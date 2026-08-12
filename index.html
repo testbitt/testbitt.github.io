@@ -1,3 +1,62 @@
 <!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kamu Kamu Standard Libary</title><meta name="theme-color" content="#0f6b4f"><style>body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#eef7f2;color:#12372b;display:grid;place-items:center;min-height:100vh}.box{background:#fff;padding:28px 32px;border-radius:22px;box-shadow:0 18px 50px #0f6b4f22;text-align:center;max-width:520px}.logo{width:72px;height:72px;border-radius:22px;background:#0f6b4f;color:#fff;display:grid;place-items:center;font-weight:900;font-size:22px;margin:auto auto 14px}.spin{display:inline-block;width:22px;height:22px;border:3px solid #b8dfcf;border-top-color:#0f6b4f;border-radius:50%;animation:s 1s linear infinite}@keyframes s{to{transform:rotate(360deg)}}</style></head><body><div class="box"><div class="logo">KSL</div><h2>Kamu Kamu Standard Libary</h2><p>กำลังโหลดหลักสูตร...</p><div class="spin"></div><p id="msg" style="font-size:13px;color:#678">Holding Time • สูตรการผลิต • สูตรชงเครื่องดื่ม</p></div><script>
-(async()=>{try{const files=["payload-01.txt","payload-02.txt","payload-03.txt","payload-04.txt","payload-05.txt","payload-06.txt","payload-07.txt","payload-08.txt"];const chunks=await Promise.all(files.map(f=>fetch(f,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('โหลด '+f+' ไม่สำเร็จ');return r.text()})));const b64=chunks.join('');const bin=atob(b64);const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));let html;if('DecompressionStream' in window){const ds=new DecompressionStream('gzip');html=await new Response(new Blob([bytes]).stream().pipeThrough(ds)).text()}else{await new Promise((ok,fail)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js';s.onload=ok;s.onerror=fail;document.head.appendChild(s)});html=pako.ungzip(bytes,{to:'string'})}const gas='https://script.google.com/macros/s/AKfycbySkH0Fn2P757EJM_bDNYNkQx-Ieq6IAa9e0uSz1WOPt4u8eL4dP7pr3iBH0lqn6zxD/exec';html=html.replace("settings:{passScore:80,syncEnabled:false,gasUrl:'',syncKey:''}",`settings:{passScore:80,syncEnabled:true,gasUrl:'${gas}',syncKey:''}`);html=html.replace("const defaultSettings={passScore:80,syncEnabled:false,gasUrl:'',syncKey:''};",`const defaultSettings={passScore:80,syncEnabled:true,gasUrl:'${gas}',syncKey:''};`);html=html.replace("// V2 -> V3 migration: seed the two new recipe databases automatically.",`// Google Sheets deployment migration\n    let syncConfigChanged=false;\n    if(appState.settings.gasUrl!=='${gas}'){appState.settings.gasUrl='${gas}';appState.settings.syncEnabled=true;syncConfigChanged=true}\n    if(syncConfigChanged){await dbSet(appState);setTimeout(()=>syncAllTrainingDataNow(),900)}\n    // V2 -> V3 migration: seed the two new recipe databases automatically.`);html=html.replace("app:'KAMU-KAMU-STANDARD-LIBARY-V3.3'","app:'KSL-V3.4'");document.open();document.write(html);document.close()}catch(e){console.error(e);document.getElementById('msg').textContent='โหลดระบบไม่สำเร็จ: '+e.message}})();
+(async()=>{try{
+const files=["payload-01.txt","payload-02.txt","payload-03.txt","payload-04.txt","payload-05.txt","payload-06.txt","payload-07.txt","payload-08.txt"];
+const chunks=await Promise.all(files.map(f=>fetch(f,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('โหลด '+f+' ไม่สำเร็จ');return r.text()})));
+const b64=chunks.join(''),bin=atob(b64),bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));let html;
+if('DecompressionStream' in window){const ds=new DecompressionStream('gzip');html=await new Response(new Blob([bytes]).stream().pipeThrough(ds)).text()}
+else{await new Promise((ok,fail)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js';s.onload=ok;s.onerror=fail;document.head.appendChild(s)});html=pako.ungzip(bytes,{to:'string'})}
+
+const gas='https://script.google.com/macros/s/AKfycbySkH0Fn2P757EJM_bDNYNkQx-Ieq6IAa9e0uSz1WOPt4u8eL4dP7pr3iBH0lqn6zxD/exec';
+html=html.replace("settings:{passScore:80,syncEnabled:false,gasUrl:'',syncKey:''}",`settings:{passScore:80,syncEnabled:true,gasUrl:'${gas}',syncKey:''}`);
+html=html.replace("const defaultSettings={passScore:80,syncEnabled:false,gasUrl:'',syncKey:''};",`const defaultSettings={passScore:80,syncEnabled:true,gasUrl:'${gas}',syncKey:''};`);
+html=html.replace("// V2 -> V3 migration: seed the two new recipe databases automatically.",`// Google Sheets deployment migration\n    let syncConfigChanged=false;\n    if(appState.settings.gasUrl!=='${gas}'){appState.settings.gasUrl='${gas}';appState.settings.syncEnabled=true;syncConfigChanged=true}\n    if(syncConfigChanged){await dbSet(appState);setTimeout(()=>syncAllTrainingDataNow(),900)}\n    // V2 -> V3 migration: seed the two new recipe databases automatically.`);
+html=html.replace("app:'KAMU-KAMU-STANDARD-LIBARY-V3.3'","app:'KSL-V3.5'");
+
+// UI text updates
+html=html.replace('แยก 3 ฐานข้อมูลชัดเจน • Upload แล้ว Save อัตโนมัติ • สูตรการผลิตและสูตรชงจะสร้างบทเรียนใหม่ทันที','แยก 3 ฐานข้อมูลชัดเจน • Upload แล้ว Save อัตโนมัติ • ทุกฐานจะสร้างบทเรียนใหม่จากข้อมูลล่าสุดทันที');
+html=html.replace('<div class="small-note">Smart Merge: ชื่อวัตถุดิบ + สถานะ + จุดจัดเก็บ</div>','<div class="small-note">เมื่อ Upload สำเร็จ ระบบจะ <b>Replace ฐาน Holding Time</b> ด้วยข้อมูลชุดใหม่ และสร้าง Flash Card / หลักสูตร Holding Time ใหม่ทันที</div>');
+html=html.replace('ลบ Holding Time, สูตรการผลิต, สูตรชงเครื่องดื่ม, ประวัติ Upload, Progress และผลสอบใน Browser เครื่องนี้ ต้องใส่รหัส <b>1310</b>','ลบ Holding Time, สูตรการผลิต, สูตรชงเครื่องดื่ม, ประวัติ Upload, Progress และผลสอบใน Browser เครื่องนี้');
+html=html.replace('การล้างผลสอบต้องใช้รหัส 1310 เช่นเดียวกับการล้างข้อมูลหลักสูตร','ระบบจะขอรหัสยืนยันก่อนล้างผลสอบ');
+html=html.replace("กรอกรหัส 1310 เพื่อล้างผลสอบทั้งหมด","กรอกรหัสยืนยันเพื่อล้างผลสอบทั้งหมด");
+html=html.replaceAll('🏆 เปิด Certificate','🏆 เปิดใบประกาศ');
+html=html.replace('สามารถออก Certificate ได้แล้ว 🌟','ระบบสร้างใบประกาศให้แล้ว 🌟');
+html=html.replaceAll('<th>Certificate</th>','<th>ใบประกาศ</th>');
+html=html.replaceAll('พร้อมเก็บคะแนนและ Certificate','พร้อมเก็บคะแนนและใบประกาศ');
+html=html.replaceAll('ข้อมูลนี้จะถูกใช้บนผลสอบและ Certificate','ข้อมูลนี้จะถูกใช้บนผลสอบและใบประกาศ');
+html=html.replace('Certificate of Achievement</div><div class="cert-sub">ใบรับรองการผ่านหลักสูตร Kamu Kamu Standard Libary • Product Knowledge & Recipe Training','ใบประกาศนียบัตร</div><div class="cert-sub">Certificate of Achievement • Product Knowledge & Recipe Training');
+html=html.replace('Version 3.2','Version 3.5');
+
+// Runtime overrides: Holding Time uses Replace, and certificate opens automatically after a passing exam.
+const patch=`<script>
+(function(){
+  window.handleFiles=async function(fileList){
+    const files=[...fileList];if(!files.length)return;
+    const list=document.getElementById('uploadList');list.innerHTML='';
+    let batch=[],success=0,totalRows=0;
+    for(const file of files){
+      const row=document.createElement('div');row.className='file-row';row.innerHTML='<span>📄 '+escapeHtml(file.name)+'</span><span>กำลังอ่าน...</span>';list.appendChild(row);
+      try{
+        const rows=await parseFile(file);if(!rows.length)throw new Error('ไม่พบแถวข้อมูลที่ใช้งานได้');
+        batch.push(...rows);success++;totalRows+=rows.length;
+        appState.history.unshift({name:file.name,rows:rows.length,when:new Date().toISOString(),source:'Upload & Replace',dataType:'holding'});
+        row.lastElementChild.className='file-ok';row.lastElementChild.textContent='✓ '+rows.length+' แถว';
+      }catch(e){row.lastElementChild.className='file-bad';row.lastElementChild.textContent='✕ '+e.message}
+    }
+    if(success){
+      const map=new Map();batch.forEach(r=>{const k=rowKey(r);if(k.replace(/\\|/g,''))map.set(k,r)});batch=[...map.values()];
+      appState.data=batch;appState.updatedAt=new Date().toISOString();appState.initialized=true;appState.history=appState.history.slice(0,25);
+      await dbSet(appState);refreshAll();
+      toast('Holding Time อัปเดตแล้ว '+batch.length+' แถว • Replace ฐานเดิม • สร้างหลักสูตรใหม่ทันที');
+      if(appState.settings.syncEnabled)syncToGoogle('syncHoldingTime',{rows:appState.data,updatedAt:appState.updatedAt});
+    }else toast('ยังไม่มีไฟล์ที่อัปเดตสำเร็จ','error');
+    const inp=document.getElementById('fileInput');if(inp)inp.value='';
+  };
+  const oldFinish=window.finishQuiz;
+  if(typeof oldFinish==='function')window.finishQuiz=async function(){await oldFinish();const r=(appState.results||[])[0];if(r&&r.passed)setTimeout(()=>showCertificate(r.id),650)};
+  window.clearResultsWithCode=async function(){const code=prompt('กรอกรหัสยืนยันเพื่อล้างผลสอบทั้งหมด');if(code!=='1310'){if(code!==null)toast('รหัสไม่ถูกต้อง','error');return}appState.results=[];await dbSet(appState);renderResults();toast('ล้างผลสอบใน Browser เครื่องนี้แล้ว')};
+})();
+<\/script>`;
+html=html.replace('</body>',patch+'</body>');
+document.open();document.write(html);document.close();
+}catch(e){console.error(e);document.getElementById('msg').textContent='โหลดระบบไม่สำเร็จ: '+e.message}})();
 </script></body></html>
