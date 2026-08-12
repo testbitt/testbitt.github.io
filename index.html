@@ -14,46 +14,20 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#eef7f2;
 </style>
 </head>
 <body>
-<div class="box">
-  <div class="logo">KSL</div>
-  <h2>Kamu Kamu Standard Libary</h2>
-  <p>กำลังโหลดหลักสูตร...</p>
-  <div class="spin"></div>
-  <p id="msg" style="font-size:13px;color:#678">Holding Time • สูตรการผลิต • สูตรชงเครื่องดื่ม</p>
-</div>
+<div class="box"><div class="logo">KSL</div><h2>Kamu Kamu Standard Libary</h2><p>กำลังโหลดหลักสูตร...</p><div class="spin"></div><p id="msg" style="font-size:13px;color:#678">Holding Time • สูตรการผลิต • สูตรชงเครื่องดื่ม</p></div>
 <script>
 (async()=>{
-  try{
-    const files=[
-      'payload-v37-01.txt','payload-v37-02.txt','payload-v37-03.txt','payload-v37-04.txt',
-      'payload-v37-05.txt','payload-v37-06.txt','payload-v37-07.txt','payload-v37-08.txt'
-    ];
-    const parts=await Promise.all(files.map(f=>fetch(f,{cache:'no-store'}).then(r=>{
-      if(!r.ok) throw new Error('โหลด '+f+' ไม่สำเร็จ');
-      return r.text();
-    })));
-    const bin=atob(parts.join(''));
-    const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));
-    let html;
-    if('DecompressionStream' in window){
-      html=await new Response(
-        new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))
-      ).text();
-    }else{
-      await new Promise((ok,fail)=>{
-        const s=document.createElement('script');
-        s.src='https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js';
-        s.onload=ok;s.onerror=fail;document.head.appendChild(s);
-      });
-      html=pako.ungzip(bytes,{to:'string'});
-    }
-    document.open();
-    document.write(html);
-    document.close();
-  }catch(e){
-    console.error(e);
-    document.getElementById('msg').textContent='โหลดระบบไม่สำเร็จ: '+e.message;
-  }
+ try{
+  const ver='restore-20260812-1';
+  const files=['payload-01.txt','payload-02.txt','payload-03.txt','payload-04.txt','payload-05.txt','payload-06.txt','payload-07.txt','payload-08.txt'];
+  const parts=await Promise.all(files.map(f=>fetch(f+'?v='+ver,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('โหลด '+f+' ไม่สำเร็จ ('+r.status+')');return r.text()})));
+  const bin=atob(parts.join(''));
+  const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));
+  if(!('DecompressionStream' in window)) throw new Error('Browser นี้ไม่รองรับการเปิดหลักสูตร กรุณาใช้ Chrome/Edge รุ่นล่าสุด');
+  const html=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  if(!html.includes('<!DOCTYPE html>') && !html.includes('<!doctype html>')) throw new Error('ไฟล์หลักสูตรไม่สมบูรณ์');
+  document.open();document.write(html);document.close();
+ }catch(e){console.error(e);document.getElementById('msg').innerHTML='เปิดระบบไม่สำเร็จ<br><b>'+String(e.message||e)+'</b><br><small>กรุณารีเฟรชหน้าเว็บอีกครั้ง</small>';}
 })();
 </script>
 </body>
