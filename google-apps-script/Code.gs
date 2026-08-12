@@ -1,6 +1,6 @@
 /**
- * Kamu Kamu Standard Libary (KSL) V3.4 - Google Sheets backend
- * Supports: Quiz Results (50 questions), Holding Time, Production Recipes, Beverage Recipes.
+ * Kamu Kamu Standard Libary (KSL) V3.4.1 - Google Sheets backend
+ * Fix: Web App no longer depends on SpreadsheetApp.getActive() during /exec calls.
  */
 const CONFIG = {
   RESULTS_SHEET: 'Results',
@@ -16,75 +16,126 @@ const PRODUCTION_HEADERS = ['page','recipe_name_th','recipe_name_en','variant','
 const DRINK_HEADERS = ['Category','Menu','Variant','Step_No','Component_Type','Ingredient','Quantity','Unit','Price_Baht','Instructions','Notes','Source_Page','Synced At'];
 const RESULT_HEADERS = ['Timestamp','Employee ID','Name','Branch','Position','Course Scope','Score','Total','Percent','Passed','Pass Score','Duration Sec','Certificate ID','App'];
 
+/**
+ * RUN THIS ONCE MANUALLY from the Apps Script editor while the script is bound
+ * to the target Google Sheet. It stores the Spreadsheet ID for Web App usage.
+ */
 function setupSheets() {
-  const ss = SpreadsheetApp.getActive();
+  const active = SpreadsheetApp.getActiveSpreadsheet();
+  if (!active) throw new Error('ไม่พบ Google Sheet ที่ผูกกับ Apps Script กรุณาเปิด Apps Script จาก Extensions > Apps Script ของไฟล์ Google Sheet');
+
+  PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', active.getId());
+  ensureAllSheets_(active);
+  logWithSheet_(active, 'setupSheets', 0, 'OK', 'Spreadsheet ID saved: ' + active.getId());
+  return 'KSL backend ready: ' + active.getId();
+}
+
+function getSpreadsheet_() {
+  const props = PropertiesService.getScriptProperties();
+  const id = props.getProperty('SPREADSHEET_ID');
+  if (id) return SpreadsheetApp.openById(id);
+
+  // Fallback only for manual editor runs. A Web App normally has no active spreadsheet.
+  const active = SpreadsheetApp.getActiveSpreadsheet();
+  if (active) {
+    props.setProperty('SPREADSHEET_ID', active.getId());
+    return active;
+  }
+  throw new Error('ยังไม่ได้ตั้งค่า SPREADSHEET_ID กรุณารัน setupSheets() 1 ครั้ง แล้ว Deploy Web App เวอร์ชันใหม่');
+}
+
+function ensureAllSheets_(ss) {
   ensureSheet_(ss, CONFIG.RESULTS_SHEET, RESULT_HEADERS);
   ensureSheet_(ss, CONFIG.HOLDING_SHEET, HOLDING_HEADERS);
   ensureSheet_(ss, CONFIG.PRODUCTION_SHEET, PRODUCTION_HEADERS);
   ensureSheet_(ss, CONFIG.DRINK_SHEET, DRINK_HEADERS);
   ensureSheet_(ss, CONFIG.LOG_SHEET, ['Timestamp','Action','Rows','Status','Message']);
-  return 'Kamu Kamu Standard Libary Google Sheets backend ready';
 }
 
-function doGet() {
-  return json_({ok:true,app:'KSL-V3.4',time:new Date().toISOString()});
+function doGet(e) {
+  try {
+    const ss = getSpreadsheet_();
+    ensureAllSheets_(ss);
+    return json_({
+      ok: true,
+      app: 'KSL-V3.4.1',
+      spreadsheetId: ss.getId(),
+      spreadsheetName: ss.getName(),
+      ready: true,
+      time: new Date().toISOString()
+    });
+  } catch (err) {
+    return json_({ok:false,app:'KSL-V3.4.1',ready:false,error:String(err && err.message || err)});
+  }
 }
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
+  lock.waitLock(30000);
+  let ss = null;
   try {
-    setupSheets();
+    ss = getSpreadsheet_();
+    ensureAllSheets_(ss);
     const body = parseBody_(e);
     verifyKey_(body.key || '');
     const action = String(body.action || '');
-    if (action === 'saveResult') return json_(saveResult_(body.result || {}));
-    if (action === 'syncHoldingTime') return json_(replaceSheet_(CONFIG.HOLDING_SHEET, HOLDING_HEADERS, body.rows || [], body.updatedAt || '', 'syncHoldingTime'));
-    if (action === 'syncProductionRecipes') return json_(replaceSheet_(CONFIG.PRODUCTION_SHEET, PRODUCTION_HEADERS, body.rows || [], body.updatedAt || '', 'syncProductionRecipes'));
-    if (action === 'syncDrinkRecipes') return json_(replaceSheet_(CONFIG.DRINK_SHEET, DRINK_HEADERS, body.rows || [], body.updatedAt || '', 'syncDrinkRecipes'));
-    throw new Error('Unknown action: ' + action);
+
+    let result;
+    if (action === 'saveResult') result = saveResult_(ss, body.result || {});
+    else if (action === 'syncHoldingTime') result = replaceSheet_(ss, CONFIG.HOLDING_SHEET, HOLDING_HEADERS, body.rows || [], body.updatedAt || '', 'syncHoldingTime');
+    else if (action === 'syncProductionRecipes') result = replaceSheet_(ss, CONFIG.PRODUCTION_SHEET, PRODUCTION_HEADERS, body.rows || [], body.updatedAt || '', 'syncProductionRecipes');
+    else if (action === 'syncDrinkRecipes') result = replaceSheet_(ss, CONFIG.DRINK_SHEET, DRINK_HEADERS, body.rows || [], body.updatedAt || '', 'syncDrinkRecipes');
+    else if (action === 'ping') result = {ok:true,action:'ping',app:'KSL-V3.4.1'};
+    else throw new Error('Unknown action: ' + action);
+
+    return json_(result);
   } catch (err) {
-    log_('error',0,'ERROR',String(err && err.message || err));
+    try {
+      if (!ss) ss = getSpreadsheet_();
+      logWithSheet_(ss, 'error', 0, 'ERROR', String(err && err.message || err));
+    } catch (_) {}
     return json_({ok:false,error:String(err && err.message || err)});
   } finally {
-    lock.releaseLock();
+    try { lock.releaseLock(); } catch (_) {}
   }
 }
 
-function saveResult_(r) {
-  const sh = SpreadsheetApp.getActive().getSheetByName(CONFIG.RESULTS_SHEET);
+function saveResult_(ss, r) {
+  const sh = ss.getSheetByName(CONFIG.RESULTS_SHEET);
   sh.appendRow([
     r.when || new Date().toISOString(),
     safe_(r.employeeId), safe_(r.name), safe_(r.branch), safe_(r.position),
     safe_(r.courseScope || 'all'),
     Number(r.score || 0), Number(r.total || 50), Number(r.pct || 0), r.passed === true,
-    Number(r.passScore || 80), Number(r.durationSec || 0), safe_(r.id), 'KSL-V3.4'
+    Number(r.passScore || 80), Number(r.durationSec || 0), safe_(r.id), 'KSL-V3.4.1'
   ]);
-  log_('saveResult',1,'OK',safe_(r.id));
+  logWithSheet_(ss, 'saveResult', 1, 'OK', safe_(r.id));
   return {ok:true,action:'saveResult'};
 }
 
-function replaceSheet_(sheetName, headers, rows, updatedAt, action) {
+function replaceSheet_(ss, sheetName, headers, rows, updatedAt, action) {
   if (!Array.isArray(rows)) throw new Error('rows must be an array');
-  const sh = SpreadsheetApp.getActive().getSheetByName(sheetName);
+  const sh = ss.getSheetByName(sheetName);
   sh.clearContents();
   sh.getRange(1,1,1,headers.length).setValues([headers]);
   sh.setFrozenRows(1);
   sh.getRange(1,1,1,headers.length).setFontWeight('bold');
+
   const dataHeaders = headers.slice(0,-1);
   if (rows.length) {
     const stamp = updatedAt || new Date().toISOString();
-    const values = rows.map(r => dataHeaders.map(h => safe_(r[h])).concat(stamp));
+    const values = rows.map(r => dataHeaders.map(h => safe_(r && r[h])).concat(stamp));
     sh.getRange(2,1,values.length,headers.length).setValues(values);
   }
-  log_(action,rows.length,'OK',updatedAt || '');
+
+  logWithSheet_(ss, action, rows.length, 'OK', updatedAt || '');
   return {ok:true,action:action,rows:rows.length};
 }
 
 function ensureSheet_(ss,name,headers){
-  let sh=ss.getSheetByName(name);
-  if(!sh) sh=ss.insertSheet(name);
-  if(sh.getLastRow()===0){
+  let sh = ss.getSheetByName(name);
+  if (!sh) sh = ss.insertSheet(name);
+  if (sh.getLastRow() === 0) {
     sh.getRange(1,1,1,headers.length).setValues([headers]);
     sh.setFrozenRows(1);
     sh.getRange(1,1,1,headers.length).setFontWeight('bold');
@@ -93,10 +144,20 @@ function ensureSheet_(ss,name,headers){
 }
 
 function parseBody_(e){
-  const raw=e&&e.postData&&e.postData.contents?e.postData.contents:(e&&e.parameter&&e.parameter.payload?e.parameter.payload:'{}');
-  try{return JSON.parse(raw)}catch(_){throw new Error('Invalid JSON payload')}
+  const raw = e && e.postData && e.postData.contents
+    ? e.postData.contents
+    : (e && e.parameter && e.parameter.payload ? e.parameter.payload : '{}');
+  try { return JSON.parse(raw); }
+  catch (_) { throw new Error('Invalid JSON payload'); }
 }
-function verifyKey_(key){if(CONFIG.SHARED_KEY && String(key)!==String(CONFIG.SHARED_KEY)) throw new Error('Invalid Sync Key')}
-function safe_(v){return v===null||v===undefined?'':String(v)}
-function json_(obj){return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON)}
-function log_(action,rows,status,message){const sh=SpreadsheetApp.getActive().getSheetByName(CONFIG.LOG_SHEET);if(sh)sh.appendRow([new Date().toISOString(),action,rows,status,message])}
+
+function verifyKey_(key){
+  if (CONFIG.SHARED_KEY && String(key) !== String(CONFIG.SHARED_KEY)) throw new Error('Invalid Sync Key');
+}
+
+function safe_(v){ return v === null || v === undefined ? '' : String(v); }
+function json_(obj){ return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
+function logWithSheet_(ss, action, rows, status, message){
+  const sh = ss.getSheetByName(CONFIG.LOG_SHEET);
+  if (sh) sh.appendRow([new Date().toISOString(), action, rows, status, message]);
+}
