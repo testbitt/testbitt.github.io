@@ -18,7 +18,7 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#eef7f2;
 <script>
 (async()=>{
  try{
-  const ver='v45-expiry-reference';
+  const ver='v46-expiry-reference-exact';
   const files=['payload-01.txt','payload-02.txt','payload-03.txt','payload-04.txt','payload-05.txt','payload-06.txt','payload-07.txt','payload-08.txt'];
   const parts=await Promise.all(files.map(f=>fetch(f+'?v='+ver,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('โหลด '+f+' ไม่สำเร็จ ('+r.status+')');return r.text()})));
   const bin=atob(parts.join(''));
@@ -33,10 +33,10 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#eef7f2;
   const curriculum=document.createElement('script');curriculum.src='patch-v41.js?v=43';curriculum.async=false;document.body.appendChild(curriculum);
   const expiry=document.createElement('script');expiry.src='patch-v42.js?v=43';expiry.async=false;document.body.appendChild(expiry);
   const hideCode=document.createElement('script');hideCode.src='patch-v44.js?v=44b';hideCode.async=false;document.body.appendChild(hideCode);
-  const expiryRef=document.createElement('script');expiryRef.src='patch-v45.js?v=45';expiryRef.async=false;document.body.appendChild(expiryRef);
+  const expiryRef=document.createElement('script');expiryRef.src='patch-v45.js?v=46';expiryRef.async=false;document.body.appendChild(expiryRef);
  }catch(e){console.error(e);const msg=document.getElementById('msg');if(msg)msg.innerHTML='เปิดระบบไม่สำเร็จ<br><b>'+String(e.message||e)+'</b><br><small>กรุณารีเฟรชหน้าเว็บอีกครั้ง</small>';}
 })();
 </script>
 </body>
 </html>
-<!-- deploy-v45 -->
+<!-- deploy-v46 -->
