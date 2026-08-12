@@ -18,16 +18,18 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#eef7f2;
 <script>
 (async()=>{
  try{
-  const ver='restore-20260812-1';
+  const ver='v38-quiz-only';
   const files=['payload-01.txt','payload-02.txt','payload-03.txt','payload-04.txt','payload-05.txt','payload-06.txt','payload-07.txt','payload-08.txt'];
   const parts=await Promise.all(files.map(f=>fetch(f+'?v='+ver,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('โหลด '+f+' ไม่สำเร็จ ('+r.status+')');return r.text()})));
   const bin=atob(parts.join(''));
   const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));
   if(!('DecompressionStream' in window)) throw new Error('Browser นี้ไม่รองรับการเปิดหลักสูตร กรุณาใช้ Chrome/Edge รุ่นล่าสุด');
   const html=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
-  if(!html.includes('<!DOCTYPE html>') && !html.includes('<!doctype html>')) throw new Error('ไฟล์หลักสูตรไม่สมบูรณ์');
+  if(!html.includes('<!DOCTYPE html>')&&!html.includes('<!doctype html>')) throw new Error('ไฟล์หลักสูตรไม่สมบูรณ์');
   document.open();document.write(html);document.close();
- }catch(e){console.error(e);document.getElementById('msg').innerHTML='เปิดระบบไม่สำเร็จ<br><b>'+String(e.message||e)+'</b><br><small>กรุณารีเฟรชหน้าเว็บอีกครั้ง</small>';}
+  const hide=document.createElement('style');hide.textContent='#loginGate,#userPill,#resultProfileStrip{display:none!important}';document.head.appendChild(hide);
+  const patch=document.createElement('script');patch.src='patch-v38.js?v=38';patch.async=false;document.body.appendChild(patch);
+ }catch(e){console.error(e);const msg=document.getElementById('msg');if(msg)msg.innerHTML='เปิดระบบไม่สำเร็จ<br><b>'+String(e.message||e)+'</b><br><small>กรุณารีเฟรชหน้าเว็บอีกครั้ง</small>';}
 })();
 </script>
 </body>
