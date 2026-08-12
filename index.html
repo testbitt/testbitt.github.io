@@ -18,7 +18,7 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#eef7f2;
 <script>
 (async()=>{
  try{
-  const ver='v41-curriculum-flashcards';
+  const ver='v42-expiry-document';
   const files=['payload-01.txt','payload-02.txt','payload-03.txt','payload-04.txt','payload-05.txt','payload-06.txt','payload-07.txt','payload-08.txt'];
   const parts=await Promise.all(files.map(f=>fetch(f+'?v='+ver,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('โหลด '+f+' ไม่สำเร็จ ('+r.status+')');return r.text()})));
   const bin=atob(parts.join(''));
@@ -31,9 +31,10 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#eef7f2;
   const patch=document.createElement('script');patch.src='patch-v39.js?v=39b';patch.async=false;document.body.appendChild(patch);
   const homeLinks=document.createElement('script');homeLinks.src='patch-v40.js?v=40';homeLinks.async=false;document.body.appendChild(homeLinks);
   const curriculum=document.createElement('script');curriculum.src='patch-v41.js?v=41';curriculum.async=false;document.body.appendChild(curriculum);
+  const expiry=document.createElement('script');expiry.src='patch-v42.js?v=42';expiry.async=false;document.body.appendChild(expiry);
  }catch(e){console.error(e);const msg=document.getElementById('msg');if(msg)msg.innerHTML='เปิดระบบไม่สำเร็จ<br><b>'+String(e.message||e)+'</b><br><small>กรุณารีเฟรชหน้าเว็บอีกครั้ง</small>';}
 })();
 </script>
 </body>
 </html>
-<!-- deploy-v41 -->
+<!-- deploy-v42 -->
