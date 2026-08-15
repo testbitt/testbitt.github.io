@@ -1,0 +1,45 @@
+name: Switch Travel Page To Vector Banner
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/switch-to-vector-banner.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  switch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Replace broken raster banner
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('travel-expense/index.html')
+          s=p.read_text(encoding='utf-8')
+          s=re.sub(r'src="\./kamu-banner\.webp\?v=[^"]+"', 'src="./banner-travel-ot-vector.svg?v=20260816-vector1"', s)
+          s=s.replace('aspect-ratio:1200/514', 'aspect-ratio:1600/686')
+          s=s.replace('width="1200" height="514"', 'width="1600" height="686"')
+          p.write_text(s,encoding='utf-8')
+          assert 'banner-travel-ot-vector.svg?v=20260816-vector1' in s
+          assert 'kamu-banner.webp?v=' not in s
+          print('VECTOR_BANNER_LINK_OK')
+          PY
+      - name: Commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add travel-expense/index.html
+          git commit -m "Use crisp vector travel and OT banner"
+          git push
