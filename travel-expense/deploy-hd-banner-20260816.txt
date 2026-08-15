@@ -1,0 +1,1 @@
+Force GitHub Pages deployment after HD banner rebuild. Banner source: 1200x514 WebP.
