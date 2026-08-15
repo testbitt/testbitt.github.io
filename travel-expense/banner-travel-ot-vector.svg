@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 686" role="img" aria-labelledby="title desc">
+<title id="title">ระบบบันทึกค่าเดินทาง และ OT</title>
+<desc id="desc">แบนเนอร์ระบบพนักงาน KAMU สำหรับบันทึกค่าเดินทางและโอที</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f7f8df"/><stop offset=".52" stop-color="#fffdf5"/><stop offset="1" stop-color="#eef6da"/></linearGradient>
+  <linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1c5b31"/><stop offset="1" stop-color="#397b3d"/></linearGradient>
+  <linearGradient id="lime" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9ecb3b"/><stop offset="1" stop-color="#5b991d"/></linearGradient>
+  <linearGradient id="orange" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffb029"/><stop offset="1" stop-color="#ef8200"/></linearGradient>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#274621" flood-opacity=".18"/></filter>
+  <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="18"/></filter>
+  <pattern id="dots" width="32" height="32" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="2" fill="#82ad4b" opacity=".14"/></pattern>
+</defs>
+<rect width="1600" height="686" rx="40" fill="url(#bg)"/>
+<rect width="1600" height="686" rx="40" fill="url(#dots)"/>
+<path d="M0 0h510C390 55 250 82 0 175Z" fill="#bcd870" opacity=".55"/>
+<path d="M1600 0h-470c110 48 250 87 470 198Z" fill="#d9e79c" opacity=".58"/>
+<path d="M0 594c270-56 489-19 666 92H0Z" fill="#6ba62e" opacity=".94"/>
+<path d="M1600 568c-264 7-454 52-590 118h590Z" fill="#4d9129" opacity=".95"/>
+<ellipse cx="805" cy="610" rx="520" ry="62" fill="#dce9b3" opacity=".7" filter="url(#soft)"/>
+<!-- route + travel icons -->
+<path d="M72 305c75-97 145-120 215-55 48 45 96 47 146-9" fill="none" stroke="#f09a0b" stroke-width="10" stroke-linecap="round" stroke-dasharray="18 20" opacity=".88"/>
+<g transform="translate(72 205)" filter="url(#shadow)"><path d="M0 48C0 20 22 0 50 0s50 20 50 48c0 35-50 89-50 89S0 83 0 48Z" fill="url(#orange)"/><circle cx="50" cy="47" r="19" fill="#fff7dd"/></g>
+<g transform="translate(93 470)" filter="url(#shadow)"><path d="M12 57h220l-18-70H69L42 8 25 16Z" fill="#fff" stroke="#cad5c2" stroke-width="5"/><path d="M47 8h153l-23-48H85Z" fill="#dce9f2"/><circle cx="58" cy="59" r="25" fill="#29332e"/><circle cx="181" cy="59" r="25" fill="#29332e"/><circle cx="58" cy="59" r="11" fill="#c8d0cb"/><circle cx="181" cy="59" r="11" fill="#c8d0cb"/><rect x="63" y="-17" width="41" height="25" rx="8" fill="#7cafcb"/><rect x="111" y="-17" width="62" height="25" rx="8" fill="#7cafcb"/></g>
+<!-- left anime-style staff -->
+<g transform="translate(210 58)" filter="url(#shadow)">
+  <path d="M73 505c9-115 17-194 87-226 57-27 132-22 180 18 46 39 53 118 58 208Z" fill="url(#green)"/>
+  <path d="M160 293c26 29 53 39 82 32 25-7 48-23 70-45l24 225H104l31-213Z" fill="#2f713b"/>
+  <path d="M198 281h80l-5 73c-18 28-57 29-77 1Z" fill="#f6cda8"/>
+  <ellipse cx="239" cy="191" rx="92" ry="105" fill="#ffd9b7"/>
+  <path d="M148 183c-4-92 42-150 112-150 61 0 104 38 105 105-17-24-34-39-52-48 4 25-4 38-17 51-17-21-33-33-54-39-14 20-42 36-94 44Z" fill="#2e241f"/>
+  <path d="M158 116c22-83 119-110 180-48-43-29-105-21-135 18 47-15 78-9 119 18-46-16-94-10-164 12Z" fill="#3a2b23"/>
+  <ellipse cx="202" cy="192" rx="11" ry="15" fill="#35231b"/><ellipse cx="279" cy="192" rx="11" ry="15" fill="#35231b"/>
+  <circle cx="199" cy="187" r="4" fill="#fff"/><circle cx="276" cy="187" r="4" fill="#fff"/>
+  <path d="M208 234q32 25 65-2" fill="none" stroke="#9a443a" stroke-width="6" stroke-linecap="round"/>
+  <ellipse cx="178" cy="222" rx="16" ry="7" fill="#f3a1a1" opacity=".45"/><ellipse cx="300" cy="222" rx="16" ry="7" fill="#f3a1a1" opacity=".45"/>
+  <path d="M153 313c-32 13-59 47-72 91" fill="none" stroke="#ffd9b7" stroke-width="35" stroke-linecap="round"/>
+  <path d="M79 403c-19 18-24 42-2 52 27 12 47-25 52-49Z" fill="#ffd9b7"/>
+  <!-- receipt -->
+  <g transform="translate(-12 326) rotate(-8)"><rect width="108" height="160" rx="8" fill="#fff" stroke="#d7dfd4" stroke-width="3"/><text x="54" y="27" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#31573b">ใบเสร็จ</text><path d="M18 48h72M18 69h54M18 90h70M18 111h48M18 133h70" stroke="#abb8aa" stroke-width="4" stroke-linecap="round"/><text x="82" y="147" text-anchor="end" font-family="Arial,sans-serif" font-size="16" font-weight="700" fill="#31573b">310.00</text></g>
+  <!-- thumbs up -->
+  <path d="M324 328c47-4 76-31 88-75 7-25 30-17 28 3l-7 48h40c25 0 29 18 19 35l-27 67c-7 17-18 24-37 24h-74Z" fill="#ffd9b7"/>
+  <path d="M337 320v115" stroke="#1f5b32" stroke-width="15" stroke-linecap="round"/>
+  <rect x="214" y="365" width="50" height="70" rx="7" fill="#f6faf0" stroke="#b7c9a5" stroke-width="4"/><circle cx="239" cy="386" r="9" fill="#7aa84a"/><path d="M224 406h30M224 418h30" stroke="#7aa84a" stroke-width="4"/>
+</g>
+<!-- right anime-style staff -->
+<g transform="translate(1230 53)" filter="url(#shadow)">
+  <path d="M-58 510c8-121 16-199 77-229 55-27 126-24 175 11 47 34 60 117 64 218Z" fill="url(#green)"/>
+  <path d="M25 285h79l-4 70c-16 29-58 31-78 1Z" fill="#f6cda8"/>
+  <ellipse cx="65" cy="191" rx="88" ry="103" fill="#ffd9b7"/>
+  <path d="M-23 178c-3-92 44-149 111-149 61 0 103 38 103 103-20-23-41-39-60-48 4 22-5 39-18 51-18-19-35-32-55-38-17 21-42 36-81 45Z" fill="#2e241f"/>
+  <path d="M-6 108C26 31 111 21 165 67 119 43 63 51 32 85c37-13 72-9 111 16-43-15-92-9-149 7Z" fill="#3a2b23"/>
+  <ellipse cx="28" cy="191" rx="11" ry="15" fill="#35231b"/><ellipse cx="101" cy="191" rx="11" ry="15" fill="#35231b"/>
+  <circle cx="25" cy="186" r="4" fill="#fff"/><circle cx="98" cy="186" r="4" fill="#fff"/>
+  <path d="M38 232q30 24 61-2" fill="none" stroke="#9a443a" stroke-width="6" stroke-linecap="round"/>
+  <ellipse cx="8" cy="219" rx="15" ry="7" fill="#f3a1a1" opacity=".45"/><ellipse cx="121" cy="219" rx="15" ry="7" fill="#f3a1a1" opacity=".45"/>
+  <path d="M-28 313c-34 16-52 53-61 93" fill="none" stroke="#ffd9b7" stroke-width="35" stroke-linecap="round"/>
+  <!-- pen --> <path d="M-95 383l60-104" stroke="#28342b" stroke-width="10" stroke-linecap="round"/><path d="M-35 279l10-19 5 21Z" fill="#f3a21a"/>
+  <!-- clipboard -->
+  <g transform="translate(110 337) rotate(4)"><rect width="151" height="196" rx="10" fill="#9c6734"/><rect x="10" y="13" width="131" height="171" rx="6" fill="#fffdf5"/><rect x="47" y="-7" width="59" height="24" rx="8" fill="#c5c9b7" stroke="#5f634f" stroke-width="3"/><text x="75" y="48" text-anchor="middle" font-family="Tahoma,'Noto Sans Thai',sans-serif" font-size="17" font-weight="700" fill="#36573c">บันทึก OT</text><path d="M27 70h98M27 96h98M27 122h98M27 148h98" stroke="#ccd4c7" stroke-width="3"/><text x="27" y="88" font-family="Arial" font-size="13" fill="#5e685e">18:00</text><text x="84" y="88" font-family="Arial" font-size="13" fill="#5e685e">21:00</text><text x="113" y="88" font-family="Arial" font-size="13" fill="#2f713b">3.0</text><text x="75" y="174" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700" fill="#43822d">10.50 h</text></g>
+</g>
+<!-- clock -->
+<g transform="translate(1320 82)" filter="url(#shadow)"><circle cx="0" cy="0" r="54" fill="#fff9ec" stroke="#b8a57d" stroke-width="6"/><circle r="5" fill="#31573b"/><path d="M0 0V-31M0 0L25 8" stroke="#31573b" stroke-width="6" stroke-linecap="round"/><path d="M0-43v8M43 0h-8M0 43v-8M-43 0h8" stroke="#806f50" stroke-width="4"/></g>
+<!-- central title -->
+<g text-anchor="middle" font-family="Tahoma,'Noto Sans Thai','Leelawadee UI',sans-serif" filter="url(#shadow)">
+  <text x="800" y="166" font-size="61" font-weight="800" fill="#467c20">ระบบบันทึก</text>
+  <text x="800" y="293" font-size="116" font-weight="900" fill="#5a951f" stroke="#f5f5dd" stroke-width="10" paint-order="stroke">ค่าเดินทาง</text>
+  <text x="800" y="398" font-size="82" font-weight="900" fill="#6d4a12">และ <tspan fill="#f08a00" font-size="110">OT</tspan></text>
+</g>
+<!-- top icon badges -->
+<g filter="url(#shadow)"><circle cx="698" cy="72" r="39" fill="url(#lime)"/><path d="M678 80h40l-4-17h-32Z" fill="none" stroke="#fff" stroke-width="6" stroke-linejoin="round"/><circle cx="685" cy="84" r="5" fill="#fff"/><circle cx="711" cy="84" r="5" fill="#fff"/><circle cx="790" cy="72" r="39" fill="url(#orange)"/><circle cx="790" cy="72" r="22" fill="none" stroke="#fff" stroke-width="5"/><path d="M790 72V56M790 72l13 8" stroke="#fff" stroke-width="5" stroke-linecap="round"/></g>
+<!-- subtitle pill -->
+<g filter="url(#shadow)"><rect x="522" y="435" width="556" height="59" rx="30" fill="url(#lime)"/><text x="800" y="475" text-anchor="middle" font-family="Tahoma,'Noto Sans Thai',sans-serif" font-size="29" font-weight="700" fill="#fff">ใช้งานง่าย  รวดเร็ว  โปร่งใส  และตรวจสอบได้</text></g>
+<!-- feature strip -->
+<g transform="translate(430 520)" filter="url(#shadow)"><rect width="740" height="126" rx="29" fill="#fffdf7" opacity=".97"/><g font-family="Tahoma,'Noto Sans Thai',sans-serif" font-size="16" font-weight="700" fill="#435343" text-anchor="middle">
+  <g transform="translate(87 25)"><rect x="-27" width="54" height="44" rx="10" fill="#edf5d8"/><path d="M-17 17h34v21h-34Z" fill="#559125"/><circle cx="10" cy="27" r="6" fill="#d9e9b2"/><text y="87">บันทึกค่าใช้จ่าย</text></g>
+  <g transform="translate(229 25)"><rect x="-22" width="44" height="50" rx="5" fill="none" stroke="#559125" stroke-width="5"/><path d="M-11 16h22M-11 28h22M-11 40h15" stroke="#559125" stroke-width="4"/><text y="87">แนบใบเสร็จ</text></g>
+  <g transform="translate(371 25)"><path d="M-27 17h54v31h-54Z" fill="#69a832"/><circle r="10" cx="0" cy="32" fill="#edf5d8"/><text y="87">บันทึกเงิน</text></g>
+  <g transform="translate(513 25)"><circle cx="0" cy="25" r="25" fill="none" stroke="#559125" stroke-width="5"/><path d="M0 25V8M0 25l14 9" stroke="#559125" stroke-width="5" stroke-linecap="round"/><text y="87">คำนวณ OT</text></g>
+  <g transform="translate(655 25)"><rect x="-24" width="48" height="49" rx="5" fill="#559125"/><path d="M-14 13h28M-14 24h8M2 24h12M-14 35h8M2 35h12" stroke="#fff" stroke-width="3"/><text y="87">ตรวจสอบได้</text></g>
+</g></g>
+<!-- decorative leaves/sparkles -->
+<g fill="#77a83c" opacity=".85"><path d="M506 96c30-34 53-30 69-21-21 30-41 35-69 21Z"/><path d="M1090 114c32-36 57-30 73-19-23 31-43 35-73 19Z"/><path d="M1168 317c27-31 49-26 63-17-20 27-38 31-63 17Z"/><path d="M438 402c24-27 44-23 56-15-18 24-34 27-56 15Z"/></g>
+<g fill="#f2ad1d"><path d="M462 71l7 18 18 7-18 7-7 18-7-18-18-7 18-7Z"/><path d="M1135 71l6 15 15 6-15 6-6 15-6-15-15-6 15-6Z"/><path d="M1035 165l5 13 13 5-13 5-5 13-5-13-13-5 13-5Z"/></g>
+</svg>
