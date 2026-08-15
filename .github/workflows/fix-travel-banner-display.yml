@@ -1,0 +1,39 @@
+name: Fix Travel Banner Display
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-travel-banner-display.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix-display:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update banner cache and aspect ratio
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('travel-expense/index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('./kamu-banner.webp?v=20260815-2245','./kamu-banner.webp?v=20260816-hd1200')
+          s=s.replace('aspect-ratio:3/1','aspect-ratio:1200/514')
+          s=s.replace('width="600" height="257"','width="1200" height="514"')
+          p.write_text(s,encoding='utf-8')
+          assert 'v=20260816-hd1200' in s
+          assert 'aspect-ratio:1200/514' in s
+          PY
+      - name: Commit display fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add travel-expense/index.html
+          git commit -m "Use HD travel banner without stale cache"
+          git push
