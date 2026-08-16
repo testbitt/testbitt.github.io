@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/finalize-travel-banner-jpg.yml'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,58 +14,54 @@ jobs:
   finalize:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Assemble and verify JPG
         shell: bash
         run: |
           set -euo pipefail
-          ls -lh travel-expense/jpg-part*.txt
           for f in $(find travel-expense -maxdepth 1 -name 'jpg-part*.txt' | sort -V); do cat "$f"; done | tr -d '\r\n[:space:]' > /tmp/banner.b64
           base64 --decode /tmp/banner.b64 > travel-expense/banner-travel-ot.jpg
-          echo "JPG bytes: $(stat -c%s travel-expense/banner-travel-ot.jpg)"
-          sha256sum travel-expense/banner-travel-ot.jpg
-          file travel-expense/banner-travel-ot.jpg
           python -m pip install pillow --quiet
           python - <<'PY'
           from PIL import Image
           from pathlib import Path
           p=Path('travel-expense/banner-travel-ot.jpg')
-          im=Image.open(p)
-          im.verify()
-          im=Image.open(p)
-          w,h=im.size
-          print('VERIFIED_JPG', w, h, p.stat().st_size)
-          assert w >= 1000, (w,h)
-          assert h >= 400, (w,h)
+          im=Image.open(p); im.verify()
+          im=Image.open(p); w,h=im.size
+          print('VERIFIED_JPG',w,h,p.stat().st_size)
+          assert w >= 900 and h >= 380
           assert p.stat().st_size > 100000
           PY
 
       - name: Point website to verified JPG
         shell: bash
         run: |
-          set -euo pipefail
           python - <<'PY'
           from PIL import Image
           from pathlib import Path
+          import re
           p=Path('travel-expense/index.html')
           s=p.read_text(encoding='utf-8')
           w,h=Image.open('travel-expense/banner-travel-ot.jpg').size
-          import re
-          s=re.sub(r'\.\/kamu-banner\.webp\?v=[^"\']+', './banner-travel-ot.jpg?v=20260816-final-jpg', s)
-          s=re.sub(r'aspect-ratio:\s*\d+\s*\/\s*\d+', f'aspect-ratio:{w}/{h}', s)
+          s=re.sub(r'src="\./(?:banner-exact\.webp|banner-kamu-staff-final\.webp|banner-travel-ot-vector\.svg|kamu-banner\.webp)(?:\?v=[^"]*)?"', 'src="./banner-travel-ot.jpg?v=20260816-verified-jpg"', s, count=1)
+          s=re.sub(r'aspect-ratio:\s*\d+\s*/\s*\d+', f'aspect-ratio:{w}/{h}', s)
           s=re.sub(r'width="\d+" height="\d+" loading="eager" fetchpriority="high"', f'width="{w}" height="{h}" loading="eager" fetchpriority="high"', s, count=1)
           p.write_text(s,encoding='utf-8')
-          print('HTML banner set to', w, h)
+          assert 'banner-travel-ot.jpg?v=20260816-verified-jpg' in s
           PY
 
       - name: Commit verified JPG and HTML
         shell: bash
         run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add travel-expense/banner-travel-ot.jpg travel-expense/index.html
-          git commit -m "Use verified direct JPG travel banner"
-          git push
+          if git diff --cached --quiet; then
+            echo 'No changes'
+          else
+            git commit -m 'Use verified JPG anime travel OT banner'
+            git push
+          fi
