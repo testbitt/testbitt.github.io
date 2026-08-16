@@ -1,0 +1,44 @@
+name: Apply Anime Theme V2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-anime-theme-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply anime theme and refreshed banner
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('travel-expense/index.html')
+          s=p.read_text(encoding='utf-8')
+          link='<link rel="stylesheet" href="./anime-theme-v2.css?v=20260816-anime2">'
+          if 'anime-theme-v2.css' not in s:
+              s=s.replace('</head>',link+'</head>')
+          s=s.replace('banner-travel-ot-vector.svg?v=20260816-vector1','banner-travel-ot-vector.svg?v=20260816-anime2')
+          s=s.replace('banner-travel-ot-vector.svg?v=20260816-vector2','banner-travel-ot-vector.svg?v=20260816-anime2')
+          p.write_text(s,encoding='utf-8')
+          assert 'anime-theme-v2.css?v=20260816-anime2' in s
+          assert 'banner-travel-ot-vector.svg?v=20260816-anime2' in s
+          PY
+      - name: Commit portal update
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add travel-expense/index.html
+          if git diff --cached --quiet; then
+            echo "Already applied"
+            exit 0
+          fi
+          git commit -m "Apply anime theme and refreshed travel OT banner"
+          git push
