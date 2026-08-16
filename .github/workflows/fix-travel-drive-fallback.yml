@@ -1,0 +1,61 @@
+name: Fix Travel Drive Permission Fallback
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-travel-drive-fallback.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch travel save fallback
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('travel-expense/index.html')
+          s = p.read_text(encoding='utf-8')
+
+          pattern = re.compile(
+              r"let z=await Promise\.all\(\[file\(fo\),file\(fb\)\]\),x=await post\(\{\.\.\.b,receiptOutName:z\[0\]\.name,receiptOutType:z\[0\]\.type,receiptOutData:z\[0\]\.data,receiptBackName:z\[1\]\.name,receiptBackType:z\[1\]\.type,receiptBackData:z\[1\]\.data\},f,\$\('travelSave'\)\);success\(x\.message,x\.recordId\|\|x\.claimId,'travel'\)"
+          )
+
+          replacement = """let z=await Promise.all([file(fo),file(fb)]),x,withFiles={...b,receiptOutName:z[0].name,receiptOutType:z[0].type,receiptOutData:z[0].data,receiptBackName:z[1].name,receiptBackType:z[1].type,receiptBackData:z[1].data};try{x=await post(withFiles,f,$('travelSave'))}catch(err){let msg=String(err&&err.message||err);if(/DriveApp|getFoldersByName|googleapis\\.com\\/auth\\/drive|ไม่ได้รับอนุญาตให้เรียกใช้/i.test(msg)){x=await post({...b,receiptOutName:'',receiptOutType:'',receiptOutData:'',receiptBackName:'',receiptBackType:'',receiptBackData:''},f,$('travelSave'));x.message=(x.message||'บันทึกข้อมูลสำเร็จ')+' • บันทึกข้อมูลแล้ว แต่เอกสารแนบยังไม่ถูกอัปโหลด เนื่องจาก Google Drive ยังไม่ได้รับสิทธิ์'}else throw err}success(x.message,x.recordId||x.claimId,'travel')"""
+
+          s2, n = pattern.subn(replacement, s, count=1)
+          if n != 1:
+              raise SystemExit(f'Expected exactly 1 travel save block, patched {n}')
+
+          # Cache-bust the page CSS reference so the newest HTML is easier to identify in browser caches.
+          s2 = s2.replace('anime-theme-v2.css?v=20260816-anime2', 'anime-theme-v2.css?v=20260816-drivefix1')
+          p.write_text(s2, encoding='utf-8')
+
+          assert 'Google Drive ยังไม่ได้รับสิทธิ์' in s2
+          assert 'drivefix1' in s2
+          print('PATCH_OK', len(s), len(s2))
+          PY
+
+      - name: Commit patched page
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add travel-expense/index.html
+          if git diff --cached --quiet; then
+            echo 'No changes'
+          else
+            git commit -m 'Handle Google Drive permission errors when saving travel expense'
+            git push
+          fi
