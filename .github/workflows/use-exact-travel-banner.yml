@@ -1,0 +1,52 @@
+name: Use Exact Travel Banner
+
+on:
+  push:
+    paths:
+      - '.github/workflows/use-exact-travel-banner.yml'
+      - 'travel-expense/banner-kamu-staff-final.webp'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify exact banner asset
+        run: |
+          set -euo pipefail
+          test -f travel-expense/banner-kamu-staff-final.webp
+          echo '2b4ab365c88c72f3ec111ddf6be971f4bbf4d924943a1ac96e1fc765be2f86b7  travel-expense/banner-kamu-staff-final.webp' | sha256sum -c -
+          file travel-expense/banner-kamu-staff-final.webp | grep -q '1915x821'
+      - name: Point website to exact requested image
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('travel-expense/index.html')
+          s=p.read_text()
+          old='src="./banner-travel-ot-vector.svg?v=20260816-anime2" alt="ระบบบันทึกค่าเดินทาง และ OT" width="1600" height="686"'
+          new='src="./banner-kamu-staff-final.webp?v=20260816-exact1" alt="KAMU KAMU STAFF ระบบบันทึกค่าเดินทาง และ OT" width="1915" height="821"'
+          if old not in s:
+              raise SystemExit('Expected old banner markup not found')
+          s=s.replace(old,new,1)
+          s=s.replace('aspect-ratio:1600/686','aspect-ratio:1915/821')
+          p.write_text(s)
+          assert 'banner-kamu-staff-final.webp?v=20260816-exact1' in s
+          assert 'banner-travel-ot-vector.svg?v=20260816-anime2' not in s
+          PY
+      - name: Commit banner switch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add travel-expense/index.html
+          if git diff --cached --quiet; then
+            echo 'No HTML change needed'
+          else
+            git commit -m 'Use exact user-provided anime banner'
+            git push
+          fi
