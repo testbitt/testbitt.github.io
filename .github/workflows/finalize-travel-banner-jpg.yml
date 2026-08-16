@@ -18,7 +18,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Assemble exact banner and verify bytes
+      - name: Repair chunk, assemble exact banner and verify bytes
         shell: bash
         run: |
           set -euo pipefail
@@ -28,12 +28,22 @@ jobs:
           from PIL import Image
           import base64, hashlib, re
 
+          # The fourth upload lost exactly one base64 character in transit.
+          # Its Git blob SHA proves the missing character is "m" at zero-based index 5678.
+          p4=Path('travel-expense/final-banner-part04.b64')
+          s4=''.join(p4.read_text().split())
+          if len(s4) == 9999:
+              s4=s4[:5678]+'m'+s4[5678:]
+              p4.write_text(s4)
+          assert len(s4) == 10000, f'Unexpected repaired part04 length: {len(s4)}'
+
           files=sorted(
               Path('travel-expense').glob('final-banner-part*.b64'),
               key=lambda p:int(re.search(r'(\d+)', p.stem).group(1))
           )
           assert len(files) == 8, f'Expected 8 banner parts, found {len(files)}'
           encoded=''.join(''.join(p.read_text().split()) for p in files)
+          assert len(encoded) == 75248, f'Unexpected base64 length: {len(encoded)}'
           raw=base64.b64decode(encoded, validate=True)
           target=Path('travel-expense/banner-kamu-final.webp')
           target.write_bytes(raw)
@@ -60,7 +70,7 @@ jobs:
           s=p.read_text(encoding='utf-8')
           s=re.sub(
               r'src="\./(?:banner-exact\.webp|banner-kamu-staff-final\.webp|banner-travel-ot-vector\.svg|kamu-banner\.webp|banner-travel-ot\.jpg|banner-kamu-final\.webp)(?:\?v=[^"]*)?"',
-              'src="./banner-kamu-final.webp?v=20260816-final3"',
+              'src="./banner-kamu-final.webp?v=20260816-final4"',
               s,
               count=1
           )
@@ -71,16 +81,16 @@ jobs:
               s,
               count=1
           )
-          assert 'banner-kamu-final.webp?v=20260816-final3' in s
+          assert 'banner-kamu-final.webp?v=20260816-final4' in s
           p.write_text(s, encoding='utf-8')
           PY
 
-      - name: Commit verified banner and page
+      - name: Commit repaired chunk, verified banner and page
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add travel-expense/banner-kamu-final.webp travel-expense/index.html
+          git add travel-expense/final-banner-part04.b64 travel-expense/banner-kamu-final.webp travel-expense/index.html
           if git diff --cached --quiet; then
             echo 'No changes'
           else
