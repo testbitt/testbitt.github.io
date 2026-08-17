@@ -2,7 +2,8 @@
 (() => {
   'use strict';
 
-  const PARTS = Array.from({length:7},(_,i)=>`assets/banner-hq-part-${String(i).padStart(2,'0')}.txt?v=50`);
+  const EXPECTED_BASE64_LENGTH = 116632;
+  const PARTS = Array.from({length:8},(_,i)=>`assets/banner-hq-part-${String(i).padStart(2,'0')}.txt?v=50b`);
   let hqPromise = null;
 
   const style = document.createElement('style');
@@ -33,7 +34,9 @@
       })
     )).then(parts=>{
       const b64 = parts.join('').replace(/\s+/g,'');
-      if(b64.length < 100000 || !b64.startsWith('UklG')) throw new Error('ข้อมูล Banner HQ ไม่สมบูรณ์');
+      if(b64.length !== EXPECTED_BASE64_LENGTH || !b64.startsWith('UklG') || !b64.endsWith('AAA')) {
+        throw new Error(`ข้อมูล Banner HQ ไม่สมบูรณ์ (${b64.length}/${EXPECTED_BASE64_LENGTH})`);
+      }
       return `data:image/webp;base64,${b64}`;
     });
     return hqPromise;
