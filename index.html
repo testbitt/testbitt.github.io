@@ -18,7 +18,7 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#eef7f2;
 <script>
 (async()=>{
  try{
-  const ver='v48-manage-gate-b';
+  const ver='v49-banner-theme';
   const files=['payload-01.txt','payload-02.txt','payload-03.txt','payload-04.txt','payload-05.txt','payload-06.txt','payload-07.txt','payload-08.txt'];
   const parts=await Promise.all(files.map(f=>fetch(f+'?v='+ver,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('โหลด '+f+' ไม่สำเร็จ ('+r.status+')');return r.text()})));
   const bin=atob(parts.join(''));
@@ -36,9 +36,10 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#eef7f2;
   const expiryRef=document.createElement('script');expiryRef.src='patch-v45.js?v=46';expiryRef.async=false;document.body.appendChild(expiryRef);
   const expiryData=document.createElement('script');expiryData.src='patch-v46.js?v=46';expiryData.async=false;document.body.appendChild(expiryData);
   const manageGate=document.createElement('script');manageGate.src='patch-v48.js?v=48b';manageGate.async=false;document.body.appendChild(manageGate);
+  const theme49=document.createElement('script');theme49.src='patch-v49.js?v=49';theme49.async=false;document.body.appendChild(theme49);
  }catch(e){console.error(e);const msg=document.getElementById('msg');if(msg)msg.innerHTML='เปิดระบบไม่สำเร็จ<br><b>'+String(e.message||e)+'</b><br><small>กรุณารีเฟรชหน้าเว็บอีกครั้ง</small>';}
 })();
 </script>
 </body>
 </html>
-<!-- deploy-v48-manage-gate-b -->
+<!-- deploy-v49-banner-theme -->
