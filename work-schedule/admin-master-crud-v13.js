@@ -11,14 +11,10 @@
 
   let editingShift=null,editingOt=null;
 
-  function button(text,cls='ghost'){
-    return `<button type="button" class="btn ${cls}" style="padding:6px 9px;font-size:11px">${text}</button>`;
-  }
-
   function renderMastersCrud(){
-    shiftList.innerHTML=(db.shifts||[]).map(s=>`<div style="display:grid;grid-template-columns:90px 1fr auto;gap:10px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--line)"><b>${esc(s.day_code)}</b><span>${esc(s.normal_time)}</span><span style="display:flex;gap:6px">${button('แก้ไข','secondary').replace('type="button"',`type="button" class="btn secondary editShift" data-code="${esc(s.day_code)}"`)}${button('ลบ').replace('type="button"',`type="button" class="btn ghost delShift" data-code="${esc(s.day_code)}"`)}</span></div>`).join('')||'<div class="empty" style="padding:20px">ยังไม่มี Shift</div>';
+    shiftList.innerHTML=(db.shifts||[]).map(s=>`<div style="display:grid;grid-template-columns:90px 1fr auto;gap:10px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--line)"><b>${esc(s.day_code)}</b><span>${esc(s.normal_time)}</span><span style="display:flex;gap:6px"><button type="button" class="btn secondary editShift" data-code="${esc(s.day_code)}" style="padding:6px 9px;font-size:11px">แก้ไข</button><button type="button" class="btn ghost delShift" data-code="${esc(s.day_code)}" style="padding:6px 9px;font-size:11px">ลบ</button></span></div>`).join('')||'<div class="empty" style="padding:20px">ยังไม่มี Shift</div>';
 
-    otList.innerHTML=(db.otTypes||[]).map(o=>`<div style="display:grid;grid-template-columns:100px 1fr auto;gap:10px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--line)"><b>${esc(o.code)}</b><span>${esc(o.name)}</span><span style="display:flex;gap:6px">${button('แก้ไข','secondary').replace('type="button"',`type="button" class="btn secondary editOt" data-code="${esc(o.code)}"`)}${button('ลบ').replace('type="button"',`type="button" class="btn ghost delOt" data-code="${esc(o.code)}"`)}</span></div>`).join('')||'<div class="empty" style="padding:20px">ยังไม่มีประเภท OT</div>';
+    otList.innerHTML=(db.otTypes||[]).map(o=>`<div style="display:grid;grid-template-columns:100px 1fr auto;gap:10px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--line)"><b>${esc(o.code)}</b><span>${esc(o.name)}</span><span style="display:flex;gap:6px"><button type="button" class="btn secondary editOt" data-code="${esc(o.code)}" style="padding:6px 9px;font-size:11px">แก้ไข</button><button type="button" class="btn ghost delOt" data-code="${esc(o.code)}" style="padding:6px 9px;font-size:11px">ลบ</button></span></div>`).join('')||'<div class="empty" style="padding:20px">ยังไม่มีประเภท OT</div>';
 
     document.querySelectorAll('.editShift').forEach(b=>b.onclick=()=>{
       const s=db.shifts.find(x=>x.day_code===b.dataset.code);if(!s)return;
