@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Kamu Kamu Standard Libary</title>
+<meta name="theme-color" content="#0f6b4f">
+<style>html,body{margin:0;min-height:100%;background:#f6faf7}body{min-height:100vh}</style>
+</head>
+<body>
+<script>
+(async()=>{
+  const VERSION='v54-direct-app';
+  const SHELL_CACHE_KEY='KSL_APP_SHELL_V52';
+  const CORE_PATCHES=[
+    'patch-v39.js?v=54','patch-v40.js?v=54','patch-v41.js?v=54',
+    'patch-v42.js?v=54','patch-v44.js?v=54','patch-v45.js?v=54',
+    'patch-v46.js?v=54','patch-v48.js?v=54','patch-v49.js?v=54'
+  ];
+
+  function loadOrderedScripts(sources){
+    const promises=[];
+    for(const src of sources){
+      const s=document.createElement('script');
+      s.src=src;
+      s.async=false;
+      promises.push(new Promise((resolve,reject)=>{
+        s.onload=()=>resolve(src);
+        s.onerror=()=>reject(new Error('โหลด '+src+' ไม่สำเร็จ'));
+      }));
+      document.body.appendChild(s);
+    }
+    return Promise.all(promises);
+  }
+
+  function loadHQInBackground(){
+    const run=()=>{
+      const s=document.createElement('script');
+      s.src='patch-v50.js?v=54';
+      s.async=true;
+      s.onerror=()=>console.warn('Banner HQ โหลดไม่สำเร็จ ใช้ภาพสำรองแทน');
+      document.body.appendChild(s);
+    };
+    if('requestIdleCallback' in window) requestIdleCallback(run,{timeout:1800});
+    else setTimeout(run,650);
+  }
+
+  async function getShell(){
+    try{
+      const cached=localStorage.getItem(SHELL_CACHE_KEY);
+      if(cached && /<html/i.test(cached)) return cached;
+    }catch(_){ }
+
+    const files=['payload-01.txt','payload-02.txt','payload-03.txt','payload-04.txt','payload-05.txt','payload-06.txt','payload-07.txt','payload-08.txt'];
+    const parts=await Promise.all(files.map(f=>fetch(f+'?v='+VERSION,{cache:'force-cache'}).then(r=>{
+      if(!r.ok) throw new Error('โหลด '+f+' ไม่สำเร็จ ('+r.status+')');
+      return r.text();
+    })));
+    const bin=atob(parts.join(''));
+    const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));
+    if(!('DecompressionStream' in window)) throw new Error('กรุณาใช้ Chrome หรือ Edge รุ่นล่าสุด');
+    const html=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+    if(!/<html/i.test(html)) throw new Error('ไฟล์หลักสูตรไม่สมบูรณ์');
+    try{localStorage.setItem(SHELL_CACHE_KEY,html)}catch(_){ }
+    return html;
+  }
+
+  function showFatal(err){
+    console.error(err);
+    document.documentElement.style.visibility='visible';
+    document.body.innerHTML='<div style="font-family:system-ui;padding:24px;color:#173d30">เปิดระบบไม่สำเร็จ กรุณาปิดแท็บแล้วเปิดใหม่อีกครั้ง</div>';
+  }
+
+  try{
+    let html=await getShell();
+    const bootHide='<style id="kslBootHide">html{visibility:hidden!important;background:#f6faf7!important}</style>';
+    html=html.replace(/<head([^>]*)>/i,'<head$1>'+bootHide);
+    document.open();document.write(html);document.close();
+
+    const hide=document.createElement('style');
+    hide.id='kslPermanentHide';
+    hide.textContent='#loginGate,#userPill,#resultProfileStrip{display:none!important}';
+    document.head.appendChild(hide);
+
+    await loadOrderedScripts(CORE_PATCHES);
+
+    if(typeof window.goPage==='function') window.goPage('home');
+    else if(typeof goPage==='function') goPage('home');
+
+    await new Promise(resolve=>{
+      const start=performance.now();
+      const tick=()=>{
+        const ready=document.querySelector('#home .ksl-v49-banner-wrap');
+        if(ready || performance.now()-start>900) return resolve();
+        requestAnimationFrame(tick);
+      };
+      tick();
+    });
+
+    document.getElementById('kslBootHide')?.remove();
+    document.documentElement.style.visibility='visible';
+    window.scrollTo(0,0);
+    loadHQInBackground();
+    if(history.replaceState) history.replaceState(null,'','/');
+  }catch(err){showFatal(err)}
+})();
+</script>
+</body>
+</html>
