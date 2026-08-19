@@ -13,12 +13,12 @@
 <body>
 <script>
 (async()=>{
-  const VERSION='v54-direct-app';
+  const VERSION='v56-answer-key';
   const SHELL_CACHE_KEY='KSL_APP_SHELL_V52';
   const CORE_PATCHES=[
-    'patch-v39.js?v=54','patch-v40.js?v=54','patch-v41.js?v=54',
-    'patch-v42.js?v=54','patch-v44.js?v=54','patch-v45.js?v=54',
-    'patch-v46.js?v=54','patch-v48.js?v=54','patch-v49.js?v=54'
+    'patch-v39.js?v=56','patch-v40.js?v=56','patch-v41.js?v=56',
+    'patch-v42.js?v=56','patch-v44.js?v=56','patch-v45.js?v=56',
+    'patch-v46.js?v=56','patch-v48.js?v=56','patch-v49.js?v=56','patch-v56.js?v=56'
   ];
 
   function loadOrderedScripts(sources){
@@ -39,7 +39,7 @@
   function loadHQInBackground(){
     const run=()=>{
       const s=document.createElement('script');
-      s.src='patch-v50.js?v=54';
+      s.src='patch-v50.js?v=56';
       s.async=true;
       s.onerror=()=>console.warn('Banner HQ โหลดไม่สำเร็จ ใช้ภาพสำรองแทน');
       document.body.appendChild(s);
