@@ -8,42 +8,128 @@
 <meta http-equiv="Expires" content="0">
 <title>Kamu Kamu Standard Libary</title>
 <meta name="theme-color" content="#0f6b4f">
+<script>
+(()=>{
+  const APP_VERSION='51';
+  const u=new URL(location.href);
+  if(u.searchParams.get('app')!==APP_VERSION){
+    u.searchParams.set('app',APP_VERSION);
+    location.replace(u.pathname+'?'+u.searchParams.toString()+u.hash);
+  }
+})();
+</script>
 <style>
-body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#eef7f2;color:#12372b;display:grid;place-items:center;min-height:100vh}
-.box{background:#fff;padding:28px 32px;border-radius:22px;box-shadow:0 18px 50px #0f6b4f22;text-align:center;max-width:520px}
-.logo{width:72px;height:72px;border-radius:22px;background:#0f6b4f;color:#fff;display:grid;place-items:center;font-weight:900;font-size:22px;margin:auto auto 14px}
-.spin{display:inline-block;width:22px;height:22px;border:3px solid #b8dfcf;border-top-color:#0f6b4f;border-radius:50%;animation:s 1s linear infinite}
-@keyframes s{to{transform:rotate(360deg)}}
+html,body{margin:0;min-height:100%;background:#f6faf7;color:#173d30;font-family:system-ui,-apple-system,"Segoe UI","Noto Sans Thai",sans-serif}
+body{min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 12% 10%,#fff0f4 0,transparent 24%),radial-gradient(circle at 88% 8%,#fff7d9 0,transparent 25%),linear-gradient(180deg,#fbfdfb,#eef7f1)}
+.ksl-boot{width:min(560px,calc(100% - 36px));box-sizing:border-box;background:rgba(255,255,255,.96);border:1px solid #d2e7dc;border-radius:26px;padding:34px 30px;text-align:center;box-shadow:0 18px 55px rgba(24,86,61,.10)}
+.ksl-logo{width:78px;height:78px;margin:0 auto 15px;border-radius:24px;background:linear-gradient(145deg,#0f6b4f,#339271);color:#fff;display:grid;place-items:center;font-size:22px;font-weight:1000;box-shadow:0 10px 24px rgba(15,107,79,.18)}
+.ksl-boot h1{font-size:24px;margin:0 0 6px;color:#173d30}.ksl-boot p{margin:0;color:#6b8077;font-size:14px}.ksl-dots{display:flex;justify-content:center;gap:7px;margin:20px 0 14px}.ksl-dots i{width:8px;height:8px;border-radius:99px;background:#41ae84;animation:p 1s infinite alternate}.ksl-dots i:nth-child(2){animation-delay:.16s}.ksl-dots i:nth-child(3){animation-delay:.32s}@keyframes p{to{opacity:.25;transform:translateY(-5px)}}
+#msg{font-size:12px!important;color:#7b8f86!important}
 </style>
 </head>
 <body>
-<div class="box"><div class="logo">KSL</div><h2>Kamu Kamu Standard Libary</h2><p>กำลังโหลดหลักสูตร...</p><div class="spin"></div><p id="msg" style="font-size:13px;color:#678">Holding Time • สูตรการผลิต • สูตรชงเครื่องดื่ม</p></div>
+<div class="ksl-boot" id="bootScreen">
+  <div class="ksl-logo">KSL</div>
+  <h1>Kamu Kamu Standard Libary</h1>
+  <p>กำลังเปิดหน้าหลักสูตรเวอร์ชันล่าสุด</p>
+  <div class="ksl-dots"><i></i><i></i><i></i></div>
+  <p id="msg">Holding Time • สูตรการผลิต • สูตรชงเครื่องดื่ม</p>
+</div>
 <script>
 (async()=>{
- try{
-  const ver='v50c-banner-hq';
-  const files=['payload-01.txt','payload-02.txt','payload-03.txt','payload-04.txt','payload-05.txt','payload-06.txt','payload-07.txt','payload-08.txt'];
-  const parts=await Promise.all(files.map(f=>fetch(f+'?v='+ver,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('โหลด '+f+' ไม่สำเร็จ ('+r.status+')');return r.text()})));
-  const bin=atob(parts.join(''));
-  const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));
-  if(!('DecompressionStream' in window)) throw new Error('Browser นี้ไม่รองรับการเปิดหลักสูตร กรุณาใช้ Chrome/Edge รุ่นล่าสุด');
-  const html=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
-  if(!html.includes('<!DOCTYPE html>')&&!html.includes('<!doctype html>')) throw new Error('ไฟล์หลักสูตรไม่สมบูรณ์');
-  document.open();document.write(html);document.close();
-  const hide=document.createElement('style');hide.textContent='#loginGate,#userPill,#resultProfileStrip{display:none!important}';document.head.appendChild(hide);
-  const patch=document.createElement('script');patch.src='patch-v39.js?v=39b';patch.async=false;document.body.appendChild(patch);
-  const homeLinks=document.createElement('script');homeLinks.src='patch-v40.js?v=47';homeLinks.async=false;document.body.appendChild(homeLinks);
-  const curriculum=document.createElement('script');curriculum.src='patch-v41.js?v=43';curriculum.async=false;document.body.appendChild(curriculum);
-  const expiry=document.createElement('script');expiry.src='patch-v42.js?v=43';expiry.async=false;document.body.appendChild(expiry);
-  const hideCode=document.createElement('script');hideCode.src='patch-v44.js?v=44b';hideCode.async=false;document.body.appendChild(hideCode);
-  const expiryRef=document.createElement('script');expiryRef.src='patch-v45.js?v=46';expiryRef.async=false;document.body.appendChild(expiryRef);
-  const expiryData=document.createElement('script');expiryData.src='patch-v46.js?v=46';expiryData.async=false;document.body.appendChild(expiryData);
-  const manageGate=document.createElement('script');manageGate.src='patch-v48.js?v=48b';manageGate.async=false;document.body.appendChild(manageGate);
-  const theme49=document.createElement('script');theme49.src='patch-v49.js?v=49b';theme49.async=false;document.body.appendChild(theme49);
-  const bannerHQ=document.createElement('script');bannerHQ.src='patch-v50.js?v=50c';bannerHQ.async=false;document.body.appendChild(bannerHQ);
- }catch(e){console.error(e);const msg=document.getElementById('msg');if(msg)msg.innerHTML='เปิดระบบไม่สำเร็จ<br><b>'+String(e.message||e)+'</b><br><small>กรุณารีเฟรชหน้าเว็บอีกครั้ง</small>';}
+  const VERSION='v51-direct-new-home';
+  const PATCHES=[
+    'patch-v39.js?v=51',
+    'patch-v40.js?v=51',
+    'patch-v41.js?v=51',
+    'patch-v42.js?v=51',
+    'patch-v44.js?v=51',
+    'patch-v45.js?v=51',
+    'patch-v46.js?v=51',
+    'patch-v48.js?v=51',
+    'patch-v49.js?v=51',
+    'patch-v50.js?v=51'
+  ];
+
+  function loadScript(src){
+    return new Promise((resolve,reject)=>{
+      const s=document.createElement('script');
+      s.src=src;
+      s.async=false;
+      s.onload=()=>resolve(src);
+      s.onerror=()=>reject(new Error('โหลด '+src+' ไม่สำเร็จ'));
+      document.body.appendChild(s);
+    });
+  }
+
+  function waitForNewHome(timeout=3000){
+    return new Promise(resolve=>{
+      const start=Date.now();
+      const tick=()=>{
+        const home=document.getElementById('home');
+        const banner=home?.querySelector('.ksl-v49-banner-wrap');
+        if(home&&banner) return resolve(true);
+        if(Date.now()-start>=timeout) return resolve(false);
+        requestAnimationFrame(tick);
+      };
+      tick();
+    });
+  }
+
+  function showFatal(err){
+    console.error(err);
+    document.documentElement.style.visibility='visible';
+    document.body.innerHTML=`<div class="ksl-boot"><div class="ksl-logo">KSL</div><h1>เปิดระบบไม่สำเร็จ</h1><p>${String(err?.message||err)}</p><div style="margin-top:18px"><button onclick="location.replace('/?app=51&t='+Date.now())" style="border:0;border-radius:14px;padding:12px 18px;background:#0f6b4f;color:#fff;font-weight:800;cursor:pointer">ลองเปิดใหม่</button></div></div>`;
+  }
+
+  try{
+    const files=['payload-01.txt','payload-02.txt','payload-03.txt','payload-04.txt','payload-05.txt','payload-06.txt','payload-07.txt','payload-08.txt'];
+    const parts=await Promise.all(files.map(f=>fetch(f+'?v='+VERSION,{cache:'no-store'}).then(r=>{
+      if(!r.ok) throw new Error('โหลด '+f+' ไม่สำเร็จ ('+r.status+')');
+      return r.text();
+    })));
+
+    const bin=atob(parts.join(''));
+    const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));
+    if(!('DecompressionStream' in window)) throw new Error('กรุณาใช้ Chrome หรือ Edge รุ่นล่าสุด');
+
+    let html=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+    if(!/<html/i.test(html)) throw new Error('ไฟล์หลักสูตรไม่สมบูรณ์');
+
+    /* Prevent the legacy UI from ever being painted. */
+    const bootHide='<style id="kslBootHide">html{visibility:hidden!important;background:#f6faf7!important}</style>';
+    html=html.replace(/<head([^>]*)>/i,'<head$1>'+bootHide);
+
+    document.open();
+    document.write(html);
+    document.close();
+
+    const permanentHide=document.createElement('style');
+    permanentHide.id='kslPermanentHide';
+    permanentHide.textContent='#loginGate,#userPill,#resultProfileStrip{display:none!important}';
+    document.head.appendChild(permanentHide);
+
+    for(const src of PATCHES){
+      await loadScript(src);
+    }
+
+    if(typeof window.goPage==='function') window.goPage('home');
+    else if(typeof goPage==='function') goPage('home');
+
+    await waitForNewHome();
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+
+    document.getElementById('kslBootHide')?.remove();
+    document.documentElement.style.visibility='visible';
+    window.scrollTo({top:0,left:0,behavior:'instant'});
+
+    /* Keep the visible URL clean after the versioned navigation has loaded. */
+    if(history.replaceState) history.replaceState(null,'','/');
+  }catch(err){
+    showFatal(err);
+  }
 })();
 </script>
 </body>
 </html>
-<!-- deploy-v50c-banner-hq -->
+<!-- deploy-v51-direct-new-home -->
