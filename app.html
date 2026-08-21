@@ -13,13 +13,13 @@
 <body>
 <script>
 (async()=>{
-  const VERSION='v59-live-central';
+  const VERSION='v60-jsonp-central';
   const SHELL_CACHE_KEY='KSL_APP_SHELL_V52';
   const CORE_PATCHES=[
-    'patch-v39.js?v=59','patch-v40.js?v=59','patch-v41.js?v=59',
-    'patch-v42.js?v=59','patch-v44.js?v=59','patch-v45.js?v=59',
-    'patch-v46.js?v=59','patch-v48.js?v=59','patch-v49.js?v=59',
-    'patch-v56.js?v=59','patch-v57.js?v=59','patch-v59.js?v=59'
+    'patch-v39.js?v=60','patch-v40.js?v=60','patch-v41.js?v=60',
+    'patch-v42.js?v=60','patch-v44.js?v=60','patch-v45.js?v=60',
+    'patch-v46.js?v=60','patch-v48.js?v=60','patch-v49.js?v=60',
+    'patch-v56.js?v=60','patch-v57.js?v=60','patch-v60.js?v=60'
   ];
 
   function loadOrderedScripts(sources){
@@ -40,7 +40,7 @@
   function loadHQInBackground(){
     const run=()=>{
       const s=document.createElement('script');
-      s.src='patch-v50.js?v=59';
+      s.src='patch-v50.js?v=60';
       s.async=true;
       s.onerror=()=>console.warn('Banner HQ โหลดไม่สำเร็จ ใช้ภาพสำรองแทน');
       document.body.appendChild(s);
