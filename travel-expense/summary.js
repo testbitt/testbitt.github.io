@@ -14,6 +14,41 @@
     return x;
   }
 
+  function prepareUI(){
+    const travelCard=document.querySelector('#goTravelSummary h3');
+    const otCard=document.querySelector('#goOTSummary h3');
+    const travelTag=document.querySelector('#goTravelSummary .tag');
+    const otTag=document.querySelector('#goOTSummary .tag');
+    const travelTitle=document.querySelector('#travelSummary h2');
+    const otTitle=document.querySelector('#otSummary h2');
+    if(travelCard)travelCard.textContent='3. ตรวจสอบค่าเดินทาง';
+    if(otCard)otCard.textContent='4. ตรวจสอบการทำ OT';
+    if(travelTag)travelTag.textContent='TRAVEL CHECK →';
+    if(otTag)otTag.textContent='OT CHECK →';
+    if(travelTitle)travelTitle.textContent='💰 ตรวจสอบค่าเดินทาง';
+    if(otTitle)otTitle.textContent='📊 ตรวจสอบการทำ OT';
+
+    const hoursEl=$('osHours');
+    if(hoursEl){
+      const metric=hoursEl.closest('.metric');
+      const label=metric&&metric.querySelector('small');
+      if(label)label.textContent='OT ใช้สำหรับชดชั่วโมง เข้า-ออก';
+      if(metric&&!$('osPaidHours')){
+        const paid=document.createElement('div');
+        paid.className='metric';
+        paid.innerHTML='<small>OT ทำจ่ายเงิน</small><strong id="osPaidHours">0.00 ชม.</strong>';
+        metric.insertAdjacentElement('afterend',paid);
+      }
+    }
+
+    if(!document.getElementById('otSplitStyle')){
+      const style=document.createElement('style');
+      style.id='otSplitStyle';
+      style.textContent='@media(min-width:761px){#otSummary .metric-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}';
+      document.head.appendChild(style);
+    }
+  }
+
   function clearTravel(){
     ['tsEmployeeId','tsMonth','tsStart','tsEnd'].forEach(i=>$(i).value='');
     $('tsCount').textContent='0';
@@ -27,6 +62,7 @@
     ['osEmployeeId','osMonth','osStart','osEnd'].forEach(i=>$(i).value='');
     $('osCount').textContent='0';
     $('osHours').textContent='0.00 ชม.';
+    if($('osPaidHours'))$('osPaidHours').textContent='0.00 ชม.';
     $('osName').textContent='-';
     $('osStatus').className='summary-status';
     $('osBody').innerHTML='<tr><td colspan="8" class="summary-empty">กรอกรหัสพนักงาน แล้วกด “ค้นหาและสรุป”</td></tr>';
@@ -62,10 +98,13 @@
     $('osSearch').disabled=true;
     try{
       const x=await api({action:'getOTSummary',employeeId,month:$('osMonth').value,startDate:$('osStart').value,endDate:$('osEnd').value});
-      $('osCount').textContent=Number(x.totals?.count||0).toLocaleString('th-TH');
-      $('osHours').textContent=num(x.totals?.totalHours)+' ชม.';
-      $('osName').textContent=x.employeeName||'-';
       const rows=x.records||[];
+      const compensateHours=rows.reduce((sum,r)=>/ชดชั่วโมง/i.test(String(r.otType||''))?sum+Number(r.hours||0):sum,0);
+      const paidHours=rows.reduce((sum,r)=>/ทำจ่ายเงิน/i.test(String(r.otType||''))?sum+Number(r.hours||0):sum,0);
+      $('osCount').textContent=Number(x.totals?.count||rows.length||0).toLocaleString('th-TH');
+      $('osHours').textContent=num(compensateHours)+' ชม.';
+      if($('osPaidHours'))$('osPaidHours').textContent=num(paidHours)+' ชม.';
+      $('osName').textContent=x.employeeName||'-';
       $('osBody').innerHTML=rows.length?rows.map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.recordId)}</td><td>${esc(r.branch)}</td><td>${esc(r.startTime)} - ${esc(r.endTime)}</td><td>${num(r.hours)}</td><td>${esc(r.otType)}</td><td>${esc(r.reason)}</td><td>${esc(r.status||'-')}</td></tr>`).join(''):'<tr><td colspan="8" class="summary-empty">ไม่พบข้อมูลตาม Filter ที่เลือก</td></tr>';
       $('osStatus').textContent='✓ พบ '+rows.length.toLocaleString('th-TH')+' รายการ'+(x.employeeName?' • '+x.employeeName:'');
     }catch(e){
@@ -75,6 +114,7 @@
   }
 
   window.initKamuSummary=()=>{
+    prepareUI();
     $('tsSearch').onclick=loadTravel;
     $('osSearch').onclick=loadOT;
     $('tsReset').onclick=clearTravel;
