@@ -1,6 +1,6 @@
 /**
- * Kamu Kamu Standard Libary (KSL) V3.4.1 - Google Sheets backend
- * Fix: Web App no longer depends on SpreadsheetApp.getActive() during /exec calls.
+ * Kamu Kamu Standard Libary (KSL) V3.5 - Google Sheets backend
+ * Central data: every device can read the latest shared course datasets.
  */
 const CONFIG = {
   RESULTS_SHEET: 'Results',
@@ -16,14 +16,9 @@ const PRODUCTION_HEADERS = ['page','recipe_name_th','recipe_name_en','variant','
 const DRINK_HEADERS = ['Category','Menu','Variant','Step_No','Component_Type','Ingredient','Quantity','Unit','Price_Baht','Instructions','Notes','Source_Page','Synced At'];
 const RESULT_HEADERS = ['Timestamp','Employee ID','Name','Branch','Position','Course Scope','Score','Total','Percent','Passed','Pass Score','Duration Sec','Certificate ID','App'];
 
-/**
- * RUN THIS ONCE MANUALLY from the Apps Script editor while the script is bound
- * to the target Google Sheet. It stores the Spreadsheet ID for Web App usage.
- */
 function setupSheets() {
   const active = SpreadsheetApp.getActiveSpreadsheet();
   if (!active) throw new Error('ไม่พบ Google Sheet ที่ผูกกับ Apps Script กรุณาเปิด Apps Script จาก Extensions > Apps Script ของไฟล์ Google Sheet');
-
   PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', active.getId());
   ensureAllSheets_(active);
   logWithSheet_(active, 'setupSheets', 0, 'OK', 'Spreadsheet ID saved: ' + active.getId());
@@ -34,8 +29,6 @@ function getSpreadsheet_() {
   const props = PropertiesService.getScriptProperties();
   const id = props.getProperty('SPREADSHEET_ID');
   if (id) return SpreadsheetApp.openById(id);
-
-  // Fallback only for manual editor runs. A Web App normally has no active spreadsheet.
   const active = SpreadsheetApp.getActiveSpreadsheet();
   if (active) {
     props.setProperty('SPREADSHEET_ID', active.getId());
@@ -56,17 +49,71 @@ function doGet(e) {
   try {
     const ss = getSpreadsheet_();
     ensureAllSheets_(ss);
+    const action = String(e && e.parameter && e.parameter.action || 'status').trim();
+
+    if (action === 'snapshot') {
+      return json_(buildSnapshot_(ss));
+    }
+
     return json_({
       ok: true,
-      app: 'KSL-V3.4.1',
+      app: 'KSL-V3.5',
       spreadsheetId: ss.getId(),
       spreadsheetName: ss.getName(),
       ready: true,
+      snapshot: true,
       time: new Date().toISOString()
     });
   } catch (err) {
-    return json_({ok:false,app:'KSL-V3.4.1',ready:false,error:String(err && err.message || err)});
+    return json_({ok:false,app:'KSL-V3.5',ready:false,error:String(err && err.message || err)});
   }
+}
+
+function buildSnapshot_(ss) {
+  const holding = readDataSheet_(ss, CONFIG.HOLDING_SHEET, HOLDING_HEADERS);
+  const production = readDataSheet_(ss, CONFIG.PRODUCTION_SHEET, PRODUCTION_HEADERS);
+  const drink = readDataSheet_(ss, CONFIG.DRINK_SHEET, DRINK_HEADERS);
+  return {
+    ok: true,
+    action: 'snapshot',
+    app: 'KSL-V3.5',
+    spreadsheetId: ss.getId(),
+    spreadsheetName: ss.getName(),
+    time: new Date().toISOString(),
+    meta: {
+      holdingTime: {rows: holding.rows.length, updatedAt: holding.updatedAt},
+      productionRecipes: {rows: production.rows.length, updatedAt: production.updatedAt},
+      drinkRecipes: {rows: drink.rows.length, updatedAt: drink.updatedAt}
+    },
+    data: {
+      holdingTime: holding.rows,
+      productionRecipes: production.rows,
+      drinkRecipes: drink.rows
+    }
+  };
+}
+
+function readDataSheet_(ss, sheetName, headers) {
+  const sh = ss.getSheetByName(sheetName);
+  if (!sh || sh.getLastRow() < 2) return {rows:[],updatedAt:''};
+  const count = sh.getLastRow() - 1;
+  const values = sh.getRange(2,1,count,headers.length).getValues();
+  const dataHeaders = headers.slice(0,-1);
+  let updatedAt = '';
+  const rows = values.map(row => {
+    const obj = {};
+    dataHeaders.forEach((h,i) => obj[h] = valueForJson_(row[i]));
+    const stamp = valueForJson_(row[headers.length-1]);
+    if (stamp && String(stamp) > String(updatedAt)) updatedAt = String(stamp);
+    return obj;
+  }).filter(obj => Object.values(obj).some(v => v !== '' && v !== null));
+  return {rows,updatedAt};
+}
+
+function valueForJson_(v) {
+  if (v instanceof Date) return v.toISOString();
+  if (v === null || v === undefined) return '';
+  return v;
 }
 
 function doPost(e) {
@@ -85,7 +132,7 @@ function doPost(e) {
     else if (action === 'syncHoldingTime') result = replaceSheet_(ss, CONFIG.HOLDING_SHEET, HOLDING_HEADERS, body.rows || [], body.updatedAt || '', 'syncHoldingTime');
     else if (action === 'syncProductionRecipes') result = replaceSheet_(ss, CONFIG.PRODUCTION_SHEET, PRODUCTION_HEADERS, body.rows || [], body.updatedAt || '', 'syncProductionRecipes');
     else if (action === 'syncDrinkRecipes') result = replaceSheet_(ss, CONFIG.DRINK_SHEET, DRINK_HEADERS, body.rows || [], body.updatedAt || '', 'syncDrinkRecipes');
-    else if (action === 'ping') result = {ok:true,action:'ping',app:'KSL-V3.4.1'};
+    else if (action === 'ping') result = {ok:true,action:'ping',app:'KSL-V3.5'};
     else throw new Error('Unknown action: ' + action);
 
     return json_(result);
@@ -107,7 +154,7 @@ function saveResult_(ss, r) {
     safe_(r.employeeId), safe_(r.name), safe_(r.branch), safe_(r.position),
     safe_(r.courseScope || 'all'),
     Number(r.score || 0), Number(r.total || 50), Number(r.pct || 0), r.passed === true,
-    Number(r.passScore || 80), Number(r.durationSec || 0), safe_(r.id), 'KSL-V3.4.1'
+    Number(r.passScore || 80), Number(r.durationSec || 0), safe_(r.id), 'KSL-V3.5'
   ]);
   logWithSheet_(ss, 'saveResult', 1, 'OK', safe_(r.id));
   return {ok:true,action:'saveResult'};
