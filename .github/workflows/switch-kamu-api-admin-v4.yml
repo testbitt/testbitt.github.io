@@ -1,0 +1,57 @@
+name: Switch KAMU API Admin V4
+
+on:
+  push:
+    paths:
+      - '.github/workflows/switch-kamu-api-admin-v4.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  switch-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace Apps Script URL everywhere
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          new = 'https://script.google.com/macros/s/AKfycbzCc6jDCvwzIx8GMyDslEh607Ggi3h-DgOFUGTKhyWH3KbSqXo3S7s45DNlhynk956F/exec'
+          files = [
+              Path('travel-expense/index.html'),
+              Path('travel-expense/summary.js'),
+              Path('travel-expense/admin.js'),
+          ]
+          for p in files:
+              s = p.read_text(encoding='utf-8')
+              s2, n = re.subn(r'https://script\.google\.com/macros/s/[A-Za-z0-9_-]+/exec', new, s)
+              if p.name == 'index.html':
+                  s2 = re.sub(r'summary\.js\?v=[^\"\']+', 'summary.js?v=20260821-admin-v4', s2)
+                  s2 = re.sub(r'admin\.js\?v=[^\"\']+', 'admin.js?v=20260821-admin-v4', s2)
+                  s2 = re.sub(r'admin\.css\?v=[^\"\']+', 'admin.css?v=20260821-admin-v4', s2)
+              if s2 != s:
+                  p.write_text(s2, encoding='utf-8')
+              print(p, 'URL replacements:', n)
+          PY
+      - name: Verify new backend everywhere
+        run: |
+          grep -F 'AKfycbzCc6jDCvwzIx8GMyDslEh607Ggi3h-DgOFUGTKhyWH3KbSqXo3S7s45DNlhynk956F' travel-expense/index.html
+          grep -F 'AKfycbzCc6jDCvwzIx8GMyDslEh607Ggi3h-DgOFUGTKhyWH3KbSqXo3S7s45DNlhynk956F' travel-expense/summary.js
+          grep -F 'AKfycbzCc6jDCvwzIx8GMyDslEh607Ggi3h-DgOFUGTKhyWH3KbSqXo3S7s45DNlhynk956F' travel-expense/admin.js
+          grep -F 'summary.js?v=20260821-admin-v4' travel-expense/index.html
+          grep -F 'admin.js?v=20260821-admin-v4' travel-expense/index.html
+      - name: Commit update
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '4189826+github-actions[bot]@users.noreply.github.com'
+          git add travel-expense/index.html travel-expense/summary.js travel-expense/admin.js
+          if git diff --cached --quiet; then
+            echo 'No changes needed'
+          else
+            git commit -m 'Use latest Admin V4 Apps Script backend'
+            git push
+          fi
