@@ -25,9 +25,7 @@
       if(!res.ok) throw new Error(`API ${res.status}`);
       const json = await res.json();
       const d = json?.data || {};
-      if(!Array.isArray(d.holdingTime) || !Array.isArray(d.productionRecipes) || !Array.isArray(d.drinkRecipes)) {
-        throw new Error('snapshot API not deployed yet');
-      }
+      if(!Array.isArray(d.holdingTime) || !Array.isArray(d.productionRecipes) || !Array.isArray(d.drinkRecipes)) throw new Error('snapshot API not deployed yet');
       return {...json, source:'Google Sheets Live'};
     }catch(err){
       console.info('[KSL V5.8] live API unavailable; use published snapshot', err?.message || err);
@@ -67,7 +65,6 @@
     target.splice(0,target.length,...rows.map(r=>({...r})));
     return true;
   }
-
   function replaceMatchingArrays(root, rowsByType){
     const seen = new WeakSet();
     const changed = {holding:0,production:0,drink:0};
@@ -79,9 +76,7 @@
         try{ value=obj[key]; }catch(_){ continue; }
         if(Array.isArray(value)){
           const type=classify(value);
-          if(type && rowsByType[type]?.length){
-            replaceArray(value,rowsByType[type]); changed[type]++;
-          }
+          if(type && rowsByType[type]?.length){ replaceArray(value,rowsByType[type]); changed[type]++; }
           continue;
         }
         if(value && typeof value==='object') walk(value,depth+1);
@@ -90,18 +85,15 @@
     walk(root,0);
     return changed;
   }
-
   function assignKnownKeys(state, data){
     if(!state || typeof state!=='object') return;
     const holding=data.holdingTime||[], production=data.productionRecipes||[], drink=data.drinkRecipes||[];
     if(Array.isArray(state.data)) replaceArray(state.data,holding); else state.data=holding.map(r=>({...r}));
-
     const prodKeys=['productionRecipes','productionData','production','recipesProduction'];
     const drinkKeys=['beverageRecipes','drinkRecipes','beverageData','drinkData','drinks'];
     for(const k of prodKeys){ if(Array.isArray(state[k])) replaceArray(state[k],production); }
     for(const k of drinkKeys){ if(Array.isArray(state[k])) replaceArray(state[k],drink); }
   }
-
   function refreshViews(){
     const calls=['refreshAll','renderDataTable','renderCourses','renderCourseMenu','renderFlashCards','populateCalculator','renderAnswerKey','updateStats'];
     for(const name of calls){
@@ -118,14 +110,12 @@
       drink:Array.isArray(data.drinkRecipes)?data.drinkRecipes:[]
     };
     if(!rowsByType.holding.length && !rowsByType.production.length && !rowsByType.drink.length) return false;
-
     let state=null;
     try{ if(typeof appState!=='undefined') state=appState; }catch(_){ }
     if(!state) return false;
 
     const changed=replaceMatchingArrays(state,rowsByType);
     assignKnownKeys(state,data);
-
     try{
       state.centralSync={
         version:'5.8', source:snapshot.source||'Central', generatedAt:snapshot.generatedAt||snapshot.time||'',
@@ -133,7 +123,6 @@
       };
     }catch(_){ }
     try{ localStorage.setItem('KSL_CENTRAL_SYNC_META',JSON.stringify(state.centralSync||{})); }catch(_){ }
-    try{ if(typeof dbSet==='function') await dbSet(state); }catch(err){ console.debug('[KSL V5.8] local persist skipped',err); }
 
     refreshViews();
     setTimeout(refreshViews,120);
@@ -144,7 +133,7 @@
 
   async function syncCentral(force=false){
     if(syncPromise && !force) return syncPromise;
-    syncPromise=(async()=>{
+    const task=(async()=>{
       try{
         let snapshot=await loadApi();
         if(!snapshot) snapshot=await loadStatic();
@@ -154,11 +143,10 @@
       }catch(err){
         console.warn('[KSL V5.8] central sync failed; local data remains available',err);
         return null;
-      }finally{
-        setTimeout(()=>{syncPromise=null},800);
       }
     })();
-    return syncPromise;
+    syncPromise=task;
+    try{return await task}finally{if(syncPromise===task)syncPromise=null}
   }
 
   window.KSL_SYNC_CENTRAL=syncCentral;
@@ -167,7 +155,7 @@
     if(Date.now()-last>5*60*1000){ sessionStorage.setItem('KSL_LAST_CENTRAL_CHECK',String(Date.now())); syncCentral(true); }
   });
 
-  // Do not block first paint. Replace browser-local data shortly after the app is visible.
+  // Central data updates after first paint, so it never blocks the home screen.
   const start=()=>{sessionStorage.setItem('KSL_LAST_CENTRAL_CHECK',String(Date.now()));syncCentral(true)};
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(start,30),{once:true});
   else setTimeout(start,30);
