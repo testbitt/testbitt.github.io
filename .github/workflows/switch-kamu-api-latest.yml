@@ -14,27 +14,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Replace Apps Script URLs
+      - name: Replace Apps Script URLs and bust cache
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
 
           new = 'https://script.google.com/macros/s/AKfycbx_FWk2tZ-m2riA_Tfqs2OBXcTcFxQ5pfZE8_EG0HdI-CU8-jmAwztUH32DPTOWc0CV/exec'
-          for file in ['travel-expense/index.html', 'travel-expense/summary.js']:
+          files = ['travel-expense/index.html', 'travel-expense/summary.js']
+          for file in files:
               p = Path(file)
               s = p.read_text(encoding='utf-8')
-              s2, n = re.subn(r'https://script\.google\.com/macros/s/[A-Za-z0-9_-]+/exec', new, s)
-              if n:
-                  p.write_text(s2, encoding='utf-8')
-                  print(file, 'replaced', n, 'URL(s)')
-              else:
-                  print(file, 'no Apps Script URL found')
+              s = re.sub(r'https://script\.google\.com/macros/s/[A-Za-z0-9_-]+/exec', new, s)
+              if file.endswith('index.html'):
+                  s = re.sub(r'summary\.js\?v=[A-Za-z0-9_-]+', 'summary.js?v=20260821-api-v3', s)
+              p.write_text(s, encoding='utf-8')
           PY
-      - name: Verify latest API is present
+      - name: Verify latest API and cache version
         run: |
           grep -F 'AKfycbx_FWk2tZ-m2riA_Tfqs2OBXcTcFxQ5pfZE8_EG0HdI-CU8-jmAwztUH32DPTOWc0CV' travel-expense/index.html
           grep -F 'AKfycbx_FWk2tZ-m2riA_Tfqs2OBXcTcFxQ5pfZE8_EG0HdI-CU8-jmAwztUH32DPTOWc0CV' travel-expense/summary.js
+          grep -F 'summary.js?v=20260821-api-v3' travel-expense/index.html
       - name: Commit update
         run: |
           git config user.name 'github-actions[bot]'
@@ -43,6 +43,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'No changes needed'
           else
-            git commit -m 'Use latest Apps Script backend for KAMU Travel OT'
+            git commit -m 'Use latest Apps Script backend and refresh Summary cache'
             git push
           fi
