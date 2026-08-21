@@ -1,0 +1,37 @@
+name: Update Travel API backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-travel-api-20260821.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace Apps Script URL
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('travel-expense/index.html')
+          s = p.read_text(encoding='utf-8')
+          old = 'https://script.google.com/macros/s/AKfycbxMDNpjyyLE1WCvzzneIwCEs4YQDwJHIbViSFHSlPX_PWpkch1zjXfrlJs3PmKB4nsq/exec'
+          new = 'https://script.google.com/macros/s/AKfycbzq0lB7xBLsq6KcdIYA0oslzL6CN_kz-9fNDPj-a5mwthslAcIljusyiy75mYHG0e4r/exec'
+          if old not in s:
+              raise SystemExit('Old Apps Script URL not found in index.html')
+          s = s.replace(old, new)
+          p.write_text(s, encoding='utf-8')
+          print('Updated Apps Script URL')
+          PY
+      - name: Commit update
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add travel-expense/index.html
+          git commit -m 'Point Travel app to Summary V3 backend'
+          git push
