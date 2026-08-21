@@ -1,0 +1,37 @@
+name: Refresh OT Summary Cache
+
+on:
+  push:
+    paths:
+      - '.github/workflows/refresh-ot-summary-cache.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refresh summary asset version
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('travel-expense/index.html')
+          s=p.read_text(encoding='utf-8')
+          s=re.sub(r'summary\.js\?v=[A-Za-z0-9._-]+', 'summary.js?v=20260821-ot-split1', s)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit refresh
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add travel-expense/index.html
+          if git diff --cached --quiet; then
+            echo 'No changes needed'
+          else
+            git commit -m 'Load split OT summary metrics'
+            git push
+          fi
