@@ -1,6 +1,6 @@
 /**
- * Kamu Kamu Standard Libary (KSL) V3.5 - Google Sheets backend
- * Central data: every device can read the latest shared course datasets.
+ * Kamu Kamu Standard Libary (KSL) V3.6 - Google Sheets backend
+ * JSON + JSONP central snapshot for reliable cross-origin reads from GitHub Pages.
  */
 const CONFIG = {
   RESULTS_SHEET: 'Results',
@@ -18,7 +18,7 @@ const RESULT_HEADERS = ['Timestamp','Employee ID','Name','Branch','Position','Co
 
 function setupSheets() {
   const active = SpreadsheetApp.getActiveSpreadsheet();
-  if (!active) throw new Error('ไม่พบ Google Sheet ที่ผูกกับ Apps Script กรุณาเปิด Apps Script จาก Extensions > Apps Script ของไฟล์ Google Sheet');
+  if (!active) throw new Error('ไม่พบ Google Sheet ที่ผูกกับ Apps Script');
   PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', active.getId());
   ensureAllSheets_(active);
   logWithSheet_(active, 'setupSheets', 0, 'OK', 'Spreadsheet ID saved: ' + active.getId());
@@ -34,7 +34,7 @@ function getSpreadsheet_() {
     props.setProperty('SPREADSHEET_ID', active.getId());
     return active;
   }
-  throw new Error('ยังไม่ได้ตั้งค่า SPREADSHEET_ID กรุณารัน setupSheets() 1 ครั้ง แล้ว Deploy Web App เวอร์ชันใหม่');
+  throw new Error('ยังไม่ได้ตั้งค่า SPREADSHEET_ID กรุณารัน setupSheets() 1 ครั้ง');
 }
 
 function ensureAllSheets_(ss) {
@@ -46,26 +46,26 @@ function ensureAllSheets_(ss) {
 }
 
 function doGet(e) {
+  const callback = normalizeCallback_(e && e.parameter && e.parameter.callback);
   try {
     const ss = getSpreadsheet_();
     ensureAllSheets_(ss);
     const action = String(e && e.parameter && e.parameter.action || 'status').trim();
-
-    if (action === 'snapshot') {
-      return json_(buildSnapshot_(ss));
-    }
-
-    return json_({
-      ok: true,
-      app: 'KSL-V3.5',
-      spreadsheetId: ss.getId(),
-      spreadsheetName: ss.getName(),
-      ready: true,
-      snapshot: true,
-      time: new Date().toISOString()
-    });
+    const payload = action === 'snapshot'
+      ? buildSnapshot_(ss)
+      : {
+          ok: true,
+          app: 'KSL-V3.6',
+          spreadsheetId: ss.getId(),
+          spreadsheetName: ss.getName(),
+          ready: true,
+          snapshot: true,
+          jsonp: true,
+          time: new Date().toISOString()
+        };
+    return output_(payload, callback);
   } catch (err) {
-    return json_({ok:false,app:'KSL-V3.5',ready:false,error:String(err && err.message || err)});
+    return output_({ok:false,app:'KSL-V3.6',ready:false,error:String(err && err.message || err)}, callback);
   }
 }
 
@@ -76,7 +76,7 @@ function buildSnapshot_(ss) {
   return {
     ok: true,
     action: 'snapshot',
-    app: 'KSL-V3.5',
+    app: 'KSL-V3.6',
     spreadsheetId: ss.getId(),
     spreadsheetName: ss.getName(),
     time: new Date().toISOString(),
@@ -126,15 +126,13 @@ function doPost(e) {
     const body = parseBody_(e);
     verifyKey_(body.key || '');
     const action = String(body.action || '');
-
     let result;
     if (action === 'saveResult') result = saveResult_(ss, body.result || {});
     else if (action === 'syncHoldingTime') result = replaceSheet_(ss, CONFIG.HOLDING_SHEET, HOLDING_HEADERS, body.rows || [], body.updatedAt || '', 'syncHoldingTime');
     else if (action === 'syncProductionRecipes') result = replaceSheet_(ss, CONFIG.PRODUCTION_SHEET, PRODUCTION_HEADERS, body.rows || [], body.updatedAt || '', 'syncProductionRecipes');
     else if (action === 'syncDrinkRecipes') result = replaceSheet_(ss, CONFIG.DRINK_SHEET, DRINK_HEADERS, body.rows || [], body.updatedAt || '', 'syncDrinkRecipes');
-    else if (action === 'ping') result = {ok:true,action:'ping',app:'KSL-V3.5'};
+    else if (action === 'ping') result = {ok:true,action:'ping',app:'KSL-V3.6'};
     else throw new Error('Unknown action: ' + action);
-
     return json_(result);
   } catch (err) {
     try {
@@ -152,9 +150,8 @@ function saveResult_(ss, r) {
   sh.appendRow([
     r.when || new Date().toISOString(),
     safe_(r.employeeId), safe_(r.name), safe_(r.branch), safe_(r.position),
-    safe_(r.courseScope || 'all'),
-    Number(r.score || 0), Number(r.total || 50), Number(r.pct || 0), r.passed === true,
-    Number(r.passScore || 80), Number(r.durationSec || 0), safe_(r.id), 'KSL-V3.5'
+    safe_(r.courseScope || 'all'), Number(r.score || 0), Number(r.total || 50), Number(r.pct || 0),
+    r.passed === true, Number(r.passScore || 80), Number(r.durationSec || 0), safe_(r.id), 'KSL-V3.6'
   ]);
   logWithSheet_(ss, 'saveResult', 1, 'OK', safe_(r.id));
   return {ok:true,action:'saveResult'};
@@ -167,14 +164,12 @@ function replaceSheet_(ss, sheetName, headers, rows, updatedAt, action) {
   sh.getRange(1,1,1,headers.length).setValues([headers]);
   sh.setFrozenRows(1);
   sh.getRange(1,1,1,headers.length).setFontWeight('bold');
-
   const dataHeaders = headers.slice(0,-1);
   if (rows.length) {
     const stamp = updatedAt || new Date().toISOString();
     const values = rows.map(r => dataHeaders.map(h => safe_(r && r[h])).concat(stamp));
     sh.getRange(2,1,values.length,headers.length).setValues(values);
   }
-
   logWithSheet_(ss, action, rows.length, 'OK', updatedAt || '');
   return {ok:true,action:action,rows:rows.length};
 }
@@ -200,6 +195,20 @@ function parseBody_(e){
 
 function verifyKey_(key){
   if (CONFIG.SHARED_KEY && String(key) !== String(CONFIG.SHARED_KEY)) throw new Error('Invalid Sync Key');
+}
+
+function normalizeCallback_(v) {
+  const s = String(v || '').trim();
+  return /^[A-Za-z_$][0-9A-Za-z_$]*(?:\.[A-Za-z_$][0-9A-Za-z_$]*)*$/.test(s) ? s : '';
+}
+
+function output_(obj, callback) {
+  const text = JSON.stringify(obj);
+  if (callback) {
+    return ContentService.createTextOutput(callback + '(' + text + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(text).setMimeType(ContentService.MimeType.JSON);
 }
 
 function safe_(v){ return v === null || v === undefined ? '' : String(v); }
