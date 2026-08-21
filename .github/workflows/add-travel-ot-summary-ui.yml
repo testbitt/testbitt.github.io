@@ -1,0 +1,52 @@
+name: Add Travel OT Summary UI
+on:
+  push:
+    paths:
+      - '.github/workflows/add-travel-ot-summary-ui.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch summary UI into current web app
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('travel-expense/index.html')
+          s=p.read_text(encoding='utf-8')
+          if 'summary.css?v=20260821-summary1' not in s:
+              s=s.replace('</head>','<link rel="stylesheet" href="./summary.css?v=20260821-summary1"></head>')
+          if 'id="goTravelSummary"' not in s:
+              old='<span class="tag">OT RECORD →</span></div></div></section><section id="travel"'
+              new='<span class="tag">OT RECORD →</span></div><div class="card" id="goTravelSummary"><div class="ico">💰</div><h3>3. สรุปค่าเดินทาง</h3><p>ตรวจสอบรายการย้อนหลัง กรองตามเดือน/วันที่ และดูค่าใช้จ่ายรวม</p><span class="tag">TRAVEL SUMMARY →</span></div><div class="card" id="goOTSummary"><div class="ico">📊</div><h3>4. สรุปการทำ OT</h3><p>ตรวจสอบประวัติ OT กรองตามเดือน/วันที่ และดูชั่วโมงรวม</p><span class="tag">OT SUMMARY →</span></div></div></section><section id="travel"'
+              if old not in s: raise SystemExit('home card anchor not found')
+              s=s.replace(old,new,1)
+          if 'id="travelSummary"' not in s:
+              summary='''<section id="travelSummary" class="hidden"><button class="back" data-home>‹ กลับหน้าแรก</button><div class="summary-panel"><h2>💰 สรุปค่าเดินทาง</h2><p class="desc">ค้นหาเฉพาะข้อมูลของพนักงานตามรหัสพนักงาน และกรองตามเดือน/ช่วงวันที่ได้</p><div class="filterbar"><div class="f"><label>รหัสพนักงาน <span class="req">*</span></label><input id="tsEmployeeId" inputmode="numeric" placeholder="เช่น 1233"></div><div class="f"><label>เดือน</label><input type="month" id="tsMonth"></div><div class="f"><label>วันที่เริ่มต้น</label><input type="date" id="tsStart"></div><div class="f"><label>วันที่สิ้นสุด</label><input type="date" id="tsEnd"></div></div><div class="filter-actions"><button type="button" class="btn summary-secondary" id="tsReset">ล้าง Filter</button><button type="button" class="btn primary" id="tsSearch">ค้นหาและสรุป</button></div><div id="tsStatus" class="summary-status"></div><div class="metric-grid"><div class="metric"><small>จำนวนรายการ</small><strong id="tsCount">0</strong></div><div class="metric"><small>ระยะทางรวม</small><strong id="tsKm">0.00 กม.</strong></div><div class="metric"><small>ค่าเดินทางรวม</small><strong id="tsAmount">0.00 บาท</strong></div></div><div class="summary-table-wrap"><table class="summary-table"><thead><tr><th>วันที่</th><th>เลขรายการ</th><th>ต้นทาง → ปลายทาง</th><th>ประเภท</th><th>ระยะทาง</th><th>ค่าเดินทาง</th><th>เอกสาร</th><th>สถานะ</th></tr></thead><tbody id="tsBody"><tr><td colspan="8" class="summary-empty">กรอกรหัสพนักงาน แล้วกด “ค้นหาและสรุป”</td></tr></tbody></table></div></div></section><section id="otSummary" class="hidden"><button class="back" data-home>‹ กลับหน้าแรก</button><div class="summary-panel"><h2>📊 สรุปการทำ OT</h2><p class="desc">ค้นหาเฉพาะข้อมูลของพนักงานตามรหัสพนักงาน และกรองตามเดือน/ช่วงวันที่ได้</p><div class="filterbar"><div class="f"><label>รหัสพนักงาน <span class="req">*</span></label><input id="osEmployeeId" inputmode="numeric" placeholder="เช่น 1233"></div><div class="f"><label>เดือน</label><input type="month" id="osMonth"></div><div class="f"><label>วันที่เริ่มต้น</label><input type="date" id="osStart"></div><div class="f"><label>วันที่สิ้นสุด</label><input type="date" id="osEnd"></div></div><div class="filter-actions"><button type="button" class="btn summary-secondary" id="osReset">ล้าง Filter</button><button type="button" class="btn primary" id="osSearch">ค้นหาและสรุป</button></div><div id="osStatus" class="summary-status"></div><div class="metric-grid"><div class="metric"><small>จำนวนรายการ OT</small><strong id="osCount">0</strong></div><div class="metric"><small>ชั่วโมง OT รวม</small><strong id="osHours">0.00 ชม.</strong></div><div class="metric"><small>ชื่อพนักงาน</small><strong id="osName" style="font-size:16px">-</strong></div></div><div class="summary-table-wrap"><table class="summary-table"><thead><tr><th>วันที่</th><th>เลขรายการ</th><th>สาขา</th><th>เวลา</th><th>ชั่วโมง</th><th>ประเภท OT</th><th>เหตุผล</th><th>สถานะ</th></tr></thead><tbody id="osBody"><tr><td colspan="8" class="summary-empty">กรอกรหัสพนักงาน แล้วกด “ค้นหาและสรุป”</td></tr></tbody></table></div></div></section>'''
+              anchor='</main><datalist id="branchList">'
+              if anchor not in s: raise SystemExit('main anchor not found')
+              s=s.replace(anchor,summary+anchor,1)
+          s=s.replace("['home','travel','ot'].forEach", "['home','travel','ot','travelSummary','otSummary'].forEach",1)
+          if "$('goTravelSummary').onclick" not in s:
+              anchor="$('goOT').onclick=()=>show('ot');"
+              if anchor not in s: raise SystemExit('handler anchor not found')
+              s=s.replace(anchor,anchor+"$('goTravelSummary').onclick=()=>show('travelSummary');$('goOTSummary').onclick=()=>show('otSummary');",1)
+          if 'window.KAMU_API=API' not in s:
+              anchor=',MAX=4194304,'
+              if anchor not in s: raise SystemExit('API anchor not found')
+              s=s.replace(anchor,';window.KAMU_API=API;const MAX=4194304,',1)
+          if 'summary.js?v=20260821-summary1' not in s:
+              s=s.replace('</body>','<script src="./summary.js?v=20260821-summary1"></script><script>window.initKamuSummary&&window.initKamuSummary()</script></body>')
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit web summary UI
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add travel-expense/index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Add Travel and OT summary menus"
+          git push
