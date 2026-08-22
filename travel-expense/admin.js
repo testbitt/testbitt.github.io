@@ -34,7 +34,7 @@
       <button class="back" id="adminBack">‹ กลับหน้าแรก</button>
       <div class="admin-panel">
         <div class="admin-head">
-          <div><h2>🔐 Admin • สรุปค่าเดินทางและ OT</h2><p>สรุปข้อมูลทั้งหมดตามเดือน/ช่วงวันที่ พร้อม Export CSV</p></div>
+          <div><h2>🔐 Admin • สรุปค่าเดินทางและ OT</h2><p>ข้อมูลและยอดรวมจะแสดงตาม Filter ที่เลือก พร้อม Export เฉพาะข้อมูลหลัง Filter</p></div>
           <button type="button" class="btn summary-secondary" id="adminLock">ออกจาก Admin</button>
         </div>
         <div class="admin-filterbar">
@@ -68,18 +68,13 @@
     document.querySelector('main').appendChild(sec);
   }
 
-  function hideAdmin(){
-    const sec=$('adminSummary');
-    if(sec)sec.classList.add('hidden');
-  }
-
+  function hideAdmin(){const sec=$('adminSummary');if(sec)sec.classList.add('hidden');}
   function showHome(){
     hideAdmin();
     ['travel','ot','travelSummary','otSummary'].forEach(id=>$(id)&&$(id).classList.add('hidden'));
     $('home')&&$('home').classList.remove('hidden');
     scrollTo(0,0);
   }
-
   function showAdmin(){
     ['home','travel','ot','travelSummary','otSummary'].forEach(id=>$(id)&&$(id).classList.add('hidden'));
     $('adminSummary').classList.remove('hidden');
@@ -95,10 +90,7 @@
       adminCode=code;
       showAdmin();
       await loadAdmin();
-    }catch(e){
-      adminCode='';
-      alert(e.message);
-    }
+    }catch(e){adminCode='';alert(e.message);}
   }
 
   function resetFilters(){
@@ -106,14 +98,73 @@
     loadAdmin();
   }
 
+  function matchDate(date,month,start,end){
+    const d=String(date||'').slice(0,10);
+    if(!d)return false;
+    if(month&&d.slice(0,7)!==month)return false;
+    if(start&&d<start)return false;
+    if(end&&d>end)return false;
+    return true;
+  }
+
+  function filterReturnedData(travelRows,otRows){
+    const month=$('adMonth').value;
+    const start=$('adStart').value;
+    const end=$('adEnd').value;
+    const employee=$('adEmployee').value.trim();
+    const branch=$('adBranch').value.trim().toUpperCase();
+
+    const travel=(travelRows||[]).filter(r=>{
+      if(!matchDate(r.date,month,start,end))return false;
+      if(employee&&String(r.employeeId||'').trim()!==employee)return false;
+      if(branch){
+        const origin=String(r.origin||'').trim().toUpperCase();
+        const destination=String(r.destination||'').trim().toUpperCase();
+        if(origin!==branch&&destination!==branch)return false;
+      }
+      return true;
+    });
+
+    const ot=(otRows||[]).filter(r=>{
+      if(!matchDate(r.date,month,start,end))return false;
+      if(employee&&String(r.employeeId||'').trim()!==employee)return false;
+      if(branch&&String(r.branch||'').trim().toUpperCase()!==branch)return false;
+      return true;
+    });
+
+    return {travel,ot};
+  }
+
+  function renderAdmin(travelRows,otRows){
+    lastTravel=travelRows;
+    lastOT=otRows;
+
+    const totalKm=lastTravel.reduce((s,r)=>s+Number(r.totalKm||0),0);
+    const totalAmount=lastTravel.reduce((s,r)=>s+Number(r.amount||0),0);
+    const compHours=lastOT.reduce((s,r)=>/ชดชั่วโมง/i.test(String(r.otType||''))?s+Number(r.hours||0):s,0);
+    const paidHours=lastOT.reduce((s,r)=>/ทำจ่ายเงิน/i.test(String(r.otType||''))?s+Number(r.hours||0):s,0);
+    const totalHours=lastOT.reduce((s,r)=>s+Number(r.hours||0),0);
+
+    $('adTravelCount').textContent=lastTravel.length.toLocaleString('th-TH');
+    $('adTravelKm').textContent=num(totalKm)+' กม.';
+    $('adTravelAmount').textContent=money(totalAmount)+' บาท';
+    $('adCompHours').textContent=num(compHours)+' ชม.';
+    $('adPaidHours').textContent=num(paidHours)+' ชม.';
+    $('adTotalHours').textContent=num(totalHours)+' ชม.';
+
+    $('adTravelBody').innerHTML=lastTravel.length?lastTravel.map(r=>`<tr><td>${esc(r.timestamp||'-')}</td><td>${esc(r.date)}</td><td>${esc(r.recordId)}</td><td>${esc(r.employeeId)}</td><td>${esc(r.employeeName)}</td><td>${esc(r.origin)} → ${esc(r.destination)}</td><td>${esc(r.travelReason||'-')}</td><td>${esc(r.transportType)}</td><td>${num(r.totalKm)} กม.</td><td class="summary-money">${money(r.amount)} บาท</td><td>${esc(r.status||'-')}</td></tr>`).join(''):'<tr><td colspan="11" class="summary-empty">ไม่พบข้อมูลค่าเดินทางตาม Filter</td></tr>';
+
+    $('adOTBody').innerHTML=lastOT.length?lastOT.map(r=>`<tr><td>${esc(r.timestamp||'-')}</td><td>${esc(r.date)}</td><td>${esc(r.recordId)}</td><td>${esc(r.employeeId)}</td><td>${esc(r.employeeName)}</td><td>${esc(r.branch)}</td><td>${esc(r.startTime)} - ${esc(r.endTime)}</td><td>${num(r.hours)}</td><td>${esc(r.otType)}</td><td>${esc(r.reason)}</td><td>${esc(r.status||'-')}</td></tr>`).join(''):'<tr><td colspan="11" class="summary-empty">ไม่พบข้อมูล OT ตาม Filter</td></tr>';
+  }
+
   async function loadAdmin(){
     if(!adminCode)return;
     if($('adStart').value&&$('adEnd').value&&$('adStart').value>$('adEnd').value)return alert('วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด');
     $('adStatus').className='summary-status show';
-    $('adStatus').textContent='⏳ กำลังโหลดข้อมูล...';
+    $('adStatus').textContent='⏳ กำลังโหลดข้อมูลตาม Filter...';
     $('adSearch').disabled=true;
     try{
-      const x=await api({
+      const payload={
         action:'getAdminSummary',
         adminCode,
         month:$('adMonth').value,
@@ -121,29 +172,18 @@
         endDate:$('adEnd').value,
         employeeId:$('adEmployee').value.trim(),
         branch:$('adBranch').value.trim()
-      });
-      lastTravel=x.travelRecords||[];
-      lastOT=x.otRecords||[];
-      const t=x.totals||{};
-      $('adTravelCount').textContent=Number(t.travelCount||0).toLocaleString('th-TH');
-      $('adTravelKm').textContent=num(t.totalKm)+' กม.';
-      $('adTravelAmount').textContent=money(t.totalAmount)+' บาท';
-      $('adCompHours').textContent=num(t.compHours)+' ชม.';
-      $('adPaidHours').textContent=num(t.paidHours)+' ชม.';
-      $('adTotalHours').textContent=num(t.totalHours)+' ชม.';
-      $('adTravelBody').innerHTML=lastTravel.length?lastTravel.map(r=>`<tr><td>${esc(r.timestamp||'-')}</td><td>${esc(r.date)}</td><td>${esc(r.recordId)}</td><td>${esc(r.employeeId)}</td><td>${esc(r.employeeName)}</td><td>${esc(r.origin)} → ${esc(r.destination)}</td><td>${esc(r.travelReason||'-')}</td><td>${esc(r.transportType)}</td><td>${num(r.totalKm)} กม.</td><td class="summary-money">${money(r.amount)} บาท</td><td>${esc(r.status||'-')}</td></tr>`).join(''):'<tr><td colspan="11" class="summary-empty">ไม่พบข้อมูลค่าเดินทางตาม Filter</td></tr>';
-      $('adOTBody').innerHTML=lastOT.length?lastOT.map(r=>`<tr><td>${esc(r.timestamp||'-')}</td><td>${esc(r.date)}</td><td>${esc(r.recordId)}</td><td>${esc(r.employeeId)}</td><td>${esc(r.employeeName)}</td><td>${esc(r.branch)}</td><td>${esc(r.startTime)} - ${esc(r.endTime)}</td><td>${num(r.hours)}</td><td>${esc(r.otType)}</td><td>${esc(r.reason)}</td><td>${esc(r.status||'-')}</td></tr>`).join(''):'<tr><td colspan="11" class="summary-empty">ไม่พบข้อมูล OT ตาม Filter</td></tr>';
-      $('adStatus').textContent=`✓ ค่าเดินทาง ${lastTravel.length.toLocaleString('th-TH')} รายการ • OT ${lastOT.length.toLocaleString('th-TH')} รายการ`;
+      };
+      const x=await api(payload);
+      const filtered=filterReturnedData(x.travelRecords||[],x.otRecords||[]);
+      renderAdmin(filtered.travel,filtered.ot);
+      $('adStatus').textContent=`✓ ตาม Filter: ค่าเดินทาง ${lastTravel.length.toLocaleString('th-TH')} รายการ • OT ${lastOT.length.toLocaleString('th-TH')} รายการ`;
     }catch(e){
       $('adStatus').textContent='⚠️ '+e.message;
       if(/รหัส Admin/i.test(e.message))adminCode='';
     }finally{$('adSearch').disabled=false;}
   }
 
-  function csvCell(v){
-    const s=String(v??'').replace(/"/g,'""');
-    return `"${s}"`;
-  }
+  function csvCell(v){const s=String(v??'').replace(/"/g,'""');return `"${s}"`;}
   function downloadCSV(filename,headers,rows){
     const csv='\ufeff'+[headers,...rows].map(r=>r.map(csvCell).join(',')).join('\r\n');
     const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
@@ -151,10 +191,10 @@
     const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
   }
   function exportTravel(){
-    downloadCSV('KAMU_Travel_Admin.csv',['Timestamp','วันที่','เลขรายการ','รหัสพนักงาน','ชื่อ','ต้นทาง','ปลายทาง','สาเหตุในการเดินทาง','ประเภท','ระยะทางรวม','ค่าเดินทาง','สถานะ'],lastTravel.map(r=>[r.timestamp,r.date,r.recordId,r.employeeId,r.employeeName,r.origin,r.destination,r.travelReason,r.transportType,r.totalKm,r.amount,r.status]));
+    downloadCSV('KAMU_Travel_Admin_Filtered.csv',['Timestamp','วันที่','เลขรายการ','รหัสพนักงาน','ชื่อ','ต้นทาง','ปลายทาง','สาเหตุในการเดินทาง','ประเภท','ระยะทางรวม','ค่าเดินทาง','สถานะ'],lastTravel.map(r=>[r.timestamp,r.date,r.recordId,r.employeeId,r.employeeName,r.origin,r.destination,r.travelReason,r.transportType,r.totalKm,r.amount,r.status]));
   }
   function exportOT(){
-    downloadCSV('KAMU_OT_Admin.csv',['Timestamp','วันที่','เลขรายการ','รหัสพนักงาน','ชื่อ','สาขา','เวลาเริ่ม','เวลาสิ้นสุด','ชั่วโมง','ประเภท OT','เหตุผล','สถานะ'],lastOT.map(r=>[r.timestamp,r.date,r.recordId,r.employeeId,r.employeeName,r.branch,r.startTime,r.endTime,r.hours,r.otType,r.reason,r.status]));
+    downloadCSV('KAMU_OT_Admin_Filtered.csv',['Timestamp','วันที่','เลขรายการ','รหัสพนักงาน','ชื่อ','สาขา','เวลาเริ่ม','เวลาสิ้นสุด','ชั่วโมง','ประเภท OT','เหตุผล','สถานะ'],lastOT.map(r=>[r.timestamp,r.date,r.recordId,r.employeeId,r.employeeName,r.branch,r.startTime,r.endTime,r.hours,r.otType,r.reason,r.status]));
   }
 
   window.initKamuAdmin=()=>{
