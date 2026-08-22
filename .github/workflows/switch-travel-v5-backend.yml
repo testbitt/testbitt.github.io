@@ -1,0 +1,46 @@
+name: Switch Travel V5 backend
+
+on:
+  push:
+    paths:
+      - '.github/workflows/switch-travel-v5-backend.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  switch-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace Apps Script backend and cache version
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          old = 'https://script.google.com/macros/s/AKfycbzCc6jDCvwzIx8GMyDslEh607Ggi3h-DgOFUGTKhyWH3KbSqXo3S7s45DNlhynk956F/exec'
+          new = 'https://script.google.com/macros/s/AKfycbz6t9MS0Ylx8UYhAC4wNdCUvIqNOVbBcs09FiOLy_uIr-lNztukhD3mjlHgfDC_XjZy/exec'
+          files = [
+              Path('travel-expense/index.html'),
+              Path('travel-expense/summary.js'),
+              Path('travel-expense/admin.js'),
+          ]
+          for p in files:
+              s = p.read_text(encoding='utf-8')
+              s = s.replace(old, new)
+              if p.name == 'index.html':
+                  s = s.replace('summary.js?v=20260821-admin-v4', 'summary.js?v=20260822-travel-v5')
+                  s = s.replace('admin.js?v=20260821-admin-v4', 'admin.js?v=20260822-travel-v5')
+                  s = s.replace('admin.css?v=20260821-admin-v4', 'admin.css?v=20260822-travel-v5')
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit V5 backend switch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add travel-expense/index.html travel-expense/summary.js travel-expense/admin.js
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+          else
+            git commit -m 'Use Travel V5 Apps Script backend'
+            git push
+          fi
