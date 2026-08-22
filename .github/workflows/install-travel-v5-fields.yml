@@ -1,0 +1,104 @@
+name: Install Travel V5 Fields
+on:
+  push:
+    paths:
+      - '.github/workflows/install-travel-v5-fields.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Update Travel form and Admin tables
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          index = Path('travel-expense/index.html')
+          s = index.read_text(encoding='utf-8')
+
+          old = '<div class="f full"><label>ประเภทการเดินทาง <span class="req">*</span></label><input list="transportList" name="transportType" id="transportType" required></div>'
+          new = '<div class="f full"><label>สาเหตุในการเดินทาง <span class="req">*</span></label><input name="travelReason" placeholder="ระบุสาเหตุในการเดินทาง" required></div>' + old
+          if 'name="travelReason"' not in s:
+              if old not in s: raise SystemExit('Travel type field pattern not found')
+              s = s.replace(old, new, 1)
+
+          old_payload = "employeeName:d.get('employeeName'),transportType:t"
+          new_payload = "employeeName:d.get('employeeName'),travelReason:d.get('travelReason'),transportType:t"
+          if 'travelReason:d.get' not in s:
+              if old_payload not in s: raise SystemExit('Travel payload pattern not found')
+              s = s.replace(old_payload, new_payload, 1)
+
+          old_review = "['พนักงาน',b.employeeId+' '+b.employeeName],['ประเภท',t]"
+          new_review = "['พนักงาน',b.employeeId+' '+b.employeeName],['สาเหตุ',b.travelReason],['ประเภท',t]"
+          if "['สาเหตุ',b.travelReason]" not in s:
+              if old_review not in s: raise SystemExit('Travel review pattern not found')
+              s = s.replace(old_review, new_review, 1)
+
+          s = s.replace('./admin.js?v=20260821-admin-v4', './admin.js?v=20260822-travel-v5')
+          index.write_text(s, encoding='utf-8')
+
+          admin = Path('travel-expense/admin.js')
+          a = admin.read_text(encoding='utf-8')
+
+          # Travel admin table: add Timestamp and travel reason.
+          old_th = '<th>วันที่</th><th>เลขรายการ</th><th>รหัสพนักงาน</th><th>ชื่อ</th><th>ต้นทาง → ปลายทาง</th><th>ประเภท</th><th>ระยะทาง</th><th>ค่าเดินทาง</th><th>สถานะ</th>'
+          new_th = '<th>Timestamp</th><th>วันที่</th><th>เลขรายการ</th><th>รหัสพนักงาน</th><th>ชื่อ</th><th>ต้นทาง → ปลายทาง</th><th>สาเหตุ</th><th>ประเภท</th><th>ระยะทาง</th><th>ค่าเดินทาง</th><th>สถานะ</th>'
+          if old_th in a:
+              a = a.replace(old_th, new_th, 1)
+          a = a.replace('colspan="9" class="summary-empty">เลือก Filter', 'colspan="11" class="summary-empty">เลือก Filter', 1)
+          a = a.replace('colspan="9" class="summary-empty">ไม่พบข้อมูลค่าเดินทาง', 'colspan="11" class="summary-empty">ไม่พบข้อมูลค่าเดินทาง', 1)
+
+          old_row = '<tr><td>${esc(r.date)}</td><td>${esc(r.recordId)}</td><td>${esc(r.employeeId)}</td><td>${esc(r.employeeName)}</td><td>${esc(r.origin)} → ${esc(r.destination)}</td><td>${esc(r.transportType)}</td><td>${num(r.totalKm)} กม.</td><td class="summary-money">${money(r.amount)} บาท</td><td>${esc(r.status||\'-\')}</td></tr>'
+          new_row = '<tr><td>${esc(r.timestamp||\'-\')}</td><td>${esc(r.date)}</td><td>${esc(r.recordId)}</td><td>${esc(r.employeeId)}</td><td>${esc(r.employeeName)}</td><td>${esc(r.origin)} → ${esc(r.destination)}</td><td>${esc(r.travelReason||\'-\')}</td><td>${esc(r.transportType)}</td><td>${num(r.totalKm)} กม.</td><td class="summary-money">${money(r.amount)} บาท</td><td>${esc(r.status||\'-\')}</td></tr>'
+          if old_row in a:
+              a = a.replace(old_row, new_row, 1)
+
+          # OT admin table: add Timestamp.
+          old_ot_th = '<th>วันที่</th><th>เลขรายการ</th><th>รหัสพนักงาน</th><th>ชื่อ</th><th>สาขา</th><th>เวลา</th><th>ชั่วโมง</th><th>ประเภท OT</th><th>เหตุผล</th><th>สถานะ</th>'
+          new_ot_th = '<th>Timestamp</th><th>วันที่</th><th>เลขรายการ</th><th>รหัสพนักงาน</th><th>ชื่อ</th><th>สาขา</th><th>เวลา</th><th>ชั่วโมง</th><th>ประเภท OT</th><th>เหตุผล</th><th>สถานะ</th>'
+          if old_ot_th in a:
+              a = a.replace(old_ot_th, new_ot_th, 1)
+          a = a.replace('colspan="10" class="summary-empty">เลือก Filter', 'colspan="11" class="summary-empty">เลือก Filter', 1)
+          a = a.replace('colspan="10" class="summary-empty">ไม่พบข้อมูล OT', 'colspan="11" class="summary-empty">ไม่พบข้อมูล OT', 1)
+
+          old_ot_row = '<tr><td>${esc(r.date)}</td><td>${esc(r.recordId)}</td><td>${esc(r.employeeId)}</td><td>${esc(r.employeeName)}</td><td>${esc(r.branch)}</td><td>${esc(r.startTime)} - ${esc(r.endTime)}</td><td>${num(r.hours)}</td><td>${esc(r.otType)}</td><td>${esc(r.reason)}</td><td>${esc(r.status||\'-\')}</td></tr>'
+          new_ot_row = '<tr><td>${esc(r.timestamp||\'-\')}</td><td>${esc(r.date)}</td><td>${esc(r.recordId)}</td><td>${esc(r.employeeId)}</td><td>${esc(r.employeeName)}</td><td>${esc(r.branch)}</td><td>${esc(r.startTime)} - ${esc(r.endTime)}</td><td>${num(r.hours)}</td><td>${esc(r.otType)}</td><td>${esc(r.reason)}</td><td>${esc(r.status||\'-\')}</td></tr>'
+          if old_ot_row in a:
+              a = a.replace(old_ot_row, new_ot_row, 1)
+
+          # CSV export fields.
+          old_exp_tr_h = "['วันที่','เลขรายการ','รหัสพนักงาน','ชื่อ','ต้นทาง','ปลายทาง','ประเภท','ระยะทางรวม','ค่าเดินทาง','สถานะ']"
+          new_exp_tr_h = "['Timestamp','วันที่','เลขรายการ','รหัสพนักงาน','ชื่อ','ต้นทาง','ปลายทาง','สาเหตุในการเดินทาง','ประเภท','ระยะทางรวม','ค่าเดินทาง','สถานะ']"
+          a = a.replace(old_exp_tr_h, new_exp_tr_h)
+          old_exp_tr_r = '[r.date,r.recordId,r.employeeId,r.employeeName,r.origin,r.destination,r.transportType,r.totalKm,r.amount,r.status]'
+          new_exp_tr_r = '[r.timestamp,r.date,r.recordId,r.employeeId,r.employeeName,r.origin,r.destination,r.travelReason,r.transportType,r.totalKm,r.amount,r.status]'
+          a = a.replace(old_exp_tr_r, new_exp_tr_r)
+
+          old_exp_ot_h = "['วันที่','เลขรายการ','รหัสพนักงาน','ชื่อ','สาขา','เวลาเริ่ม','เวลาสิ้นสุด','ชั่วโมง','ประเภท OT','เหตุผล','สถานะ']"
+          new_exp_ot_h = "['Timestamp','วันที่','เลขรายการ','รหัสพนักงาน','ชื่อ','สาขา','เวลาเริ่ม','เวลาสิ้นสุด','ชั่วโมง','ประเภท OT','เหตุผล','สถานะ']"
+          a = a.replace(old_exp_ot_h, new_exp_ot_h)
+          old_exp_ot_r = '[r.date,r.recordId,r.employeeId,r.employeeName,r.branch,r.startTime,r.endTime,r.hours,r.otType,r.reason,r.status]'
+          new_exp_ot_r = '[r.timestamp,r.date,r.recordId,r.employeeId,r.employeeName,r.branch,r.startTime,r.endTime,r.hours,r.otType,r.reason,r.status]'
+          a = a.replace(old_exp_ot_r, new_exp_ot_r)
+
+          admin.write_text(a, encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name 'KAMU Web Updater'
+          git config user.email 'actions@users.noreply.github.com'
+          git add travel-expense/index.html travel-expense/admin.js
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+          else
+            git commit -m 'Add travel reason and admin timestamps'
+            git push origin main
+          fi
