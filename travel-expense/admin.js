@@ -60,10 +60,10 @@
         </div>
 
         <div class="admin-section-head"><h3>💰 รายละเอียดค่าเดินทาง</h3><button type="button" class="btn" id="exportTravel">Export ค่าเดินทาง CSV</button></div>
-        <div class="summary-table-wrap"><table class="summary-table"><thead><tr><th>วันที่</th><th>เลขรายการ</th><th>รหัสพนักงาน</th><th>ชื่อ</th><th>ต้นทาง → ปลายทาง</th><th>ประเภท</th><th>ระยะทาง</th><th>ค่าเดินทาง</th><th>สถานะ</th></tr></thead><tbody id="adTravelBody"><tr><td colspan="9" class="summary-empty">เลือก Filter แล้วกด “ค้นหาและสรุป”</td></tr></tbody></table></div>
+        <div class="summary-table-wrap"><table class="summary-table"><thead><tr><th>Timestamp</th><th>วันที่</th><th>เลขรายการ</th><th>รหัสพนักงาน</th><th>ชื่อ</th><th>ต้นทาง → ปลายทาง</th><th>สาเหตุ</th><th>ประเภท</th><th>ระยะทาง</th><th>ค่าเดินทาง</th><th>สถานะ</th></tr></thead><tbody id="adTravelBody"><tr><td colspan="11" class="summary-empty">เลือก Filter แล้วกด “ค้นหาและสรุป”</td></tr></tbody></table></div>
 
         <div class="admin-section-head"><h3>⏰ รายละเอียด OT</h3><button type="button" class="btn" id="exportOT">Export OT CSV</button></div>
-        <div class="summary-table-wrap"><table class="summary-table"><thead><tr><th>วันที่</th><th>เลขรายการ</th><th>รหัสพนักงาน</th><th>ชื่อ</th><th>สาขา</th><th>เวลา</th><th>ชั่วโมง</th><th>ประเภท OT</th><th>เหตุผล</th><th>สถานะ</th></tr></thead><tbody id="adOTBody"><tr><td colspan="10" class="summary-empty">เลือก Filter แล้วกด “ค้นหาและสรุป”</td></tr></tbody></table></div>
+        <div class="summary-table-wrap"><table class="summary-table"><thead><tr><th>Timestamp</th><th>วันที่</th><th>เลขรายการ</th><th>รหัสพนักงาน</th><th>ชื่อ</th><th>สาขา</th><th>เวลา</th><th>ชั่วโมง</th><th>ประเภท OT</th><th>เหตุผล</th><th>สถานะ</th></tr></thead><tbody id="adOTBody"><tr><td colspan="11" class="summary-empty">เลือก Filter แล้วกด “ค้นหาและสรุป”</td></tr></tbody></table></div>
       </div>`;
     document.querySelector('main').appendChild(sec);
   }
@@ -131,8 +131,8 @@
       $('adCompHours').textContent=num(t.compHours)+' ชม.';
       $('adPaidHours').textContent=num(t.paidHours)+' ชม.';
       $('adTotalHours').textContent=num(t.totalHours)+' ชม.';
-      $('adTravelBody').innerHTML=lastTravel.length?lastTravel.map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.recordId)}</td><td>${esc(r.employeeId)}</td><td>${esc(r.employeeName)}</td><td>${esc(r.origin)} → ${esc(r.destination)}</td><td>${esc(r.transportType)}</td><td>${num(r.totalKm)} กม.</td><td class="summary-money">${money(r.amount)} บาท</td><td>${esc(r.status||'-')}</td></tr>`).join(''):'<tr><td colspan="9" class="summary-empty">ไม่พบข้อมูลค่าเดินทางตาม Filter</td></tr>';
-      $('adOTBody').innerHTML=lastOT.length?lastOT.map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.recordId)}</td><td>${esc(r.employeeId)}</td><td>${esc(r.employeeName)}</td><td>${esc(r.branch)}</td><td>${esc(r.startTime)} - ${esc(r.endTime)}</td><td>${num(r.hours)}</td><td>${esc(r.otType)}</td><td>${esc(r.reason)}</td><td>${esc(r.status||'-')}</td></tr>`).join(''):'<tr><td colspan="10" class="summary-empty">ไม่พบข้อมูล OT ตาม Filter</td></tr>';
+      $('adTravelBody').innerHTML=lastTravel.length?lastTravel.map(r=>`<tr><td>${esc(r.timestamp||'-')}</td><td>${esc(r.date)}</td><td>${esc(r.recordId)}</td><td>${esc(r.employeeId)}</td><td>${esc(r.employeeName)}</td><td>${esc(r.origin)} → ${esc(r.destination)}</td><td>${esc(r.travelReason||'-')}</td><td>${esc(r.transportType)}</td><td>${num(r.totalKm)} กม.</td><td class="summary-money">${money(r.amount)} บาท</td><td>${esc(r.status||'-')}</td></tr>`).join(''):'<tr><td colspan="11" class="summary-empty">ไม่พบข้อมูลค่าเดินทางตาม Filter</td></tr>';
+      $('adOTBody').innerHTML=lastOT.length?lastOT.map(r=>`<tr><td>${esc(r.timestamp||'-')}</td><td>${esc(r.date)}</td><td>${esc(r.recordId)}</td><td>${esc(r.employeeId)}</td><td>${esc(r.employeeName)}</td><td>${esc(r.branch)}</td><td>${esc(r.startTime)} - ${esc(r.endTime)}</td><td>${num(r.hours)}</td><td>${esc(r.otType)}</td><td>${esc(r.reason)}</td><td>${esc(r.status||'-')}</td></tr>`).join(''):'<tr><td colspan="11" class="summary-empty">ไม่พบข้อมูล OT ตาม Filter</td></tr>';
       $('adStatus').textContent=`✓ ค่าเดินทาง ${lastTravel.length.toLocaleString('th-TH')} รายการ • OT ${lastOT.length.toLocaleString('th-TH')} รายการ`;
     }catch(e){
       $('adStatus').textContent='⚠️ '+e.message;
@@ -151,10 +151,10 @@
     const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
   }
   function exportTravel(){
-    downloadCSV('KAMU_Travel_Admin.csv',['วันที่','เลขรายการ','รหัสพนักงาน','ชื่อ','ต้นทาง','ปลายทาง','ประเภท','ระยะทางรวม','ค่าเดินทาง','สถานะ'],lastTravel.map(r=>[r.date,r.recordId,r.employeeId,r.employeeName,r.origin,r.destination,r.transportType,r.totalKm,r.amount,r.status]));
+    downloadCSV('KAMU_Travel_Admin.csv',['Timestamp','วันที่','เลขรายการ','รหัสพนักงาน','ชื่อ','ต้นทาง','ปลายทาง','สาเหตุในการเดินทาง','ประเภท','ระยะทางรวม','ค่าเดินทาง','สถานะ'],lastTravel.map(r=>[r.timestamp,r.date,r.recordId,r.employeeId,r.employeeName,r.origin,r.destination,r.travelReason,r.transportType,r.totalKm,r.amount,r.status]));
   }
   function exportOT(){
-    downloadCSV('KAMU_OT_Admin.csv',['วันที่','เลขรายการ','รหัสพนักงาน','ชื่อ','สาขา','เวลาเริ่ม','เวลาสิ้นสุด','ชั่วโมง','ประเภท OT','เหตุผล','สถานะ'],lastOT.map(r=>[r.date,r.recordId,r.employeeId,r.employeeName,r.branch,r.startTime,r.endTime,r.hours,r.otType,r.reason,r.status]));
+    downloadCSV('KAMU_OT_Admin.csv',['Timestamp','วันที่','เลขรายการ','รหัสพนักงาน','ชื่อ','สาขา','เวลาเริ่ม','เวลาสิ้นสุด','ชั่วโมง','ประเภท OT','เหตุผล','สถานะ'],lastOT.map(r=>[r.timestamp,r.date,r.recordId,r.employeeId,r.employeeName,r.branch,r.startTime,r.endTime,r.hours,r.otType,r.reason,r.status]));
   }
 
   window.initKamuAdmin=()=>{
