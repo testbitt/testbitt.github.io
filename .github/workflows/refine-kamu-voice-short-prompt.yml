@@ -1,0 +1,47 @@
+name: Refine KAMU voice prompt
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/refine-kamu-voice-short-prompt.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch voice assistant
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('travel-expense/voice-assistant.js')
+          s=p.read_text()
+          s=s.replace('u.rate=1.15;', 'u.rate=1.10;')
+          s=s.replace('''        <p class="desc">พูดว่า “ตรวจสอบค่าเดินทาง” หรือ “ตรวจสอบ OT” แล้วตอบรหัสพนักงานและช่วงเวลาที่ต้องการ</p>\n        <div id="voiceSupport" style="margin:14px 0;padding:10px;border-radius:12px;background:#f7fbf8;font-size:12px"></div>\n''','')
+          s=re.sub(r'''\n        <div id="voiceFlow".*?</div>''','',s,flags=re.S)
+          s=s.replace("    $('voiceSupport').textContent=SpeechRecognition?'พร้อมรับรหัสพนักงานด้วยเสียงภาษาไทย / English ✓':'เบราว์เซอร์นี้ไม่รองรับ Speech Recognition กรุณาใช้ Chrome หรือ Edge';\n",'')
+          s=re.sub(r"function employeeIdSpeech\(id\)\{.*?\n  \}", r'''function employeeIdSpeech(id){
+    const digit={'0':'ศูนย์','1':'หนึ่ง','2':'สอง','3':'สาม','4':'สี่','5':'ห้า','6':'หก','7':'เจ็ด','8':'แปด','9':'เก้า'};
+    const letter={A:'เอ',B:'บี',C:'ซี',D:'ดี',E:'อี',F:'เอฟ',G:'จี',H:'เอช',I:'ไอ',J:'เจ',K:'เค',L:'แอล',M:'เอ็ม',N:'เอ็น',O:'โอ',P:'พี',Q:'คิว',R:'อาร์',S:'เอส',T:'ที',U:'ยู',V:'วี',W:'ดับเบิลยู',X:'เอ็กซ์',Y:'วาย',Z:'แซด'};
+    return String(id||'').toUpperCase().split('-').map(part=>{
+      const groups=part.match(/[A-Z]+|\d+/g)||[];
+      return groups.map(g=>/^[A-Z]+$/.test(g)?g.split('').map(ch=>letter[ch]||ch).join(''):g.split('').map(ch=>digit[ch]||ch).join(' ')).join(' ');
+    }).join(' ');
+  }''',s,flags=re.S,count=1)
+          s=s.replace("ask('ได้ค่ะ ขอรหัสพนักงานนะคะ พูดได้ทั้งตัวเลขและตัวอักษร เช่น ดี วี ที ขีด วาย สอง สอง สาม','employee')","ask('ขอรหัสพนักงานค่ะ','employee')")
+          s=s.replace("ask('ได้ยินรหัสไม่ชัดค่ะ ลองพูดทีละตัว เช่น เอ็ม ขีด สาม ศูนย์ ศูนย์ สอง อีกครั้งนะคะ','employee')","ask('ขอรหัสพนักงานอีกครั้งค่ะ','employee')")
+          p.write_text(s)
+          idx=Path('travel-expense/index.html')
+          t=idx.read_text()
+          t=re.sub(r'voice-assistant\.js\?v=[^"\']+', 'voice-assistant.js?v=20260831-voice8-short', t)
+          idx.write_text(t)
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add travel-expense/voice-assistant.js travel-expense/index.html
+          git diff --cached --quiet || git commit -m "Shorten voice prompt and refine ID pronunciation"
+          git push
