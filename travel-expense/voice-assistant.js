@@ -11,7 +11,7 @@
   function speak(text,after){
     try{speechSynthesis.cancel();}catch(_){ }
     const u=new SpeechSynthesisUtterance(text);
-    u.lang='th-TH';u.rate=.95;u.pitch=1;
+    u.lang='th-TH';u.rate=1.08;u.pitch=1;
     u.onend=()=>after&&setTimeout(after,250);
     u.onerror=()=>after&&setTimeout(after,250);
     speechSynthesis.speak(u);
