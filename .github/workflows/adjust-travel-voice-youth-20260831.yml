@@ -1,0 +1,43 @@
+name: Adjust Travel Voice Youth Tone
+on:
+  push:
+    paths:
+      - '.github/workflows/adjust-travel-voice-youth-20260831.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update youthful female voice tone
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('travel-expense/voice-assistant.js')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('let softThaiVoice=null;', 'let youthfulThaiVoice=null;')
+          s=s.replace('function chooseSoftThaiVoice(){', 'function chooseYouthfulThaiVoice(){')
+          s=s.replace("const femaleHint=/female|woman|หญิง|kanya|narisa|premwadee|pim|ploy|suda|siri|woranuch|nicha/i;", "const femaleHint=/female|woman|girl|young|youth|หญิง|สาว|kanya|narisa|premwadee|pim|ploy|suda|siri|woranuch|nicha/i;")
+          s=s.replace("softThaiVoice=thai.find(v=>femaleHint.test(v.name||''))||thai.find(v=>/google.*ไทย|google.*thai/i.test(v.name||''))||thai.find(v=>v.localService)||thai[0]||null;", "youthfulThaiVoice=thai.find(v=>femaleHint.test(v.name||''))||thai.find(v=>/google.*ไทย|google.*thai/i.test(v.name||''))||thai.find(v=>v.localService)||thai[0]||null;")
+          s=s.replace('chooseSoftThaiVoice();', 'chooseYouthfulThaiVoice();')
+          s=s.replace("speechSynthesis.addEventListener('voiceschanged',chooseSoftThaiVoice)", "speechSynthesis.addEventListener('voiceschanged',chooseYouthfulThaiVoice)")
+          s=s.replace('speechSynthesis.onvoiceschanged=chooseSoftThaiVoice;', 'speechSynthesis.onvoiceschanged=chooseYouthfulThaiVoice;')
+          s=s.replace('if(softThaiVoice)u.voice=softThaiVoice;', 'if(youthfulThaiVoice)u.voice=youthfulThaiVoice;')
+          s=s.replace('u.rate=1.08;', 'u.rate=1.12;')
+          s=s.replace('u.pitch=1.06;', 'u.pitch=1.16;')
+          p.write_text(s,encoding='utf-8')
+
+          idx=Path('travel-expense/index.html')
+          h=idx.read_text(encoding='utf-8')
+          import re
+          h=re.sub(r'voice-assistant\.js\?v=[^"\']+', 'voice-assistant.js?v=20260831-voice7-youth', h)
+          idx.write_text(h,encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name 'testbitt'
+          git config user.email '91386610+testbitt@users.noreply.github.com'
+          git add travel-expense/voice-assistant.js travel-expense/index.html
+          git diff --cached --quiet || git commit -m 'Use youthful female voice for Travel assistant'
+          git push
