@@ -1,0 +1,41 @@
+name: Install Travel OT Voice Assistant
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/install-travel-voice-20260831.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add voice assistant script to Travel app
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('travel-expense/index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="./voice-assistant.js?v=20260831-voice1"></script>'
+          if 'voice-assistant.js' not in s:
+              s=s.replace('</body>',tag+'</body>')
+          else:
+              import re
+              s=re.sub(r'<script src="\./voice-assistant\.js\?v=[^"]+"></script>',tag,s)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit installation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add travel-expense/index.html
+          if git diff --cached --quiet; then
+            echo 'No change needed'
+          else
+            git commit -m 'Load Travel OT voice assistant'
+            git push
+          fi
