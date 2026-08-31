@@ -21,3 +21,43 @@ $('#branch').onchange=()=>{if(!activeCustomCheck)selectedRM.clear();compute()};$
 $('#rmFilterBtn').onclick=e=>{e.stopPropagation();toggleRMPopup()};$('#rmSearch').oninput=renderRMOptions;$('#rmAll').onclick=()=>{selectedRM=new Set(rmChoices().map(x=>x.code));markCustomDirty();renderRMFilter(true);render()};$('#rmClear').onclick=()=>{selectedRM.clear();markCustomDirty();renderRMFilter(true);render()};$('#rmPopup').onclick=e=>e.stopPropagation();document.addEventListener('click',()=>toggleRMPopup(false));
 $('#customCheckSelect').onchange=e=>{const name=e.target.value;if(name)applyCustomCheck(name);else{activeCustomCheck='';customDirty=false;localStorage.removeItem('inventory:lastCustomCheck');renderCustomChecks();setCustomMessage('')}};$('#saveCustom').onclick=saveCustomCheckAs;$('#updateCustom').onclick=updateCustomCheck;$('#deleteCustom').onclick=deleteCustomCheck;
 $('#useReport').onclick=()=>{let b=$('#branch').value;for(const x of S.analysis)localStorage.setItem(countsKey(b,x.rm),x.reportActual);compute()};$('#clearCount').onclick=()=>{let b=$('#branch').value;for(const x of S.analysis)localStorage.removeItem(countsKey(b,x.rm));compute()};
+
+/* Version 2.0 — Convert Master Upload */
+if(!Array.isArray(S.convert))S.convert=[];
+const _saveBeforeConvert=save;
+save=async function(){await dbPut('state',{stock:S.stock,item:S.item,recipe:S.recipe,wip:S.wip,convert:S.convert,stockDate:S.stockDate,meta:S.meta})};
+const _buildIndexesBeforeConvert=buildIndexes;
+buildIndexes=function(){_buildIndexesBeforeConvert();IDX.convertByCode=new Map();for(const r of S.convert||[]){if(r&&r.code&&Number(r.factor)>0)IDX.convertByCode.set(T(r.code),r)}};
+const _convFactorBeforeConvert=convFactor;
+convFactor=function(code,bu,su,desc=''){
+ const manual=Number(localStorage.getItem('conv:'+code+':'+bu+':'+su));if(manual>0)return manual;
+ const row=IDX.convertByCode?.get(T(code));
+ if(row&&Number(row.factor)>0){const stockOk=K(row.unit)===K(su),bomOk=unitKind(row.convertUnit)===unitKind(bu)||K(row.convertUnit)===K(bu);if(stockOk&&bomOk)return Number(row.factor)}
+ return _convFactorBeforeConvert(code,bu,su,desc);
+};
+function convertPick(r,key){for(const k of Object.keys(r||{}))if(K(k)===key)return r[k];return''}
+const _readBeforeConvert=read;
+read=async function(file,type){
+ if(type!=='convert')return _readBeforeConvert(file,type);
+ const metaEl=$('#mConvert');metaEl.textContent=`กำลังอ่าน ${file.name} ...`;
+ try{
+  if(!window.XLSX)throw Error('ตัวอ่าน Excel ยังโหลดไม่สำเร็จ กรุณา Refresh หน้าเว็บแล้วลองใหม่');
+  const b=await file.arrayBuffer(),wb=XLSX.read(b,{type:'array',cellDates:true}),ws=wb.Sheets[wb.SheetNames[0]],a=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  let h=-1;for(let i=0;i<Math.min(80,a.length);i++){const set=new Set((a[i]||[]).map(K));if(['code','unit','convert','convertunit'].every(x=>set.has(x))){h=i;break}}
+  if(h<0)throw Error('ไม่พบ Header Convert: Code / Unit / Convert / Convert Unit');
+  const raw=XLSX.utils.sheet_to_json(ws,{range:h,defval:''});
+  const parsed=raw.map(r=>({code:T(convertPick(r,'code')),desc:T(convertPick(r,'detailrawmaterial')),unit:T(convertPick(r,'unit')),factor:N(convertPick(r,'convert')),convertUnit:T(convertPick(r,'convertunit'))})).filter(r=>r.code&&r.unit&&r.factor>0&&r.convertUnit);
+  if(!parsed.length)throw Error('ไม่พบข้อมูล Convert ที่ใช้งานได้');
+  const map=new Map();for(const r of parsed)map.set(r.code,r);S.convert=[...map.values()];S.meta.convert=file.name;
+  buildIndexes();invalidateCalcCache();await save();refresh();compute();
+  metaEl.insertAdjacentHTML('beforeend',' <span class="ok">✓ บันทึกสำเร็จ</span>');
+ }catch(e){metaEl.innerHTML=`<span class="bad">Upload ไม่สำเร็จ: ${String(e.message||e)}</span>`;throw e}
+};
+const _refreshBeforeConvert=refresh;
+refresh=function(){_refreshBeforeConvert();const el=$('#mConvert');if(el)el.textContent=S.convert?.length?`${S.meta.convert||''} • ${S.convert.length.toLocaleString()} conversion rows`:'ยังไม่มีข้อมูล';const info=$('#convertMasterInfo');if(info)info.textContent=S.convert?.length?`Convert Master: ${S.convert.length.toLocaleString()} รายการ • ใช้ก่อน Auto Conversion`:'ยังไม่ได้ Upload Convert Master'};
+const uploadGrid=document.querySelector('#upload .grid');
+if(uploadGrid&&!document.querySelector('#fConvert'))uploadGrid.insertAdjacentHTML('beforeend','<div class="card upload-card"><div class="upload-icon">🔄</div><b>4. Convert</b><input type="file" id="fConvert" accept=".xlsx,.xls,.xlsm"><div id="mConvert" class="subtle">ยังไม่มีข้อมูล</div></div>');
+const convNotice=document.querySelector('#conversion .notice');if(convNotice&&!document.querySelector('#convertMasterInfo'))convNotice.insertAdjacentHTML('afterend','<div id="convertMasterInfo" class="subtle" style="margin-top:8px"></div>');
+const st=document.createElement('style');st.textContent='#upload .grid{grid-template-columns:repeat(4,minmax(0,1fr))}@media(max-width:1199px){#upload .grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){#upload .grid{grid-template-columns:1fr}}';document.head.appendChild(st);
+const ver=document.querySelector('.version');if(ver)ver.textContent='Version 2.0 • Convert Master Upload';
+if($('#fConvert'))$('#fConvert').onchange=e=>uploadEvent(e,'convert');
