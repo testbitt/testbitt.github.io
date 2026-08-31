@@ -1,0 +1,166 @@
+name: Update Voice Date Parser
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-voice-date-parser-20260831.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update-date-parser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Expand Thai voice date parser
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          p=Path('travel-expense/voice-assistant.js')
+          s=p.read_text(encoding='utf-8')
+
+          new_block=r'''  function thaiNumberWordsToDigits(text){
+    let s=normalizeThaiDigits(String(text||'').toLowerCase());
+    const pairs=[
+      ['ศูนย์','0'],['หนึ่ง','1'],['เอ็ด','1'],['สอง','2'],['ยี่','2'],['สาม','3'],['สี่','4'],['ห้า','5'],['หก','6'],['เจ็ด','7'],['แปด','8'],['เก้า','9']
+    ];
+    for(const [w,d] of pairs)s=s.replace(new RegExp(w,'g'),` ${d} `);
+    return s.replace(/\s+/g,' ').trim();
+  }
+
+  function thaiDayWordToNumber(text){
+    let s=String(text||'').toLowerCase().replace(/วันที่|วัน/g,'').trim();
+    s=normalizeThaiDigits(s);
+    if(/^\d{1,2}$/.test(s))return Number(s);
+    const units={'ศูนย์':0,'หนึ่ง':1,'เอ็ด':1,'สอง':2,'สาม':3,'สี่':4,'ห้า':5,'หก':6,'เจ็ด':7,'แปด':8,'เก้า':9};
+    if(units[s]!=null)return units[s];
+    let n=0;
+    if(s.includes('ยี่สิบ')){n=20;s=s.replace('ยี่สิบ','');}
+    else if(s.includes('สามสิบ')){n=30;s=s.replace('สามสิบ','');}
+    else if(s.includes('สิบ')){n=10;s=s.replace('สิบ','');}
+    if(s&&units[s]!=null)n+=units[s];
+    return n>=1&&n<=31?n:0;
+  }
+
+  function normalizeYear(y){
+    y=Number(y||0);
+    if(!y)return new Date().getFullYear();
+    if(y<100)y+=(y>=50?2500:2000);
+    if(y>2400)y-=543;
+    return y;
+  }
+
+  function lastDayOfMonth(y,m){return new Date(y,m,0).getDate();}
+
+  function parseDate(text){
+    let raw=normalizeThaiDigits(String(text||'').trim().toLowerCase());
+    let s=raw.replace(/พ\.ศ\.|พศ|ค\.ศ\.|คศ/g,' ').replace(/ปี/g,' ').replace(/เดือน/g,' ').replace(/วันที่/g,' ').replace(/วัน/g,' ').replace(/,/g,' ').replace(/\s+/g,' ').trim();
+    const now=new Date();
+
+    if(/วันนี้|วันนี้เลย/.test(raw))return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+    if(/เมื่อวาน|เมื่อวานนี้/.test(raw)){const d=new Date(now);d.setDate(d.getDate()-1);return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
+    if(/พรุ่งนี้/.test(raw)){const d=new Date(now);d.setDate(d.getDate()+1);return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
+
+    let monthNum=0;
+    for(const [name,n] of Object.entries(months)){
+      if(raw.includes(name)){monthNum=n;break;}
+    }
+
+    if(/ต้นเดือน/.test(raw)){
+      const y=normalizeYear((raw.match(/\d{4}/)||[])[0]);
+      const m=monthNum||now.getMonth()+1;
+      return `${y}-${pad(m)}-01`;
+    }
+    if(/สิ้นเดือน|ปลายเดือน/.test(raw)){
+      const y=normalizeYear((raw.match(/\d{4}/)||[])[0]);
+      const m=monthNum||now.getMonth()+1;
+      return `${y}-${pad(m)}-${pad(lastDayOfMonth(y,m))}`;
+    }
+
+    // 01/08/2569, 1-8-69, 1.8.2026
+    let m=s.match(/(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{2,4})/);
+    if(m){
+      const d=+m[1],mo=+m[2],y=normalizeYear(m[3]);
+      return validYMD(y,mo,d)?`${y}-${pad(mo)}-${pad(d)}`:'';
+    }
+
+    // 1 8 2569 / 1 8 69 / 01 08 2026
+    m=s.match(/(?:^|\s)(\d{1,2})\s+(\d{1,2})\s+(\d{2,4})(?:$|\s)/);
+    if(m){
+      const d=+m[1],mo=+m[2],y=normalizeYear(m[3]);
+      return validYMD(y,mo,d)?`${y}-${pad(mo)}-${pad(d)}`:'';
+    }
+
+    // 2569-08-01 / 2026-08-01
+    m=s.match(/(\d{4})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{1,2})/);
+    if(m){
+      const y=normalizeYear(m[1]),mo=+m[2],d=+m[3];
+      return validYMD(y,mo,d)?`${y}-${pad(mo)}-${pad(d)}`:'';
+    }
+
+    if(monthNum){
+      // Supports: 1 สิงหาคม 2569, 1 สิงหา 69, วันที่หนึ่งสิงหาคม, หนึ่ง สิงหา
+      const beforeMonth=raw.slice(0,Math.max(...Object.keys(months).filter(k=>raw.includes(k)).map(k=>raw.indexOf(k))));
+      const dayDigits=(beforeMonth.match(/\d{1,2}/g)||[]).map(Number).find(n=>n>=1&&n<=31);
+      let d=dayDigits||thaiDayWordToNumber(beforeMonth);
+
+      // If day is stuck to month word, e.g. หนึ่งสิงหาคม
+      if(!d){
+        for(const name of Object.keys(months)){
+          if(raw.includes(name)){
+            const prefix=raw.split(name)[0].replace(/วันที่|วัน|เดือน/g,'').trim();
+            d=thaiDayWordToNumber(prefix);
+            if(d)break;
+          }
+        }
+      }
+
+      const nums=(raw.match(/\d{2,4}/g)||[]).map(Number);
+      let y=nums.length?[...nums].reverse().find(n=>n>31):0;
+      y=normalizeYear(y||now.getFullYear());
+      if(d&&validYMD(y,monthNum,d))return `${y}-${pad(monthNum)}-${pad(d)}`;
+    }
+
+    // Spoken individual digits or Thai words, e.g. หนึ่ง แปด หก เก้า -> 1/8/69
+    const spoken=thaiNumberWordsToDigits(raw);
+    const digitTokens=(spoken.match(/\d+/g)||[]);
+    if(digitTokens.length>=3){
+      let d=Number(digitTokens[0]),mo=Number(digitTokens[1]);
+      let yearToken=digitTokens.slice(2).join('');
+      let y=normalizeYear(yearToken);
+      if(validYMD(y,mo,d))return `${y}-${pad(mo)}-${pad(d)}`;
+    }
+
+    return '';
+  }
+
+'''
+
+          pattern=r"  function parseDate\(text\)\{.*?\n  \}\n\n  function thaiDate"
+          repl=new_block+'  function thaiDate'
+          s2,n=re.subn(pattern,repl,s,flags=re.S)
+          if n!=1:
+              raise SystemExit(f'parseDate replacement count={n}')
+          p.write_text(s2,encoding='utf-8')
+          PY
+      - name: Bump voice cache
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('travel-expense/index.html')
+          s=p.read_text(encoding='utf-8')
+          s=re.sub(r'voice-assistant\.js\?v=[^"<]+','voice-assistant.js?v=20260831-voice3',s)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add travel-expense/voice-assistant.js travel-expense/index.html
+          git commit -m 'Support flexible Thai voice date formats'
+          git push
