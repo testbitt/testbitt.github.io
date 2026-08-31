@@ -254,6 +254,7 @@
       const id=parseEmployeeId(text);
       if(!id){ask('ขอรหัสพนักงานอีกครั้งค่ะ','employee');return;}
       state.employeeId=id;
+      setHeard(`รหัสพนักงาน: ${id}`);
       setStatus(`กำลังตรวจสอบรหัสพนักงาน ${id}...`);
       state.employeeName=await getEmployeeName(id);
       const nameText=state.employeeName?` • ${state.employeeName}`:'';
