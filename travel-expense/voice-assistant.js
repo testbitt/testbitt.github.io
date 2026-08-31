@@ -11,35 +11,42 @@
     'กรกฎาคม':7,'กรกฎา':7,'กค':7,'สิงหาคม':8,'สิงหา':8,'สค':8,'กันยายน':9,'กันยา':9,'กย':9,
     'ตุลาคม':10,'ตุลา':10,'ตค':10,'พฤศจิกายน':11,'พฤศจิกา':11,'พย':11,'ธันวาคม':12,'ธันวา':12,'ธค':12
   };
-  let recognition=null;
-  let warmThaiVoice=null;
-  let state={step:'idle',type:'',employeeId:'',startDate:'',endDate:''};
+  const thaiDayWords={
+    'หนึ่ง':1,'สอง':2,'สาม':3,'สี่':4,'ห้า':5,'หก':6,'เจ็ด':7,'แปด':8,'เก้า':9,'สิบ':10,
+    'สิบเอ็ด':11,'สิบสอง':12,'สิบสาม':13,'สิบสี่':14,'สิบห้า':15,'สิบหก':16,'สิบเจ็ด':17,'สิบแปด':18,'สิบเก้า':19,
+    'ยี่สิบ':20,'ยี่สิบเอ็ด':21,'ยี่สิบสอง':22,'ยี่สิบสาม':23,'ยี่สิบสี่':24,'ยี่สิบห้า':25,'ยี่สิบหก':26,'ยี่สิบเจ็ด':27,'ยี่สิบแปด':28,'ยี่สิบเก้า':29,
+    'สามสิบ':30,'สามสิบเอ็ด':31
+  };
 
-  function chooseWarmThaiVoice(){
+  let recognition=null;
+  let softThaiVoice=null;
+  let state={step:'idle',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};
+
+  function chooseSoftThaiVoice(){
     if(!window.speechSynthesis)return;
     const voices=speechSynthesis.getVoices()||[];
     const thai=voices.filter(v=>/^th(?:-|_)/i.test(v.lang||'')||/thai|ไทย/i.test(v.name||''));
-    const maleHint=/male|man|niwat|niwatt|thanawat|narong|somchai|chai|ชาย/i;
-    warmThaiVoice=thai.find(v=>maleHint.test(v.name||''))||thai.find(v=>v.localService)||thai[0]||null;
+    const femaleHint=/female|woman|หญิง|kanya|narisa|premwadee|pim|ploy|suda|siri|woranuch|nicha/i;
+    softThaiVoice=thai.find(v=>femaleHint.test(v.name||''))||thai.find(v=>/google.*ไทย|google.*thai/i.test(v.name||''))||thai.find(v=>v.localService)||thai[0]||null;
   }
-  chooseWarmThaiVoice();
+  chooseSoftThaiVoice();
   if(window.speechSynthesis){
-    if(speechSynthesis.addEventListener)speechSynthesis.addEventListener('voiceschanged',chooseWarmThaiVoice);
-    else speechSynthesis.onvoiceschanged=chooseWarmThaiVoice;
+    if(speechSynthesis.addEventListener)speechSynthesis.addEventListener('voiceschanged',chooseSoftThaiVoice);
+    else speechSynthesis.onvoiceschanged=chooseSoftThaiVoice;
   }
 
   function speak(text,after){
     if(!window.speechSynthesis){after&&after();return;}
     try{speechSynthesis.cancel();}catch(_){ }
-    chooseWarmThaiVoice();
+    chooseSoftThaiVoice();
     const u=new SpeechSynthesisUtterance(text);
     u.lang='th-TH';
-    if(warmThaiVoice)u.voice=warmThaiVoice;
+    if(softThaiVoice)u.voice=softThaiVoice;
     u.rate=1.08;
-    u.pitch=.86;
+    u.pitch=1.06;
     u.volume=1;
-    u.onend=()=>after&&setTimeout(after,180);
-    u.onerror=()=>after&&setTimeout(after,180);
+    u.onend=()=>after&&setTimeout(after,170);
+    u.onerror=()=>after&&setTimeout(after,170);
     speechSynthesis.speak(u);
   }
 
@@ -49,15 +56,22 @@
   function ymd(y,m,d){return `${y}-${pad(m)}-${pad(d)}`;}
   function daysInMonth(y,m){return new Date(y,m,0).getDate();}
   function validYMD(y,m,d){const dt=new Date(y,m-1,d);return dt.getFullYear()===y&&dt.getMonth()===m-1&&dt.getDate()===d;}
-  function thaiDate(value){if(!value)return '-';const [y,m,d]=value.split('-').map(Number);return `${d}/${pad(m)}/${y+543}`;}
+  function thaiDate(value){if(!value)return '-';const [y,m,d]=String(value).slice(0,10).split('-').map(Number);return `${d}/${pad(m)}/${y+543}`;}
 
   function appendUI(){
     if($('goVoiceAssistant'))return;
     const grid=document.querySelector('#home .grid2');
     if(!grid)return;
+    const style=document.createElement('style');
+    style.id='voiceDailyStyle';
+    style.textContent=`
+      .voice-daily{margin-top:22px}.voice-day{border:1px solid #dfeae2;border-radius:16px;background:#fff;margin:12px 0;overflow:hidden}.voice-day-head{padding:12px 14px;background:#f3faf5;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.voice-day-head strong{color:#24573a}.voice-day-total{font-size:12px;color:#617068}.voice-detail-wrap{overflow:auto}.voice-detail-table{width:100%;min-width:860px;border-collapse:collapse;font-size:12px}.voice-detail-table th,.voice-detail-table td{padding:9px 10px;border-bottom:1px solid #edf2ee;text-align:left;vertical-align:top}.voice-detail-table th{background:#fbfdfb;color:#66736b;white-space:nowrap}.voice-detail-table tr:last-child td{border-bottom:0}.voice-empty{padding:18px;text-align:center;color:#7a867f}.voice-emp{margin:10px 0;padding:12px 14px;border-radius:13px;background:#eef8f1;border:1px solid #d7eadc;font-weight:800;color:#28543a}@media(max-width:760px){.voice-day-head{align-items:flex-start}.voice-detail-table{min-width:760px}}
+    `;
+    document.head.appendChild(style);
+
     const card=document.createElement('div');
     card.className='card';card.id='goVoiceAssistant';
-    card.innerHTML='<div class="ico">🎙️</div><h3>6. ตรวจสอบด้วยเสียง</h3><p>พูดเพื่อตรวจสอบค่าเดินทางหรือ OT และฟังสรุปผลอัตโนมัติ</p><span class="tag">VOICE CHECK →</span>';
+    card.innerHTML='<div class="ico">🎙️</div><h3>6. ตรวจสอบด้วยเสียง</h3><p>พูดเพื่อตรวจสอบค่าเดินทางหรือ OT และดูรายละเอียดรายวัน</p><span class="tag">VOICE CHECK →</span>';
     grid.appendChild(card);
 
     const sec=document.createElement('section');
@@ -104,18 +118,16 @@
   function stopAll(reset=true){
     try{recognition&&recognition.abort();}catch(_){ }
     try{speechSynthesis.cancel();}catch(_){ }
-    if(reset){state={step:'idle',type:'',employeeId:'',startDate:'',endDate:''};setStatus('หยุดการรับคำสั่งเสียงแล้ว');}
+    if(reset){state={step:'idle',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};setStatus('หยุดการรับคำสั่งเสียงแล้ว');}
   }
 
   function startFlow(){
     if(!SpeechRecognition){alert('อุปกรณ์นี้ไม่รองรับการรับคำสั่งเสียง กรุณาใช้ Chrome หรือ Edge');return;}
-    state={step:'type',type:'',employeeId:'',startDate:'',endDate:''};
+    state={step:'type',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};
     $('voiceResult').innerHTML='';setHeard('');
-    ask('สวัสดีครับ ต้องการตรวจสอบค่าเดินทาง หรือ ตรวจสอบโอทีครับ','type');
+    ask('สวัสดีค่ะ ต้องการตรวจสอบค่าเดินทาง หรือ ตรวจสอบโอทีคะ','type');
   }
-  function ask(displayMessage,step,spokenMessage=displayMessage){
-    state.step=step;setStatus(displayMessage);speak(spokenMessage,listen);
-  }
+  function ask(displayMessage,step,spokenMessage=displayMessage){state.step=step;setStatus(displayMessage);speak(spokenMessage,listen);}
   function listen(){
     if(!SpeechRecognition)return;
     try{recognition&&recognition.abort();}catch(_){ }
@@ -123,7 +135,7 @@
     recognition.lang='th-TH';recognition.interimResults=false;recognition.maxAlternatives=3;recognition.continuous=false;
     recognition.onstart=()=>{$('voiceStart').textContent='🎙️ กำลังฟัง...';};
     recognition.onend=()=>{$('voiceStart').textContent='🎤 เริ่มคำสั่งเสียง';};
-    recognition.onerror=()=>{setStatus('ผมฟังไม่ชัดครับ ลองกดเริ่มแล้วพูดใหม่อีกครั้งนะครับ');};
+    recognition.onerror=()=>{setStatus('ได้ยินไม่ชัดค่ะ ลองกดเริ่มแล้วพูดใหม่อีกครั้งนะคะ');};
     recognition.onresult=e=>{
       const text=Array.from(e.results[0]).map(x=>x.transcript).join(' ');
       setHeard(text);handleAnswer(text);
@@ -148,12 +160,6 @@
     return String(id||'').split('').map(d=>words[d]||d).join(' ');
   }
 
-  const thaiDayWords={
-    'หนึ่ง':1,'สอง':2,'สาม':3,'สี่':4,'ห้า':5,'หก':6,'เจ็ด':7,'แปด':8,'เก้า':9,'สิบ':10,
-    'สิบเอ็ด':11,'สิบสอง':12,'สิบสาม':13,'สิบสี่':14,'สิบห้า':15,'สิบหก':16,'สิบเจ็ด':17,'สิบแปด':18,'สิบเก้า':19,
-    'ยี่สิบ':20,'ยี่สิบเอ็ด':21,'ยี่สิบสอง':22,'ยี่สิบสาม':23,'ยี่สิบสี่':24,'ยี่สิบห้า':25,'ยี่สิบหก':26,'ยี่สิบเจ็ด':27,'ยี่สิบแปด':28,'ยี่สิบเก้า':29,
-    'สามสิบ':30,'สามสิบเอ็ด':31
-  };
   function normalizeYear(raw,text=''){
     let y=Number(raw);if(!Number.isFinite(y))return 0;
     if(y>=2400)return y-543;
@@ -164,11 +170,7 @@
     }
     return y;
   }
-  function currentYear(){return new Date().getFullYear();}
-  function findMonthByName(s){
-    for(const [name,n] of Object.entries(monthAliases)){if(s.includes(name))return n;}
-    return 0;
-  }
+  function findMonthByName(s){for(const [name,n] of Object.entries(monthAliases)){if(s.includes(name))return n;}return 0;}
   function monthPeriod(y,m){return {kind:'month',start:ymd(y,m,1),end:ymd(y,m,daysInMonth(y,m)),label:`${monthNames[m]} ${y+543}`};}
   function datePeriod(y,m,d){return validYMD(y,m,d)?{kind:'date',date:ymd(y,m,d),label:thaiDate(ymd(y,m,d))}:null;}
   function parsePeriod(text){
@@ -179,77 +181,35 @@
     if(/วันนี้/.test(s))return datePeriod(now.getFullYear(),now.getMonth()+1,now.getDate());
     if(/เมื่อวาน/.test(s)){const d=new Date(now);d.setDate(d.getDate()-1);return datePeriod(d.getFullYear(),d.getMonth()+1,d.getDate());}
 
-    let m=s.match(/(?:วันที่\s*)?(\d{1,2})\s*(?:วัน\s*)?(?:เดือน\s*)?(\d{1,2})\s*(?:ปี\s*)?(\d{2,4})/);
-    if(m){const d=+m[1],mo=+m[2],y=normalizeYear(m[3],s);if(mo>=1&&mo<=12)return datePeriod(y,mo,d);}
-    m=s.match(/(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{2,4})/);
-    if(m){return datePeriod(normalizeYear(m[3],s),+m[2],+m[1]);}
+    let m=s.match(/(?:วันที่\s*)?(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{2,4})/);
+    if(m){const d=+m[1],mo=+m[2],y=normalizeYear(m[3],s);return datePeriod(y,mo,d);}
 
-    const namedMonth=findMonthByName(s);
-    if(namedMonth){
+    m=s.match(/(?:วันที่\s*)?(\d{1,2})\s*(?:เดือน)?\s*(\d{1,2})\s*(?:ปี)?\s*(\d{2,4})/);
+    if(m&&/เดือน|ปี|วันที่/.test(s)){const d=+m[1],mo=+m[2],y=normalizeYear(m[3],s);return datePeriod(y,mo,d);}
+
+    let month=findMonthByName(s);
+    if(month){
       const nums=(s.match(/\d{1,4}/g)||[]).map(Number);
-      let day=0,year=0;
-      if(nums.length>=2){day=nums[0];year=normalizeYear(nums[nums.length-1],s);}
-      else if(nums.length===1){
-        if(nums[0]>31||/ปี|พ\.?\s*ศ\.?/.test(s))year=normalizeYear(nums[0],s);
-        else day=nums[0];
-      }
-      if(!day){
-        for(const [w,n] of Object.entries(thaiDayWords)){if(new RegExp(`(?:วันที่|วัน)\\s*${w}`).test(s)){day=n;break;}}
-      }
-      if(!year)year=currentYear();
-      if(day)return datePeriod(year,namedMonth,day);
-      return monthPeriod(year,namedMonth);
+      let day=0;
+      const dayMatch=s.match(/(?:วันที่\s*)?(\d{1,2})\s*(?=[ก-๙])/);
+      if(dayMatch)day=+dayMatch[1];
+      if(!day){for(const [word,n] of Object.entries(thaiDayWords)){if(new RegExp(`(?:วันที่\\s*)?${word}(?=\\s|${monthNames[month]}|$)`).test(s)){day=n;break;}}}
+      let year=0;
+      const ym=s.match(/(?:ปี|พ\.?ศ\.?)\s*(\d{2,4})/);if(ym)year=normalizeYear(ym[1],s);
+      if(!year){const candidate=[...nums].reverse().find(n=>n>31);if(candidate)year=normalizeYear(candidate,s);}
+      if(!year)year=now.getFullYear();
+      return day?datePeriod(year,month,day):monthPeriod(year,month);
     }
 
-    m=s.match(/(?:เดือน\s*)(\d{1,2})(?:\s*(?:ปี)?\s*(\d{2,4}))?/);
-    if(m){const mo=+m[1];if(mo<1||mo>12)return null;const y=m[2]?normalizeYear(m[2],s):currentYear();return monthPeriod(y,mo);}
+    m=s.match(/(?:เดือน\s*)?(\d{1,2})\s*(?:ปี\s*)?(\d{2,4})?/);
+    if(m&&/เดือน/.test(s)){
+      const mo=+m[1];if(mo<1||mo>12)return null;
+      const year=m[2]?normalizeYear(m[2],s):now.getFullYear();return monthPeriod(year,mo);
+    }
 
-    const nums=(s.match(/\d+/g)||[]).map(Number);
-    if(nums.length>=3){const d=nums[0],mo=nums[1],y=normalizeYear(nums[2],s);return datePeriod(y,mo,d);}
+    m=s.match(/^(\d{1,2})\s+(\d{1,2})\s+(\d{2,4})$/);
+    if(m)return datePeriod(normalizeYear(m[3],s),+m[2],+m[1]);
     return null;
-  }
-
-  function handleAnswer(text){
-    if(state.step==='type'){
-      if(/เดินทาง|ค่าเดินทาง/.test(text)){state.type='travel';ask('ได้ครับ ขอรหัสพนักงานหน่อยครับ พูดตัวเลขทีละหลักได้เลย','employee');return;}
-      if(/โอ\s*ที|OT|ot|โอที/.test(text)){state.type='ot';ask('ได้ครับ ขอรหัสพนักงานหน่อยครับ พูดตัวเลขทีละหลักได้เลย','employee');return;}
-      ask('ขออีกครั้งนะครับ ต้องการเช็กค่าเดินทาง หรือโอทีครับ','type');return;
-    }
-    if(state.step==='employee'){
-      const id=parseEmployeeId(text);
-      if(!id){ask('ผมฟังรหัสไม่ชัดครับ ลองพูดตัวเลขทีละหลักอีกครั้งนะครับ','employee');return;}
-      state.employeeId=id;
-      ask(
-        `รับรหัสพนักงาน ${id} แล้วครับ ต้องการตรวจสอบช่วงไหนครับ`,
-        'start',
-        `รับรหัสพนักงาน ${employeeIdSpeech(id)} แล้วครับ ต้องการตรวจสอบช่วงไหนครับ พูดชื่อเดือน เช่น สิงหาคม ปี 2569 หรือพูดวันที่เริ่มต้นก็ได้ครับ`
-      );
-      return;
-    }
-    if(state.step==='start'){
-      const p=parsePeriod(text);
-      if(!p){ask('ผมยังจับช่วงเวลาไม่ได้ครับ ลองพูดว่า สิงหาคม ปี 2569 หรือ 1 เดือน 8 ปี 26 ก็ได้ครับ','start');return;}
-      if(p.kind==='month'){
-        state.startDate=p.start;state.endDate=p.end;state.step='loading';
-        setStatus(`กำลังตรวจสอบข้อมูลของรหัส ${state.employeeId} สำหรับเดือน ${p.label}...`);
-        speak(`ได้ครับ ผมจะเช็กทั้งเดือน ${p.label} ให้เลย รอสักครู่นะครับ`);lookup();return;
-      }
-      state.startDate=p.date;
-      ask(`เริ่มวันที่ ${thaiDate(p.date)} แล้วครับ วันที่สิ้นสุดเป็นวันไหนครับ`,'end',`ได้ครับ เริ่มวันที่ ${thaiDate(p.date)} แล้ววันที่สิ้นสุดเป็นวันไหนครับ`);
-      return;
-    }
-    if(state.step==='end'){
-      if(/วันเดียวกัน|วันเดิม|วันนั้น/.test(text)){
-        state.endDate=state.startDate;
-      }else{
-        const p=parsePeriod(text);
-        if(!p){ask('ผมฟังวันที่สิ้นสุดไม่ชัดครับ ลองพูดวันที่อีกครั้ง หรือพูดว่า วันเดียวกัน ก็ได้ครับ','end');return;}
-        state.endDate=p.kind==='month'?p.end:p.date;
-      }
-      if(state.endDate<state.startDate){ask('วันที่สิ้นสุดอยู่ก่อนวันที่เริ่มต้นครับ ขอวันที่สิ้นสุดใหม่อีกครั้งนะครับ','end');return;}
-      state.step='loading';setStatus('กำลังตรวจสอบข้อมูลจากฐานข้อมูล...');
-      speak('ได้ครับ ผมกำลังเช็กข้อมูลให้ รอสักครู่นะครับ');lookup();
-    }
   }
 
   async function post(payload){
@@ -257,29 +217,106 @@
     const t=await r.text();let x;try{x=JSON.parse(t)}catch{throw Error('Apps Script ตอบกลับไม่ถูกต้อง');}
     if(!x.success)throw Error(x.message||'ค้นข้อมูลไม่สำเร็จ');return x;
   }
+  async function getEmployeeName(id){
+    const actions=state.type==='travel'?['getTravelSummary','getOTSummary']:['getOTSummary','getTravelSummary'];
+    for(const action of actions){
+      try{const x=await post({action,employeeId:id,month:'',startDate:'',endDate:''});if(String(x.employeeName||'').trim())return String(x.employeeName).trim();}catch(_){ }
+    }
+    return '';
+  }
+  function nameForSpeech(fullName){
+    const parts=String(fullName||'').trim().split(/\s+/).filter(Boolean);if(!parts.length)return '';
+    const first=parts.shift(),last=parts.join(' ');return last?`ชื่อ ${first} นามสกุล ${last}`:`ชื่อ ${first}`;
+  }
+
+  async function handleAnswer(text){
+    if(state.step==='type'){
+      if(/เดินทาง|ค่าเดินทาง/.test(text)){state.type='travel';ask('ได้ค่ะ ขอรหัสพนักงานนะคะ พูดตัวเลขทีละหลักได้เลย','employee');return;}
+      if(/โอ\s*ที|OT|ot|โอที/.test(text)){state.type='ot';ask('ได้ค่ะ ขอรหัสพนักงานนะคะ พูดตัวเลขทีละหลักได้เลย','employee');return;}
+      ask('ขออีกครั้งนะคะ ต้องการเช็กค่าเดินทาง หรือโอทีคะ','type');return;
+    }
+    if(state.step==='employee'){
+      const id=parseEmployeeId(text);
+      if(!id){ask('ได้ยินรหัสไม่ชัดค่ะ ลองพูดตัวเลขทีละหลักอีกครั้งนะคะ','employee');return;}
+      state.employeeId=id;
+      setStatus(`กำลังตรวจสอบรหัสพนักงาน ${id}...`);
+      state.employeeName=await getEmployeeName(id);
+      const nameText=state.employeeName?` • ${state.employeeName}`:'';
+      const spokenName=state.employeeName?` ${nameForSpeech(state.employeeName)}`:' ยังไม่พบชื่อในรายการย้อนหลัง';
+      ask(`รหัสพนักงาน ${id}${nameText} • ต้องการตรวจสอบช่วงไหน`,'start',`รับรหัสพนักงาน ${employeeIdSpeech(id)}${spokenName} แล้วค่ะ ต้องการตรวจสอบช่วงไหนคะ พูดชื่อเดือน เช่น สิงหาคม ปี 2569 หรือพูดวันที่เริ่มต้นก็ได้ค่ะ`);
+      return;
+    }
+    if(state.step==='start'){
+      const p=parsePeriod(text);
+      if(!p){ask('ได้ยินช่วงเวลาไม่ชัดค่ะ ลองพูดชื่อเดือน เช่น สิงหาคม หรือพูด 1 เดือน 8 ปี 26 อีกครั้งนะคะ','start');return;}
+      if(p.kind==='month'){
+        state.startDate=p.start;state.endDate=p.end;state.periodLabel=p.label;state.step='loading';
+        setStatus(`กำลังตรวจสอบข้อมูลเดือน ${p.label}...`);speak(`ได้ค่ะ จะตรวจสอบทั้งเดือน ${p.label} กำลังค้นข้อมูลให้นะคะ`);lookup();return;
+      }
+      state.startDate=p.date;state.periodLabel=p.label;
+      ask(`เริ่มวันที่ ${p.label} • กรุณาระบุวันที่สิ้นสุด`,'end',`ได้ค่ะ เริ่มวันที่ ${p.label} แล้ววันที่สิ้นสุดเป็นวันไหนคะ`);return;
+    }
+    if(state.step==='end'){
+      const p=parsePeriod(text);
+      if(!p){ask('ได้ยินวันที่สิ้นสุดไม่ชัดค่ะ ลองพูดใหม่อีกครั้งนะคะ','end');return;}
+      const d=p.kind==='month'?p.end:p.date;
+      if(d<state.startDate){ask('วันที่สิ้นสุดอยู่ก่อนวันที่เริ่มต้นค่ะ ขอวันที่สิ้นสุดใหม่อีกครั้งนะคะ','end');return;}
+      state.endDate=d;state.periodLabel=`${thaiDate(state.startDate)} - ${thaiDate(state.endDate)}`;state.step='loading';
+      setStatus('กำลังตรวจสอบข้อมูลจากฐานข้อมูล...');speak('ได้ค่ะ กำลังเช็กข้อมูลให้ รอสักครู่นะคะ');lookup();
+    }
+  }
+
+  function groupByDate(rows){
+    const map={};(rows||[]).forEach(r=>{const d=String(r.date||'').slice(0,10)||'ไม่ระบุวันที่';(map[d]||(map[d]=[])).push(r);});
+    return Object.entries(map).sort((a,b)=>a[0].localeCompare(b[0]));
+  }
+  function attachmentLinks(r){
+    const links=[];
+    if(r.receiptOutUrl)links.push(`<a href="${esc(r.receiptOutUrl)}" target="_blank" rel="noopener">ขาไป</a>`);
+    if(r.receiptBackUrl)links.push(`<a href="${esc(r.receiptBackUrl)}" target="_blank" rel="noopener">ขากลับ</a>`);
+    return links.length?links.join(' / '):'-';
+  }
+  function renderTravelDays(rows){
+    if(!rows.length)return '<div class="voice-empty">ไม่พบรายละเอียดค่าเดินทางในช่วงที่เลือก</div>';
+    return `<div class="voice-daily"><h3>📅 รายละเอียดค่าเดินทางรายวัน</h3>${groupByDate(rows).map(([date,items])=>{
+      const km=items.reduce((s,r)=>s+Number(r.totalKm||0),0),amount=items.reduce((s,r)=>s+Number(r.amount||0),0);
+      return `<div class="voice-day"><div class="voice-day-head"><strong>${thaiDate(date)} • ${items.length} รายการ</strong><span class="voice-day-total">${num(km)} กม. • ${num(amount)} บาท</span></div><div class="voice-detail-wrap"><table class="voice-detail-table"><thead><tr><th>ต้นทาง → ปลายทาง</th><th>สาเหตุ</th><th>ประเภท</th><th>ระยะทาง</th><th>ค่าเดินทาง</th><th>เอกสาร</th><th>สถานะ</th></tr></thead><tbody>${items.map(r=>`<tr><td>${esc(r.origin||'-')} → ${esc(r.destination||'-')}</td><td>${esc(r.travelReason||'-')}</td><td>${esc(r.transportType||'-')}</td><td>${num(r.totalKm)} กม.</td><td>${num(r.amount)} บาท</td><td>${attachmentLinks(r)}</td><td>${esc(r.status||'-')}</td></tr>`).join('')}</tbody></table></div></div>`;
+    }).join('')}</div>`;
+  }
+  function renderOTDays(rows){
+    if(!rows.length)return '<div class="voice-empty">ไม่พบรายละเอียด OT ในช่วงที่เลือก</div>';
+    return `<div class="voice-daily"><h3>📅 รายละเอียด OT รายวัน</h3>${groupByDate(rows).map(([date,items])=>{
+      const comp=items.reduce((s,r)=>/ชดชั่วโมง/i.test(String(r.otType||''))?s+Number(r.hours||0):s,0);
+      const paid=items.reduce((s,r)=>/ทำจ่ายเงิน/i.test(String(r.otType||''))?s+Number(r.hours||0):s,0);
+      const total=items.reduce((s,r)=>s+Number(r.hours||0),0);
+      return `<div class="voice-day"><div class="voice-day-head"><strong>${thaiDate(date)} • ${items.length} รายการ</strong><span class="voice-day-total">ชด ${num(comp)} ชม. • จ่าย ${num(paid)} ชม. • รวม ${num(total)} ชม.</span></div><div class="voice-detail-wrap"><table class="voice-detail-table"><thead><tr><th>สาขา</th><th>เวลา</th><th>ชั่วโมง</th><th>ประเภท OT</th><th>เหตุผล</th><th>สถานะ</th></tr></thead><tbody>${items.map(r=>`<tr><td>${esc(r.branch||'-')}</td><td>${esc(r.startTime||'-')} - ${esc(r.endTime||'-')}</td><td>${num(r.hours)}</td><td>${esc(r.otType||'-')}</td><td>${esc(r.reason||'-')}</td><td>${esc(r.status||'-')}</td></tr>`).join('')}</tbody></table></div></div>`;
+    }).join('')}</div>`;
+  }
 
   async function lookup(){
     try{
       if(state.type==='travel'){
         const x=await post({action:'getTravelSummary',employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''});
-        const rows=x.records||[];const count=Number(x.totals?.count||rows.length||0),km=Number(x.totals?.totalKm||0),amount=Number(x.totals?.totalAmount||0);
-        const display=count?`พบค่าเดินทาง ${count} รายการ ระยะทางรวม ${num(km)} กิโลเมตร ค่าเดินทางรวม ${num(amount)} บาท`:`ไม่พบข้อมูลค่าเดินทางของรหัสพนักงาน ${state.employeeId} ในช่วงที่เลือก`;
-        const spoken=count?`เจอข้อมูลแล้วครับ มีค่าเดินทางทั้งหมด ${count} รายการ ระยะทางรวม ${num(km)} กิโลเมตร และค่าเดินทางรวม ${num(amount)} บาทครับ`:`ไม่พบข้อมูลค่าเดินทางของรหัสพนักงาน ${employeeIdSpeech(state.employeeId)} ในช่วงที่เลือกครับ`;
-        $('voiceResult').innerHTML=`<div class="summary-panel"><h3>🚙 สรุปค่าเดินทาง</h3><p><b>รหัสพนักงาน:</b> ${esc(state.employeeId)} ${x.employeeName?`• ${esc(x.employeeName)}`:''}</p><p><b>ช่วงวันที่:</b> ${thaiDate(state.startDate)} - ${thaiDate(state.endDate)}</p><div class="metric-grid"><div class="metric"><small>จำนวนรายการ</small><strong>${count}</strong></div><div class="metric"><small>ระยะทางรวม</small><strong>${num(km)} กม.</strong></div><div class="metric"><small>ค่าเดินทางรวม</small><strong>${num(amount)} บาท</strong></div></div></div>`;
-        setStatus(display);speak(spoken+' ถ้าต้องการเช็กอีกครั้ง กดเริ่มคุยกับระบบได้เลยครับ');
+        const rows=(x.records||[]).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+        const count=Number(x.totals?.count||rows.length||0),km=Number(x.totals?.totalKm||0),amount=Number(x.totals?.totalAmount||0);
+        const name=x.employeeName||state.employeeName||'';state.employeeName=name;
+        const message=count?`พบข้อมูลค่าเดินทาง ${count} รายการ ระยะทางรวม ${num(km)} กิโลเมตร ค่าเดินทางรวม ${num(amount)} บาทค่ะ`:`ไม่พบข้อมูลค่าเดินทางของรหัสพนักงาน ${employeeIdSpeech(state.employeeId)} ในช่วงที่เลือกค่ะ`;
+        $('voiceResult').innerHTML=`<div class="summary-panel"><h3>🚙 สรุปค่าเดินทาง</h3><div class="voice-emp">รหัสพนักงาน ${esc(state.employeeId)}${name?` • ${esc(name)}`:''}</div><p><b>ช่วงเวลา:</b> ${esc(state.periodLabel||`${thaiDate(state.startDate)} - ${thaiDate(state.endDate)}`)}</p><div class="metric-grid"><div class="metric"><small>จำนวนรายการ</small><strong>${count}</strong></div><div class="metric"><small>ระยะทางรวม</small><strong>${num(km)} กม.</strong></div><div class="metric"><small>ค่าเดินทางรวม</small><strong>${num(amount)} บาท</strong></div></div>${renderTravelDays(rows)}</div>`;
+        setStatus(message);speak(message+' รายละเอียดแยกตามวันแสดงอยู่ด้านล่างค่ะ');
       }else{
         const x=await post({action:'getOTSummary',employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''});
-        const rows=x.records||[];const count=Number(x.totals?.count||rows.length||0);
+        const rows=(x.records||[]).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+        const count=Number(x.totals?.count||rows.length||0);
         const comp=rows.reduce((s,r)=>/ชดชั่วโมง/i.test(String(r.otType||''))?s+Number(r.hours||0):s,0);
         const paid=rows.reduce((s,r)=>/ทำจ่ายเงิน/i.test(String(r.otType||''))?s+Number(r.hours||0):s,0);
         const total=rows.reduce((s,r)=>s+Number(r.hours||0),0);
-        const display=count?`พบ OT ${count} รายการ • ชดชั่วโมง ${num(comp)} ชม. • จ่ายเงิน ${num(paid)} ชม. • รวม ${num(total)} ชม.`:`ไม่พบข้อมูล OT ของรหัสพนักงาน ${state.employeeId} ในช่วงที่เลือก`;
-        const spoken=count?`เจอข้อมูลแล้วครับ มีโอทีทั้งหมด ${count} รายการ เป็นโอทีชดชั่วโมง ${num(comp)} ชั่วโมง โอทีทำจ่ายเงิน ${num(paid)} ชั่วโมง รวมทั้งหมด ${num(total)} ชั่วโมงครับ`:`ไม่พบข้อมูลโอทีของรหัสพนักงาน ${employeeIdSpeech(state.employeeId)} ในช่วงที่เลือกครับ`;
-        $('voiceResult').innerHTML=`<div class="summary-panel"><h3>⏰ สรุป OT</h3><p><b>รหัสพนักงาน:</b> ${esc(state.employeeId)} ${x.employeeName?`• ${esc(x.employeeName)}`:''}</p><p><b>ช่วงวันที่:</b> ${thaiDate(state.startDate)} - ${thaiDate(state.endDate)}</p><div class="metric-grid"><div class="metric"><small>OT ชดชั่วโมง</small><strong>${num(comp)} ชม.</strong></div><div class="metric"><small>OT ทำจ่ายเงิน</small><strong>${num(paid)} ชม.</strong></div><div class="metric"><small>OT รวม</small><strong>${num(total)} ชม.</strong></div></div></div>`;
-        setStatus(display);speak(spoken+' ถ้าต้องการเช็กอีกครั้ง กดเริ่มคุยกับระบบได้เลยครับ');
+        const name=x.employeeName||state.employeeName||'';state.employeeName=name;
+        const message=count?`พบโอที ${count} รายการ โอทีชดชั่วโมง ${num(comp)} ชั่วโมง โอทีทำจ่ายเงิน ${num(paid)} ชั่วโมง รวม ${num(total)} ชั่วโมงค่ะ`:`ไม่พบข้อมูลโอทีของรหัสพนักงาน ${employeeIdSpeech(state.employeeId)} ในช่วงที่เลือกค่ะ`;
+        $('voiceResult').innerHTML=`<div class="summary-panel"><h3>⏰ สรุป OT</h3><div class="voice-emp">รหัสพนักงาน ${esc(state.employeeId)}${name?` • ${esc(name)}`:''}</div><p><b>ช่วงเวลา:</b> ${esc(state.periodLabel||`${thaiDate(state.startDate)} - ${thaiDate(state.endDate)}`)}</p><div class="metric-grid"><div class="metric"><small>OT ชดชั่วโมง</small><strong>${num(comp)} ชม.</strong></div><div class="metric"><small>OT ทำจ่ายเงิน</small><strong>${num(paid)} ชม.</strong></div><div class="metric"><small>OT รวม</small><strong>${num(total)} ชม.</strong></div></div>${renderOTDays(rows)}</div>`;
+        setStatus(message);speak(message+' รายละเอียดแยกตามวันแสดงอยู่ด้านล่างค่ะ');
       }
       state.step='done';
-    }catch(e){setStatus('เกิดข้อผิดพลาด: '+e.message);speak('ขอโทษครับ ตอนนี้ตรวจสอบข้อมูลไม่ได้ ลองใหม่อีกครั้งนะครับ');state.step='idle';}
+    }catch(e){setStatus('เกิดข้อผิดพลาด: '+e.message);speak('ไม่สามารถตรวจสอบข้อมูลได้ค่ะ กรุณาลองใหม่อีกครั้ง');state.step='idle';}
   }
 
   function boot(){appendUI();}
