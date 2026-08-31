@@ -26,7 +26,7 @@
     if(!window.speechSynthesis)return;
     const voices=speechSynthesis.getVoices()||[];
     const thai=voices.filter(v=>/^th(?:-|_)/i.test(v.lang||'')||/thai|ไทย/i.test(v.name||''));
-    const femaleHint=/female|woman|girl|young|youth|หญิง|สาว|kanya|narisa|premwadee|pim|ploy|suda|siri|woranuch|nicha/i;
+    const femaleHint=/female|woman|girl|young|youth|anime|หญิง|สาว|kanya|narisa|premwadee|pim|ploy|suda|siri|woranuch|nicha/i;
     youthfulThaiVoice=thai.find(v=>femaleHint.test(v.name||''))||thai.find(v=>/google.*ไทย|google.*thai/i.test(v.name||''))||thai.find(v=>v.localService)||thai[0]||null;
   }
   chooseYouthfulThaiVoice();
@@ -42,8 +42,8 @@
     const u=new SpeechSynthesisUtterance(text);
     u.lang='th-TH';
     if(youthfulThaiVoice)u.voice=youthfulThaiVoice;
-    u.rate=1.12;
-    u.pitch=1.16;
+    u.rate=1.15;
+    u.pitch=1.28;
     u.volume=1;
     u.onend=()=>after&&setTimeout(after,170);
     u.onerror=()=>after&&setTimeout(after,170);
@@ -87,7 +87,7 @@
         <div id="voiceStatus" style="margin:18px auto 6px;padding:14px;max-width:680px;border-radius:14px;background:#fff8dc;color:#6d5500;font-weight:800">กด “เริ่มคำสั่งเสียง” แล้วพูดคำสั่ง</div>
         <div id="voiceHeard" style="font-size:12px;color:#6b776e;min-height:20px"></div>
         <div id="voiceFlow" style="margin:16px auto;max-width:680px;text-align:left;background:#f7fbf8;border:1px solid #dfeae2;border-radius:14px;padding:14px;font-size:13px">
-          <b>พูดช่วงเวลาได้หลายแบบ</b><br>
+          <b>พูดรหัสได้ทั้งไทย / English</b><br>• DVT-Y223 → “ดี วี ที ขีด วาย สอง สอง สาม”<br>• M-3002 → “เอ็ม ขีด สาม ศูนย์ ศูนย์ สอง”<br><br><b>พูดช่วงเวลาได้หลายแบบ</b><br>
           • “สิงหาคม” / “เดือนสิงหาคม ปี 2569”<br>
           • “เดือน 8 ปี 26” / “เดือน 8 ปี 69”<br>
           • “1 เดือน 8 ปี 26” / “1 สิงหาคม 2569” / “1/8/69”<br>
@@ -97,7 +97,7 @@
       </div>`;
     document.querySelector('main').appendChild(sec);
 
-    $('voiceSupport').textContent=SpeechRecognition?'พร้อมรับคำสั่งเสียงภาษาไทย ✓':'เบราว์เซอร์นี้ไม่รองรับ Speech Recognition กรุณาใช้ Chrome หรือ Edge';
+    $('voiceSupport').textContent=SpeechRecognition?'พร้อมรับรหัสพนักงานด้วยเสียงภาษาไทย / English ✓':'เบราว์เซอร์นี้ไม่รองรับ Speech Recognition กรุณาใช้ Chrome หรือ Edge';
     $('goVoiceAssistant').onclick=openVoice;
     $('voiceBack').onclick=goHome;
     $('voiceStart').onclick=startFlow;
@@ -148,16 +148,30 @@
     return String(s||'').replace(/[๐-๙]/g,c=>map[c]);
   }
   function parseEmployeeId(text){
-    let s=normalizeThaiDigits(text).toLowerCase();
-    const direct=s.match(/\d{2,10}/g);
-    if(direct)return direct.join('').replace(/\D/g,'');
-    const words=[['ศูนย์','0'],['หนึ่ง','1'],['เอ็ด','1'],['สอง','2'],['สาม','3'],['สี่','4'],['ห้า','5'],['หก','6'],['เจ็ด','7'],['แปด','8'],['เก้า','9']];
-    for(const [w,d] of words)s=s.replace(new RegExp(w,'g'),` ${d} `);
-    const ds=s.match(/\d/g);return ds?ds.join(''):'';
+    let raw=normalizeThaiDigits(text).trim().replace(/[–—]/g,'-');
+    const upper=raw.toUpperCase();
+    const direct=upper.match(/(?:[A-Z]{1,12}(?:-[A-Z0-9]{1,16}|[A-Z0-9]{1,16})|\d{2,16})/);
+    if(direct && /[A-Z0-9]/.test(direct[0])) return direct[0].replace(/^-+|-+$/g,'');
+    let s=raw.toLowerCase();
+    const replacements=[
+      ['ดับเบิลยู','W'],['double u','W'],['เอ็กซ์','X'],['เอช','H'],['เอฟ','F'],['แอล','L'],['เอ็ม','M'],['เอ็น','N'],['อาร์','R'],['เอส','S'],['แซด','Z'],
+      ['เอ','A'],['บี','B'],['ซี','C'],['ดี','D'],['อี','E'],['จี','G'],['ไอ','I'],['เจ','J'],['เค','K'],['โอ','O'],['พี','P'],['คิว','Q'],['ที','T'],['ยู','U'],['วี','V'],['วาย','Y'],
+      ['dee','D'],['vee','V'],['tee','T'],['why','Y'],['em','M'],['en','N'],['bee','B'],['see','C'],['gee','G'],['jay','J'],['kay','K'],['pee','P'],['cue','Q'],['are','R'],['you','U'],['ex','X'],['zed','Z'],
+      ['ขีดกลาง','-'],['เครื่องหมายขีด','-'],['ขีด','-'],['dash','-'],['hyphen','-'],
+      ['ศูนย์','0'],['หนึ่ง','1'],['เอ็ด','1'],['สอง','2'],['สาม','3'],['สี่','4'],['ห้า','5'],['หก','6'],['เจ็ด','7'],['แปด','8'],['เก้า','9'],
+      ['zero','0'],['one','1'],['two','2'],['three','3'],['four','4'],['five','5'],['six','6'],['seven','7'],['eight','8'],['nine','9']
+    ];
+    for(const [from,to] of replacements){
+      s=s.replace(new RegExp(from.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),` ${to} `);
+    }
+    let id=s.toUpperCase().replace(/\s+/g,'').replace(/[^A-Z0-9-]/g,'');
+    id=id.replace(/-+/g,'-').replace(/^-+|-+$/g,'');
+    return /[A-Z0-9]/.test(id)?id:'';
   }
   function employeeIdSpeech(id){
-    const words={'0':'ศูนย์','1':'หนึ่ง','2':'สอง','3':'สาม','4':'สี่','5':'ห้า','6':'หก','7':'เจ็ด','8':'แปด','9':'เก้า'};
-    return String(id||'').split('').map(d=>words[d]||d).join(' ');
+    const digit={'0':'ศูนย์','1':'หนึ่ง','2':'สอง','3':'สาม','4':'สี่','5':'ห้า','6':'หก','7':'เจ็ด','8':'แปด','9':'เก้า'};
+    const letter={A:'เอ',B:'บี',C:'ซี',D:'ดี',E:'อี',F:'เอฟ',G:'จี',H:'เอช',I:'ไอ',J:'เจ',K:'เค',L:'แอล',M:'เอ็ม',N:'เอ็น',O:'โอ',P:'พี',Q:'คิว',R:'อาร์',S:'เอส',T:'ที',U:'ยู',V:'วี',W:'ดับเบิลยู',X:'เอ็กซ์',Y:'วาย',Z:'แซด'};
+    return String(id||'').toUpperCase().split('').map(ch=>digit[ch]||letter[ch]||(ch==='-'?'ขีด':ch)).join(' ');
   }
 
   function normalizeYear(raw,text=''){
@@ -231,13 +245,13 @@
 
   async function handleAnswer(text){
     if(state.step==='type'){
-      if(/เดินทาง|ค่าเดินทาง/.test(text)){state.type='travel';ask('ได้ค่ะ ขอรหัสพนักงานนะคะ พูดตัวเลขทีละหลักได้เลย','employee');return;}
-      if(/โอ\s*ที|OT|ot|โอที/.test(text)){state.type='ot';ask('ได้ค่ะ ขอรหัสพนักงานนะคะ พูดตัวเลขทีละหลักได้เลย','employee');return;}
+      if(/เดินทาง|ค่าเดินทาง/.test(text)){state.type='travel';ask('ได้ค่ะ ขอรหัสพนักงานนะคะ พูดได้ทั้งตัวเลขและตัวอักษร เช่น ดี วี ที ขีด วาย สอง สอง สาม','employee');return;}
+      if(/โอ\s*ที|OT|ot|โอที/.test(text)){state.type='ot';ask('ได้ค่ะ ขอรหัสพนักงานนะคะ พูดได้ทั้งตัวเลขและตัวอักษร เช่น ดี วี ที ขีด วาย สอง สอง สาม','employee');return;}
       ask('ขออีกครั้งนะคะ ต้องการเช็กค่าเดินทาง หรือโอทีคะ','type');return;
     }
     if(state.step==='employee'){
       const id=parseEmployeeId(text);
-      if(!id){ask('ได้ยินรหัสไม่ชัดค่ะ ลองพูดตัวเลขทีละหลักอีกครั้งนะคะ','employee');return;}
+      if(!id){ask('ได้ยินรหัสไม่ชัดค่ะ ลองพูดทีละตัว เช่น เอ็ม ขีด สาม ศูนย์ ศูนย์ สอง อีกครั้งนะคะ','employee');return;}
       state.employeeId=id;
       setStatus(`กำลังตรวจสอบรหัสพนักงาน ${id}...`);
       state.employeeName=await getEmployeeName(id);
