@@ -1,0 +1,60 @@
+name: Refine KAMU voice no code speech
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/refine-kamu-voice-no-code-speech.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch voice assistant
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('travel-expense/voice-assistant.js')
+          s=p.read_text()
+
+          s=s.replace('u.rate=1.15;', 'u.rate=1.10;')
+          s=s.replace('u.rate=1.12;', 'u.rate=1.10;')
+
+          s=s.replace('''        <p class="desc">พูดว่า “ตรวจสอบค่าเดินทาง” หรือ “ตรวจสอบ OT” แล้วตอบรหัสพนักงานและช่วงเวลาที่ต้องการ</p>\n''','')
+          s=re.sub(r'''\n        <div id="voiceSupport"[^>]*></div>''','',s)
+          s=re.sub(r'''\n        <div id="voiceFlow".*?</div>''','',s,flags=re.S)
+          s=re.sub(r"\n\s*\$\('voiceSupport'\)\.textContent=.*?;",'',s)
+
+          s=s.replace("ask('ได้ค่ะ ขอรหัสพนักงานนะคะ พูดได้ทั้งตัวเลขและตัวอักษร เช่น ดี วี ที ขีด วาย สอง สอง สาม','employee')","ask('ขอรหัสพนักงานค่ะ','employee')")
+          s=s.replace("ask('ได้ค่ะ ขอรหัสพนักงานนะคะ พูดตัวเลขทีละหลักได้เลย','employee')","ask('ขอรหัสพนักงานค่ะ','employee')")
+          s=s.replace("ask('ได้ยินรหัสไม่ชัดค่ะ ลองพูดทีละตัว เช่น เอ็ม ขีด สาม ศูนย์ ศูนย์ สอง อีกครั้งนะคะ','employee')","ask('ขอรหัสพนักงานอีกครั้งค่ะ','employee')")
+          s=s.replace("ask('ได้ยินรหัสไม่ชัดค่ะ ลองพูดตัวเลขทีละหลักอีกครั้งนะคะ','employee')","ask('ขอรหัสพนักงานอีกครั้งค่ะ','employee')")
+
+          old="""      const spokenName=state.employeeName?` ${nameForSpeech(state.employeeName)}`:' ยังไม่พบชื่อในรายการย้อนหลัง';
+      ask(`รหัสพนักงาน ${id}${nameText} • ต้องการตรวจสอบช่วงไหน`,'start',`รับรหัสพนักงาน ${employeeIdSpeech(id)}${spokenName} แล้วค่ะ ต้องการตรวจสอบช่วงไหนคะ พูดชื่อเดือน เช่น สิงหาคม ปี 2569 หรือพูดวันที่เริ่มต้นก็ได้ค่ะ`);"""
+          new="""      const spokenName=state.employeeName?`${nameForSpeech(state.employeeName)}`:'ยังไม่พบชื่อในรายการย้อนหลังค่ะ';
+      ask(`รหัสพนักงาน ${id}${nameText} • ต้องการตรวจสอบช่วงไหน`,'start',`${spokenName} ต้องการตรวจสอบช่วงไหนคะ`);"""
+          if old in s:
+              s=s.replace(old,new)
+          else:
+              s=re.sub(r"\s*const spokenName=.*?\n\s*ask\(`รหัสพนักงาน \$\{id\}.*?;", "\n      const spokenName=state.employeeName?`${nameForSpeech(state.employeeName)}`:'ยังไม่พบชื่อในรายการย้อนหลังค่ะ';\n      ask(`รหัสพนักงาน ${id}${nameText} • ต้องการตรวจสอบช่วงไหน`,'start',`${spokenName} ต้องการตรวจสอบช่วงไหนคะ`);", s, count=1, flags=re.S)
+
+          s=s.replace("`ไม่พบข้อมูลค่าเดินทางของรหัสพนักงาน ${employeeIdSpeech(state.employeeId)} ในช่วงที่เลือกค่ะ`", "`ไม่พบข้อมูลค่าเดินทางในช่วงที่เลือกค่ะ`")
+          s=s.replace("`ไม่พบข้อมูลโอทีของรหัสพนักงาน ${employeeIdSpeech(state.employeeId)} ในช่วงที่เลือกค่ะ`", "`ไม่พบข้อมูลโอทีในช่วงที่เลือกค่ะ`")
+
+          p.write_text(s)
+
+          idx=Path('travel-expense/index.html')
+          t=idx.read_text()
+          t=re.sub(r'voice-assistant\.js\?v=[^"\']+', 'voice-assistant.js?v=20260831-voice9-nocode', t)
+          idx.write_text(t)
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add travel-expense/voice-assistant.js travel-expense/index.html
+          git diff --cached --quiet || git commit -m "Stop speaking employee IDs and simplify voice prompts"
+          git push
