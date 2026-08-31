@@ -1,0 +1,68 @@
+name: Upgrade KAMU voice IDs and anime tone
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/upgrade-kamu-voice-id-anime.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch voice assistant
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('travel-expense/voice-assistant.js')
+          s=p.read_text()
+          s=s.replace("const femaleHint=/female|woman|girl|young|youth|หญิง|สาว|kanya|narisa|premwadee|pim|ploy|suda|siri|woranuch|nicha/i;","const femaleHint=/female|woman|girl|young|youth|anime|หญิง|สาว|kanya|narisa|premwadee|pim|ploy|suda|siri|woranuch|nicha/i;")
+          s=s.replace("u.rate=1.12;\n    u.pitch=1.16;", "u.rate=1.15;\n    u.pitch=1.28;")
+          s=s.replace("พร้อมรับคำสั่งเสียงภาษาไทย ✓", "พร้อมรับรหัสพนักงานด้วยเสียงภาษาไทย / English ✓")
+          old=re.search(r"  function parseEmployeeId\(text\)\{.*?\n  \}\n  function employeeIdSpeech\(id\)\{.*?\n  \}", s, re.S)
+          if not old: raise SystemExit('employee id parser block not found')
+          new=r'''  function parseEmployeeId(text){
+    let raw=normalizeThaiDigits(text).trim().replace(/[–—]/g,'-');
+    const upper=raw.toUpperCase();
+    const direct=upper.match(/(?:[A-Z]{1,12}(?:-[A-Z0-9]{1,16}|[A-Z0-9]{1,16})|\d{2,16})/);
+    if(direct && /[A-Z0-9]/.test(direct[0])) return direct[0].replace(/^-+|-+$/g,'');
+    let s=raw.toLowerCase();
+    const replacements=[
+      ['ดับเบิลยู','W'],['double u','W'],['เอ็กซ์','X'],['เอช','H'],['เอฟ','F'],['แอล','L'],['เอ็ม','M'],['เอ็น','N'],['อาร์','R'],['เอส','S'],['แซด','Z'],
+      ['เอ','A'],['บี','B'],['ซี','C'],['ดี','D'],['อี','E'],['จี','G'],['ไอ','I'],['เจ','J'],['เค','K'],['โอ','O'],['พี','P'],['คิว','Q'],['ที','T'],['ยู','U'],['วี','V'],['วาย','Y'],
+      ['dee','D'],['vee','V'],['tee','T'],['why','Y'],['em','M'],['en','N'],['bee','B'],['see','C'],['gee','G'],['jay','J'],['kay','K'],['pee','P'],['cue','Q'],['are','R'],['you','U'],['ex','X'],['zed','Z'],
+      ['ขีดกลาง','-'],['เครื่องหมายขีด','-'],['ขีด','-'],['dash','-'],['hyphen','-'],
+      ['ศูนย์','0'],['หนึ่ง','1'],['เอ็ด','1'],['สอง','2'],['สาม','3'],['สี่','4'],['ห้า','5'],['หก','6'],['เจ็ด','7'],['แปด','8'],['เก้า','9'],
+      ['zero','0'],['one','1'],['two','2'],['three','3'],['four','4'],['five','5'],['six','6'],['seven','7'],['eight','8'],['nine','9']
+    ];
+    for(const [from,to] of replacements){
+      s=s.replace(new RegExp(from.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),` ${to} `);
+    }
+    let id=s.toUpperCase().replace(/\s+/g,'').replace(/[^A-Z0-9-]/g,'');
+    id=id.replace(/-+/g,'-').replace(/^-+|-+$/g,'');
+    return /[A-Z0-9]/.test(id)?id:'';
+  }
+  function employeeIdSpeech(id){
+    const digit={'0':'ศูนย์','1':'หนึ่ง','2':'สอง','3':'สาม','4':'สี่','5':'ห้า','6':'หก','7':'เจ็ด','8':'แปด','9':'เก้า'};
+    const letter={A:'เอ',B:'บี',C:'ซี',D:'ดี',E:'อี',F:'เอฟ',G:'จี',H:'เอช',I:'ไอ',J:'เจ',K:'เค',L:'แอล',M:'เอ็ม',N:'เอ็น',O:'โอ',P:'พี',Q:'คิว',R:'อาร์',S:'เอส',T:'ที',U:'ยู',V:'วี',W:'ดับเบิลยู',X:'เอ็กซ์',Y:'วาย',Z:'แซด'};
+    return String(id||'').toUpperCase().split('').map(ch=>digit[ch]||letter[ch]||(ch==='-'?'ขีด':ch)).join(' ');
+  }'''
+          s=s[:old.start()]+new+s[old.end():]
+          s=s.replace("พูดตัวเลขทีละหลักได้เลย", "พูดได้ทั้งตัวเลขและตัวอักษร เช่น ดี วี ที ขีด วาย สอง สอง สาม")
+          s=s.replace("ได้ยินรหัสไม่ชัดค่ะ ลองพูดตัวเลขทีละหลักอีกครั้งนะคะ", "ได้ยินรหัสไม่ชัดค่ะ ลองพูดทีละตัว เช่น เอ็ม ขีด สาม ศูนย์ ศูนย์ สอง อีกครั้งนะคะ")
+          s=s.replace("<b>พูดช่วงเวลาได้หลายแบบ</b><br>", "<b>พูดรหัสได้ทั้งไทย / English</b><br>• DVT-Y223 → “ดี วี ที ขีด วาย สอง สอง สาม”<br>• M-3002 → “เอ็ม ขีด สาม ศูนย์ ศูนย์ สอง”<br><br><b>พูดช่วงเวลาได้หลายแบบ</b><br>")
+          p.write_text(s)
+          idx=Path('travel-expense/index.html')
+          t=idx.read_text()
+          t=re.sub(r'voice-assistant\.js\?v=[^"\']+', 'voice-assistant.js?v=20260831-voice7-anime-id', t)
+          idx.write_text(t)
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add travel-expense/voice-assistant.js travel-expense/index.html
+          git diff --cached --quiet || git commit -m "Support alphanumeric voice IDs and anime voice tone"
+          git push
