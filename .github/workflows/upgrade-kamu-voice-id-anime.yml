@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch voice assistant
+      - name: Patch employee ID display
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -20,25 +20,18 @@ jobs:
           p = Path('travel-expense/voice-assistant.js')
           s = p.read_text()
 
-          s = s.replace('u.rate=1.15;', 'u.rate=1.10;')
-          s = s.replace('u.rate=1.12;', 'u.rate=1.10;')
-
-          s = s.replace("ask('ได้ค่ะ ขอรหัสพนักงานนะคะ พูดได้ทั้งตัวเลขและตัวอักษร เช่น ดี วี ที ขีด วาย สอง สอง สาม','employee')", "ask('ขอรหัสพนักงานค่ะ','employee')")
-          s = s.replace("ask('ได้ค่ะ ขอรหัสพนักงานนะคะ พูดตัวเลขทีละหลักได้เลย','employee')", "ask('ขอรหัสพนักงานค่ะ','employee')")
-          s = s.replace("ask('ได้ยินรหัสไม่ชัดค่ะ ลองพูดทีละตัว เช่น เอ็ม ขีด สาม ศูนย์ ศูนย์ สอง อีกครั้งนะคะ','employee')", "ask('ขอรหัสพนักงานอีกครั้งค่ะ','employee')")
-          s = s.replace("ask('ได้ยินรหัสไม่ชัดค่ะ ลองพูดตัวเลขทีละหลักอีกครั้งนะคะ','employee')", "ask('ขอรหัสพนักงานอีกครั้งค่ะ','employee')")
-
-          old = "รับรหัสพนักงาน ${employeeIdSpeech(id)}${spokenName} แล้วค่ะ ต้องการตรวจสอบช่วงไหนคะ พูดชื่อเดือน เช่น สิงหาคม ปี 2569 หรือพูดวันที่เริ่มต้นก็ได้ค่ะ"
-          new = "รหัสพนักงาน ${employeeIdSpeech(id).replace('ดี วี ที','ดีวีที').replace(/ ขีด /g,' ')}${spokenName} ต้องการตรวจสอบช่วงไหนคะ"
-          s = s.replace(old, new)
-
-          s = s.replace("document.head.appendChild(style);", "document.head.appendChild(style);\n    style.textContent += '#voiceFlow,#voiceSupport,#voiceAssistant .desc{display:none!important}';", 1)
+          old = "      state.employeeId=id;\n      setStatus(`กำลังตรวจสอบรหัสพนักงาน ${id}...`);"
+          new = "      state.employeeId=id;\n      setHeard(`รหัสพนักงาน: ${id}`);\n      setStatus(`กำลังตรวจสอบรหัสพนักงาน ${id}...`);"
+          if old in s:
+              s = s.replace(old, new, 1)
+          elif "setHeard(`รหัสพนักงาน: ${id}`);" not in s:
+              raise SystemExit('employee ID display insertion point not found')
 
           p.write_text(s)
 
           idx = Path('travel-expense/index.html')
           t = idx.read_text()
-          t = re.sub(r'voice-assistant\.js\?v=[^\"]+', 'voice-assistant.js?v=20260831-voice10-confirm', t)
+          t = re.sub(r'voice-assistant\.js\?v=[^\"]+', 'voice-assistant.js?v=20260831-voice11-english-id', t)
           idx.write_text(t)
           PY
       - name: Commit
@@ -46,5 +39,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add travel-expense/voice-assistant.js travel-expense/index.html
-          git diff --cached --quiet || git commit -m "Simplify employee ID prompt and confirm code after recognition"
+          git diff --cached --quiet || git commit -m "Show recognized employee IDs in English format"
           git push
