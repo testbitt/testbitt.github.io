@@ -1,0 +1,77 @@
+name: Update Voice Natural Speech and Employee ID Digits
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-voice-natural-digits-20260831.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update-voice:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch voice assistant
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('travel-expense/voice-assistant.js')
+          s=p.read_text(encoding='utf-8')
+
+          helper="""\n  function employeeIdSpeech(id){\n    const digitWords={'0':'ศูนย์','1':'หนึ่ง','2':'สอง','3':'สาม','4':'สี่','5':'ห้า','6':'หก','7':'เจ็ด','8':'แปด','9':'เก้า'};\n    return String(id||'').split('').map(d=>digitWords[d]||d).join(' ');\n  }\n\n"""
+          if 'function employeeIdSpeech' not in s:
+              marker='  const months={'
+              if marker not in s: raise SystemExit('months marker not found')
+              s=s.replace(marker, helper+marker, 1)
+
+          replacements={
+            "ask('กรุณาพูดว่า ตรวจสอบค่าเดินทาง หรือ ตรวจสอบ โอที','type');":"ask('สวัสดีครับ ต้องการตรวจสอบค่าเดินทาง หรือ ตรวจสอบโอทีครับ','type');",
+            "if(/เดินทาง|ค่าเดินทาง/.test(text)){state.type='travel';ask('กรุณาพูดรหัสพนักงาน โดยพูดตัวเลขทีละหลัก','employee');return;}":"if(/เดินทาง|ค่าเดินทาง/.test(text)){state.type='travel';ask('ได้ครับ ขอรหัสพนักงานหน่อยครับ พูดตัวเลขทีละหลักได้เลย','employee');return;}",
+            "if(/โอ\\s*ที|OT|ot|โอที/.test(text)){state.type='ot';ask('กรุณาพูดรหัสพนักงาน โดยพูดตัวเลขทีละหลัก','employee');return;}":"if(/โอ\\s*ที|OT|ot|โอที/.test(text)){state.type='ot';ask('ได้ครับ ขอรหัสพนักงานหน่อยครับ พูดตัวเลขทีละหลักได้เลย','employee');return;}",
+            "ask('ไม่พบประเภทที่ต้องการ กรุณาพูดว่า ตรวจสอบค่าเดินทาง หรือ ตรวจสอบ โอที','type');return;":"ask('ขออีกครั้งนะครับ ต้องการเช็กค่าเดินทาง หรือโอทีครับ','type');return;",
+            "if(!id){ask('ไม่สามารถอ่านรหัสพนักงานได้ กรุณาพูดรหัสเป็นตัวเลขทีละหลักอีกครั้ง','employee');return;}":"if(!id){ask('ผมฟังรหัสไม่ชัดครับ ลองพูดตัวเลขทีละหลักอีกครั้งนะครับ','employee');return;}",
+            "ask(`รับรหัสพนักงาน ${id} แล้ว กรุณาพูดวันที่เริ่มต้น เช่น 1 สิงหาคม 2569`,'start');return;":"ask(`รับรหัสพนักงาน ${employeeIdSpeech(id)} แล้วครับ ขอวันที่เริ่มต้นที่ต้องการตรวจสอบครับ เช่น 1 สิงหาคม 2569`,'start');return;",
+            "if(!d){ask('อ่านวันที่เริ่มต้นไม่ได้ กรุณาพูดใหม่ เช่น 1 สิงหาคม 2569','start');return;}":"if(!d){ask('ผมฟังวันที่เริ่มต้นไม่ชัดครับ ลองพูดใหม่ เช่น 1 สิงหาคม 2569','start');return;}",
+            "ask(`วันที่เริ่มต้น ${thaiDate(d)} กรุณาพูดวันที่สิ้นสุด`,'end');return;":"ask(`ได้ครับ เริ่มวันที่ ${thaiDate(d)} แล้ววันที่สิ้นสุดเป็นวันไหนครับ`,'end');return;",
+            "if(!d){ask('อ่านวันที่สิ้นสุดไม่ได้ กรุณาพูดใหม่','end');return;}":"if(!d){ask('ผมฟังวันที่สิ้นสุดไม่ชัดครับ ลองพูดวันที่อีกครั้งนะครับ','end');return;}",
+            "if(d<state.startDate){ask('วันที่สิ้นสุดน้อยกว่าวันที่เริ่มต้น กรุณาพูดวันที่สิ้นสุดใหม่','end');return;}":"if(d<state.startDate){ask('วันที่สิ้นสุดอยู่ก่อนวันที่เริ่มต้นครับ ขอวันที่สิ้นสุดใหม่อีกครั้งนะครับ','end');return;}",
+            "speak('กำลังตรวจสอบข้อมูล กรุณารอสักครู่');":"speak('ได้ครับ ผมกำลังเช็กข้อมูลให้ รอสักครู่นะครับ');",
+            "`ไม่พบข้อมูลค่าเดินทางของรหัสพนักงาน ${state.employeeId} ในช่วงวันที่ที่กำหนด`":"`ไม่พบข้อมูลค่าเดินทางของรหัสพนักงาน ${employeeIdSpeech(state.employeeId)} ในช่วงวันที่ที่กำหนดครับ`",
+            "`ไม่พบข้อมูลโอทีของรหัสพนักงาน ${state.employeeId} ในช่วงวันที่ที่กำหนด`":"`ไม่พบข้อมูลโอทีของรหัสพนักงาน ${employeeIdSpeech(state.employeeId)} ในช่วงวันที่ที่กำหนดครับ`"
+          }
+          for old,new in replacements.items():
+              if old in s:
+                  s=s.replace(old,new,1)
+
+          # Make result narration friendlier.
+          s=s.replace("`พบค่าเดินทาง ${count} รายการ ระยะทางรวม ${num(km)} กิโลเมตร ค่าเดินทางรวม ${num(amount)} บาท`",
+                      "`เจอข้อมูลแล้วครับ มีค่าเดินทางทั้งหมด ${count} รายการ ระยะทางรวม ${num(km)} กิโลเมตร และค่าเดินทางรวม ${num(amount)} บาทครับ`")
+          s=s.replace("`พบโอที ${count} รายการ โอทีชดชั่วโมง ${num(comp)} ชั่วโมง โอทีทำจ่ายเงิน ${num(paid)} ชั่วโมง รวม ${num(total)} ชั่วโมง`",
+                      "`เจอข้อมูลแล้วครับ มีโอทีทั้งหมด ${count} รายการ เป็นโอทีชดชั่วโมง ${num(comp)} ชั่วโมง โอทีทำจ่ายเงิน ${num(paid)} ชั่วโมง รวมทั้งหมด ${num(total)} ชั่วโมงครับ`")
+          s=s.replace("message+ ' หากต้องการตรวจสอบใหม่ ให้กดปุ่มเริ่มคำสั่งเสียง'",
+                      "message+' ถ้าต้องการเช็กอีกครั้ง กดเริ่มคุยกับระบบได้เลยครับ'")
+          s=s.replace("message+' หากต้องการตรวจสอบใหม่ ให้กดปุ่มเริ่มคำสั่งเสียง'",
+                      "message+' ถ้าต้องการเช็กอีกครั้ง กดเริ่มคุยกับระบบได้เลยครับ'")
+
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Bump voice cache in index
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('travel-expense/index.html')
+          s=p.read_text(encoding='utf-8')
+          import re
+          s=re.sub(r'voice-assistant\.js\?v=[^"<]+','voice-assistant.js?v=20260831-voice2',s)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add travel-expense/voice-assistant.js travel-expense/index.html
+          git commit -m 'Make voice assistant natural and read employee ID digit by digit'
+          git push
