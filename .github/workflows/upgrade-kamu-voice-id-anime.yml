@@ -15,7 +15,7 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
+          import re, base64
           p=Path('travel-expense/voice-assistant.js')
           s=p.read_text()
           s=s.replace("const femaleHint=/female|woman|girl|young|youth|หญิง|สาว|kanya|narisa|premwadee|pim|ploy|suda|siri|woranuch|nicha/i;","const femaleHint=/female|woman|girl|young|youth|anime|หญิง|สาว|kanya|narisa|premwadee|pim|ploy|suda|siri|woranuch|nicha/i;")
@@ -23,32 +23,7 @@ jobs:
           s=s.replace("พร้อมรับคำสั่งเสียงภาษาไทย ✓", "พร้อมรับรหัสพนักงานด้วยเสียงภาษาไทย / English ✓")
           old=re.search(r"  function parseEmployeeId\(text\)\{.*?\n  \}\n  function employeeIdSpeech\(id\)\{.*?\n  \}", s, re.S)
           if not old: raise SystemExit('employee id parser block not found')
-          new=r'''  function parseEmployeeId(text){
-    let raw=normalizeThaiDigits(text).trim().replace(/[–—]/g,'-');
-    const upper=raw.toUpperCase();
-    const direct=upper.match(/(?:[A-Z]{1,12}(?:-[A-Z0-9]{1,16}|[A-Z0-9]{1,16})|\d{2,16})/);
-    if(direct && /[A-Z0-9]/.test(direct[0])) return direct[0].replace(/^-+|-+$/g,'');
-    let s=raw.toLowerCase();
-    const replacements=[
-      ['ดับเบิลยู','W'],['double u','W'],['เอ็กซ์','X'],['เอช','H'],['เอฟ','F'],['แอล','L'],['เอ็ม','M'],['เอ็น','N'],['อาร์','R'],['เอส','S'],['แซด','Z'],
-      ['เอ','A'],['บี','B'],['ซี','C'],['ดี','D'],['อี','E'],['จี','G'],['ไอ','I'],['เจ','J'],['เค','K'],['โอ','O'],['พี','P'],['คิว','Q'],['ที','T'],['ยู','U'],['วี','V'],['วาย','Y'],
-      ['dee','D'],['vee','V'],['tee','T'],['why','Y'],['em','M'],['en','N'],['bee','B'],['see','C'],['gee','G'],['jay','J'],['kay','K'],['pee','P'],['cue','Q'],['are','R'],['you','U'],['ex','X'],['zed','Z'],
-      ['ขีดกลาง','-'],['เครื่องหมายขีด','-'],['ขีด','-'],['dash','-'],['hyphen','-'],
-      ['ศูนย์','0'],['หนึ่ง','1'],['เอ็ด','1'],['สอง','2'],['สาม','3'],['สี่','4'],['ห้า','5'],['หก','6'],['เจ็ด','7'],['แปด','8'],['เก้า','9'],
-      ['zero','0'],['one','1'],['two','2'],['three','3'],['four','4'],['five','5'],['six','6'],['seven','7'],['eight','8'],['nine','9']
-    ];
-    for(const [from,to] of replacements){
-      s=s.replace(new RegExp(from.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),` ${to} `);
-    }
-    let id=s.toUpperCase().replace(/\s+/g,'').replace(/[^A-Z0-9-]/g,'');
-    id=id.replace(/-+/g,'-').replace(/^-+|-+$/g,'');
-    return /[A-Z0-9]/.test(id)?id:'';
-  }
-  function employeeIdSpeech(id){
-    const digit={'0':'ศูนย์','1':'หนึ่ง','2':'สอง','3':'สาม','4':'สี่','5':'ห้า','6':'หก','7':'เจ็ด','8':'แปด','9':'เก้า'};
-    const letter={A:'เอ',B:'บี',C:'ซี',D:'ดี',E:'อี',F:'เอฟ',G:'จี',H:'เอช',I:'ไอ',J:'เจ',K:'เค',L:'แอล',M:'เอ็ม',N:'เอ็น',O:'โอ',P:'พี',Q:'คิว',R:'อาร์',S:'เอส',T:'ที',U:'ยู',V:'วี',W:'ดับเบิลยู',X:'เอ็กซ์',Y:'วาย',Z:'แซด'};
-    return String(id||'').toUpperCase().split('').map(ch=>digit[ch]||letter[ch]||(ch==='-'?'ขีด':ch)).join(' ');
-  }'''
+          new=base64.b64decode('ICBmdW5jdGlvbiBwYXJzZUVtcGxveWVlSWQodGV4dCl7CiAgICBsZXQgcmF3PW5vcm1hbGl6ZVRoYWlEaWdpdHModGV4dCkudHJpbSgpLnJlcGxhY2UoL1vigJPigJRdL2csJy0nKTsKICAgIGNvbnN0IHVwcGVyPXJhdy50b1VwcGVyQ2FzZSgpOwogICAgY29uc3QgZGlyZWN0PXVwcGVyLm1hdGNoKC8oPzpbQS1aXXsxLDEyfSg/Oi1bQS1aMC05XXsxLDE2fXxbQS1aMC05XXsxLDE2fSl8XGR7MiwxNn0pLyk7CiAgICBpZihkaXJlY3QgJiYgL1tBLVowLTldLy50ZXN0KGRpcmVjdFswXSkpIHJldHVybiBkaXJlY3RbMF0ucmVwbGFjZSgvXi0rfC0rJC9nLCcnKTsKICAgIGxldCBzPXJhdy50b0xvd2VyQ2FzZSgpOwogICAgY29uc3QgcmVwbGFjZW1lbnRzPVsKICAgICAgWyfguJTguLHguJrguYDguJrguLTguKXguKLguLknLCdXJ10sWydkb3VibGUgdScsJ1cnXSxbJ+C5gOC4reC5h+C4geC4i+C5jCcsJ1gnXSxbJ+C5gOC4reC4iicsJ0gnXSxbJ+C5gOC4reC4nycsJ0YnXSxbJ+C5geC4reC4pScsJ0wnXSxbJ+C5gOC4reC5h+C4oScsJ00nXSxbJ+C5gOC4reC5h+C4mScsJ04nXSxbJ+C4reC4suC4o+C5jCcsJ1InXSxbJ+C5gOC4reC4qicsJ1MnXSxbJ+C5geC4i+C4lCcsJ1onXSwKICAgICAgWyfguYDguK0nLCdBJ10sWyfguJrguLUnLCdCJ10sWyfguIvguLUnLCdDJ10sWyfguJTguLUnLCdEJ10sWyfguK3guLUnLCdFJ10sWyfguIjguLUnLCdHJ10sWyfguYTguK0nLCdJJ10sWyfguYDguIgnLCdKJ10sWyfguYDguIQnLCdLJ10sWyfguYLguK0nLCdPJ10sWyfguJ7guLUnLCdQJ10sWyfguITguLTguKcnLCdRJ10sWyfguJfguLUnLCdUJ10sWyfguKLguLknLCdVJ10sWyfguKfguLUnLCdWJ10sWyfguKfguLLguKInLCdZJ10sCiAgICAgIFsnZGVlJywnRCddLFsndmVlJywnViddLFsndGVlJywnVCddLFsnd2h5JywnWSddLFsnZW0nLCdNJ10sWydlbicsJ04nXSxbJ2JlZScsJ0InXSxbJ3NlZScsJ0MnXSxbJ2dlZScsJ0cnXSxbJ2pheScsJ0onXSxbJ2theScsJ0snXSxbJ3BlZScsJ1AnXSxbJ2N1ZScsJ1EnXSxbJ2FyZScsJ1InXSxbJ3lvdScsJ1UnXSxbJ2V4JywnWCddLFsnemVkJywnWiddLAogICAgICBbJ+C4guC4teC4lOC4geC4peC4suC4hycsJy0nXSxbJ+C5gOC4hOC4o+C4t+C5iOC4reC4h+C4q+C4oeC4suC4ouC4guC4teC4lCcsJy0nXSxbJ+C4guC4teC4lCcsJy0nXSxbJ2Rhc2gnLCctJ10sWydoeXBoZW4nLCctJ10sCiAgICAgIFsn4Lio4Li54LiZ4Lii4LmMJywnMCddLFsn4Lir4LiZ4Li24LmI4LiHJywnMSddLFsn4LmA4Lit4LmH4LiUJywnMSddLFsn4Liq4Lit4LiHJywnMiddLFsn4Liq4Liy4LihJywnMyddLFsn4Liq4Li14LmIJywnNCddLFsn4Lir4LmJ4LiyJywnNSddLFsn4Lir4LiBJywnNiddLFsn4LmA4LiI4LmH4LiUJywnNyddLFsn4LmB4Lib4LiUJywnOCddLFsn4LmA4LiB4LmJ4LiyJywnOSddLAogICAgICBbJ3plcm8nLCcwJ10sWydvbmUnLCcxJ10sWyd0d28nLCcyJ10sWyd0aHJlZScsJzMnXSxbJ2ZvdXInLCc0J10sWydmaXZlJywnNSddLFsnc2l4JywnNiddLFsnc2V2ZW4nLCc3J10sWydlaWdodCcsJzgnXSxbJ25pbmUnLCc5J10KICAgIF07CiAgICBmb3IoY29uc3QgW2Zyb20sdG9dIG9mIHJlcGxhY2VtZW50cyl7CiAgICAgIHM9cy5yZXBsYWNlKG5ldyBSZWdFeHAoZnJvbS5yZXBsYWNlKC9bLiorP14ke30oKXxbXF1cXF0vZywnXFwkJicpLCdnaScpLGAgJHt0b30gYCk7CiAgICB9CiAgICBsZXQgaWQ9cy50b1VwcGVyQ2FzZSgpLnJlcGxhY2UoL1xzKy9nLCcnKS5yZXBsYWNlKC9bXkEtWjAtOS1dL2csJycpOwogICAgaWQ9aWQucmVwbGFjZSgvLSsvZywnLScpLnJlcGxhY2UoL14tK3wtKyQvZywnJyk7CiAgICByZXR1cm4gL1tBLVowLTldLy50ZXN0KGlkKT9pZDonJzsKICB9CiAgZnVuY3Rpb24gZW1wbG95ZWVJZFNwZWVjaChpZCl7CiAgICBjb25zdCBkaWdpdD17JzAnOifguKjguLnguJnguKLguYwnLCcxJzon4Lir4LiZ4Li24LmI4LiHJywnMic6J+C4quC4reC4hycsJzMnOifguKrguLLguKEnLCc0Jzon4Liq4Li14LmIJywnNSc6J+C4q+C5ieC4sicsJzYnOifguKvguIEnLCc3Jzon4LmA4LiI4LmH4LiUJywnOCc6J+C5geC4m+C4lCcsJzknOifguYDguIHguYnguLInfTsKICAgIGNvbnN0IGxldHRlcj17QTon4LmA4LitJyxCOifguJrguLUnLEM6J+C4i+C4tScsRDon4LiU4Li1JyxFOifguK3guLUnLEY6J+C5gOC4reC4nycsRzon4LiI4Li1JyxIOifguYDguK3guIonLEk6J+C5hOC4rScsSjon4LmA4LiIJyxLOifguYDguIQnLEw6J+C5geC4reC4pScsTTon4LmA4Lit4LmH4LihJyxOOifguYDguK3guYfguJknLE86J+C5guC4rScsUDon4Lie4Li1JyxROifguITguLTguKcnLFI6J+C4reC4suC4o+C5jCcsUzon4LmA4Lit4LiqJyxUOifguJfguLUnLFU6J+C4ouC4uScsVjon4Lin4Li1JyxXOifguJTguLHguJrguYDguJrguLTguKXguKLguLknLFg6J+C5gOC4reC5h+C4geC4i+C5jCcsWTon4Lin4Liy4LiiJyxaOifguYHguIvguJQnfTsKICAgIHJldHVybiBTdHJpbmcoaWR8fCcnKS50b1VwcGVyQ2FzZSgpLnNwbGl0KCcnKS5tYXAoY2g9PmRpZ2l0W2NoXXx8bGV0dGVyW2NoXXx8KGNoPT09Jy0nPyfguILguLXguJQnOmNoKSkuam9pbignICcpOwogIH0=').decode()
           s=s[:old.start()]+new+s[old.end():]
           s=s.replace("พูดตัวเลขทีละหลักได้เลย", "พูดได้ทั้งตัวเลขและตัวอักษร เช่น ดี วี ที ขีด วาย สอง สอง สาม")
           s=s.replace("ได้ยินรหัสไม่ชัดค่ะ ลองพูดตัวเลขทีละหลักอีกครั้งนะคะ", "ได้ยินรหัสไม่ชัดค่ะ ลองพูดทีละตัว เช่น เอ็ม ขีด สาม ศูนย์ ศูนย์ สอง อีกครั้งนะคะ")
