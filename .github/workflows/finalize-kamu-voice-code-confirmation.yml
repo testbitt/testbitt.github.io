@@ -1,0 +1,84 @@
+name: Finalize KAMU voice code confirmation
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/finalize-kamu-voice-code-confirmation.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch voice assistant
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('travel-expense/voice-assistant.js')
+          s=p.read_text()
+
+          # Slow the anime voice slightly.
+          s=s.replace('u.rate=1.15;', 'u.rate=1.10;')
+          s=s.replace('u.rate=1.12;', 'u.rate=1.10;')
+
+          # Remove explanatory text/examples from the Voice page.
+          s=s.replace('        <p class="desc">พูดว่า “ตรวจสอบค่าเดินทาง” หรือ “ตรวจสอบ OT” แล้วตอบรหัสพนักงานและช่วงเวลาที่ต้องการ</p>\n','')
+          start=s.find('        <div id="voiceFlow"')
+          if start!=-1:
+              end=s.find('        <div id="voiceResult"', start)
+              if end!=-1:
+                  s=s[:start]+s[end:]
+          s=s.replace('        <div id="voiceSupport" style="margin:14px 0;padding:10px;border-radius:12px;background:#f7fbf8;font-size:12px"></div>\n','')
+          s=re.sub(r"\n\s*\$\('voiceSupport'\)\.textContent=.*?;",'',s)
+
+          # Ask for employee ID only, no examples.
+          s=s.replace("ask('ได้ค่ะ ขอรหัสพนักงานนะคะ พูดได้ทั้งตัวเลขและตัวอักษร เช่น ดี วี ที ขีด วาย สอง สอง สาม','employee')","ask('ขอรหัสพนักงานค่ะ','employee')")
+          s=s.replace("ask('ได้ค่ะ ขอรหัสพนักงานนะคะ พูดตัวเลขทีละหลักได้เลย','employee')","ask('ขอรหัสพนักงานค่ะ','employee')")
+          s=s.replace("ask('ได้ยินรหัสไม่ชัดค่ะ ลองพูดทีละตัว เช่น เอ็ม ขีด สาม ศูนย์ ศูนย์ สอง อีกครั้งนะคะ','employee')","ask('ขอรหัสพนักงานอีกครั้งค่ะ','employee')")
+          s=s.replace("ask('ได้ยินรหัสไม่ชัดค่ะ ลองพูดตัวเลขทีละหลักอีกครั้งนะคะ','employee')","ask('ขอรหัสพนักงานอีกครั้งค่ะ','employee')")
+
+          # Read ID back after recognition. Group consecutive letters, skip hyphen.
+          a=s.index('  function employeeIdSpeech(id){')
+          b=s.index('\n  function normalizeYear', a)
+          fn='''  function employeeIdSpeech(id){
+    const digit={'0':'ศูนย์','1':'หนึ่ง','2':'สอง','3':'สาม','4':'สี่','5':'ห้า','6':'หก','7':'เจ็ด','8':'แปด','9':'เก้า'};
+    const word={DVT:'ดีวีที'};
+    const letter={A:'เอ',B:'บี',C:'ซี',D:'ดี',E:'อี',F:'เอฟ',G:'จี',H:'เอช',I:'ไอ',J:'เจ',K:'เค',L:'แอล',M:'เอ็ม',N:'เอ็น',O:'โอ',P:'พี',Q:'คิว',R:'อาร์',S:'เอส',T:'ที',U:'ยู',V:'วี',W:'ดับเบิลยู',X:'เอ็กซ์',Y:'วาย',Z:'แซด'};
+    return String(id||'').toUpperCase().split('-').map(part=>{
+      const groups=part.match(/[A-Z]+|\\d+/g)||[];
+      return groups.map(g=>{
+        if(word[g])return word[g];
+        if(/^[A-Z]+$/.test(g))return g.split('').map(ch=>letter[ch]||ch).join('');
+        return g.split('').map(ch=>digit[ch]||ch).join(' ');
+      }).join(' ');
+    }).join(' ');
+  }'''
+          s=s[:a]+fn+s[b:]
+
+          # Confirm ID after recognition, then read employee name and ask period.
+          old="""      const spokenName=state.employeeName?` ${nameForSpeech(state.employeeName)}`:' ยังไม่พบชื่อในรายการย้อนหลัง';
+      ask(`รหัสพนักงาน ${id}${nameText} • ต้องการตรวจสอบช่วงไหน`,'start',`รับรหัสพนักงาน ${employeeIdSpeech(id)}${spokenName} แล้วค่ะ ต้องการตรวจสอบช่วงไหนคะ พูดชื่อเดือน เช่น สิงหาคม ปี 2569 หรือพูดวันที่เริ่มต้นก็ได้ค่ะ`);"""
+          new="""      const spokenName=state.employeeName?` ${nameForSpeech(state.employeeName)}`:' ยังไม่พบชื่อในรายการย้อนหลัง';
+      ask(`รหัสพนักงาน ${id}${nameText} • ต้องการตรวจสอบช่วงไหน`,'start',`รหัสพนักงาน ${employeeIdSpeech(id)}${spokenName} ต้องการตรวจสอบช่วงไหนคะ`);"""
+          if old in s:
+              s=s.replace(old,new)
+          else:
+              # Handle any previous no-code variant.
+              s=re.sub(r"\s*const spokenName=state\.employeeName\?.*?\n\s*ask\(`รหัสพนักงาน \$\{id\}.*?;", "\n      const spokenName=state.employeeName?` ${nameForSpeech(state.employeeName)}`:' ยังไม่พบชื่อในรายการย้อนหลัง';\n      ask(`รหัสพนักงาน ${id}${nameText} • ต้องการตรวจสอบช่วงไหน`,'start',`รหัสพนักงาน ${employeeIdSpeech(id)}${spokenName} ต้องการตรวจสอบช่วงไหนคะ`);", s, count=1, flags=re.S)
+
+          p.write_text(s)
+
+          idx=Path('travel-expense/index.html')
+          t=idx.read_text()
+          t=re.sub(r'voice-assistant\.js\?v=[^"\']+', 'voice-assistant.js?v=20260831-voice10-confirm', t)
+          idx.write_text(t)
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add travel-expense/voice-assistant.js travel-expense/index.html
+          git diff --cached --quiet || git commit -m "Ask employee ID simply and confirm it after recognition"
+          git push
