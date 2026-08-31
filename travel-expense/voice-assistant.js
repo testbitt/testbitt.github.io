@@ -19,31 +19,31 @@
   };
 
   let recognition=null;
-  let softThaiVoice=null;
+  let youthfulThaiVoice=null;
   let state={step:'idle',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};
 
-  function chooseSoftThaiVoice(){
+  function chooseYouthfulThaiVoice(){
     if(!window.speechSynthesis)return;
     const voices=speechSynthesis.getVoices()||[];
     const thai=voices.filter(v=>/^th(?:-|_)/i.test(v.lang||'')||/thai|ไทย/i.test(v.name||''));
-    const femaleHint=/female|woman|หญิง|kanya|narisa|premwadee|pim|ploy|suda|siri|woranuch|nicha/i;
-    softThaiVoice=thai.find(v=>femaleHint.test(v.name||''))||thai.find(v=>/google.*ไทย|google.*thai/i.test(v.name||''))||thai.find(v=>v.localService)||thai[0]||null;
+    const femaleHint=/female|woman|girl|young|youth|หญิง|สาว|kanya|narisa|premwadee|pim|ploy|suda|siri|woranuch|nicha/i;
+    youthfulThaiVoice=thai.find(v=>femaleHint.test(v.name||''))||thai.find(v=>/google.*ไทย|google.*thai/i.test(v.name||''))||thai.find(v=>v.localService)||thai[0]||null;
   }
-  chooseSoftThaiVoice();
+  chooseYouthfulThaiVoice();
   if(window.speechSynthesis){
-    if(speechSynthesis.addEventListener)speechSynthesis.addEventListener('voiceschanged',chooseSoftThaiVoice);
-    else speechSynthesis.onvoiceschanged=chooseSoftThaiVoice;
+    if(speechSynthesis.addEventListener)speechSynthesis.addEventListener('voiceschanged',chooseYouthfulThaiVoice);
+    else speechSynthesis.onvoiceschanged=chooseYouthfulThaiVoice;
   }
 
   function speak(text,after){
     if(!window.speechSynthesis){after&&after();return;}
     try{speechSynthesis.cancel();}catch(_){ }
-    chooseSoftThaiVoice();
+    chooseYouthfulThaiVoice();
     const u=new SpeechSynthesisUtterance(text);
     u.lang='th-TH';
-    if(softThaiVoice)u.voice=softThaiVoice;
-    u.rate=1.08;
-    u.pitch=1.06;
+    if(youthfulThaiVoice)u.voice=youthfulThaiVoice;
+    u.rate=1.12;
+    u.pitch=1.16;
     u.volume=1;
     u.onend=()=>after&&setTimeout(after,170);
     u.onerror=()=>after&&setTimeout(after,170);
