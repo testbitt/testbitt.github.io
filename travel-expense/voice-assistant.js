@@ -81,7 +81,7 @@
     if(!SpeechRecognition){alert('อุปกรณ์นี้ไม่รองรับการรับคำสั่งเสียง กรุณาใช้ Chrome หรือ Edge');return;}
     state={step:'type',type:'',employeeId:'',startDate:'',endDate:''};
     $('voiceResult').innerHTML='';setHeard('');
-    ask('กรุณาพูดว่า ตรวจสอบค่าเดินทาง หรือ ตรวจสอบ โอที','type');
+    ask('สวัสดีครับ ต้องการตรวจสอบค่าเดินทาง หรือ ตรวจสอบโอทีครับ','type');
   }
 
   function ask(message,step){
@@ -120,6 +120,12 @@
     return result;
   }
 
+
+  function employeeIdSpeech(id){
+    const digitWords={'0':'ศูนย์','1':'หนึ่ง','2':'สอง','3':'สาม','4':'สี่','5':'ห้า','6':'หก','7':'เจ็ด','8':'แปด','9':'เก้า'};
+    return String(id||'').split('').map(d=>digitWords[d]||d).join(' ');
+  }
+
   const months={
     'มกราคม':1,'มกรา':1,'กุมภาพันธ์':2,'กุมภา':2,'มีนาคม':3,'มีนา':3,'เมษายน':4,'เมษา':4,'พฤษภาคม':5,'พฤษภา':5,'มิถุนายน':6,'มิถุนา':6,'กรกฎาคม':7,'กรกฎา':7,'สิงหาคม':8,'สิงหา':8,'กันยายน':9,'กันยา':9,'ตุลาคม':10,'ตุลา':10,'พฤศจิกายน':11,'พฤศจิกา':11,'ธันวาคม':12,'ธันวา':12
   };
@@ -148,29 +154,29 @@
 
   function handleAnswer(text){
     if(state.step==='type'){
-      if(/เดินทาง|ค่าเดินทาง/.test(text)){state.type='travel';ask('กรุณาพูดรหัสพนักงาน โดยพูดตัวเลขทีละหลัก','employee');return;}
-      if(/โอ\s*ที|OT|ot|โอที/.test(text)){state.type='ot';ask('กรุณาพูดรหัสพนักงาน โดยพูดตัวเลขทีละหลัก','employee');return;}
-      ask('ไม่พบประเภทที่ต้องการ กรุณาพูดว่า ตรวจสอบค่าเดินทาง หรือ ตรวจสอบ โอที','type');return;
+      if(/เดินทาง|ค่าเดินทาง/.test(text)){state.type='travel';ask('ได้ครับ ขอรหัสพนักงานหน่อยครับ พูดตัวเลขทีละหลักได้เลย','employee');return;}
+      if(/โอ\s*ที|OT|ot|โอที/.test(text)){state.type='ot';ask('ได้ครับ ขอรหัสพนักงานหน่อยครับ พูดตัวเลขทีละหลักได้เลย','employee');return;}
+      ask('ขออีกครั้งนะครับ ต้องการเช็กค่าเดินทาง หรือโอทีครับ','type');return;
     }
     if(state.step==='employee'){
       const id=parseEmployeeId(text);
-      if(!id){ask('ไม่สามารถอ่านรหัสพนักงานได้ กรุณาพูดรหัสเป็นตัวเลขทีละหลักอีกครั้ง','employee');return;}
+      if(!id){ask('ผมฟังรหัสไม่ชัดครับ ลองพูดตัวเลขทีละหลักอีกครั้งนะครับ','employee');return;}
       state.employeeId=id;
-      ask(`รับรหัสพนักงาน ${id} แล้ว กรุณาพูดวันที่เริ่มต้น เช่น 1 สิงหาคม 2569`,'start');return;
+      ask(`รับรหัสพนักงาน ${employeeIdSpeech(id)} แล้วครับ ขอวันที่เริ่มต้นที่ต้องการตรวจสอบครับ เช่น 1 สิงหาคม 2569`,'start');return;
     }
     if(state.step==='start'){
       const d=parseDate(text);
-      if(!d){ask('อ่านวันที่เริ่มต้นไม่ได้ กรุณาพูดใหม่ เช่น 1 สิงหาคม 2569','start');return;}
+      if(!d){ask('ผมฟังวันที่เริ่มต้นไม่ชัดครับ ลองพูดใหม่ เช่น 1 สิงหาคม 2569','start');return;}
       state.startDate=d;
-      ask(`วันที่เริ่มต้น ${thaiDate(d)} กรุณาพูดวันที่สิ้นสุด`,'end');return;
+      ask(`ได้ครับ เริ่มวันที่ ${thaiDate(d)} แล้ววันที่สิ้นสุดเป็นวันไหนครับ`,'end');return;
     }
     if(state.step==='end'){
       const d=parseDate(text);
-      if(!d){ask('อ่านวันที่สิ้นสุดไม่ได้ กรุณาพูดใหม่','end');return;}
-      if(d<state.startDate){ask('วันที่สิ้นสุดน้อยกว่าวันที่เริ่มต้น กรุณาพูดวันที่สิ้นสุดใหม่','end');return;}
+      if(!d){ask('ผมฟังวันที่สิ้นสุดไม่ชัดครับ ลองพูดวันที่อีกครั้งนะครับ','end');return;}
+      if(d<state.startDate){ask('วันที่สิ้นสุดอยู่ก่อนวันที่เริ่มต้นครับ ขอวันที่สิ้นสุดใหม่อีกครั้งนะครับ','end');return;}
       state.endDate=d;state.step='loading';
       setStatus('กำลังตรวจสอบข้อมูลจากฐานข้อมูล...');
-      speak('กำลังตรวจสอบข้อมูล กรุณารอสักครู่');
+      speak('ได้ครับ ผมกำลังเช็กข้อมูลให้ รอสักครู่นะครับ');
       lookup();
     }
   }
@@ -186,18 +192,18 @@
       if(state.type==='travel'){
         const x=await post({action:'getTravelSummary',employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''});
         const rows=x.records||[];const count=Number(x.totals?.count||rows.length||0),km=Number(x.totals?.totalKm||0),amount=Number(x.totals?.totalAmount||0);
-        const message=count?`พบค่าเดินทาง ${count} รายการ ระยะทางรวม ${num(km)} กิโลเมตร ค่าเดินทางรวม ${num(amount)} บาท`:`ไม่พบข้อมูลค่าเดินทางของรหัสพนักงาน ${state.employeeId} ในช่วงวันที่ที่กำหนด`;
+        const message=count?`เจอข้อมูลแล้วครับ มีค่าเดินทางทั้งหมด ${count} รายการ ระยะทางรวม ${num(km)} กิโลเมตร และค่าเดินทางรวม ${num(amount)} บาทครับ`:`ไม่พบข้อมูลค่าเดินทางของรหัสพนักงาน ${employeeIdSpeech(state.employeeId)} ในช่วงวันที่ที่กำหนดครับ`;
         $('voiceResult').innerHTML=`<div class="summary-panel"><h3>🚙 สรุปค่าเดินทาง</h3><p><b>รหัสพนักงาน:</b> ${esc(state.employeeId)} ${x.employeeName?`• ${esc(x.employeeName)}`:''}</p><p><b>ช่วงวันที่:</b> ${thaiDate(state.startDate)} - ${thaiDate(state.endDate)}</p><div class="metric-grid"><div class="metric"><small>จำนวนรายการ</small><strong>${count}</strong></div><div class="metric"><small>ระยะทางรวม</small><strong>${num(km)} กม.</strong></div><div class="metric"><small>ค่าเดินทางรวม</small><strong>${num(amount)} บาท</strong></div></div></div>`;
-        setStatus(message);speak(message+ ' หากต้องการตรวจสอบใหม่ ให้กดปุ่มเริ่มคำสั่งเสียง');
+        setStatus(message);speak(message+' ถ้าต้องการเช็กอีกครั้ง กดเริ่มคุยกับระบบได้เลยครับ');
       }else{
         const x=await post({action:'getOTSummary',employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''});
         const rows=x.records||[];const count=Number(x.totals?.count||rows.length||0);
         const comp=rows.reduce((s,r)=>/ชดชั่วโมง/i.test(String(r.otType||''))?s+Number(r.hours||0):s,0);
         const paid=rows.reduce((s,r)=>/ทำจ่ายเงิน/i.test(String(r.otType||''))?s+Number(r.hours||0):s,0);
         const total=rows.reduce((s,r)=>s+Number(r.hours||0),0);
-        const message=count?`พบโอที ${count} รายการ โอทีชดชั่วโมง ${num(comp)} ชั่วโมง โอทีทำจ่ายเงิน ${num(paid)} ชั่วโมง รวม ${num(total)} ชั่วโมง`:`ไม่พบข้อมูลโอทีของรหัสพนักงาน ${state.employeeId} ในช่วงวันที่ที่กำหนด`;
+        const message=count?`เจอข้อมูลแล้วครับ มีโอทีทั้งหมด ${count} รายการ เป็นโอทีชดชั่วโมง ${num(comp)} ชั่วโมง โอทีทำจ่ายเงิน ${num(paid)} ชั่วโมง รวมทั้งหมด ${num(total)} ชั่วโมงครับ`:`ไม่พบข้อมูลโอทีของรหัสพนักงาน ${employeeIdSpeech(state.employeeId)} ในช่วงวันที่ที่กำหนดครับ`;
         $('voiceResult').innerHTML=`<div class="summary-panel"><h3>⏰ สรุป OT</h3><p><b>รหัสพนักงาน:</b> ${esc(state.employeeId)} ${x.employeeName?`• ${esc(x.employeeName)}`:''}</p><p><b>ช่วงวันที่:</b> ${thaiDate(state.startDate)} - ${thaiDate(state.endDate)}</p><div class="metric-grid"><div class="metric"><small>OT ชดชั่วโมง</small><strong>${num(comp)} ชม.</strong></div><div class="metric"><small>OT ทำจ่ายเงิน</small><strong>${num(paid)} ชม.</strong></div><div class="metric"><small>OT รวม</small><strong>${num(total)} ชม.</strong></div></div></div>`;
-        setStatus(message);speak(message+' หากต้องการตรวจสอบใหม่ ให้กดปุ่มเริ่มคำสั่งเสียง');
+        setStatus(message);speak(message+' ถ้าต้องการเช็กอีกครั้ง กดเริ่มคุยกับระบบได้เลยครับ');
       }
       state.step='done';
     }catch(e){setStatus('เกิดข้อผิดพลาด: '+e.message);speak('ไม่สามารถตรวจสอบข้อมูลได้ กรุณาลองใหม่อีกครั้ง');state.step='idle';}
