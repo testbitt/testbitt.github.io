@@ -1,0 +1,45 @@
+name: Increase Voice Assistant Speech Speed
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-voice-speed-20260831.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update-speed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Increase speech rate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('travel-expense/voice-assistant.js')
+          s=p.read_text(encoding='utf-8')
+          s,n=re.subn(r"u\.lang='th-TH';u\.rate=[0-9.]+;u\.pitch=1;","u.lang='th-TH';u.rate=1.08;u.pitch=1;",s,count=1)
+          if n!=1:
+              raise SystemExit('Speech rate line not found')
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Bump voice cache
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('travel-expense/index.html')
+          s=p.read_text(encoding='utf-8')
+          s=re.sub(r'voice-assistant\.js\?v=[^"<]+','voice-assistant.js?v=20260831-voice-speed1',s)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add travel-expense/voice-assistant.js travel-expense/index.html
+          git commit -m 'Increase voice assistant speech speed to 1.08x'
+          git push
