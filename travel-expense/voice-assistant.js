@@ -42,7 +42,7 @@
     const u=new SpeechSynthesisUtterance(text);
     u.lang='th-TH';
     if(youthfulThaiVoice)u.voice=youthfulThaiVoice;
-    u.rate=1.15;
+    u.rate=1.10;
     u.pitch=1.28;
     u.volume=1;
     u.onend=()=>after&&setTimeout(after,170);
@@ -68,6 +68,7 @@
       .voice-daily{margin-top:22px}.voice-day{border:1px solid #dfeae2;border-radius:16px;background:#fff;margin:12px 0;overflow:hidden}.voice-day-head{padding:12px 14px;background:#f3faf5;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.voice-day-head strong{color:#24573a}.voice-day-total{font-size:12px;color:#617068}.voice-detail-wrap{overflow:auto}.voice-detail-table{width:100%;min-width:860px;border-collapse:collapse;font-size:12px}.voice-detail-table th,.voice-detail-table td{padding:9px 10px;border-bottom:1px solid #edf2ee;text-align:left;vertical-align:top}.voice-detail-table th{background:#fbfdfb;color:#66736b;white-space:nowrap}.voice-detail-table tr:last-child td{border-bottom:0}.voice-empty{padding:18px;text-align:center;color:#7a867f}.voice-emp{margin:10px 0;padding:12px 14px;border-radius:13px;background:#eef8f1;border:1px solid #d7eadc;font-weight:800;color:#28543a}@media(max-width:760px){.voice-day-head{align-items:flex-start}.voice-detail-table{min-width:760px}}
     `;
     document.head.appendChild(style);
+    style.textContent += '#voiceFlow,#voiceSupport,#voiceAssistant .desc{display:none!important}';
 
     const card=document.createElement('div');
     card.className='card';card.id='goVoiceAssistant';
@@ -245,19 +246,19 @@
 
   async function handleAnswer(text){
     if(state.step==='type'){
-      if(/เดินทาง|ค่าเดินทาง/.test(text)){state.type='travel';ask('ได้ค่ะ ขอรหัสพนักงานนะคะ พูดได้ทั้งตัวเลขและตัวอักษร เช่น ดี วี ที ขีด วาย สอง สอง สาม','employee');return;}
-      if(/โอ\s*ที|OT|ot|โอที/.test(text)){state.type='ot';ask('ได้ค่ะ ขอรหัสพนักงานนะคะ พูดได้ทั้งตัวเลขและตัวอักษร เช่น ดี วี ที ขีด วาย สอง สอง สาม','employee');return;}
+      if(/เดินทาง|ค่าเดินทาง/.test(text)){state.type='travel';ask('ขอรหัสพนักงานค่ะ','employee');return;}
+      if(/โอ\s*ที|OT|ot|โอที/.test(text)){state.type='ot';ask('ขอรหัสพนักงานค่ะ','employee');return;}
       ask('ขออีกครั้งนะคะ ต้องการเช็กค่าเดินทาง หรือโอทีคะ','type');return;
     }
     if(state.step==='employee'){
       const id=parseEmployeeId(text);
-      if(!id){ask('ได้ยินรหัสไม่ชัดค่ะ ลองพูดทีละตัว เช่น เอ็ม ขีด สาม ศูนย์ ศูนย์ สอง อีกครั้งนะคะ','employee');return;}
+      if(!id){ask('ขอรหัสพนักงานอีกครั้งค่ะ','employee');return;}
       state.employeeId=id;
       setStatus(`กำลังตรวจสอบรหัสพนักงาน ${id}...`);
       state.employeeName=await getEmployeeName(id);
       const nameText=state.employeeName?` • ${state.employeeName}`:'';
       const spokenName=state.employeeName?` ${nameForSpeech(state.employeeName)}`:' ยังไม่พบชื่อในรายการย้อนหลัง';
-      ask(`รหัสพนักงาน ${id}${nameText} • ต้องการตรวจสอบช่วงไหน`,'start',`รับรหัสพนักงาน ${employeeIdSpeech(id)}${spokenName} แล้วค่ะ ต้องการตรวจสอบช่วงไหนคะ พูดชื่อเดือน เช่น สิงหาคม ปี 2569 หรือพูดวันที่เริ่มต้นก็ได้ค่ะ`);
+      ask(`รหัสพนักงาน ${id}${nameText} • ต้องการตรวจสอบช่วงไหน`,'start',`รหัสพนักงาน ${employeeIdSpeech(id).replace('ดี วี ที','ดีวีที').replace(/ ขีด /g,' ')}${spokenName} ต้องการตรวจสอบช่วงไหนคะ`);
       return;
     }
     if(state.step==='start'){
