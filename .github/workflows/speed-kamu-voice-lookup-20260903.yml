@@ -1,0 +1,67 @@
+name: Speed up KAMU voice lookup
+
+on:
+  push:
+    paths:
+      - '.github/workflows/speed-kamu-voice-lookup-20260903.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Patch voice lookup cache
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('travel-expense/voice-assistant.js')
+          s=p.read_text()
+          old="""  let recognition=null;\n  let youthfulThaiVoice=null;\n  let state={step:'idle',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};"""
+          new="""  let recognition=null;\n  let youthfulThaiVoice=null;\n  let state={step:'idle',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};\n  let summaryCache={travel:null,ot:null};\n  let backendWarmed=false;"""
+          assert old in s
+          s=s.replace(old,new,1)
+          old="""  function openVoice(){\n    ['home','travel','ot','travelSummary','otSummary','adminSummary'].forEach(id=>$(id)&&$(id).classList.add('hidden'));\n    $('voiceAssistant').classList.remove('hidden');scrollTo(0,0);\n  }"""
+          new="""  function openVoice(){\n    ['home','travel','ot','travelSummary','otSummary','adminSummary'].forEach(id=>$(id)&&$(id).classList.add('hidden'));\n    $('voiceAssistant').classList.remove('hidden');scrollTo(0,0);\n    warmBackend();\n  }\n  function warmBackend(){\n    if(backendWarmed)return;\n    backendWarmed=true;\n    post({action:'ping'}).catch(()=>{});\n  }"""
+          assert old in s
+          s=s.replace(old,new,1)
+          old="""    state={step:'type',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};\n    $('voiceResult').innerHTML='';setHeard('');"""
+          new="""    state={step:'type',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};\n    summaryCache={travel:null,ot:null};\n    $('voiceResult').innerHTML='';setHeard('');"""
+          assert old in s
+          s=s.replace(old,new,1)
+          old="""  async function getEmployeeName(id){\n    const actions=state.type==='travel'?['getTravelSummary','getOTSummary']:['getOTSummary','getTravelSummary'];\n    for(const action of actions){\n      try{const x=await post({action,employeeId:id,month:'',startDate:'',endDate:''});if(String(x.employeeName||'').trim())return String(x.employeeName).trim();}catch(_){ }\n    }\n    return '';\n  }"""
+          new="""  async function getEmployeeName(id){\n    const actions=state.type==='travel'?[['travel','getTravelSummary'],['ot','getOTSummary']]:[['ot','getOTSummary'],['travel','getTravelSummary']];\n    for(const [type,action] of actions){\n      try{\n        const x=await post({action,employeeId:id,month:'',startDate:'',endDate:''});\n        summaryCache[type]={employeeId:id,data:x};\n        const name=String(x.employeeName||x.records?.[0]?.employeeName||'').trim();\n        if(name)return name;\n      }catch(_){ }\n    }\n    return '';\n  }\n  function cachedRows(type){\n    const c=summaryCache[type];\n    if(!c||c.employeeId!==state.employeeId||!c.data)return null;\n    return (c.data.records||[]).filter(r=>{\n      const d=String(r.date||'').slice(0,10);\n      return d&&(!state.startDate||d>=state.startDate)&&(!state.endDate||d<=state.endDate);\n    });\n  }"""
+          assert old in s
+          s=s.replace(old,new,1)
+          old="""        const x=await post({action:'getTravelSummary',employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''});\n        const rows=(x.records||[]).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));\n        const count=Number(x.totals?.count||rows.length||0),km=Number(x.totals?.totalKm||0),amount=Number(x.totals?.totalAmount||0);\n        const name=x.employeeName||state.employeeName||'';state.employeeName=name;"""
+          new="""        const cached=cachedRows('travel');\n        const x=cached===null?await post({action:'getTravelSummary',employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''}):summaryCache.travel.data;\n        const rows=(cached===null?(x.records||[]):cached).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));\n        const count=rows.length,km=rows.reduce((s,r)=>s+Number(r.totalKm||0),0),amount=rows.reduce((s,r)=>s+Number(r.amount||0),0);\n        const name=x.employeeName||rows[0]?.employeeName||state.employeeName||'';state.employeeName=name;"""
+          assert old in s
+          s=s.replace(old,new,1)
+          old="""        const x=await post({action:'getOTSummary',employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''});\n        const rows=(x.records||[]).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));\n        const count=Number(x.totals?.count||rows.length||0);"""
+          new="""        const cached=cachedRows('ot');\n        const x=cached===null?await post({action:'getOTSummary',employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''}):summaryCache.ot.data;\n        const rows=(cached===null?(x.records||[]):cached).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));\n        const count=rows.length;"""
+          assert old in s
+          s=s.replace(old,new,1)
+          p.write_text(s)
+          idx=Path('travel-expense/index.html')
+          h=idx.read_text()
+          h2=re.sub(r'voice-assistant\.js\?v=[^\"\']+', 'voice-assistant.js?v=20260903-voice14-fast', h)
+          assert h2!=h
+          idx.write_text(h2)
+          PY
+          node --check travel-expense/voice-assistant.js
+      - name: Commit optimized voice lookup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add travel-expense/voice-assistant.js travel-expense/index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Speed up voice summary lookup"
+          git push
