@@ -1,0 +1,34 @@
+name: Restore KAMU voice assistant
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/restore-kamu-voice-20260903.yml'
+permissions:
+  contents: write
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore last working voice assistant
+        run: |
+          git checkout 1d065b673031b549e0a065a585fc6fc393b588ab -- travel-expense/voice-assistant.js
+          node --check travel-expense/voice-assistant.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('travel-expense/index.html')
+          s=p.read_text()
+          s=re.sub(r'voice-assistant\.js\?v=[^\"]+', 'voice-assistant.js?v=20260903-voice13-restored', s)
+          p.write_text(s)
+          PY
+      - name: Commit restored voice
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add travel-expense/voice-assistant.js travel-expense/index.html
+          git diff --cached --quiet || git commit -m "Restore working KAMU voice assistant"
+          git push
