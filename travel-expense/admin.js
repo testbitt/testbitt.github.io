@@ -139,11 +139,32 @@
   function showAdmin(){['home','travel','ot','travelSummary','otSummary'].forEach(id=>$(id)?.classList.add('hidden'));$('adminSummary').classList.remove('hidden');clearTravel();clearOT();scrollTo(0,0);}
   function switchTab(tab){const travel=tab==='travel';$('adminTravelPanel').classList.toggle('hidden',!travel);$('adminOTPanel').classList.toggle('hidden',travel);$('tabTravel').classList.toggle('active',travel);$('tabOT').classList.toggle('active',!travel);}
 
-  async function enterAdmin(){
-    const code=prompt('กรุณากรอกรหัส Admin');if(code===null)return;
-    try{const x=await api({action:'verifyAdmin',adminCode:code});if(!x.authorized)throw Error('รหัส Admin ไม่ถูกต้อง');adminCode=code;showAdmin();switchTab('travel');}
-    catch(e){adminCode='';alert(e.message);}
+  function openAdminLogin(){
+    if($('adminLoginModal'))return;
+    const m=document.createElement('div');
+    m.id='adminLoginModal';m.className='modal';
+    m.innerHTML=`<div class="mbox" style="max-width:420px"><h3>🔐 เข้าสู่ Admin</h3><div class="f" style="margin-top:14px"><label>รหัส Admin</label><input id="adminCodeInput" type="password" inputmode="numeric" autocomplete="off" placeholder="กรอกรหัส Admin"></div><div id="adminLoginStatus" style="min-height:22px;margin-top:10px;font-size:12px;color:#8a5d00"></div><div class="actions"><button type="button" class="btn" id="adminLoginCancel">ยกเลิก</button><button type="button" class="btn primary" id="adminLoginSubmit">เข้าสู่ Admin</button></div></div>`;
+    document.body.appendChild(m);
+    const input=$('adminCodeInput'),submit=$('adminLoginSubmit'),status=$('adminLoginStatus');
+    const close=()=>m.remove();
+    const go=async()=>{
+      const code=String(input.value||'').trim();
+      if(!code){status.textContent='กรุณากรอกรหัส Admin';input.focus();return;}
+      submit.disabled=true;input.disabled=true;status.textContent='⏳ กำลังตรวจสอบรหัส...';
+      try{
+        const x=await api({action:'verifyAdmin',adminCode:code});
+        if(!x.authorized)throw Error('รหัส Admin ไม่ถูกต้อง');
+        adminCode=code;close();showAdmin();switchTab('travel');
+      }catch(e){
+        adminCode='';status.textContent='⚠️ '+(e.message||'ไม่สามารถเข้าสู่ Admin ได้');submit.disabled=false;input.disabled=false;input.select();
+      }
+    };
+    $('adminLoginCancel').onclick=close;submit.onclick=go;
+    input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go();}});
+    setTimeout(()=>input.focus(),50);
   }
+
+  function enterAdmin(){openAdminLogin();}
 
   window.initKamuAdmin=()=>{
     appendUI();
