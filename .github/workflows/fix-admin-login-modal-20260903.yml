@@ -1,0 +1,41 @@
+name: Fix Admin Login Modal
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-admin-login-modal-20260903.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch admin login
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('travel-expense/admin.js')
+          s=p.read_text()
+          old="""  async function enterAdmin(){\n    const code=prompt('กรุณากรอกรหัส Admin');if(code===null)return;\n    try{const x=await api({action:'verifyAdmin',adminCode:code});if(!x.authorized)throw Error('รหัส Admin ไม่ถูกต้อง');adminCode=code;showAdmin();switchTab('travel');}\n    catch(e){adminCode='';alert(e.message);}\n  }\n"""
+          new="""  function openAdminLogin(){\n    if($('adminLoginModal'))return;\n    const m=document.createElement('div');\n    m.id='adminLoginModal';m.className='modal';\n    m.innerHTML=`<div class=\"mbox\" style=\"max-width:420px\"><h3>🔐 เข้าสู่ Admin</h3><div class=\"f\" style=\"margin-top:14px\"><label>รหัส Admin</label><input id=\"adminCodeInput\" type=\"password\" inputmode=\"numeric\" autocomplete=\"off\" placeholder=\"กรอกรหัส Admin\"></div><div id=\"adminLoginStatus\" style=\"min-height:22px;margin-top:10px;font-size:12px;color:#8a5d00\"></div><div class=\"actions\"><button type=\"button\" class=\"btn\" id=\"adminLoginCancel\">ยกเลิก</button><button type=\"button\" class=\"btn primary\" id=\"adminLoginSubmit\">เข้าสู่ Admin</button></div></div>`;\n    document.body.appendChild(m);\n    const input=$('adminCodeInput'),submit=$('adminLoginSubmit'),status=$('adminLoginStatus');\n    const close=()=>m.remove();\n    const go=async()=>{\n      const code=String(input.value||'').trim();\n      if(!code){status.textContent='กรุณากรอกรหัส Admin';input.focus();return;}\n      submit.disabled=true;input.disabled=true;status.textContent='⏳ กำลังตรวจสอบรหัส...';\n      try{\n        const x=await api({action:'verifyAdmin',adminCode:code});\n        if(!x.authorized)throw Error('รหัส Admin ไม่ถูกต้อง');\n        adminCode=code;close();showAdmin();switchTab('travel');\n      }catch(e){\n        adminCode='';status.textContent='⚠️ '+(e.message||'ไม่สามารถเข้าสู่ Admin ได้');submit.disabled=false;input.disabled=false;input.select();\n      }\n    };\n    $('adminLoginCancel').onclick=close;submit.onclick=go;\n    input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go();}});\n    setTimeout(()=>input.focus(),50);\n  }\n\n  function enterAdmin(){openAdminLogin();}\n"""
+          if old not in s:
+              raise SystemExit('enterAdmin block not found')
+          s=s.replace(old,new)
+          p.write_text(s)
+
+          idx=Path('travel-expense/index.html')
+          h=idx.read_text()
+          import re
+          h,n=re.subn(r'admin\.js\?v=[^\"\']+', 'admin.js?v=20260903-admin-loginfix', h, count=1)
+          if n!=1: raise SystemExit('admin cache tag not found')
+          idx.write_text(h)
+          PY
+          node --check travel-expense/admin.js
+      - name: Commit changes
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add travel-expense/admin.js travel-expense/index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix Admin login modal on mobile and LINE'
+          git push
