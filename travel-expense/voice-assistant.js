@@ -19,36 +19,46 @@
   };
 
   let recognition=null;
-  let youthfulThaiVoice=null;
+  let thaiVoice=null;
   let state={step:'idle',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};
-  let summaryCache={travel:null,ot:null};
-  let backendWarmed=false;
+  const ua=navigator.userAgent||'';
+  const isIOS=/iPad|iPhone|iPod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const isAndroid=/Android/i.test(ua);
+  const isLine=/Line\//i.test(ua);
+  const isLineAndroid=isAndroid&&isLine;
+  let listenStartedAt=0;
+  let silentRetryCount=0;
+  const resultCache=new Map();
 
-  function chooseYouthfulThaiVoice(){
+  function chooseThaiVoice(){
     if(!window.speechSynthesis)return;
     const voices=speechSynthesis.getVoices()||[];
     const thai=voices.filter(v=>/^th(?:-|_)/i.test(v.lang||'')||/thai|ไทย/i.test(v.name||''));
-    const femaleHint=/female|woman|girl|young|youth|anime|หญิง|สาว|kanya|narisa|premwadee|pim|ploy|suda|siri|woranuch|nicha/i;
-    youthfulThaiVoice=thai.find(v=>femaleHint.test(v.name||''))||thai.find(v=>/google.*ไทย|google.*thai/i.test(v.name||''))||thai.find(v=>v.localService)||thai[0]||null;
+    if(isIOS){
+      thaiVoice=thai.find(v=>v.localService&&/kanya|narisa|premwadee|siri|thai|ไทย/i.test(v.name||''))||thai.find(v=>v.localService)||thai[0]||null;
+    }else{
+      thaiVoice=thai.find(v=>/google.*thai|google.*ไทย/i.test(v.name||''))||thai.find(v=>v.localService)||thai[0]||null;
+    }
   }
-  chooseYouthfulThaiVoice();
+  chooseThaiVoice();
   if(window.speechSynthesis){
-    if(speechSynthesis.addEventListener)speechSynthesis.addEventListener('voiceschanged',chooseYouthfulThaiVoice);
-    else speechSynthesis.onvoiceschanged=chooseYouthfulThaiVoice;
+    if(speechSynthesis.addEventListener)speechSynthesis.addEventListener('voiceschanged',chooseThaiVoice);
+    else speechSynthesis.onvoiceschanged=chooseThaiVoice;
   }
 
   function speak(text,after){
     if(!window.speechSynthesis){after&&after();return;}
     try{speechSynthesis.cancel();}catch(_){ }
-    chooseYouthfulThaiVoice();
+    chooseThaiVoice();
     const u=new SpeechSynthesisUtterance(text);
     u.lang='th-TH';
-    if(youthfulThaiVoice)u.voice=youthfulThaiVoice;
-    u.rate=1.10;
-    u.pitch=1.28;
+    if(thaiVoice)u.voice=thaiVoice;
+    u.rate=isIOS?0.96:1.04;
+    u.pitch=isIOS?1.00:1.06;
     u.volume=1;
-    u.onend=()=>after&&setTimeout(after,170);
-    u.onerror=()=>after&&setTimeout(after,170);
+    const delay=isLineAndroid?950:260;
+    u.onend=()=>after&&setTimeout(after,delay);
+    u.onerror=()=>after&&setTimeout(after,delay);
     speechSynthesis.speak(u);
   }
 
@@ -103,7 +113,7 @@
     $('voiceSupport').textContent=SpeechRecognition?'พร้อมรับรหัสพนักงานด้วยเสียงภาษาไทย / English ✓':'เบราว์เซอร์นี้ไม่รองรับ Speech Recognition กรุณาใช้ Chrome หรือ Edge';
     $('goVoiceAssistant').onclick=openVoice;
     $('voiceBack').onclick=goHome;
-    $('voiceStart').onclick=startFlow;
+    $('voiceStart').onclick=()=>{if(state.step&&!['idle','done','loading'].includes(state.step))listen(true);else startFlow();};
     $('voiceStop').onclick=()=>stopAll(true);
     $('homeBtn')&&$('homeBtn').addEventListener('click',()=>$('voiceAssistant')?.classList.add('hidden'));
     document.querySelectorAll('[data-home]').forEach(el=>el.addEventListener('click',()=>$('voiceAssistant')?.classList.add('hidden')));
@@ -112,12 +122,6 @@
   function openVoice(){
     ['home','travel','ot','travelSummary','otSummary','adminSummary'].forEach(id=>$(id)&&$(id).classList.add('hidden'));
     $('voiceAssistant').classList.remove('hidden');scrollTo(0,0);
-    warmBackend();
-  }
-  function warmBackend(){
-    if(backendWarmed)return;
-    backendWarmed=true;
-    post({action:'ping'}).catch(()=>{});
   }
   function goHome(){
     stopAll(false);$('voiceAssistant')?.classList.add('hidden');
@@ -133,24 +137,41 @@
   function startFlow(){
     if(!SpeechRecognition){alert('อุปกรณ์นี้ไม่รองรับการรับคำสั่งเสียง กรุณาใช้ Chrome หรือ Edge');return;}
     state={step:'type',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};
-    summaryCache={travel:null,ot:null};
+    silentRetryCount=0;
     $('voiceResult').innerHTML='';setHeard('');
     ask('สวัสดีค่ะ ต้องการตรวจสอบค่าเดินทาง หรือ ตรวจสอบโอทีคะ','type');
   }
   function ask(displayMessage,step,spokenMessage=displayMessage){state.step=step;setStatus(displayMessage);speak(spokenMessage,listen);}
-  function listen(){
+  function listen(manual=false){
     if(!SpeechRecognition)return;
     try{recognition&&recognition.abort();}catch(_){ }
     recognition=new SpeechRecognition();
     recognition.lang='th-TH';recognition.interimResults=false;recognition.maxAlternatives=3;recognition.continuous=false;
-    recognition.onstart=()=>{$('voiceStart').textContent='🎙️ กำลังฟัง...';};
+    listenStartedAt=Date.now();
+    recognition.onstart=()=>{$('voiceStart').textContent='🎙️ กำลังฟัง...';setStatus('กำลังฟังอยู่ค่ะ พูดได้เลย');};
     recognition.onend=()=>{$('voiceStart').textContent='🎤 เริ่มคำสั่งเสียง';};
-    recognition.onerror=()=>{setStatus('ได้ยินไม่ชัดค่ะ ลองกดเริ่มแล้วพูดใหม่อีกครั้งนะคะ');};
+    recognition.onerror=e=>{
+      const code=String(e&&e.error||'');
+      const elapsed=Date.now()-listenStartedAt;
+      if(code==='aborted')return;
+      if(code==='no-speech'&&isLineAndroid){
+        if(silentRetryCount<2){silentRetryCount++;setStatus('กำลังฟังอยู่ค่ะ พูดได้เลย');setTimeout(()=>listen(false),900);}
+        else setStatus('ยังไม่ได้รับเสียงค่ะ แตะปุ่มไมค์แล้วพูดได้เลย');
+        return;
+      }
+      if(code==='no-speech'&&elapsed<1800){setStatus('กำลังฟังอยู่ค่ะ พูดได้เลย');return;}
+      if(code==='not-allowed'||code==='service-not-allowed'){
+        setStatus(isLineAndroid?'กรุณาอนุญาตไมโครโฟนให้ LINE แล้วแตะปุ่มไมค์อีกครั้ง':'กรุณาอนุญาตการใช้ไมโครโฟน แล้วลองอีกครั้ง');
+        return;
+      }
+      setStatus('รับเสียงไม่สำเร็จค่ะ แตะปุ่มไมค์แล้วลองพูดอีกครั้ง');
+    };
     recognition.onresult=e=>{
+      silentRetryCount=0;
       const text=Array.from(e.results[0]).map(x=>x.transcript).join(' ');
       setHeard(text);handleAnswer(text);
     };
-    try{recognition.start();}catch(_){ }
+    try{recognition.start();}catch(_){if(manual)setStatus('แตะปุ่มไมค์อีกครั้งแล้วพูดได้เลย');}
   }
 
   function normalizeThaiDigits(s){
@@ -241,25 +262,23 @@
     const t=await r.text();let x;try{x=JSON.parse(t)}catch{throw Error('Apps Script ตอบกลับไม่ถูกต้อง');}
     if(!x.success)throw Error(x.message||'ค้นข้อมูลไม่สำเร็จ');return x;
   }
-  async function getEmployeeName(id){
-    const actions=state.type==='travel'?[['travel','getTravelSummary'],['ot','getOTSummary']]:[['ot','getOTSummary'],['travel','getTravelSummary']];
-    for(const [type,action] of actions){
-      try{
-        const x=await post({action,employeeId:id,month:'',startDate:'',endDate:''});
-        summaryCache[type]={employeeId:id,data:x};
-        const name=String(x.employeeName||x.records?.[0]?.employeeName||'').trim();
-        if(name)return name;
-      }catch(_){ }
-    }
-    return '';
+  function employeeNameKey(id){return 'kamu_voice_emp_'+String(id||'').toUpperCase();}
+  function getEmployeeName(id){
+    try{return localStorage.getItem(employeeNameKey(id))||'';}catch(_){return '';}
   }
-  function cachedRows(type){
-    const c=summaryCache[type];
-    if(!c||c.employeeId!==state.employeeId||!c.data)return null;
-    return (c.data.records||[]).filter(r=>{
-      const d=String(r.date||'').slice(0,10);
-      return d&&(!state.startDate||d>=state.startDate)&&(!state.endDate||d<=state.endDate);
-    });
+  function rememberEmployeeName(id,name){
+    if(!name)return;
+    try{localStorage.setItem(employeeNameKey(id),String(name).trim());}catch(_){ }
+  }
+  function resultCacheKey(type){return [type,state.employeeId,state.startDate,state.endDate].join('|');}
+  async function getSummaryFast(type,action){
+    const key=resultCacheKey(type),cached=resultCache.get(key);
+    if(cached&&Date.now()-cached.time<300000)return cached.data;
+    const x=await post({action,employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''});
+    resultCache.set(key,{time:Date.now(),data:x});
+    const name=String(x.employeeName||x.records?.[0]?.employeeName||'').trim();
+    if(name)rememberEmployeeName(state.employeeId,name);
+    return x;
   }
   function nameForSpeech(fullName){
     const parts=String(fullName||'').trim().split(/\s+/).filter(Boolean);if(!parts.length)return '';
@@ -277,10 +296,10 @@
       if(!id){ask('ขอรหัสพนักงานอีกครั้งค่ะ','employee');return;}
       state.employeeId=id;
       setHeard(`รหัสพนักงาน: ${id}`);
-      setStatus(`กำลังตรวจสอบรหัสพนักงาน ${id}...`);
-      state.employeeName=await getEmployeeName(id);
+      setStatus(`รับรหัสพนักงาน ${id} แล้วค่ะ`);
+      state.employeeName=getEmployeeName(id);
       const nameText=state.employeeName?` • ${state.employeeName}`:'';
-      const spokenName=state.employeeName?` ${nameForSpeech(state.employeeName)}`:' ยังไม่พบชื่อในรายการย้อนหลัง';
+      const spokenName=state.employeeName?` ${nameForSpeech(state.employeeName)}`:'';
       ask(`รหัสพนักงาน ${id}${nameText} • ต้องการตรวจสอบช่วงไหน`,'start',`รหัสพนักงาน ${employeeIdSpeech(id).replace('ดี วี ที','ดีวีที').replace(/ ขีด /g,' ')}${spokenName} ต้องการตรวจสอบช่วงไหนคะ`);
       return;
     }
@@ -334,26 +353,26 @@
   async function lookup(){
     try{
       if(state.type==='travel'){
-        const cached=cachedRows('travel');
-        const x=cached===null?await post({action:'getTravelSummary',employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''}):summaryCache.travel.data;
-        const rows=(cached===null?(x.records||[]):cached).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+        const hadName=!!state.employeeName;
+        const x=await getSummaryFast('travel','getTravelSummary');
+        const rows=(x.records||[]).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
         const count=rows.length,km=rows.reduce((s,r)=>s+Number(r.totalKm||0),0),amount=rows.reduce((s,r)=>s+Number(r.amount||0),0);
-        const name=x.employeeName||rows[0]?.employeeName||state.employeeName||'';state.employeeName=name;
+        const name=x.employeeName||rows[0]?.employeeName||state.employeeName||'';state.employeeName=name;if(name)rememberEmployeeName(state.employeeId,name);
         const message=count?`พบข้อมูลค่าเดินทาง ${count} รายการ ระยะทางรวม ${num(km)} กิโลเมตร ค่าเดินทางรวม ${num(amount)} บาทค่ะ`:`ไม่พบข้อมูลค่าเดินทางของรหัสพนักงาน ${employeeIdSpeech(state.employeeId)} ในช่วงที่เลือกค่ะ`;
         $('voiceResult').innerHTML=`<div class="summary-panel"><h3>🚙 สรุปค่าเดินทาง</h3><div class="voice-emp">รหัสพนักงาน ${esc(state.employeeId)}${name?` • ${esc(name)}`:''}</div><p><b>ช่วงเวลา:</b> ${esc(state.periodLabel||`${thaiDate(state.startDate)} - ${thaiDate(state.endDate)}`)}</p><div class="metric-grid"><div class="metric"><small>จำนวนรายการ</small><strong>${count}</strong></div><div class="metric"><small>ระยะทางรวม</small><strong>${num(km)} กม.</strong></div><div class="metric"><small>ค่าเดินทางรวม</small><strong>${num(amount)} บาท</strong></div></div>${renderTravelDays(rows)}</div>`;
-        setStatus(message);speak(message+' รายละเอียดแยกตามวันแสดงอยู่ด้านล่างค่ะ');
+        setStatus(message);speak((!hadName&&name?nameForSpeech(name)+' ':'')+message+' รายละเอียดแยกตามวันแสดงอยู่ด้านล่างค่ะ');
       }else{
-        const cached=cachedRows('ot');
-        const x=cached===null?await post({action:'getOTSummary',employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''}):summaryCache.ot.data;
-        const rows=(cached===null?(x.records||[]):cached).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+        const hadName=!!state.employeeName;
+        const x=await getSummaryFast('ot','getOTSummary');
+        const rows=(x.records||[]).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
         const count=rows.length;
         const comp=rows.reduce((s,r)=>/ชดชั่วโมง/i.test(String(r.otType||''))?s+Number(r.hours||0):s,0);
         const paid=rows.reduce((s,r)=>/ทำจ่ายเงิน/i.test(String(r.otType||''))?s+Number(r.hours||0):s,0);
         const total=rows.reduce((s,r)=>s+Number(r.hours||0),0);
-        const name=x.employeeName||state.employeeName||'';state.employeeName=name;
+        const name=x.employeeName||rows[0]?.employeeName||state.employeeName||'';state.employeeName=name;if(name)rememberEmployeeName(state.employeeId,name);
         const message=count?`พบโอที ${count} รายการ โอทีชดชั่วโมง ${num(comp)} ชั่วโมง โอทีทำจ่ายเงิน ${num(paid)} ชั่วโมง รวม ${num(total)} ชั่วโมงค่ะ`:`ไม่พบข้อมูลโอทีของรหัสพนักงาน ${employeeIdSpeech(state.employeeId)} ในช่วงที่เลือกค่ะ`;
         $('voiceResult').innerHTML=`<div class="summary-panel"><h3>⏰ สรุป OT</h3><div class="voice-emp">รหัสพนักงาน ${esc(state.employeeId)}${name?` • ${esc(name)}`:''}</div><p><b>ช่วงเวลา:</b> ${esc(state.periodLabel||`${thaiDate(state.startDate)} - ${thaiDate(state.endDate)}`)}</p><div class="metric-grid"><div class="metric"><small>OT ชดชั่วโมง</small><strong>${num(comp)} ชม.</strong></div><div class="metric"><small>OT ทำจ่ายเงิน</small><strong>${num(paid)} ชม.</strong></div><div class="metric"><small>OT รวม</small><strong>${num(total)} ชม.</strong></div></div>${renderOTDays(rows)}</div>`;
-        setStatus(message);speak(message+' รายละเอียดแยกตามวันแสดงอยู่ด้านล่างค่ะ');
+        setStatus(message);speak((!hadName&&name?nameForSpeech(name)+' ':'')+message+' รายละเอียดแยกตามวันแสดงอยู่ด้านล่างค่ะ');
       }
       state.step='done';
     }catch(e){setStatus('เกิดข้อผิดพลาด: '+e.message);speak('ไม่สามารถตรวจสอบข้อมูลได้ค่ะ กรุณาลองใหม่อีกครั้ง');state.step='idle';}
