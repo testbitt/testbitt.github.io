@@ -53,7 +53,7 @@
     const u=new SpeechSynthesisUtterance(text);
     u.lang='th-TH';
     if(thaiVoice)u.voice=thaiVoice;
-    u.rate=isIOS?0.96:1.04;
+    u.rate=1.04;
     u.pitch=isIOS?1.00:1.06;
     u.volume=1;
     const delay=isLineAndroid?950:260;
