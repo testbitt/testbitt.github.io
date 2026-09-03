@@ -1,0 +1,292 @@
+name: Fix KAMU voice v15 iOS LINE speed
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-kamu-voice-v15-ios-line-speed.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Patch voice assistant
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('travel-expense/voice-assistant.js')
+          s=p.read_text()
+          def rep(old,new,label):
+              global s
+              if old not in s:
+                  raise SystemExit(f'MISSING {label}')
+              s=s.replace(old,new,1)
+
+          rep("""  let recognition=null;
+  let youthfulThaiVoice=null;
+  let state={step:'idle',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};
+  let summaryCache={travel:null,ot:null};
+  let backendWarmed=false;
+
+  function chooseYouthfulThaiVoice(){
+    if(!window.speechSynthesis)return;
+    const voices=speechSynthesis.getVoices()||[];
+    const thai=voices.filter(v=>/^th(?:-|_)/i.test(v.lang||'')||/thai|ไทย/i.test(v.name||''));
+    const femaleHint=/female|woman|girl|young|youth|anime|หญิง|สาว|kanya|narisa|premwadee|pim|ploy|suda|siri|woranuch|nicha/i;
+    youthfulThaiVoice=thai.find(v=>femaleHint.test(v.name||''))||thai.find(v=>/google.*ไทย|google.*thai/i.test(v.name||''))||thai.find(v=>v.localService)||thai[0]||null;
+  }
+  chooseYouthfulThaiVoice();
+  if(window.speechSynthesis){
+    if(speechSynthesis.addEventListener)speechSynthesis.addEventListener('voiceschanged',chooseYouthfulThaiVoice);
+    else speechSynthesis.onvoiceschanged=chooseYouthfulThaiVoice;
+  }
+
+  function speak(text,after){
+    if(!window.speechSynthesis){after&&after();return;}
+    try{speechSynthesis.cancel();}catch(_){ }
+    chooseYouthfulThaiVoice();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang='th-TH';
+    if(youthfulThaiVoice)u.voice=youthfulThaiVoice;
+    u.rate=1.10;
+    u.pitch=1.28;
+    u.volume=1;
+    u.onend=()=>after&&setTimeout(after,170);
+    u.onerror=()=>after&&setTimeout(after,170);
+    speechSynthesis.speak(u);
+  }
+""","""  let recognition=null;
+  let thaiVoice=null;
+  let state={step:'idle',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};
+  const ua=navigator.userAgent||'';
+  const isIOS=/iPad|iPhone|iPod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const isAndroid=/Android/i.test(ua);
+  const isLine=/Line\\//i.test(ua);
+  const isLineAndroid=isAndroid&&isLine;
+  let listenStartedAt=0;
+  let silentRetryCount=0;
+  const resultCache=new Map();
+
+  function chooseThaiVoice(){
+    if(!window.speechSynthesis)return;
+    const voices=speechSynthesis.getVoices()||[];
+    const thai=voices.filter(v=>/^th(?:-|_)/i.test(v.lang||'')||/thai|ไทย/i.test(v.name||''));
+    if(isIOS){
+      thaiVoice=thai.find(v=>v.localService&&/kanya|narisa|premwadee|siri|thai|ไทย/i.test(v.name||''))||thai.find(v=>v.localService)||thai[0]||null;
+    }else{
+      thaiVoice=thai.find(v=>/google.*thai|google.*ไทย/i.test(v.name||''))||thai.find(v=>v.localService)||thai[0]||null;
+    }
+  }
+  chooseThaiVoice();
+  if(window.speechSynthesis){
+    if(speechSynthesis.addEventListener)speechSynthesis.addEventListener('voiceschanged',chooseThaiVoice);
+    else speechSynthesis.onvoiceschanged=chooseThaiVoice;
+  }
+
+  function speak(text,after){
+    if(!window.speechSynthesis){after&&after();return;}
+    try{speechSynthesis.cancel();}catch(_){ }
+    chooseThaiVoice();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang='th-TH';
+    if(thaiVoice)u.voice=thaiVoice;
+    u.rate=isIOS?0.96:1.04;
+    u.pitch=isIOS?1.00:1.06;
+    u.volume=1;
+    const delay=isLineAndroid?950:260;
+    u.onend=()=>after&&setTimeout(after,delay);
+    u.onerror=()=>after&&setTimeout(after,delay);
+    speechSynthesis.speak(u);
+  }
+""",'voice platform block')
+
+          rep("""    $('voiceSupport').textContent=SpeechRecognition?'พร้อมรับรหัสพนักงานด้วยเสียงภาษาไทย / English ✓':'เบราว์เซอร์นี้ไม่รองรับ Speech Recognition กรุณาใช้ Chrome หรือ Edge';
+    $('goVoiceAssistant').onclick=openVoice;
+    $('voiceBack').onclick=goHome;
+    $('voiceStart').onclick=startFlow;
+""","""    $('voiceSupport').textContent=SpeechRecognition?'พร้อมรับรหัสพนักงานด้วยเสียงภาษาไทย / English ✓':'เบราว์เซอร์นี้ไม่รองรับ Speech Recognition กรุณาใช้ Chrome หรือ Edge';
+    $('goVoiceAssistant').onclick=openVoice;
+    $('voiceBack').onclick=goHome;
+    $('voiceStart').onclick=()=>{if(state.step&& !['idle','done','loading'].includes(state.step))listen(true);else startFlow();};
+""",'voice start button')
+
+          rep("""  function openVoice(){
+    ['home','travel','ot','travelSummary','otSummary','adminSummary'].forEach(id=>$(id)&&$(id).classList.add('hidden'));
+    $('voiceAssistant').classList.remove('hidden');scrollTo(0,0);
+    warmBackend();
+  }
+  function warmBackend(){
+    if(backendWarmed)return;
+    backendWarmed=true;
+    post({action:'ping'}).catch(()=>{});
+  }
+""","""  function openVoice(){
+    ['home','travel','ot','travelSummary','otSummary','adminSummary'].forEach(id=>$(id)&&$(id).classList.add('hidden'));
+    $('voiceAssistant').classList.remove('hidden');scrollTo(0,0);
+  }
+""",'remove backend warmup')
+
+          rep("""    state={step:'type',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};
+    summaryCache={travel:null,ot:null};
+    $('voiceResult').innerHTML='';setHeard('');
+""","""    state={step:'type',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};
+    silentRetryCount=0;
+    $('voiceResult').innerHTML='';setHeard('');
+""",'start flow cache reset')
+
+          rep("""  function listen(){
+    if(!SpeechRecognition)return;
+    try{recognition&&recognition.abort();}catch(_){ }
+    recognition=new SpeechRecognition();
+    recognition.lang='th-TH';recognition.interimResults=false;recognition.maxAlternatives=3;recognition.continuous=false;
+    recognition.onstart=()=>{$('voiceStart').textContent='🎙️ กำลังฟัง...';};
+    recognition.onend=()=>{$('voiceStart').textContent='🎤 เริ่มคำสั่งเสียง';};
+    recognition.onerror=()=>{setStatus('ได้ยินไม่ชัดค่ะ ลองกดเริ่มแล้วพูดใหม่อีกครั้งนะคะ');};
+    recognition.onresult=e=>{
+      const text=Array.from(e.results[0]).map(x=>x.transcript).join(' ');
+      setHeard(text);handleAnswer(text);
+    };
+    try{recognition.start();}catch(_){ }
+  }
+""","""  function listen(manual=false){
+    if(!SpeechRecognition)return;
+    try{recognition&&recognition.abort();}catch(_){ }
+    recognition=new SpeechRecognition();
+    recognition.lang='th-TH';recognition.interimResults=false;recognition.maxAlternatives=3;recognition.continuous=false;
+    listenStartedAt=Date.now();
+    recognition.onstart=()=>{$('voiceStart').textContent='🎙️ กำลังฟัง...';setStatus('กำลังฟังอยู่ค่ะ พูดได้เลย');};
+    recognition.onend=()=>{$('voiceStart').textContent='🎤 เริ่มคำสั่งเสียง';};
+    recognition.onerror=e=>{
+      const code=String(e&&e.error||'');
+      const elapsed=Date.now()-listenStartedAt;
+      if(code==='aborted')return;
+      if(code==='no-speech'&&isLineAndroid){
+        if(silentRetryCount<2){silentRetryCount++;setStatus('กำลังฟังอยู่ค่ะ พูดได้เลย');setTimeout(()=>listen(false),900);}
+        else{setStatus('ยังไม่ได้รับเสียงค่ะ แตะปุ่มไมค์แล้วพูดได้เลย');}
+        return;
+      }
+      if(code==='no-speech'&&elapsed<1800){setStatus('กำลังฟังอยู่ค่ะ พูดได้เลย');return;}
+      if(code==='not-allowed'||code==='service-not-allowed'){
+        setStatus(isLineAndroid?'กรุณาอนุญาตไมโครโฟนให้ LINE แล้วแตะปุ่มไมค์อีกครั้ง':'กรุณาอนุญาตการใช้ไมโครโฟน แล้วลองอีกครั้ง');
+        return;
+      }
+      setStatus('รับเสียงไม่สำเร็จค่ะ แตะปุ่มไมค์แล้วลองพูดอีกครั้ง');
+    };
+    recognition.onresult=e=>{
+      silentRetryCount=0;
+      const text=Array.from(e.results[0]).map(x=>x.transcript).join(' ');
+      setHeard(text);handleAnswer(text);
+    };
+    try{recognition.start();}catch(_){if(manual)setStatus('แตะปุ่มไมค์อีกครั้งแล้วพูดได้เลย');}
+  }
+""",'listen handling')
+
+          rep("""  async function getEmployeeName(id){
+    const actions=state.type==='travel'?[['travel','getTravelSummary'],['ot','getOTSummary']]:[['ot','getOTSummary'],['travel','getTravelSummary']];
+    for(const [type,action] of actions){
+      try{
+        const x=await post({action,employeeId:id,month:'',startDate:'',endDate:''});
+        summaryCache[type]={employeeId:id,data:x};
+        const name=String(x.employeeName||x.records?.[0]?.employeeName||'').trim();
+        if(name)return name;
+      }catch(_){ }
+    }
+    return '';
+  }
+  function cachedRows(type){
+    const c=summaryCache[type];
+    if(!c||c.employeeId!==state.employeeId||!c.data)return null;
+    return (c.data.records||[]).filter(r=>{
+      const d=String(r.date||'').slice(0,10);
+      return d&&(!state.startDate||d>=state.startDate)&&(!state.endDate||d<=state.endDate);
+    });
+  }
+""","""  function employeeNameKey(id){return 'kamu_voice_emp_'+String(id||'').toUpperCase();}
+  function getEmployeeName(id){
+    try{return localStorage.getItem(employeeNameKey(id))||'';}catch(_){return '';}
+  }
+  function rememberEmployeeName(id,name){
+    if(!name)return;
+    try{localStorage.setItem(employeeNameKey(id),String(name).trim());}catch(_){ }
+  }
+  function resultCacheKey(type){return [type,state.employeeId,state.startDate,state.endDate].join('|');}
+  async function getSummaryFast(type,action){
+    const key=resultCacheKey(type),cached=resultCache.get(key);
+    if(cached&&Date.now()-cached.time<300000)return cached.data;
+    const x=await post({action,employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''});
+    resultCache.set(key,{time:Date.now(),data:x});
+    const name=String(x.employeeName||x.records?.[0]?.employeeName||'').trim();
+    if(name)rememberEmployeeName(state.employeeId,name);
+    return x;
+  }
+""",'employee/history cache')
+
+          rep("""      setStatus(`กำลังตรวจสอบรหัสพนักงาน ${id}...`);
+      state.employeeName=await getEmployeeName(id);
+      const nameText=state.employeeName?` • ${state.employeeName}`:'';
+      const spokenName=state.employeeName?` ${nameForSpeech(state.employeeName)}`:' ยังไม่พบชื่อในรายการย้อนหลัง';
+""","""      setStatus(`รับรหัสพนักงาน ${id} แล้วค่ะ`);
+      state.employeeName=getEmployeeName(id);
+      const nameText=state.employeeName?` • ${state.employeeName}`:'';
+      const spokenName=state.employeeName?` ${nameForSpeech(state.employeeName)}`:'';
+""",'employee lookup step')
+
+          rep("""        const cached=cachedRows('travel');
+        const x=cached===null?await post({action:'getTravelSummary',employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''}):summaryCache.travel.data;
+        const rows=(cached===null?(x.records||[]):cached).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+        const count=rows.length,km=rows.reduce((s,r)=>s+Number(r.totalKm||0),0),amount=rows.reduce((s,r)=>s+Number(r.amount||0),0);
+        const name=x.employeeName||rows[0]?.employeeName||state.employeeName||'';state.employeeName=name;
+""","""        const hadName=!!state.employeeName;
+        const x=await getSummaryFast('travel','getTravelSummary');
+        const rows=(x.records||[]).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+        const count=rows.length,km=rows.reduce((s,r)=>s+Number(r.totalKm||0),0),amount=rows.reduce((s,r)=>s+Number(r.amount||0),0);
+        const name=x.employeeName||rows[0]?.employeeName||state.employeeName||'';state.employeeName=name;if(name)rememberEmployeeName(state.employeeId,name);
+""",'travel targeted lookup')
+
+          rep("""        setStatus(message);speak(message+' รายละเอียดแยกตามวันแสดงอยู่ด้านล่างค่ะ');
+      }else{
+        const cached=cachedRows('ot');
+        const x=cached===null?await post({action:'getOTSummary',employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''}):summaryCache.ot.data;
+        const rows=(cached===null?(x.records||[]):cached).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+""","""        setStatus(message);speak((!hadName&&name?nameForSpeech(name)+' ':'')+message+' รายละเอียดแยกตามวันแสดงอยู่ด้านล่างค่ะ');
+      }else{
+        const hadName=!!state.employeeName;
+        const x=await getSummaryFast('ot','getOTSummary');
+        const rows=(x.records||[]).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+""",'ot targeted lookup')
+
+          rep("""        const name=x.employeeName||state.employeeName||'';state.employeeName=name;
+""","""        const name=x.employeeName||rows[0]?.employeeName||state.employeeName||'';state.employeeName=name;if(name)rememberEmployeeName(state.employeeId,name);
+""",'ot remember name')
+
+          # replace the last OT speak only
+          old="setStatus(message);speak(message+' รายละเอียดแยกตามวันแสดงอยู่ด้านล่างค่ะ');"
+          idx=s.rfind(old)
+          if idx<0: raise SystemExit('MISSING ot speak')
+          s=s[:idx]+"setStatus(message);speak((!hadName&&name?nameForSpeech(name)+' ':'')+message+' รายละเอียดแยกตามวันแสดงอยู่ด้านล่างค่ะ');"+s[idx+len(old):]
+
+          p.write_text(s)
+          PY
+          node --check travel-expense/voice-assistant.js
+      - name: Bump cache
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('travel-expense/index.html')
+          s=p.read_text()
+          import re
+          s,n=re.subn(r'voice-assistant\.js\?v=[^"\']+', 'voice-assistant.js?v=20260903-voice15-fast-ios-line', s, count=1)
+          if n!=1: raise SystemExit('voice cache ref not found')
+          p.write_text(s)
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add travel-expense/voice-assistant.js travel-expense/index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix iOS voice LINE mic and speed up lookup'
+          git push
