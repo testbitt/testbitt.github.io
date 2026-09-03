@@ -1,4 +1,4 @@
-name: Upgrade KAMU voice IDs and anime tone
+name: Fix KAMU voice on iOS and LINE Android
 on:
   workflow_dispatch:
   push:
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch employee ID display
+      - name: Patch platform voice behavior
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -20,18 +20,73 @@ jobs:
           p = Path('travel-expense/voice-assistant.js')
           s = p.read_text()
 
-          old = "      state.employeeId=id;\n      setStatus(`กำลังตรวจสอบรหัสพนักงาน ${id}...`);"
-          new = "      state.employeeId=id;\n      setHeard(`รหัสพนักงาน: ${id}`);\n      setStatus(`กำลังตรวจสอบรหัสพนักงาน ${id}...`);"
-          if old in s:
-              s = s.replace(old, new, 1)
-          elif "setHeard(`รหัสพนักงาน: ${id}`);" not in s:
-              raise SystemExit('employee ID display insertion point not found')
+          marker = "  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;\n"
+          if 'const IS_IOS=' not in s:
+              platform = marker + "  const USER_AGENT=navigator.userAgent||'';\n  const IS_IOS=/iPhone|iPad|iPod/i.test(USER_AGENT);\n  const IS_ANDROID=/Android/i.test(USER_AGENT);\n  const IS_LINE=/\\bLine\\//i.test(USER_AGENT)||/LIFF/i.test(USER_AGENT);\n"
+              s = s.replace(marker, platform, 1)
+
+          if 'let recognitionRetry=' not in s:
+              s = s.replace('  let recognition=null;\n', '  let recognition=null;\n  let recognitionRetry=0;\n', 1)
+
+          if 'const iosNatural=' not in s:
+              pattern = r"(    youthfulThaiVoice=thai\.find\(v=>femaleHint\.test\(v\.name\|\|''\)\).*?\|\|null;\n)"
+              repl = r"\1    if(IS_IOS){\n      const iosNatural=thai.find(v=>v.localService&&/kanya|narisa|siri|thai|ไทย/i.test(v.name||''))||thai.find(v=>v.localService)||thai[0]||null;\n      if(iosNatural)youthfulThaiVoice=iosNatural;\n    }\n"
+              s, n = re.subn(pattern, repl, s, count=1)
+              if n == 0:
+                  raise SystemExit('voice selection insertion point not found')
+
+          s = re.sub(r"    u\.rate=[^;]+;", "    u.rate=IS_IOS?0.98:1.10;", s, count=1)
+          s = re.sub(r"    u\.pitch=[^;]+;", "    u.pitch=IS_IOS?1.02:1.22;", s, count=1)
+
+          old_timing = "    u.onend=()=>after&&setTimeout(after,170);\n    u.onerror=()=>after&&setTimeout(after,170);"
+          new_timing = "    const listenDelay=(IS_LINE&&IS_ANDROID)?750:(IS_IOS?360:260);\n    u.onend=()=>after&&setTimeout(after,listenDelay);\n    u.onerror=()=>after&&setTimeout(after,listenDelay);"
+          if old_timing in s:
+              s = s.replace(old_timing, new_timing, 1)
+          elif 'const listenDelay=' not in s:
+              s = re.sub(r"    u\.onend=.*?\n    u\.onerror=.*?\n", new_timing+'\n', s, count=1)
+
+          s = s.replace("    state={step:'type',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};", "    recognitionRetry=0;\n    state={step:'type',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};", 1)
+
+          old_start = "    recognition.onstart=()=>{$('voiceStart').textContent='🎙️ กำลังฟัง...';};"
+          new_start = "    recognition.onstart=()=>{$('voiceStart').textContent='🎙️ กำลังฟัง...';if(state.step!=='loading')setStatus('กำลังฟังอยู่ค่ะ พูดได้เลย');};"
+          s = s.replace(old_start, new_start, 1)
+
+          old_error = "    recognition.onerror=()=>{setStatus('ได้ยินไม่ชัดค่ะ ลองกดเริ่มแล้วพูดใหม่อีกครั้งนะคะ');};"
+          new_error = """    recognition.onerror=e=>{
+      const err=String(e&&e.error||'');
+      if(err==='aborted')return;
+      if(err==='no-speech'){
+        setStatus('กำลังรอฟังอยู่ค่ะ พูดได้เลย');
+        if(IS_LINE&&IS_ANDROID&&recognitionRetry<1&&!['idle','loading','done'].includes(state.step)){
+          recognitionRetry++;
+          setTimeout(()=>listen(),500);
+        }
+        return;
+      }
+      if(err==='not-allowed'||err==='service-not-allowed'){
+        setStatus(IS_LINE&&IS_ANDROID?'กรุณาอนุญาตไมโครโฟนให้ LINE ก่อนใช้งานค่ะ':'กรุณาอนุญาตการใช้ไมโครโฟนก่อนค่ะ');
+        return;
+      }
+      if(err==='audio-capture'){
+        setStatus('ยังไม่สามารถเปิดไมโครโฟนได้ค่ะ กรุณาตรวจสิทธิ์ไมโครโฟนแล้วลองใหม่');
+        return;
+      }
+      setStatus('รับเสียงไม่สำเร็จค่ะ กดเริ่มคำสั่งเสียงแล้วลองอีกครั้ง');
+    };"""
+          if old_error in s:
+              s = s.replace(old_error, new_error, 1)
+          elif "err==='no-speech'" not in s:
+              raise SystemExit('recognition error handler not found')
+
+          old_result = "    recognition.onresult=e=>{\n      const text=Array.from(e.results[0]).map(x=>x.transcript).join(' ');"
+          new_result = "    recognition.onresult=e=>{\n      recognitionRetry=0;\n      const text=Array.from(e.results[0]).map(x=>x.transcript).join(' ');"
+          s = s.replace(old_result, new_result, 1)
 
           p.write_text(s)
 
           idx = Path('travel-expense/index.html')
           t = idx.read_text()
-          t = re.sub(r'voice-assistant\.js\?v=[^\"]+', 'voice-assistant.js?v=20260831-voice11-english-id', t)
+          t = re.sub(r'voice-assistant\.js\?v=[^\"]+', 'voice-assistant.js?v=20260903-voice12-ios-linefix', t)
           idx.write_text(t)
           PY
       - name: Commit
@@ -39,5 +94,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add travel-expense/voice-assistant.js travel-expense/index.html
-          git diff --cached --quiet || git commit -m "Show recognized employee IDs in English format"
+          git diff --cached --quiet || git commit -m "Improve iOS voice and LINE Android microphone handling"
           git push
