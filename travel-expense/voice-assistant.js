@@ -21,6 +21,8 @@
   let recognition=null;
   let youthfulThaiVoice=null;
   let state={step:'idle',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};
+  let summaryCache={travel:null,ot:null};
+  let backendWarmed=false;
 
   function chooseYouthfulThaiVoice(){
     if(!window.speechSynthesis)return;
@@ -110,6 +112,12 @@
   function openVoice(){
     ['home','travel','ot','travelSummary','otSummary','adminSummary'].forEach(id=>$(id)&&$(id).classList.add('hidden'));
     $('voiceAssistant').classList.remove('hidden');scrollTo(0,0);
+    warmBackend();
+  }
+  function warmBackend(){
+    if(backendWarmed)return;
+    backendWarmed=true;
+    post({action:'ping'}).catch(()=>{});
   }
   function goHome(){
     stopAll(false);$('voiceAssistant')?.classList.add('hidden');
@@ -125,6 +133,7 @@
   function startFlow(){
     if(!SpeechRecognition){alert('อุปกรณ์นี้ไม่รองรับการรับคำสั่งเสียง กรุณาใช้ Chrome หรือ Edge');return;}
     state={step:'type',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};
+    summaryCache={travel:null,ot:null};
     $('voiceResult').innerHTML='';setHeard('');
     ask('สวัสดีค่ะ ต้องการตรวจสอบค่าเดินทาง หรือ ตรวจสอบโอทีคะ','type');
   }
@@ -233,11 +242,24 @@
     if(!x.success)throw Error(x.message||'ค้นข้อมูลไม่สำเร็จ');return x;
   }
   async function getEmployeeName(id){
-    const actions=state.type==='travel'?['getTravelSummary','getOTSummary']:['getOTSummary','getTravelSummary'];
-    for(const action of actions){
-      try{const x=await post({action,employeeId:id,month:'',startDate:'',endDate:''});if(String(x.employeeName||'').trim())return String(x.employeeName).trim();}catch(_){ }
+    const actions=state.type==='travel'?[['travel','getTravelSummary'],['ot','getOTSummary']]:[['ot','getOTSummary'],['travel','getTravelSummary']];
+    for(const [type,action] of actions){
+      try{
+        const x=await post({action,employeeId:id,month:'',startDate:'',endDate:''});
+        summaryCache[type]={employeeId:id,data:x};
+        const name=String(x.employeeName||x.records?.[0]?.employeeName||'').trim();
+        if(name)return name;
+      }catch(_){ }
     }
     return '';
+  }
+  function cachedRows(type){
+    const c=summaryCache[type];
+    if(!c||c.employeeId!==state.employeeId||!c.data)return null;
+    return (c.data.records||[]).filter(r=>{
+      const d=String(r.date||'').slice(0,10);
+      return d&&(!state.startDate||d>=state.startDate)&&(!state.endDate||d<=state.endDate);
+    });
   }
   function nameForSpeech(fullName){
     const parts=String(fullName||'').trim().split(/\s+/).filter(Boolean);if(!parts.length)return '';
@@ -312,17 +334,19 @@
   async function lookup(){
     try{
       if(state.type==='travel'){
-        const x=await post({action:'getTravelSummary',employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''});
-        const rows=(x.records||[]).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
-        const count=Number(x.totals?.count||rows.length||0),km=Number(x.totals?.totalKm||0),amount=Number(x.totals?.totalAmount||0);
-        const name=x.employeeName||state.employeeName||'';state.employeeName=name;
+        const cached=cachedRows('travel');
+        const x=cached===null?await post({action:'getTravelSummary',employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''}):summaryCache.travel.data;
+        const rows=(cached===null?(x.records||[]):cached).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+        const count=rows.length,km=rows.reduce((s,r)=>s+Number(r.totalKm||0),0),amount=rows.reduce((s,r)=>s+Number(r.amount||0),0);
+        const name=x.employeeName||rows[0]?.employeeName||state.employeeName||'';state.employeeName=name;
         const message=count?`พบข้อมูลค่าเดินทาง ${count} รายการ ระยะทางรวม ${num(km)} กิโลเมตร ค่าเดินทางรวม ${num(amount)} บาทค่ะ`:`ไม่พบข้อมูลค่าเดินทางของรหัสพนักงาน ${employeeIdSpeech(state.employeeId)} ในช่วงที่เลือกค่ะ`;
         $('voiceResult').innerHTML=`<div class="summary-panel"><h3>🚙 สรุปค่าเดินทาง</h3><div class="voice-emp">รหัสพนักงาน ${esc(state.employeeId)}${name?` • ${esc(name)}`:''}</div><p><b>ช่วงเวลา:</b> ${esc(state.periodLabel||`${thaiDate(state.startDate)} - ${thaiDate(state.endDate)}`)}</p><div class="metric-grid"><div class="metric"><small>จำนวนรายการ</small><strong>${count}</strong></div><div class="metric"><small>ระยะทางรวม</small><strong>${num(km)} กม.</strong></div><div class="metric"><small>ค่าเดินทางรวม</small><strong>${num(amount)} บาท</strong></div></div>${renderTravelDays(rows)}</div>`;
         setStatus(message);speak(message+' รายละเอียดแยกตามวันแสดงอยู่ด้านล่างค่ะ');
       }else{
-        const x=await post({action:'getOTSummary',employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''});
-        const rows=(x.records||[]).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
-        const count=Number(x.totals?.count||rows.length||0);
+        const cached=cachedRows('ot');
+        const x=cached===null?await post({action:'getOTSummary',employeeId:state.employeeId,startDate:state.startDate,endDate:state.endDate,month:''}):summaryCache.ot.data;
+        const rows=(cached===null?(x.records||[]):cached).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+        const count=rows.length;
         const comp=rows.reduce((s,r)=>/ชดชั่วโมง/i.test(String(r.otType||''))?s+Number(r.hours||0):s,0);
         const paid=rows.reduce((s,r)=>/ทำจ่ายเงิน/i.test(String(r.otType||''))?s+Number(r.hours||0):s,0);
         const total=rows.reduce((s,r)=>s+Number(r.hours||0),0);
