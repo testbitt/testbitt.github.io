@@ -1,0 +1,41 @@
+name: Set KAMU Voice Speed Equal
+on:
+  push:
+    paths:
+      - '.github/workflows/set-kamu-voice-speed-equal-20260903.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch voice speed and cache
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('travel-expense/voice-assistant.js')
+          s=p.read_text()
+          old="u.rate=isIOS?0.96:1.04;"
+          if old not in s:
+              raise SystemExit('voice rate pattern not found')
+          s=s.replace(old,"u.rate=1.04;",1)
+          p.write_text(s)
+
+          p=Path('travel-expense/index.html')
+          s=p.read_text()
+          import re
+          s,n=re.subn(r'voice-assistant\.js\?v=[^"<]+','voice-assistant.js?v=20260903-voice16-speed-equal',s,count=1)
+          if n!=1:
+              raise SystemExit('voice cache tag not found')
+          p.write_text(s)
+          PY
+          node --check travel-expense/voice-assistant.js
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add travel-expense/voice-assistant.js travel-expense/index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Use equal voice speed on iOS and Android'
+          git push
