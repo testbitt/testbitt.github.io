@@ -4,10 +4,6 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const num=v=>Number(v||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
   const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
-  const USER_AGENT=navigator.userAgent||'';
-  const IS_IOS=/iPhone|iPad|iPod/i.test(USER_AGENT);
-  const IS_ANDROID=/Android/i.test(USER_AGENT);
-  const IS_LINE=/\\bLine\\//i.test(USER_AGENT)||/LIFF/i.test(USER_AGENT);
   const monthNames=['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
   const monthAliases={
     'มกราคม':1,'มกรา':1,'มค':1,'กุมภาพันธ์':2,'กุมภา':2,'กพ':2,'มีนาคม':3,'มีนา':3,'มีค':3,
@@ -23,7 +19,6 @@
   };
 
   let recognition=null;
-  let recognitionRetry=0;
   let youthfulThaiVoice=null;
   let state={step:'idle',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};
 
@@ -33,10 +28,6 @@
     const thai=voices.filter(v=>/^th(?:-|_)/i.test(v.lang||'')||/thai|ไทย/i.test(v.name||''));
     const femaleHint=/female|woman|girl|young|youth|anime|หญิง|สาว|kanya|narisa|premwadee|pim|ploy|suda|siri|woranuch|nicha/i;
     youthfulThaiVoice=thai.find(v=>femaleHint.test(v.name||''))||thai.find(v=>/google.*ไทย|google.*thai/i.test(v.name||''))||thai.find(v=>v.localService)||thai[0]||null;
-    if(IS_IOS){
-      const iosNatural=thai.find(v=>v.localService&&/kanya|narisa|siri|thai|ไทย/i.test(v.name||''))||thai.find(v=>v.localService)||thai[0]||null;
-      if(iosNatural)youthfulThaiVoice=iosNatural;
-    }
   }
   chooseYouthfulThaiVoice();
   if(window.speechSynthesis){
@@ -51,12 +42,11 @@
     const u=new SpeechSynthesisUtterance(text);
     u.lang='th-TH';
     if(youthfulThaiVoice)u.voice=youthfulThaiVoice;
-    u.rate=IS_IOS?0.98:1.10;
-    u.pitch=IS_IOS?1.02:1.22;
+    u.rate=1.10;
+    u.pitch=1.28;
     u.volume=1;
-    const listenDelay=(IS_LINE&&IS_ANDROID)?750:(IS_IOS?360:260);
-    u.onend=()=>after&&setTimeout(after,listenDelay);
-    u.onerror=()=>after&&setTimeout(after,listenDelay);
+    u.onend=()=>after&&setTimeout(after,170);
+    u.onerror=()=>after&&setTimeout(after,170);
     speechSynthesis.speak(u);
   }
 
@@ -134,7 +124,6 @@
 
   function startFlow(){
     if(!SpeechRecognition){alert('อุปกรณ์นี้ไม่รองรับการรับคำสั่งเสียง กรุณาใช้ Chrome หรือ Edge');return;}
-    recognitionRetry=0;
     state={step:'type',type:'',employeeId:'',employeeName:'',startDate:'',endDate:'',periodLabel:''};
     $('voiceResult').innerHTML='';setHeard('');
     ask('สวัสดีค่ะ ต้องการตรวจสอบค่าเดินทาง หรือ ตรวจสอบโอทีคะ','type');
@@ -145,31 +134,10 @@
     try{recognition&&recognition.abort();}catch(_){ }
     recognition=new SpeechRecognition();
     recognition.lang='th-TH';recognition.interimResults=false;recognition.maxAlternatives=3;recognition.continuous=false;
-    recognition.onstart=()=>{$('voiceStart').textContent='🎙️ กำลังฟัง...';if(state.step!=='loading')setStatus('กำลังฟังอยู่ค่ะ พูดได้เลย');};
+    recognition.onstart=()=>{$('voiceStart').textContent='🎙️ กำลังฟัง...';};
     recognition.onend=()=>{$('voiceStart').textContent='🎤 เริ่มคำสั่งเสียง';};
-    recognition.onerror=e=>{
-      const err=String(e&&e.error||'');
-      if(err==='aborted')return;
-      if(err==='no-speech'){
-        setStatus('กำลังรอฟังอยู่ค่ะ พูดได้เลย');
-        if(IS_LINE&&IS_ANDROID&&recognitionRetry<1&&!['idle','loading','done'].includes(state.step)){
-          recognitionRetry++;
-          setTimeout(()=>listen(),500);
-        }
-        return;
-      }
-      if(err==='not-allowed'||err==='service-not-allowed'){
-        setStatus(IS_LINE&&IS_ANDROID?'กรุณาอนุญาตไมโครโฟนให้ LINE ก่อนใช้งานค่ะ':'กรุณาอนุญาตการใช้ไมโครโฟนก่อนค่ะ');
-        return;
-      }
-      if(err==='audio-capture'){
-        setStatus('ยังไม่สามารถเปิดไมโครโฟนได้ค่ะ กรุณาตรวจสิทธิ์ไมโครโฟนแล้วลองใหม่');
-        return;
-      }
-      setStatus('รับเสียงไม่สำเร็จค่ะ กดเริ่มคำสั่งเสียงแล้วลองอีกครั้ง');
-    };
+    recognition.onerror=()=>{setStatus('ได้ยินไม่ชัดค่ะ ลองกดเริ่มแล้วพูดใหม่อีกครั้งนะคะ');};
     recognition.onresult=e=>{
-      recognitionRetry=0;
       const text=Array.from(e.results[0]).map(x=>x.transcript).join(' ');
       setHeard(text);handleAnswer(text);
     };
