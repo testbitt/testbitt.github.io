@@ -36,3 +36,6 @@ read=async function(file,type){
 const renderV30=render;render=function(){renderV30();showCup()};
 setInterval(enforceRoleUI,800);setTimeout(enforceRoleUI,100);
 })();
+
+/* Load clean auth layout */
+(()=>{if(document.querySelector('script[data-v33-auth]'))return;const s=document.createElement('script');s.src='https://testbitt.github.io/kamu-inventory-assets/v27/patch27.js?v=33';s.dataset.v33Auth='1';s.async=false;document.head.appendChild(s)})();
