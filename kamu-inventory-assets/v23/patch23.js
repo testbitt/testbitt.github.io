@@ -28,3 +28,6 @@
   const search=$('#convSearch');if(search)search.oninput=renderConv;const add=$('#addConvRow');if(add)add.onclick=()=>{if(!S.stock?.length){setConvMessage('กรุณา Upload Stock Movement ก่อนเพิ่มสินค้าใหม่','warn');return}newConvDraft=true;renderConv();setTimeout(()=>$('#convList [data-source="new"] select')?.focus(),0)};
   const ver=document.querySelector('.version');if(ver)ver.textContent='Version 2.3 • Auto Save Conversion Master';renderConv();
 })();
+
+/* Load Version 2.4 Cup Usage */
+(()=>{if(document.querySelector('script[data-cup-v24]'))return;const s=document.createElement('script');s.src='https://testbitt.github.io/kamu-inventory-assets/v24/patch24.js?v=24';s.dataset.cupV24='1';s.async=false;document.head.appendChild(s)})();
