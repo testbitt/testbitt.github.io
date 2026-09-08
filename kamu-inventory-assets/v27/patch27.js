@@ -1,4 +1,4 @@
-/* Version 3.3 — Clean Login / Register / Admin layout */
+/* Version 3.4 — Clean Login layout without observer loop */
 (()=>{
   const css=document.createElement('style');
   css.textContent=`
@@ -34,12 +34,13 @@
   document.head.appendChild(css);
   const apply=()=>{
     const reg=document.querySelector('.cloud-mode[data-mode="register"]');
-    if(reg)reg.textContent='ลงทะเบียนเข้าใช้งาน';
+    if(reg && reg.textContent!=='ลงทะเบียนเข้าใช้งาน') reg.textContent='ลงทะเบียนเข้าใช้งาน';
     const form=document.querySelector('#cloudRegisterForm');
     const submit=form?.querySelector('button[type="submit"]');
-    if(submit)submit.textContent='ลงทะเบียนและเข้าใช้งาน';
+    if(submit && submit.textContent!=='ลงทะเบียนและเข้าใช้งาน') submit.textContent='ลงทะเบียนและเข้าใช้งาน';
     document.querySelectorAll('.cloud-note').forEach(el=>el.remove());
   };
   apply();
-  new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
+  setTimeout(apply,300);
+  setTimeout(apply,1000);
 })();
