@@ -29,5 +29,5 @@
   const ver=document.querySelector('.version');if(ver)ver.textContent='Version 2.3 • Auto Save Conversion Master';renderConv();
 })();
 
-/* Load Version 2.4 Cup Usage */
-(()=>{if(document.querySelector('script[data-cup-v24]'))return;const s=document.createElement('script');s.src='https://testbitt.github.io/kamu-inventory-assets/v24/patch24.js?v=24';s.dataset.cupV24='1';s.async=false;document.head.appendChild(s)})();
+/* Load Version 2.4 Cup Usage — cache bust v35 */
+(()=>{if(document.querySelector('script[data-cup-v35]'))return;const s=document.createElement('script');s.src='https://testbitt.github.io/kamu-inventory-assets/v24/patch24.js?v=35';s.dataset.cupV35='1';s.async=false;document.head.appendChild(s)})();
