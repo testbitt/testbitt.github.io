@@ -78,5 +78,16 @@
   ensureCupSection();renderCupUsage();
 })();
 
-/* Load Version 3.0 Public Multi User Cloud */
-(()=>{if(document.querySelector('script[data-cloud-v30]'))return;const s=document.createElement('script');s.src='https://testbitt.github.io/kamu-inventory-assets/v25/patch25.js?v=30';s.dataset.cloudV30='1';s.async=false;document.head.appendChild(s)})();
+/* Load Version 3.5 Public Multi User Cloud — clear stale session before auth */
+(()=>{
+  try{
+    localStorage.removeItem('kamuInvCloudRole');
+    localStorage.removeItem('kamuInvCloudToken');
+  }catch(e){}
+  if(document.querySelector('script[data-cloud-v35]'))return;
+  const s=document.createElement('script');
+  s.src='https://testbitt.github.io/kamu-inventory-assets/v25/patch25.js?v=35';
+  s.dataset.cloudV35='1';
+  s.async=false;
+  document.head.appendChild(s)
+})();
