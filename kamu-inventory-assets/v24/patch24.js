@@ -77,3 +77,6 @@
   const ver=document.querySelector('.version');if(ver)ver.textContent='Version 2.4 • Cup Usage';
   ensureCupSection();renderCupUsage();
 })();
+
+/* Load Version 3.0 Public Multi User Cloud */
+(()=>{if(document.querySelector('script[data-cloud-v30]'))return;const s=document.createElement('script');s.src='https://testbitt.github.io/kamu-inventory-assets/v25/patch25.js?v=30';s.dataset.cloudV30='1';s.async=false;document.head.appendChild(s)})();
