@@ -12,5 +12,5 @@ const st=document.createElement('style');st.textContent='.tablewrap table{--rm-c
 $('#exportCsv').onclick=downloadCsv;$('#exportExcel').onclick=exportExcelFile;render();
 })();
 
-/* Bootstrap Version 3.4 after cloud auth module is ready */
-(()=>{if(window.__kamuV34Loader)return;window.__kamuV34Loader=1;const boot=()=>{if(document.querySelector('script[data-v34]'))return;if(document.querySelector('#cloudAuth')){const s=document.createElement('script');s.src='https://testbitt.github.io/kamu-inventory-assets/v26/patch26.js?v=34';s.dataset.v34='1';s.async=false;document.head.appendChild(s);return}setTimeout(boot,180)};setTimeout(boot,250)})();
+/* Bootstrap Version 3.5 after cloud auth module is ready */
+(()=>{if(window.__kamuV35Loader)return;window.__kamuV35Loader=1;const boot=()=>{if(document.querySelector('script[data-v35]'))return;if(document.querySelector('#cloudAuth')){const s=document.createElement('script');s.src='https://testbitt.github.io/kamu-inventory-assets/v26/patch26.js?v=35';s.dataset.v35='1';s.async=false;document.head.appendChild(s);return}setTimeout(boot,180)};setTimeout(boot,250)})();
