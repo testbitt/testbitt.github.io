@@ -17,7 +17,7 @@
   .cloud-submit{width:100%!important;min-height:46px!important;margin:2px 0 0!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;white-space:normal!important}
   .cloud-auth-msg{width:100%!important;min-height:0!important;margin:10px 0 0!important;line-height:1.45!important;white-space:normal!important;overflow-wrap:anywhere!important}
   .cloud-auth-msg:empty{display:none!important}
-  .cloud-note{width:100%!important;margin:12px 0 0!important;padding:10px 12px!important;line-height:1.5!important;white-space:normal!important;overflow-wrap:anywhere!important}
+  .cloud-note{display:none!important}
   @media(max-width:520px){
     .cloud-auth{padding:12px 8px!important;align-items:start!important}
     .cloud-login{width:calc(100vw - 16px)!important;padding:16px!important;border-radius:18px!important;margin:8px 0!important}
@@ -38,6 +38,7 @@
     const form=document.querySelector('#cloudRegisterForm');
     const submit=form?.querySelector('button[type="submit"]');
     if(submit)submit.textContent='ลงทะเบียนและเข้าใช้งาน';
+    document.querySelectorAll('.cloud-note').forEach(el=>el.remove());
   };
   apply();
   new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
