@@ -92,7 +92,7 @@ const KSL_NEW_API='https://script.google.com/macros/s/AKfycbwtHxjbAvvxLPezMt6Glj
 })();
 
 (async()=>{
-  const VERSION='v63-safe-expiry-audit';
+  const VERSION='v63-start-expiry';
   const SHELL_CACHE_KEY='KSL_APP_SHELL_V52';
   const CORE_PATCHES=[
     'patch-v39.js?v=61','patch-v40.js?v=61','patch-v41.js?v=61',
@@ -146,8 +146,9 @@ const KSL_NEW_API='https://script.google.com/macros/s/AKfycbwtHxjbAvvxLPezMt6Glj
       try{
         await loadSafeOptionalPatch('patch-v62.js?v=63-safe-1');
         await loadSafeOptionalPatch('patch-v63.js?v=63-safe-1');
+        await loadSafeOptionalPatch('patch-v63-start-expiry.js?v=63-start-1');
         window.__KSL_RELEASE__='6.3';
-        console.info('[KSL] V6.3 safe patches ready');
+        console.info('[KSL] V6.3 safe patches + expiry start calculator ready');
       }catch(err){
         console.error('[KSL] V6.3 optional patch load failed',err);
       }
