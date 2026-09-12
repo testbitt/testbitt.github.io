@@ -88,11 +88,11 @@ const KSL_NEW_API='https://script.google.com/macros/s/AKfycbwtHxjbAvvxLPezMt6Glj
     };
   }catch(_){ }
 
-  console.info('[KSL] V6.1 API router ready',KSL_NEW_API);
+  console.info('[KSL] V6.3 API router ready',KSL_NEW_API);
 })();
 
 (async()=>{
-  const VERSION='v61-new-central-backend';
+  const VERSION='v63-safe-expiry-audit';
   const SHELL_CACHE_KEY='KSL_APP_SHELL_V52';
   const CORE_PATCHES=[
     'patch-v39.js?v=61','patch-v40.js?v=61','patch-v41.js?v=61',
@@ -126,6 +126,33 @@ const KSL_NEW_API='https://script.google.com/macros/s/AKfycbwtHxjbAvvxLPezMt6Glj
     };
     if('requestIdleCallback' in window) requestIdleCallback(run,{timeout:1800});
     else setTimeout(run,650);
+  }
+
+  async function loadSafeOptionalPatch(src){
+    const res=await fetch(src,{cache:'no-store'});
+    if(!res.ok) throw new Error('โหลด '+src+' ไม่สำเร็จ ('+res.status+')');
+    let code=await res.text();
+    const observerLoop=/new\s+MutationObserver\s*\(\s*\(\)\s*=>\s*queueMicrotask\s*\(\s*install\s*\)\s*\)\s*\.observe\s*\(\s*document\.documentElement\s*,\s*\{\s*childList\s*:\s*true\s*,\s*subtree\s*:\s*true\s*\}\s*\)\s*;?/g;
+    code=code.replace(observerLoop,'/* KSL V6.3 safe loader: recursive MutationObserver disabled */');
+    const s=document.createElement('script');
+    s.textContent=code+'\n//# sourceURL='+src.replace(/[^a-zA-Z0-9._/-]/g,'_');
+    document.body.appendChild(s);
+    s.remove();
+    return src;
+  }
+
+  function loadV63InBackground(){
+    const run=async()=>{
+      try{
+        await loadSafeOptionalPatch('patch-v62.js?v=63-safe-1');
+        await loadSafeOptionalPatch('patch-v63.js?v=63-safe-1');
+        window.__KSL_RELEASE__='6.3';
+        console.info('[KSL] V6.3 safe patches ready');
+      }catch(err){
+        console.error('[KSL] V6.3 optional patch load failed',err);
+      }
+    };
+    setTimeout(run,220);
   }
 
   async function getShell(){
@@ -184,6 +211,7 @@ const KSL_NEW_API='https://script.google.com/macros/s/AKfycbwtHxjbAvvxLPezMt6Glj
     document.documentElement.style.visibility='visible';
     window.scrollTo(0,0);
     loadHQInBackground();
+    loadV63InBackground();
     if(history.replaceState) history.replaceState(null,'','/');
   }catch(err){showFatal(err)}
 })();
