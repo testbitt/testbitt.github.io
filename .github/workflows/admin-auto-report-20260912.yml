@@ -1,0 +1,47 @@
+name: Auto Load Admin Reports
+on:
+  push:
+    paths:
+      - '.github/workflows/admin-auto-report-20260912.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Patch Admin auto reports
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('travel-expense/admin.js')
+          s=p.read_text()
+          old="""  function showAdmin(){['home','travel','ot','travelSummary','otSummary'].forEach(id=>$(id)?.classList.add('hidden'));$('adminSummary').classList.remove('hidden');clearTravel();clearOT();scrollTo(0,0);}\n  function switchTab(tab){const travel=tab==='travel';$('adminTravelPanel').classList.toggle('hidden',!travel);$('adminOTPanel').classList.toggle('hidden',travel);$('tabTravel').classList.toggle('active',travel);$('tabOT').classList.toggle('active',!travel);}\n"""
+          new="""  function currentBangkokMonth(){\n    return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'}).slice(0,7);\n  }\n  function showAdmin(){\n    ['home','travel','ot','travelSummary','otSummary'].forEach(id=>$(id)?.classList.add('hidden'));\n    $('adminSummary').classList.remove('hidden');\n    clearTravel();clearOT();\n    const month=currentBangkokMonth();\n    $('trMonth').value=month;$('aoMonth').value=month;\n    $('trStatus').textContent='⏳ กำลังโหลดรายงานค่าเดินทางเดือนปัจจุบัน...';\n    $('aoStatus').textContent='เลือกแท็บ OT เพื่อโหลดรายงานเดือนปัจจุบัน';\n    scrollTo(0,0);\n    setTimeout(()=>searchTravel(),0);\n  }\n  function switchTab(tab){\n    const travel=tab==='travel';\n    $('adminTravelPanel').classList.toggle('hidden',!travel);$('adminOTPanel').classList.toggle('hidden',travel);\n    $('tabTravel').classList.toggle('active',travel);$('tabOT').classList.toggle('active',!travel);\n    if(!travel&&!otRows.length&&$('aoMonth').value){\n      $('aoStatus').textContent='⏳ กำลังโหลดรายงาน OT เดือนปัจจุบัน...';\n      setTimeout(()=>searchOT(),0);\n    }\n  }\n"""
+          if old not in s:
+              raise SystemExit('Target showAdmin/switchTab block not found')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+
+          ip=Path('travel-expense/index.html')
+          h=ip.read_text()
+          h,n=re.subn(r'admin\.js\?v=[^"\']+', 'admin.js?v=20260912-admin-report-auto', h, count=1)
+          if n!=1:
+              raise SystemExit('admin.js cache reference not found')
+          ip.write_text(h)
+          PY
+          node --check travel-expense/admin.js
+          grep -q '20260912-admin-report-auto' travel-expense/index.html
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add travel-expense/admin.js travel-expense/index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Show Admin current month reports automatically'
+          git push
