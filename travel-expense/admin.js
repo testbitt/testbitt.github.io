@@ -136,8 +136,29 @@
   function showHome(){
     $('adminSummary')?.classList.add('hidden');['travel','ot','travelSummary','otSummary'].forEach(id=>$(id)?.classList.add('hidden'));$('home')?.classList.remove('hidden');scrollTo(0,0);
   }
-  function showAdmin(){['home','travel','ot','travelSummary','otSummary'].forEach(id=>$(id)?.classList.add('hidden'));$('adminSummary').classList.remove('hidden');clearTravel();clearOT();scrollTo(0,0);}
-  function switchTab(tab){const travel=tab==='travel';$('adminTravelPanel').classList.toggle('hidden',!travel);$('adminOTPanel').classList.toggle('hidden',travel);$('tabTravel').classList.toggle('active',travel);$('tabOT').classList.toggle('active',!travel);}
+  function currentBangkokMonth(){
+    return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'}).slice(0,7);
+  }
+  function showAdmin(){
+    ['home','travel','ot','travelSummary','otSummary'].forEach(id=>$(id)?.classList.add('hidden'));
+    $('adminSummary').classList.remove('hidden');
+    clearTravel();clearOT();
+    const month=currentBangkokMonth();
+    $('trMonth').value=month;$('aoMonth').value=month;
+    $('trStatus').textContent='⏳ กำลังโหลดรายงานค่าเดินทางเดือนปัจจุบัน...';
+    $('aoStatus').textContent='เลือกแท็บ OT เพื่อโหลดรายงานเดือนปัจจุบัน';
+    scrollTo(0,0);
+    setTimeout(()=>searchTravel(),0);
+  }
+  function switchTab(tab){
+    const travel=tab==='travel';
+    $('adminTravelPanel').classList.toggle('hidden',!travel);$('adminOTPanel').classList.toggle('hidden',travel);
+    $('tabTravel').classList.toggle('active',travel);$('tabOT').classList.toggle('active',!travel);
+    if(!travel&&!otRows.length&&$('aoMonth').value){
+      $('aoStatus').textContent='⏳ กำลังโหลดรายงาน OT เดือนปัจจุบัน...';
+      setTimeout(()=>searchOT(),0);
+    }
+  }
 
   function openAdminLogin(){
     if($('adminLoginModal'))return;
