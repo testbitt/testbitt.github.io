@@ -84,7 +84,7 @@ const KSL_NEW_API='https://script.google.com/macros/s/AKfycbwtHxjbAvvxLPezMt6Glj
           if(routed!==child.src) child.src=routed;
         }
       }catch(_){ }
-      return nativeInsert.apply(this,args);
+      return nativeInsert.call(this,child,ref);
     };
   }catch(_){ }
 
