@@ -92,7 +92,7 @@ const KSL_NEW_API='https://script.google.com/macros/s/AKfycbwtHxjbAvvxLPezMt6Glj
 })();
 
 (async()=>{
-  const VERSION='v63-expiry-history-online';
+  const VERSION='v63-expiry-correct-date';
   const SHELL_CACHE_KEY='KSL_APP_SHELL_V52';
   const CORE_PATCHES=[
     'patch-v39.js?v=61','patch-v40.js?v=61','patch-v41.js?v=61',
@@ -148,9 +148,10 @@ const KSL_NEW_API='https://script.google.com/macros/s/AKfycbwtHxjbAvvxLPezMt6Glj
         await loadSafeOptionalPatch('patch-v63.js?v=63-safe-1');
         await loadSafeOptionalPatch('patch-v63-start-expiry.js?v=63-start-1');
         await loadSafeOptionalPatch('patch-v63-expiry-result.js?v=63-result-1');
+        await loadSafeOptionalPatch('patch-v63-correct-expiry.js?v=63-correct-1');
         await loadSafeOptionalPatch('patch-v63-history.js?v=63-history-1');
         window.__KSL_RELEASE__='6.3';
-        console.info('[KSL] V6.3 safe patches + expiry audit online history ready');
+        console.info('[KSL] V6.3 safe patches + correct expiry date + online history ready');
       }catch(err){
         console.error('[KSL] V6.3 optional patch load failed',err);
       }
