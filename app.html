@@ -84,7 +84,7 @@ const KSL_NEW_API='https://script.google.com/macros/s/AKfycbwtHxjbAvvxLPezMt6Glj
           if(routed!==child.src) child.src=routed;
         }
       }catch(_){ }
-      return nativeInsert.call(this,child,ref);
+      return nativeInsert.apply(this,args);
     };
   }catch(_){ }
 
@@ -150,8 +150,9 @@ const KSL_NEW_API='https://script.google.com/macros/s/AKfycbwtHxjbAvvxLPezMt6Glj
         await loadSafeOptionalPatch('patch-v63-expiry-result.js?v=63-result-1');
         await loadSafeOptionalPatch('patch-v63-correct-expiry.js?v=63-correct-1');
         await loadSafeOptionalPatch('patch-v63-history.js?v=63-history-1');
+        await loadSafeOptionalPatch('patch-v63-inspection-meta.js?v=63-meta-1');
         window.__KSL_RELEASE__='6.3';
-        console.info('[KSL] V6.3 safe patches + correct expiry date + online history ready');
+        console.info('[KSL] V6.3 safe patches + correct expiry date + online history + inspection meta ready');
       }catch(err){
         console.error('[KSL] V6.3 optional patch load failed',err);
       }
