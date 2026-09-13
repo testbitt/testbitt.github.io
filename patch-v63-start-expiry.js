@@ -1,4 +1,4 @@
-/* KSL V6.3 update — start datetime -> calculated expiry datetime */
+/* KSL V6.3 update — start datetime support; manual expiry field is rendered by result patch */
 (() => {
   'use strict';
   if (window.__KSL_EXPIRY_START_V631__) return;
@@ -18,11 +18,9 @@
     #expiryAudit .ea-start-cell{min-width:205px}
     #expiryAudit .ea-start-input{width:190px;min-height:34px;border:1px solid #cbded5;border-radius:8px;padding:5px 7px;font:inherit;background:#fff;color:#203c31}
     #expiryAudit .ea-start-input:focus{outline:0;border-color:#2b9270;box-shadow:0 0 0 3px rgba(43,146,112,.10)}
-    #expiryAudit .ea-calc-cell{min-width:190px}
-    #expiryAudit .ea-calc-expiry{display:inline-flex;flex-direction:column;gap:2px;padding:7px 9px;border-radius:10px;background:#eef8f3;border:1px solid #d4e9df;color:#174b38;font-weight:900;line-height:1.35}
-    #expiryAudit .ea-calc-expiry small{font-size:8.5px;color:#6b8077;font-weight:700}
-    #expiryAudit .ea-calc-expiry.manual{background:#fff7df;border-color:#efdfad;color:#8b6516}
-    #expiryAudit .ea-calc-expiry.pending{background:#f3f5f4;border-color:#e1e7e4;color:#718079}
+    #expiryAudit .ea-calc-cell{min-width:205px}
+    #expiryAudit .ea-manual-expiry-input{width:190px;min-height:34px;border:1px solid #cbded5;border-radius:8px;padding:5px 7px;font:inherit;background:#fff;color:#203c31}
+    #expiryAudit .ea-manual-expiry-input:focus{outline:0;border-color:#2b9270;box-shadow:0 0 0 3px rgba(43,146,112,.10)}
   `;
   document.head.appendChild(style);
 
@@ -33,52 +31,14 @@
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(starts)); } catch (_) {}
   }
 
-  function formatThai(v){
-    if (!v) return '-';
-    const d = v instanceof Date ? v : new Date(v);
-    if (Number.isNaN(d.getTime())) return '-';
-    try {
-      return new Intl.DateTimeFormat('th-TH', {
-        day:'2-digit', month:'2-digit', year:'numeric',
-        hour:'2-digit', minute:'2-digit', hour12:false
-      }).format(d);
-    } catch (_) { return d.toLocaleString('th-TH'); }
-  }
-
-  function parseDuration(holding, start){
-    const raw = txt(holding).toLowerCase();
-    if (!raw || /ตาม.*บรรจุภัณฑ์|บรรจุภัณฑ์|package/.test(raw)) return {kind:'manual',expiry:null};
-    const base = new Date(start);
-    if (Number.isNaN(base.getTime())) return {kind:'invalid',expiry:null};
-    const m = raw.match(/(\d+(?:\.\d+)?)\s*(นาที|ชั่วโมง|ชม\.?|วัน|เดือน|ปี)/i);
-    if (!m) return {kind:'manual',expiry:null};
-    const n = Number(m[1]);
-    const unit = m[2];
-    const d = new Date(base);
-    if (/นาที/.test(unit)) d.setMinutes(d.getMinutes() + n);
-    else if (/ชั่วโมง|ชม/.test(unit)) d.setHours(d.getHours() + n);
-    else if (/วัน/.test(unit)) d.setDate(d.getDate() + n);
-    else if (/เดือน/.test(unit)) d.setMonth(d.getMonth() + n);
-    else if (/ปี/.test(unit)) d.setFullYear(d.getFullYear() + n);
-    return {kind:'fixed',expiry:d};
-  }
-
-  function resultMarkup(holding, start){
-    if (!start) return '<span class="ea-calc-expiry pending">รอวัน/เวลาเริ่มต้น<small>กรอกช่องเริ่มต้นเพื่อคำนวณ</small></span>';
-    const calc = parseDuration(holding, start);
-    if (calc.kind === 'fixed' && calc.expiry) {
-      return `<span class="ea-calc-expiry">${esc(formatThai(calc.expiry))}<small>คำนวณจาก ${esc(holding || '-')}</small></span>`;
-    }
-    if (calc.kind === 'manual') return '<span class="ea-calc-expiry manual">ตรวจตามฉลาก<small>Holding Time ไม่ระบุช่วงคำนวณ</small></span>';
-    return '<span class="ea-calc-expiry pending">คำนวณไม่ได้<small>กรุณาตรวจวัน/เวลาเริ่มต้น</small></span>';
-  }
-
   function renderCalc(tr){
+    // V6.3 manual-expiry mode owns this column. Never overwrite it with a calculated badge.
+    if (window.__KSL_EXPIRY_MANUAL_RESULT_V634__) return;
     if (!tr) return;
-    const input = tr.querySelector('.ea-start-input');
     const out = tr.querySelector('.ea-calc-cell');
-    const holding = txt(tr.cells?.[3]?.textContent);
-    if (out) out.innerHTML = resultMarkup(holding, input?.value || '');
+    if (out && !out.querySelector('.ea-manual-expiry-input')) {
+      out.innerHTML = '<span class="ea-calc-expiry pending">รอช่องวันหมดอายุ<small>กรอกวันหมดอายุเอง</small></span>';
+    }
   }
 
   function augmentTable(){
@@ -94,7 +54,7 @@
       startTh.textContent = 'เริ่มต้นวันหมดอายุ';
       const calcTh = document.createElement('th');
       calcTh.className = 'ea-calc-head';
-      calcTh.textContent = 'วัน/เวลาหมดอายุที่คำนวณ';
+      calcTh.textContent = 'วันหมดอายุ';
       const anchor = head.children[4] || null;
       head.insertBefore(startTh, anchor);
       head.insertBefore(calcTh, anchor);
@@ -164,7 +124,7 @@
   }
 
   scheduleAugment();
-  console.info('[KSL] V6.3 start datetime expiry calculator ready');
+  console.info('[KSL] V6.3 start datetime support ready for manual expiry');
 })();
 
 (() => {
