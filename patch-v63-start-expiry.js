@@ -166,3 +166,14 @@
   scheduleAugment();
   console.info('[KSL] V6.3 start datetime expiry calculator ready');
 })();
+
+(() => {
+  'use strict';
+  if (window.__KSL_EXPIRY_PICKER_LOADER_V632__) return;
+  window.__KSL_EXPIRY_PICKER_LOADER_V632__ = true;
+  const s=document.createElement('script');
+  s.src='patch-v63-item-picker.js?v=63-picker-1';
+  s.async=false;
+  s.onerror=()=>console.error('[KSL] expiry item picker load failed');
+  document.body.appendChild(s);
+})();
