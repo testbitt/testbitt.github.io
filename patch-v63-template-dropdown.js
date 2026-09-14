@@ -130,3 +130,14 @@
   boot();
   console.info('[KSL] V6.3 Template dropdown + template-only rows ready');
 })();
+
+(()=>{
+  'use strict';
+  if(window.__KSL_SELECTED_ORDER_LOADER_V63__)return;
+  window.__KSL_SELECTED_ORDER_LOADER_V63__=1;
+  const s=document.createElement('script');
+  s.src='patch-v63-selected-order.js?v=63-order-2';
+  s.async=false;
+  s.onerror=()=>console.error('[KSL] selected item ordering load failed');
+  document.body.appendChild(s);
+})();
