@@ -19,7 +19,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Mirror current Vercel production and apply v3.22 patch
+      - name: Mirror current Vercel production and apply v3.23 patch
         shell: bash
         run: |
           python3 - <<'PY'
@@ -35,7 +35,7 @@ jobs:
           OUT.mkdir(parents=True, exist_ok=True)
 
           def get(url):
-              req=Request(url, headers={'User-Agent':'Mozilla/5.0 KAMU-Mirror/3.22','Cache-Control':'no-cache'})
+              req=Request(url, headers={'User-Agent':'Mozilla/5.0 KAMU-Mirror/3.23','Cache-Control':'no-cache'})
               with urlopen(req, timeout=45) as r:
                   return r.read()
 
@@ -57,12 +57,14 @@ jobs:
           patch_dest=OUT/'assets'/'patch33.js'
           patch_dest.write_text(PATCH.read_text(encoding='utf-8'), encoding='utf-8')
 
-          html=html.replace('Version 3.21 • Public Multi‑User Cloud','Version 3.22 • Public Multi‑User Cloud')
-          tag='<script src="./assets/patch33.js?v=322"></script>\n'
-          if 'patch33.js' not in html:
-              html=html.replace('</body>', tag+'</body>')
+          html=re.sub(r'Version 3\.\d+ • Public Multi‑User Cloud','Version 3.23 • Public Multi‑User Cloud',html)
+          tag='<script src="./assets/patch33.js?v=323"></script>'
+          if 'patch33.js' in html:
+              html=re.sub(r'<script src="\./assets/patch33\.js\?v=\d+"></script>',tag,html)
+          else:
+              html=html.replace('</body>',tag+'\n</body>')
           OUT.joinpath('index.html').write_text(html, encoding='utf-8')
-          OUT.joinpath('MIRROR_BUILD.txt').write_text('KAMU Inventory Stock Checker v3.22\nSource: '+BASE+'\nBuilt: '+time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())+'\n', encoding='utf-8')
+          OUT.joinpath('MIRROR_BUILD.txt').write_text('KAMU Inventory Stock Checker v3.23\nSource: '+BASE+'\nBuilt: '+time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())+'\n', encoding='utf-8')
           print('Built mirror with', len(refs), 'production assets')
           PY
 
@@ -76,5 +78,5 @@ jobs:
             echo "No mirror changes"
             exit 0
           fi
-          git commit -m "Build KAMU Inventory Stock Checker v3.22 mirror"
+          git commit -m "Build KAMU Inventory Stock Checker v3.23 mirror"
           git push origin HEAD:main
