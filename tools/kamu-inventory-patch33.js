@@ -1,4 +1,4 @@
-/* Version 3.22 — Item Sale cup total consistency + integer daily average + branch summary layout */
+/* Version 3.23 — Item Sale consistency + integer daily average + cup grand total */
 (()=>{
   const fmt0=v=>Math.round(Number(v)||0).toLocaleString('th-TH');
   const fmt=v=>(Number(v)||0).toLocaleString('th-TH',{maximumFractionDigits:2});
@@ -73,15 +73,30 @@
     const badge=document.querySelector('#cupDaysBadge');
     const days=parseNum(badge?.textContent);
     if(!days)return;
-    document.querySelectorAll('#cupBars .cup-bar-row').forEach(row=>{
+    document.querySelectorAll('#cupBars .cup-bar-row:not(.cup-grand-total)').forEach(row=>{
       const total=parseNum(row.querySelector('strong')?.textContent),avg=row.querySelector('em');
       if(avg)avg.textContent=fmt0(total/days);
     });
   }
 
+  function renderCupGrandTotal(){
+    const bars=document.querySelector('#cupBars');
+    if(!bars)return;
+    bars.querySelector('.cup-grand-total')?.remove();
+    const regular=[...bars.querySelectorAll('.cup-bar-row:not(.cup-grand-total)')];
+    if(!regular.length)return;
+    const total=parseNum(document.querySelector('#cupTotal')?.textContent);
+    const days=parseNum(document.querySelector('#cupDaysBadge')?.textContent);
+    const row=document.createElement('div');
+    row.className='cup-bar-row cup-grand-total';
+    row.innerHTML=`<b>รวมทั้งหมด</b><div><i style="width:100%"></i></div><strong>${fmt0(total)}</strong><em>${fmt0(days?total/days:0)}</em>`;
+    bars.appendChild(row);
+  }
+
   function applyFixes(){
     fixCupUsageItemSale();
     fixDailyCupAverage();
+    renderCupGrandTotal();
   }
 
   const css=document.createElement('style');
@@ -93,6 +108,10 @@
   #cups .cup-summary-wrap th:nth-child(3),#cups .cup-summary-wrap td:nth-child(3){width:20%!important;text-align:right!important;white-space:nowrap!important;padding-left:12px!important}
   #cups .cup-summary-wrap td:nth-child(2) b{display:block!important;text-align:right!important}
   #cups .cup-bar-row em{font-variant-numeric:tabular-nums}
+  #cups .cup-grand-total{margin-top:9px;padding-top:11px!important;border-top:2px solid #b9ddc7!important;background:#edf8f1!important;border-radius:12px;padding-left:9px!important;padding-right:9px!important;font-weight:900}
+  #cups .cup-grand-total>b,#cups .cup-grand-total>strong,#cups .cup-grand-total>em{font-weight:950!important;color:#126c3e!important}
+  #cups .cup-grand-total>div{background:#d8ece0!important}
+  #cups .cup-grand-total>div>i{background:linear-gradient(90deg,#238a55,#75c996)!important}
   .cup-item-map-note{margin-top:6px;padding:7px 10px;border-radius:10px;background:#f5faf7;color:#4f6f5c}
   .cup-item-map-note .warn{color:#9a5b00;font-weight:800}
   @media(max-width:640px){#cups .cup-summary-wrap th:nth-child(1),#cups .cup-summary-wrap td:nth-child(1){width:52%!important}#cups .cup-summary-wrap th:nth-child(2),#cups .cup-summary-wrap td:nth-child(2){width:26%!important}#cups .cup-summary-wrap th:nth-child(3),#cups .cup-summary-wrap td:nth-child(3){width:22%!important}}
@@ -102,13 +121,13 @@
   try{
     const previous=render;
     render=function(){const out=previous.apply(this,arguments);requestAnimationFrame(applyFixes);return out};
-  }catch(e){console.warn('v3.22 render hook',e)}
+  }catch(e){console.warn('v3.23 render hook',e)}
 
   document.addEventListener('kamu:data-ready',()=>setTimeout(applyFixes,60));
   document.addEventListener('change',e=>{const id=e.target?.id||'';if(id==='branch'||id==='date'||id.startsWith('cup'))setTimeout(applyFixes,60)},true);
   document.addEventListener('click',e=>{if(e.target?.closest?.('.tab[data-p="cups"],.tab[data-p="dashboard"]'))setTimeout(applyFixes,120)},true);
 
   const oldVersion=document.querySelector('.version');
-  if(oldVersion){const fresh=oldVersion.cloneNode(false);fresh.textContent='Version 3.22 • Public Multi‑User Cloud';oldVersion.replaceWith(fresh)}
+  if(oldVersion){const fresh=oldVersion.cloneNode(false);fresh.textContent='Version 3.23 • Public Multi‑User Cloud';oldVersion.replaceWith(fresh)}
   setTimeout(applyFixes,120);setTimeout(applyFixes,700);setTimeout(applyFixes,1800);
 })();
