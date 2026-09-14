@@ -1,8 +1,8 @@
 /* KSL V6.3 — Custom inspection templates for Expiry Audit */
 (() => {
   'use strict';
-  if (window.__KSL_EXPIRY_CUSTOM_TEMPLATES_V636__) return;
-  window.__KSL_EXPIRY_CUSTOM_TEMPLATES_V636__ = true;
+  if (window.__KSL_EXPIRY_CUSTOM_TEMPLATES_V637__) return;
+  window.__KSL_EXPIRY_CUSTOM_TEMPLATES_V637__ = true;
 
   const STORE_KEY = 'KSL_EXPIRY_CUSTOM_TEMPLATES_V636';
   const SELECTED_KEY = 'KSL_EXPIRY_SELECTED_V632';
@@ -56,7 +56,7 @@
   }
 
   const style=document.createElement('style');
-  style.id='ksl-expiry-custom-templates-v636-style';
+  style.id='ksl-expiry-custom-templates-v637-style';
   style.textContent=`
     #expiryAudit .ea-custom-box{margin-top:10px;padding:10px;border:1px solid #cfe4da;border-radius:12px;background:#fff}
     #expiryAudit .ea-custom-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px}
@@ -66,13 +66,17 @@
     #expiryAudit .ea-custom-row .btn{white-space:nowrap}
     #expiryAudit .ea-template-editor{margin-top:10px;padding-top:10px;border-top:1px dashed #d5e5dd}
     #expiryAudit .ea-template-editor[hidden]{display:none!important}
-    #expiryAudit .ea-template-edit-row{display:grid;grid-template-columns:minmax(180px,.8fr) minmax(220px,1fr) auto;gap:7px;align-items:center}
+    #expiryAudit .ea-template-edit-row{display:grid;grid-template-columns:minmax(170px,.75fr) minmax(180px,.75fr) minmax(220px,1fr) auto;gap:7px;align-items:center}
+    #expiryAudit .ea-template-search-wrap{position:relative}
+    #expiryAudit .ea-template-search-wrap::before{content:'⌕';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:#6f8379;pointer-events:none}
+    #expiryAudit #eaTemplateItemSearch{padding-left:29px}
     #expiryAudit .ea-template-items{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;min-height:28px}
     #expiryAudit .ea-template-item-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #cfe2d8;border-radius:999px;background:#f8fcfa;padding:5px 8px;font-size:9px;font-weight:800;color:#315d4b}
     #expiryAudit .ea-template-item-chip button{border:0;background:transparent;color:#9c5757;font-weight:900;cursor:pointer;padding:0 2px}
     #expiryAudit .ea-template-actions{display:flex;gap:7px;justify-content:flex-end;margin-top:8px}
     #expiryAudit .ea-template-empty{font-size:9px;color:#87988f;padding:5px 0}
-    @media(max-width:820px){#expiryAudit .ea-custom-row{grid-template-columns:1fr 1fr}#expiryAudit #eaTemplateSelect{grid-column:1/-1}#expiryAudit .ea-template-edit-row{grid-template-columns:1fr}#expiryAudit .ea-template-actions{justify-content:stretch;flex-wrap:wrap}#expiryAudit .ea-template-actions .btn{flex:1}}
+    @media(max-width:920px){#expiryAudit .ea-template-edit-row{grid-template-columns:1fr 1fr}#expiryAudit #eaTemplateName{grid-column:1/-1}}
+    @media(max-width:820px){#expiryAudit .ea-custom-row{grid-template-columns:1fr 1fr}#expiryAudit #eaTemplateSelect{grid-column:1/-1}#expiryAudit .ea-template-edit-row{grid-template-columns:1fr}#expiryAudit #eaTemplateName{grid-column:auto}#expiryAudit .ea-template-actions{justify-content:stretch;flex-wrap:wrap}#expiryAudit .ea-template-actions .btn{flex:1}}
   `;
   document.head.appendChild(style);
 
@@ -102,6 +106,7 @@
       <div id="eaTemplateEditor" class="ea-template-editor" hidden>
         <div class="ea-template-edit-row">
           <input id="eaTemplateName" class="input" type="text" placeholder="ชื่อ Template เช่น Opening / Closing / Weekend">
+          <div class="ea-template-search-wrap"><input id="eaTemplateItemSearch" class="input" type="search" placeholder="Search วัตถุดิบ / ประเภท / Holding Time" autocomplete="off"></div>
           <select id="eaTemplateItemSelect" class="input"><option value="">เลือกรายการเพื่อเพิ่ม</option></select>
           <button id="eaTemplateAddItem" type="button" class="btn btn-outline">＋ เพิ่มรายการ</button>
         </div>
@@ -131,23 +136,36 @@
     ['eaTemplateApply','eaTemplateEdit','eaTemplateDelete'].forEach(x=>{ const el=document.getElementById(x); if(el)el.disabled=!id; });
   }
 
+  function renderItemSelect(){
+    const itemSel=document.getElementById('eaTemplateItemSelect');
+    if(!itemSel) return;
+    const current=itemSel.value;
+    const q=txt(document.getElementById('eaTemplateItemSearch')?.value).toLowerCase();
+    const options=pickerOptions()
+      .filter(o=>!draftItems.includes(o.key))
+      .filter(o=>!q || o.label.toLowerCase().includes(q));
+    itemSel.innerHTML=options.length
+      ? '<option value="">เลือกรายการเพื่อเพิ่ม</option>'+options.map(o=>`<option value="${esc(o.key)}">${esc(o.label)}</option>`).join('')
+      : '<option value="">ไม่พบรายการที่ค้นหา</option>';
+    if(current && options.some(o=>o.key===current)) itemSel.value=current;
+    else if(q && options.length===1) itemSel.value=options[0].key;
+  }
+
   function renderEditorItems(){
     const wrap=document.getElementById('eaTemplateItems');
     if(!wrap) return;
     wrap.innerHTML=draftItems.length?draftItems.map(k=>`<span class="ea-template-item-chip">${esc(labelForKey(k))}<button type="button" data-template-remove="${esc(k)}">×</button></span>`).join(''):'<span class="ea-template-empty">ยังไม่มีรายการใน Template</span>';
-    const itemSel=document.getElementById('eaTemplateItemSelect');
-    if(itemSel){
-      const options=pickerOptions().filter(o=>!draftItems.includes(o.key));
-      itemSel.innerHTML='<option value="">เลือกรายการเพื่อเพิ่ม</option>'+options.map(o=>`<option value="${esc(o.key)}">${esc(o.label)}</option>`).join('');
-    }
+    renderItemSelect();
   }
   function openEditor(template=null){
     editingId=template?.id||'';
     draftItems=template?.items?.slice()||readSelected();
     const editor=document.getElementById('eaTemplateEditor');
     const name=document.getElementById('eaTemplateName');
+    const search=document.getElementById('eaTemplateItemSearch');
     if(editor) editor.hidden=false;
     if(name){ name.value=template?.name||''; setTimeout(()=>name.focus(),0); }
+    if(search) search.value='';
     const save=document.getElementById('eaTemplateSave');
     if(save) save.textContent=editingId?'💾 บันทึกการแก้ไข':'💾 บันทึก Template';
     renderEditorItems();
@@ -156,6 +174,20 @@
     editingId=''; draftItems=[];
     const editor=document.getElementById('eaTemplateEditor'); if(editor)editor.hidden=true;
     const name=document.getElementById('eaTemplateName'); if(name)name.value='';
+    const search=document.getElementById('eaTemplateItemSearch'); if(search)search.value='';
+  }
+  function addDraftItem(){
+    const itemSel=document.getElementById('eaTemplateItemSelect');
+    let k=txt(itemSel?.value);
+    if(!k && itemSel){
+      const first=[...itemSel.options].find(o=>txt(o.value));
+      k=txt(first?.value);
+    }
+    if(!k){ toastMsg('ไม่พบรายการสำหรับเพิ่ม','warn'); return; }
+    if(!draftItems.includes(k)) draftItems.push(k);
+    const search=document.getElementById('eaTemplateItemSearch'); if(search) search.value='';
+    renderEditorItems();
+    setTimeout(()=>search?.focus(),0);
   }
 
   async function saveTemplate(){
@@ -203,12 +235,23 @@
     if(e.target?.id==='eaTemplateSelect'){ updateButtons(); return; }
   },true);
 
+  document.addEventListener('input',e=>{
+    if(e.target?.id==='eaTemplateItemSearch'){ renderItemSelect(); return; }
+  },true);
+
+  document.addEventListener('keydown',e=>{
+    if(e.target?.id==='eaTemplateItemSearch' && e.key==='Enter'){
+      e.preventDefault();
+      addDraftItem();
+    }
+  },true);
+
   document.addEventListener('click',e=>{
     if(e.target.closest?.('#eaTemplateNew')){ e.preventDefault(); openEditor(null); return; }
     if(e.target.closest?.('#eaTemplateEdit')){ e.preventDefault(); const id=document.getElementById('eaTemplateSelect')?.value||''; const t=templates.find(x=>x.id===id); if(t)openEditor(t); return; }
     if(e.target.closest?.('#eaTemplateDelete')){ e.preventDefault(); deleteTemplate(); return; }
     if(e.target.closest?.('#eaTemplateApply')){ e.preventDefault(); applyTemplate(); return; }
-    if(e.target.closest?.('#eaTemplateAddItem')){ e.preventDefault(); const k=txt(document.getElementById('eaTemplateItemSelect')?.value); if(k && !draftItems.includes(k)){draftItems.push(k);renderEditorItems();} return; }
+    if(e.target.closest?.('#eaTemplateAddItem')){ e.preventDefault(); addDraftItem(); return; }
     const rem=e.target.closest?.('[data-template-remove]');
     if(rem){ e.preventDefault(); draftItems=draftItems.filter(k=>k!==txt(rem.dataset.templateRemove)); renderEditorItems(); return; }
     if(e.target.closest?.('#eaTemplateSave')){ e.preventDefault(); saveTemplate(); return; }
@@ -230,5 +273,5 @@
 
   templates=mergeTemplates(readLocal());
   install();
-  console.info('[KSL] V6.3 Custom inspection templates ready');
+  console.info('[KSL] V6.3 Custom inspection templates + searchable item picker ready');
 })();
