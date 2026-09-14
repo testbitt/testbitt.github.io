@@ -1,25 +1,25 @@
-/* KSL V6.3 — reorder selected inspection items + autosave */
+/* KSL V6.3 — stable reorder selected inspection items + autosave (no rebuild loop) */
 (()=>{
   'use strict';
-  if(window.__KSL_EXPIRY_SELECTED_ORDER_V63__) return;
-  window.__KSL_EXPIRY_SELECTED_ORDER_V63__=1;
+  if(window.__KSL_EXPIRY_SELECTED_ORDER_V633__) return;
+  window.__KSL_EXPIRY_SELECTED_ORDER_V633__=1;
 
-  const SELECTED_KEY='KSL_EXPIRY_SELECTED_V632';
-  let rebuilding=false;
+  const ORDER_KEY='KSL_EXPIRY_SELECTED_ORDER_V633';
   let dragKey='';
   let syncTimer=0;
   let lastSynced='';
+  let observer=null;
+  let observedList=null;
 
   const q=v=>String(v??'').trim();
-  const wait=ms=>new Promise(r=>setTimeout(r,ms));
   const getState=()=>{try{if(typeof appState!=='undefined'&&appState)return appState}catch(_){}return window.appState||null};
-  const readOrder=()=>{try{const v=JSON.parse(localStorage.getItem(SELECTED_KEY)||'[]');return Array.isArray(v)?v.map(q).filter(Boolean):[]}catch(_){return[]}};
-  const writeOrder=a=>{try{localStorage.setItem(SELECTED_KEY,JSON.stringify(a))}catch(_){}};
+  const readOrder=()=>{try{const v=JSON.parse(localStorage.getItem(ORDER_KEY)||'[]');return Array.isArray(v)?v.map(q).filter(Boolean):[]}catch(_){return[]}};
+  const writeOrder=a=>{try{localStorage.setItem(ORDER_KEY,JSON.stringify(a))}catch(_){}};
 
   function ensureStyle(){
-    if(document.getElementById('ksl-selected-order-v63-style'))return;
+    if(document.getElementById('ksl-selected-order-v633-style'))return;
     const s=document.createElement('style');
-    s.id='ksl-selected-order-v63-style';
+    s.id='ksl-selected-order-v633-style';
     s.textContent=`
       #expiryAudit #eaSelectedList{align-items:center}
       #expiryAudit .ea-order-wrap{display:inline-flex;align-items:center;gap:2px;border-radius:999px}
@@ -34,22 +34,36 @@
     document.head.appendChild(s);
   }
 
+  function currentKeys(list){
+    return [...list.querySelectorAll('.ea-pick-chip[data-remove-key]')]
+      .map(x=>q(x.dataset.removeKey)).filter(Boolean);
+  }
+
+  function reconcileOrder(list){
+    const current=currentKeys(list);
+    const set=new Set(current);
+    const saved=readOrder().filter(k=>set.has(k));
+    current.forEach(k=>{if(!saved.includes(k))saved.push(k)});
+    writeOrder(saved);
+    return saved;
+  }
+
   function scheduleOnline(order){
     const signature=JSON.stringify(order);
     if(signature===lastSynced)return;
     clearTimeout(syncTimer);
     syncTimer=setTimeout(async()=>{
-      const a=readOrder();
-      const sig=JSON.stringify(a);
+      const latest=readOrder();
+      const sig=JSON.stringify(latest);
+      if(sig===lastSynced)return;
       const s=getState();
       if(!s){lastSynced=sig;return;}
-      s.expiryAuditSelectedOrder=a.slice();
-      s.expiryAuditSelectedItems=a.slice();
+      s.expiryAuditSelectedOrder=latest.slice();
       try{
         if(typeof dbSet==='function') await Promise.resolve(dbSet(s));
         lastSynced=sig;
       }catch(err){console.warn('[KSL] selected order online save failed',err)}
-    },350);
+    },450);
   }
 
   function reorderTable(order){
@@ -63,8 +77,7 @@
     rows.filter(tr=>!chosen.has(q(tr.dataset.key))).forEach(tr=>body.appendChild(tr));
   }
 
-  function updateButtons(){
-    const order=readOrder();
+  function updateButtons(order){
     document.querySelectorAll('#eaSelectedList .ea-order-wrap').forEach(w=>{
       const key=q(w.dataset.orderKey),i=order.indexOf(key);
       const prev=w.querySelector('[data-order-prev]'),next=w.querySelector('[data-order-next]');
@@ -73,77 +86,114 @@
     });
   }
 
+  function pauseObserver(){
+    if(observer)observer.disconnect();
+  }
+  function resumeObserver(list){
+    if(!list)return;
+    if(!observer)observer=new MutationObserver(()=>setTimeout(enhance,35));
+    observer.observe(list,{childList:true,subtree:false});
+    observedList=list;
+  }
+
   function enhance(){
     ensureStyle();
     const list=document.getElementById('eaSelectedList');
     if(!list)return false;
-    const chips=[...list.querySelectorAll(':scope > .ea-pick-chip[data-remove-key], :scope > button.ea-pick-chip[data-remove-key]')];
+    pauseObserver();
+
+    const order=reconcileOrder(list);
+    const chips=[...list.querySelectorAll('.ea-pick-chip[data-remove-key]')];
+
     chips.forEach(chip=>{
       const key=q(chip.dataset.removeKey); if(!key)return;
-      const wrap=document.createElement('span');
-      wrap.className='ea-order-wrap';
-      wrap.dataset.orderKey=key;
-      chip.parentNode.insertBefore(wrap,chip);
-      wrap.appendChild(chip);
+      let wrap=chip.closest('.ea-order-wrap');
+      if(!wrap || wrap.parentElement!==list){
+        wrap=document.createElement('span');
+        wrap.className='ea-order-wrap';
+        wrap.dataset.orderKey=key;
+        chip.parentNode.insertBefore(wrap,chip);
+        wrap.appendChild(chip);
+      }else{
+        wrap.dataset.orderKey=key;
+      }
       chip.draggable=true;
       chip.title='ลากเพื่อย้ายตำแหน่ง หรือใช้ปุ่ม ◀ ▶';
-      const prev=document.createElement('button');
-      prev.type='button';prev.className='ea-order-btn';prev.dataset.orderPrev=key;prev.textContent='◀';prev.title='ย้ายไปด้านหน้า';
-      const next=document.createElement('button');
-      next.type='button';next.className='ea-order-btn';next.dataset.orderNext=key;next.textContent='▶';next.title='ย้ายไปด้านหลัง';
-      wrap.append(prev,next);
+
+      if(!wrap.querySelector('[data-order-prev]')){
+        const prev=document.createElement('button');
+        prev.type='button';prev.className='ea-order-btn';prev.dataset.orderPrev=key;prev.textContent='◀';prev.title='ย้ายไปด้านหน้า';
+        wrap.appendChild(prev);
+      }else wrap.querySelector('[data-order-prev]').dataset.orderPrev=key;
+
+      if(!wrap.querySelector('[data-order-next]')){
+        const next=document.createElement('button');
+        next.type='button';next.className='ea-order-btn';next.dataset.orderNext=key;next.textContent='▶';next.title='ย้ายไปด้านหลัง';
+        wrap.appendChild(next);
+      }else wrap.querySelector('[data-order-next]').dataset.orderNext=key;
     });
+
+    const wraps=[...list.querySelectorAll(':scope > .ea-order-wrap')];
+    const byKey=new Map(wraps.map(w=>[q(w.dataset.orderKey),w]));
+    const domOrder=wraps.map(w=>q(w.dataset.orderKey)).filter(Boolean);
+    if(JSON.stringify(domOrder)!==JSON.stringify(order)){
+      order.forEach(k=>{const w=byKey.get(k);if(w)list.appendChild(w)});
+    }
+
     const label=list.parentElement?.querySelector('.ea-picker-label');
     if(label&&!label.querySelector('.ea-order-note')){
-      const n=document.createElement('span');n.className='ea-order-note';n.textContent='ลาก หรือ ◀ ▶ เพื่อจัดลำดับ • บันทึกอัตโนมัติ';label.appendChild(n);
+      const n=document.createElement('span');
+      n.className='ea-order-note';
+      n.textContent='ลาก หรือ ◀ ▶ เพื่อจัดลำดับ • บันทึกอัตโนมัติ';
+      label.appendChild(n);
     }
-    const order=readOrder();
+
     reorderTable(order);
-    updateButtons();
+    updateButtons(order);
     scheduleOnline(order);
+    resumeObserver(list);
     return true;
   }
 
-  async function rebuild(order){
-    if(rebuilding)return;
-    rebuilding=true;
-    try{
-      const clear=document.getElementById('eaClearSelected');
-      const picker=document.getElementById('eaItemPicker');
-      if(!clear||!picker){writeOrder(order);return;}
-      clear.click();
-      await wait(35);
-      for(const key of order){
-        if(![...picker.options].some(o=>q(o.value)===key))continue;
-        picker.value=key;
-        picker.dispatchEvent(new Event('change',{bubbles:true}));
-        await wait(12);
-      }
-      picker.value='';
-      picker.dispatchEvent(new Event('change',{bubbles:true}));
-      writeOrder(order);
-      reorderTable(order);
-      scheduleOnline(order);
-      setTimeout(enhance,30);
-    }finally{rebuilding=false;}
+  function applyOrder(order){
+    const list=document.getElementById('eaSelectedList');
+    if(!list)return;
+    const current=currentKeys(list);
+    const set=new Set(current);
+    order=order.filter(k=>set.has(k));
+    current.forEach(k=>{if(!order.includes(k))order.push(k)});
+    writeOrder(order);
+
+    pauseObserver();
+    const wraps=[...list.querySelectorAll(':scope > .ea-order-wrap')];
+    const byKey=new Map(wraps.map(w=>[q(w.dataset.orderKey),w]));
+    order.forEach(k=>{const w=byKey.get(k);if(w)list.appendChild(w)});
+    reorderTable(order);
+    updateButtons(order);
+    scheduleOnline(order);
+    resumeObserver(list);
   }
 
   function move(key,delta){
-    const order=readOrder();
+    const list=document.getElementById('eaSelectedList');
+    if(!list)return;
+    const order=reconcileOrder(list);
     const i=order.indexOf(key),j=i+delta;
     if(i<0||j<0||j>=order.length)return;
     [order[i],order[j]]=[order[j],order[i]];
-    rebuild(order);
+    applyOrder(order);
   }
 
   function moveTo(key,targetKey){
     if(!key||!targetKey||key===targetKey)return;
-    const order=readOrder();
+    const list=document.getElementById('eaSelectedList');
+    if(!list)return;
+    const order=reconcileOrder(list);
     const from=order.indexOf(key),to=order.indexOf(targetKey);
     if(from<0||to<0)return;
     order.splice(from,1);
     order.splice(to,0,key);
-    rebuild(order);
+    applyOrder(order);
   }
 
   document.addEventListener('click',e=>{
@@ -151,11 +201,15 @@
     if(p){e.preventDefault();e.stopPropagation();move(q(p.dataset.orderPrev),-1);return;}
     const n=e.target.closest?.('[data-order-next]');
     if(n){e.preventDefault();e.stopPropagation();move(q(n.dataset.orderNext),1);return;}
-    if(e.target.closest?.('#eaClearSelected,[data-remove-key]'))setTimeout(enhance,50);
+    if(e.target.closest?.('#eaClearSelected,[data-remove-key],#eaFlowTplApply,#eaTemplateSave,#eaTemplateDelete,#eaTemplateNew,#eaTemplateEdit')){
+      setTimeout(enhance,120);
+    }
   },true);
 
   document.addEventListener('change',e=>{
-    if(e.target?.id==='eaItemPicker')setTimeout(enhance,35);
+    if(e.target?.id==='eaItemPicker' || e.target.closest?.('#eaFlowTplList input[type="checkbox"]')){
+      setTimeout(enhance,140);
+    }
   },true);
 
   document.addEventListener('dragstart',e=>{
@@ -180,22 +234,17 @@
     moveTo(source,q(w.dataset.orderKey));
   },true);
   document.addEventListener('dragend',()=>{
-    dragKey='';document.querySelectorAll('#eaSelectedList .drag-over').forEach(x=>x.classList.remove('drag-over'));
+    dragKey='';
+    document.querySelectorAll('#eaSelectedList .drag-over').forEach(x=>x.classList.remove('drag-over'));
   },true);
 
-  let observer;
-  function watch(){
-    const list=document.getElementById('eaSelectedList');
-    if(!list)return false;
-    if(observer)observer.disconnect();
-    observer=new MutationObserver(()=>setTimeout(enhance,0));
-    observer.observe(list,{childList:true});
-    enhance();
-    return true;
-  }
-
   let tries=0;
-  (function boot(){tries++;if(!watch()&&tries<80)setTimeout(boot,120)})();
-  window.addEventListener('ksl-central-synced',()=>setTimeout(()=>{watch();enhance()},120));
-  console.info('[KSL] V6.3 selected item ordering + autosave ready');
+  (function boot(){
+    tries++;
+    if(enhance())return;
+    if(tries<80)setTimeout(boot,120);
+  })();
+
+  window.addEventListener('ksl-central-synced',()=>setTimeout(enhance,180));
+  console.info('[KSL] V6.3 stable selected item ordering + autosave ready');
 })();
