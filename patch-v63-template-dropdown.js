@@ -6,7 +6,6 @@
 
   const q=v=>String(v??'').trim();
   let applyTimer=0;
-  let enforcing=false;
   let attempts=0;
 
   const style=document.createElement('style');
@@ -87,9 +86,8 @@
         updateLabel();
         return;
       }
-      enforcing=true;
       document.getElementById('eaFlowTplApply')?.click();
-      setTimeout(()=>{enforcing=false;updateLabel();},180);
+      updateLabel();
     },90);
   }
 
@@ -112,9 +110,8 @@
 
   document.addEventListener('change',e=>{
     if(e.target.closest?.('#eaFlowTplList input[type="checkbox"]')){
-      install(); updateLabel(); applySelected(); return;
-    }
-    if(e.target?.id==='eaItemPicker' && checked().length && !enforcing){
+      install();
+      updateLabel();
       applySelected();
     }
   },true);
@@ -127,7 +124,7 @@
     if(attempts<80)setTimeout(boot,150);
   }
   boot();
-  console.info('[KSL] V6.3 Template dropdown + template-only rows ready');
+  console.info('[KSL] V6.3 Template dropdown + template-only rows ready (no picker reapply loop)');
 })();
 
 (()=>{
