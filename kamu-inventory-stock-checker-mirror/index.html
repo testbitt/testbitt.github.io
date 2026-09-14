@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KAMU Inventory Stock Checker</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" onerror="this.onerror=null;this.src='https://cdn.sheetjs.com/xlsx-0.18.5/package/dist/xlsx.full.min.js'"></script>
+<link rel="stylesheet" href="./assets/style.css?v=36">
+<style>#upload .grid{grid-template-columns:repeat(4,minmax(0,1fr))}@media(max-width:1199px){#upload .grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){#upload .grid{grid-template-columns:1fr}}</style>
+<style>
+.conv-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.conv-search-wrap{flex:1 1 360px;display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid #bfdcc9;border-radius:14px;background:#fbfffc}.conv-search-wrap input{width:100%;padding:11px 0;border:0;background:transparent;outline:none;color:#183126}.conv-autosave-bar{display:flex;align-items:center;gap:7px;margin:11px 0;padding:9px 11px;border-radius:12px;background:#f2fbf5;color:#4d6f5b;font-size:12px}.autosave-dot{width:9px;height:9px;border-radius:50%;background:#2f9a63;box-shadow:0 0 0 4px rgba(47,154,99,.12)}.conv-list{display:grid;gap:10px}.conv-card{display:grid;grid-template-columns:minmax(260px,1.8fr) minmax(100px,.7fr) 34px minmax(110px,.7fr) minmax(100px,.7fr) auto;gap:10px;align-items:end;padding:13px;border:1px solid #d7eadc;border-radius:16px;background:#fff;box-shadow:0 4px 14px rgba(35,116,73,.06)}.conv-card.is-new{border:2px dashed #7acb9a;background:#f8fff9}.conv-product{min-width:0}.conv-product-code{font-size:12px;font-weight:900;color:#17653e}.conv-product-name{margin-top:2px;font-size:13px;white-space:normal;line-height:1.25}.conv-source{display:inline-flex;margin-top:6px;padding:3px 7px;border-radius:999px;background:#eaf7ef;color:#17653e;font-size:10px;font-weight:800}.conv-source.need{background:#fff3d6;color:#8a5500}.conv-field label{display:block;font-size:10px;font-weight:800;color:#688071;margin-bottom:4px}.conv-field input,.conv-field select{width:100%;min-height:40px;padding:8px 9px;border:1px solid #c7dfcf;border-radius:10px;background:#fbfffc;color:#183126}.conv-field input:focus,.conv-field select:focus{outline:none;border-color:#7acb9a;box-shadow:0 0 0 3px rgba(73,170,112,.11)}.conv-field input[readonly]{background:#f2f7f4;color:#587062}.conv-arrow-big{align-self:center;text-align:center;font-size:24px;font-weight:900;color:#238a55;padding-bottom:4px}.conv-actions{display:flex;gap:6px;align-items:center}.conv-save-state{font-size:10px;color:#658071;white-space:nowrap}.conv-save-state.saving{color:#a15c00}.conv-save-state.saved{color:#147645}.conv-empty{padding:22px;text-align:center;border:1px dashed #c8dfd0;border-radius:16px;color:#658071}.conv-new-select{grid-column:1/-1;display:grid;grid-template-columns:minmax(260px,1.8fr) minmax(100px,.7fr) 34px minmax(110px,.7fr) minmax(100px,.7fr) auto;gap:10px;align-items:end}.conv-lock-backdrop{position:fixed;inset:0;z-index:9999;background:rgba(15,45,29,.38);display:grid;place-items:center;padding:18px}.conv-lock-box{width:min(390px,94vw);background:#fff;border:1px solid #cfe6d7;border-radius:22px;padding:20px;box-shadow:0 20px 60px rgba(17,76,45,.28)}.conv-lock-box h3{margin:0 0 6px}.conv-lock-box p{margin:0 0 14px;color:#658071;font-size:13px}.conv-lock-box input{width:100%;font-size:18px;padding:11px 12px;border:1px solid #bfdcc9;border-radius:12px;margin-bottom:10px}.conv-lock-actions{display:flex;gap:8px;justify-content:flex-end}.conv-lock-error{min-height:20px;color:#b42318;font-size:12px;font-weight:700;margin-bottom:8px}@media(max-width:980px){.conv-card,.conv-new-select{grid-template-columns:minmax(220px,1.5fr) minmax(90px,.7fr) 30px minmax(100px,.7fr) minmax(90px,.7fr)}.conv-actions{grid-column:1/-1;justify-content:flex-end}.conv-new-select .conv-actions{grid-column:auto}}@media(max-width:700px){.conv-toolbar{display:grid;grid-template-columns:1fr}.conv-toolbar .btn{width:100%}.conv-card,.conv-new-select{grid-template-columns:1fr 1fr;align-items:end}.conv-product,.conv-new-select>.conv-field:first-child{grid-column:1/-1}.conv-arrow-big{display:none}.conv-actions{grid-column:1/-1;justify-content:space-between}.conv-field input,.conv-field select{font-size:16px;min-height:44px}.conv-card{padding:11px}.conv-lock-actions .btn{flex:1}}
+</style>
+</head>
+<body>
+<header>
+  <span class="bubble b1"></span><span class="bubble b2"></span>
+  <div class="hero">
+    <div class="hero-copy">
+      <div class="brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 64 64" role="img"><path d="M14 22 32 12l18 10v22L32 54 14 44Z" fill="#bfe9cf"/><path d="M14 22 32 33l18-11M32 33v21" fill="none" stroke="#238a55" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="m23 18 18 10" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+      </div>
+      <div><h1>KAMU Inventory Stock Checker</h1><p>Audit Stock • BOM Usage • Actual Count • Inventory Reconciliation</p><span class="version">Version 3.22 • Public Multi‑User Cloud</span></div>
+    </div>
+    <svg class="hero-art" viewBox="0 0 240 110" aria-hidden="true"><ellipse cx="125" cy="93" rx="88" ry="10" fill="rgba(0,0,0,.08)"/><rect x="80" y="33" width="80" height="58" rx="18" fill="#e9fff0"/><path d="M80 48 120 70l40-22M120 70v21" fill="none" stroke="#238a55" stroke-width="5" stroke-linecap="round"/><path d="M80 48 120 26l40 22" fill="#c5edd3" stroke="#fff" stroke-width="3" stroke-linejoin="round"/><circle cx="55" cy="34" r="16" fill="#a8deb9"/><path d="M49 36c8-14 17-11 18-18-12 1-19 6-18 18Z" fill="#fff" opacity=".9"/><circle cx="186" cy="63" r="12" fill="#d5f4df"/><path d="M180 64c6-10 13-8 14-13-9 0-14 4-14 13Z" fill="#4ea875"/></svg>
+  </div>
+</header>
+<main>
+  <div class="card tabs">
+    <button class="tab active" data-p="dashboard"><span>📊</span> Dashboard</button>
+    <button class="tab" data-p="upload"><span>⬆️</span> Upload</button>
+    <button class="tab" data-p="recon"><span>🔎</span> Reconciliation</button>
+    <button class="tab" data-p="conversion"><span>⚖️</span> Unit Conversion</button>
+  </div>
+
+  <section id="upload" class="page">
+    <div class="card"><div class="section-title"><div class="icon">🗂️</div><div><h3>Upload / Update Database <span class="decor-leaf"></span></h3><div class="subtle">ไฟล์ใหม่ของฐานชนิดเดิมจะบันทึกทับฐานเดิมใน Cloud Database และ Auto Save</div></div></div></div>
+    <div class="grid upload-grid">
+      <div class="card upload-card"><div class="upload-icon">📦</div><b>1. Stock Movement</b><input type="file" id="fStock" accept=".xlsx,.xls,.xlsm"><div id="mStock" class="subtle">ยังไม่มีข้อมูล</div></div>
+      <div class="card upload-card"><div class="upload-icon">🧾</div><b>2. Item Sale</b><input type="file" id="fItem" accept=".xlsx,.xls,.xlsm"><div id="mItem" class="subtle">ยังไม่มีข้อมูล</div></div>
+      <div class="card upload-card"><div class="upload-icon">🧩</div><b>3. BOM / Bomb</b><input type="file" id="fBom" accept=".xlsx,.xls,.xlsm"><div id="mBom" class="subtle">ยังไม่มีข้อมูล</div></div>
+      <div class="card upload-card"><div class="upload-icon">🔄</div><b>4. Convert</b><input type="file" id="fConvert" accept=".xlsx,.xls,.xlsm"><div id="mConvert" class="subtle">ยังไม่มีข้อมูล</div></div>
+    </div>
+  </section>
+
+  <section id="dashboard" class="page active">
+    <div class="card">
+      <div class="section-head"><div class="section-title"><div class="icon">🎛️</div><div><h3>Inventory Filter</h3><div class="subtle">เลือกสาขา วันที่ และ RM ที่ต้องการตรวจ</div></div></div></div>
+      <div class="filters">
+        <div class="field"><label>สาขา (รหัส - ชื่อสาขา)</label><select id="branch"><option value="">กรุณา Upload ข้อมูลก่อน</option></select></div>
+        <div class="field"><label>วันที่ Item Sale</label><select id="date"></select></div>
+        <div class="field rm-filter"><label>RM / รายการวัตถุดิบ (เลือกหลายรายการ)</label><button type="button" class="rm-btn" id="rmFilterBtn">ทั้งหมด (0)</button><div class="rm-popup" id="rmPopup" hidden><input id="rmSearch" placeholder="ค้นหา RM Code / ชื่อวัตถุดิบ"><div class="rm-toolbar"><button type="button" class="btn alt small" id="rmAll">เลือกทั้งหมด</button><button type="button" class="btn alt small" id="rmClear">ล้าง</button></div><div class="rm-options" id="rmOptions"></div></div><div class="filter-meta" id="shownCount">แสดง 0 รายการ</div></div>
+        <div class="field"><label>สถานะ</label><select id="status"><option value="">ทั้งหมด</option><option>Short</option><option>Over</option><option>OK</option><option>Not counted</option><option>Needs conversion</option><option>Needs usage setup</option></select></div>
+        <div><button class="btn" id="calc">🔄 คำนวณใหม่</button><div class="filter-meta" id="calcStatus">พร้อม</div></div>
+      </div>
+      <div class="custom-check">
+        <div class="custom-title"><span class="custom-icon">⭐</span><span>Custom Check</span></div>
+        <select id="customCheckSelect"><option value="">-- เลือกชุด Custom Check --</option></select>
+        <button class="btn small" id="saveCustom">💾 บันทึกชุดใหม่</button>
+        <button class="btn alt small" id="updateCustom" disabled>✏️ บันทึกทับ</button>
+        <button class="btn danger small" id="deleteCustom" disabled>🗑️ ลบชุด</button>
+        <div class="custom-meta" id="customCheckMeta">บันทึกชุดรายการตรวจไว้ใช้ครั้งถัดไป</div>
+        <div class="custom-message" id="customCheckMessage"></div>
+      </div>
+      <div id="dateNotice" style="margin-top:11px"></div><div id="bomDiag" class="diag-grid" aria-live="polite"></div>
+    </div>
+
+    <div class="kpis">
+      <div class="card kpi"><div class="ico">📦</div>RM ทั้งหมด<b id="kItems">0</b></div>
+      <div class="card kpi"><div class="ico">🧩</div>กำหนด Usage Source<b id="kUsage">0</b></div>
+      <div class="card kpi"><div class="ico">📉</div>Short<b id="kShort" class="bad">0</b></div>
+      <div class="card kpi"><div class="ico">📈</div>Over<b id="kOver" class="warn">0</b></div>
+      <div class="card kpi"><div class="ico">⚖️</div>Need Conversion<b id="kConv">0</b></div><div class="card kpi"><div class="ico">💰</div>Variance Cost<b id="kCost">0</b></div>
+    </div>
+
+    <div class="card">
+      <div class="section-head"><div class="section-title"><div class="icon">🧮</div><div><h3>Inventory Audit</h3><div class="subtle">Actual Count บันทึกอัตโนมัติตามสาขา + RM</div></div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn alt" id="useReport">ใช้ Report Actual Stock เป็น Count</button><button class="btn alt" id="clearCount">ล้าง Count สาขานี้</button><button class="btn" id="exportCsv">⬇️ CSV</button><button class="btn" id="exportExcel">📗 Excel</button><button class="btn" id="exportPdf">📄 PDF</button><button class="btn" id="exportPpt">📊 PowerPoint</button></div></div>
+      <div class="tablewrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="recon" class="page">
+    <div class="card"><div class="section-title"><div class="icon">🔎</div><div><h3>Reconciliation</h3><div class="subtle">ตรวจ Item ไม่มี Recipe, RM ไม่พบใน Stock และ Unit Conversion</div></div></div></div>
+    <div class="card"><div class="tablewrap"><table id="reconTbl"><thead><tr><th>Type</th><th>Branch</th><th>Code</th><th>Description</th><th>Usage Source</th><th>Usage</th><th>Note</th></tr></thead><tbody></tbody></table></div></div>
+  </section>
+
+  <section id="conversion" class="page">
+    <div class="card"><div class="section-head"><div class="section-title"><div class="icon">⚖️</div><div><h3>Unit Conversion Master</h3><div class="subtle">จัดการข้อมูลแปลงจากหน่วยใหญ่ → หน่วยย่อย และนำไปใช้กับ BOM / Inventory ทั้งระบบ</div></div></div><div id="convMasterCount" class="subtle">0 รายการ</div></div><div class="notice">รูปแบบการแปลง: <b>1 หน่วยใหญ่ → จำนวนหน่วยย่อย</b> เช่น 1 กล่อง → 720 ml</div></div>
+    <div class="card"><div class="conv-toolbar"><div class="conv-search-wrap"><span>🔎</span><input id="convSearch" placeholder="ค้นหา RM Code / รายละเอียด / หน่วย"></div><button class="btn" id="addConvRow">➕ เพิ่มสินค้าจาก Stock Movement</button></div><div class="conv-autosave-bar"><span class="autosave-dot"></span><b>Auto Save</b><span>แก้ไขแล้วระบบบันทึกอัตโนมัติ</span></div><div id="convEditorMessage" class="custom-message" style="margin:8px 0"></div><div id="convList" class="conv-list"></div><div style="display:none"><table id="convTbl"><tbody></tbody></table></div></div>
+  </section>
+</main>
+<script src="./assets/app1.js?v=36"></script>
+<script src="./assets/app2.js?v=36"></script>
+<script src="./assets/app3.js?v=319"></script>
+<script src="./assets/app4.js?v=36"></script>
+<script src="./assets/app5.js?v=36"></script>
+<script src="./assets/patch21.js?v=36"></script>
+<script src="./assets/patch23.js?v=320"></script>
+<script src="./assets/patch24.js?v=312"></script>
+<script src="./assets/patch25.js?v=314"></script>
+<script src="./assets/patch26.js?v=37"></script>
+<script src="./assets/patch27.js?v=36"></script>
+<script src="./assets/patch28.js?v=314"></script>
+<script src="./assets/patch29.js?v=317"></script>
+<script src="./assets/patch30.js?v=320"></script>
+<script src="./assets/patch31.js?v=315"></script>
+<script src="./assets/patch32.js?v=320"></script>
+<script src="./assets/patch33.js?v=322"></script>
+</body>
+</html>
