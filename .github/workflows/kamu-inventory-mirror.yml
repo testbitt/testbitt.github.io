@@ -1,0 +1,80 @@
+name: Build KAMU Inventory Stock Checker mirror
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/kamu-inventory-patch33.js'
+      - '.github/workflows/kamu-inventory-mirror.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Mirror current Vercel production and apply v3.22 patch
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from urllib.request import Request, urlopen
+          from urllib.parse import urljoin, urlsplit
+          import re, shutil, time
+
+          BASE='https://kamu-inventory-stock-checker.vercel.app/'
+          OUT=Path('kamu-inventory-stock-checker-mirror')
+          PATCH=Path('tools/kamu-inventory-patch33.js')
+          if OUT.exists(): shutil.rmtree(OUT)
+          OUT.mkdir(parents=True, exist_ok=True)
+
+          def get(url):
+              req=Request(url, headers={'User-Agent':'Mozilla/5.0 KAMU-Mirror/3.22','Cache-Control':'no-cache'})
+              with urlopen(req, timeout=45) as r:
+                  return r.read()
+
+          html=get(BASE).decode('utf-8')
+          refs=sorted(set(re.findall(r'''(?:src|href)=["'](\./assets/[^"']+)["']''', html)))
+          if not refs:
+              raise SystemExit('No local assets found in production HTML')
+
+          for ref in refs:
+              url=urljoin(BASE, ref)
+              rel=urlsplit(ref).path
+              if rel.startswith('./'): rel=rel[2:]
+              elif rel.startswith('/'): rel=rel[1:]
+              dest=OUT/rel
+              dest.parent.mkdir(parents=True, exist_ok=True)
+              dest.write_bytes(get(url))
+              print('mirrored', ref, '->', dest)
+
+          patch_dest=OUT/'assets'/'patch33.js'
+          patch_dest.write_text(PATCH.read_text(encoding='utf-8'), encoding='utf-8')
+
+          html=html.replace('Version 3.21 • Public Multi‑User Cloud','Version 3.22 • Public Multi‑User Cloud')
+          tag='<script src="./assets/patch33.js?v=322"></script>\n'
+          if 'patch33.js' not in html:
+              html=html.replace('</body>', tag+'</body>')
+          OUT.joinpath('index.html').write_text(html, encoding='utf-8')
+          OUT.joinpath('MIRROR_BUILD.txt').write_text('KAMU Inventory Stock Checker v3.22\nSource: '+BASE+'\nBuilt: '+time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())+'\n', encoding='utf-8')
+          print('Built mirror with', len(refs), 'production assets')
+          PY
+
+      - name: Commit generated mirror
+        shell: bash
+        run: |
+          git config user.name "KAMU Inventory Builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add kamu-inventory-stock-checker-mirror
+          if git diff --cached --quiet; then
+            echo "No mirror changes"
+            exit 0
+          fi
+          git commit -m "Build KAMU Inventory Stock Checker v3.22 mirror"
+          git push origin HEAD:main
