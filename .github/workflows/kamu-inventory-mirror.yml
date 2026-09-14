@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'tools/kamu-inventory-patch33.js'
+      - 'tools/kamu-inventory-patch34.js'
+      - 'tools/kamu-inventory-patch35.js'
       - '.github/workflows/kamu-inventory-mirror.yml'
   workflow_dispatch:
 
@@ -19,7 +21,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Mirror current Vercel production and apply v3.23 patch
+      - name: Mirror current Vercel production and apply v3.24 patches
         shell: bash
         run: |
           python3 - <<'PY'
@@ -30,12 +32,16 @@ jobs:
 
           BASE='https://kamu-inventory-stock-checker.vercel.app/'
           OUT=Path('kamu-inventory-stock-checker-mirror')
-          PATCH=Path('tools/kamu-inventory-patch33.js')
+          PATCHES=[
+            ('patch33.js','tools/kamu-inventory-patch33.js','323'),
+            ('patch34.js','tools/kamu-inventory-patch34.js','324'),
+            ('patch35.js','tools/kamu-inventory-patch35.js','324'),
+          ]
           if OUT.exists(): shutil.rmtree(OUT)
           OUT.mkdir(parents=True, exist_ok=True)
 
           def get(url):
-              req=Request(url, headers={'User-Agent':'Mozilla/5.0 KAMU-Mirror/3.23','Cache-Control':'no-cache'})
+              req=Request(url, headers={'User-Agent':'Mozilla/5.0 KAMU-Mirror/3.24','Cache-Control':'no-cache'})
               with urlopen(req, timeout=45) as r:
                   return r.read()
 
@@ -54,17 +60,16 @@ jobs:
               dest.write_bytes(get(url))
               print('mirrored', ref, '->', dest)
 
-          patch_dest=OUT/'assets'/'patch33.js'
-          patch_dest.write_text(PATCH.read_text(encoding='utf-8'), encoding='utf-8')
+          for asset,src,ver in PATCHES:
+              (OUT/'assets'/asset).write_text(Path(src).read_text(encoding='utf-8'),encoding='utf-8')
+              tag=f'<script src="./assets/{asset}?v={ver}"></script>'
+              pattern=rf'<script src="\./assets/{re.escape(asset)}\?v=\d+"></script>'
+              if re.search(pattern,html): html=re.sub(pattern,tag,html)
+              else: html=html.replace('</body>',tag+'\n</body>')
 
-          html=re.sub(r'Version 3\.\d+ • Public Multi‑User Cloud','Version 3.23 • Public Multi‑User Cloud',html)
-          tag='<script src="./assets/patch33.js?v=323"></script>'
-          if 'patch33.js' in html:
-              html=re.sub(r'<script src="\./assets/patch33\.js\?v=\d+"></script>',tag,html)
-          else:
-              html=html.replace('</body>',tag+'\n</body>')
+          html=re.sub(r'Version 3\.\d+ • Public Multi‑User Cloud','Version 3.24 • Public Multi‑User Cloud',html)
           OUT.joinpath('index.html').write_text(html, encoding='utf-8')
-          OUT.joinpath('MIRROR_BUILD.txt').write_text('KAMU Inventory Stock Checker v3.23\nSource: '+BASE+'\nBuilt: '+time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())+'\n', encoding='utf-8')
+          OUT.joinpath('MIRROR_BUILD.txt').write_text('KAMU Inventory Stock Checker v3.24\nSource: '+BASE+'\nBuilt: '+time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())+'\n', encoding='utf-8')
           print('Built mirror with', len(refs), 'production assets')
           PY
 
@@ -78,5 +83,5 @@ jobs:
             echo "No mirror changes"
             exit 0
           fi
-          git commit -m "Build KAMU Inventory Stock Checker v3.23 mirror"
+          git commit -m "Build KAMU Inventory Stock Checker v3.24 mirror"
           git push origin HEAD:main
