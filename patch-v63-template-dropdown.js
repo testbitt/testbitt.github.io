@@ -115,7 +115,6 @@
       install(); updateLabel(); applySelected(); return;
     }
     if(e.target?.id==='eaItemPicker' && checked().length && !enforcing){
-      // In Template mode, manual additions must not leak into the inspection table.
       applySelected();
     }
   },true);
@@ -136,7 +135,7 @@
   if(window.__KSL_SELECTED_ORDER_LOADER_V63__)return;
   window.__KSL_SELECTED_ORDER_LOADER_V63__=1;
   const s=document.createElement('script');
-  s.src='patch-v63-selected-order.js?v=63-order-2';
+  s.src='patch-v63-selected-order.js?v=63-order-3';
   s.async=false;
   s.onerror=()=>console.error('[KSL] selected item ordering load failed');
   document.body.appendChild(s);
