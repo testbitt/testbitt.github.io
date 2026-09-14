@@ -25,14 +25,13 @@
   document.head.appendChild(style);
 
   function txt(v){ return String(v ?? '').trim(); }
-  function esc(v){ return txt(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function esc(v){ return txt(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[m])); }
 
   function persist(){
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(starts)); } catch (_) {}
   }
 
   function renderCalc(tr){
-    // V6.3 manual-expiry mode owns this column. Never overwrite it with a calculated badge.
     if (window.__KSL_EXPIRY_MANUAL_RESULT_V634__) return;
     if (!tr) return;
     const out = tr.querySelector('.ea-calc-cell');
@@ -103,13 +102,13 @@
   document.addEventListener('click', e => {
     const el = e.target.closest?.('#eaRefresh, .nav button[data-page="expiryAudit"]');
     if (el) scheduleAugment();
-    if (e.target.closest?.('#eaClear')) {
-      starts = {};
-      persist();
-      scheduleAugment();
-    }
   }, true);
 
+  window.addEventListener('ksl-expiry-cleared', () => {
+    starts = {};
+    persist();
+    scheduleAugment();
+  });
   window.addEventListener('ksl-central-synced', scheduleAugment);
 
   if (typeof window.renderExpiryAudit === 'function' && !window.renderExpiryAudit.__kslStartWrapped) {
