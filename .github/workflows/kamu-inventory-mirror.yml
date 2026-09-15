@@ -9,6 +9,7 @@ on:
       - 'tools/kamu-inventory-patch35.js'
       - 'tools/kamu-inventory-patch36.js'
       - 'tools/kamu-inventory-patch37.js'
+      - 'tools/kamu-inventory-patch38.js'
       - '.github/workflows/kamu-inventory-mirror.yml'
   workflow_dispatch:
 
@@ -23,7 +24,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Mirror current Vercel production and apply v3.25 patches
+      - name: Mirror current Vercel production and apply v3.26 patches
         shell: bash
         run: |
           python3 - <<'PY'
@@ -40,12 +41,13 @@ jobs:
             ('patch35.js','tools/kamu-inventory-patch35.js','324'),
             ('patch36.js','tools/kamu-inventory-patch36.js','325'),
             ('patch37.js','tools/kamu-inventory-patch37.js','325'),
+            ('patch38.js','tools/kamu-inventory-patch38.js','326'),
           ]
           if OUT.exists(): shutil.rmtree(OUT)
           OUT.mkdir(parents=True, exist_ok=True)
 
           def get(url):
-              req=Request(url, headers={'User-Agent':'Mozilla/5.0 KAMU-Mirror/3.25','Cache-Control':'no-cache'})
+              req=Request(url, headers={'User-Agent':'Mozilla/5.0 KAMU-Mirror/3.26','Cache-Control':'no-cache'})
               with urlopen(req, timeout=45) as r:
                   return r.read()
 
@@ -71,9 +73,9 @@ jobs:
               if re.search(pattern,html): html=re.sub(pattern,tag,html)
               else: html=html.replace('</body>',tag+'\n</body>')
 
-          html=re.sub(r'Version 3\.\d+ • Public Multi‑User Cloud','Version 3.25 • Public Multi‑User Cloud',html)
+          html=re.sub(r'Version 3\.\d+ • Public Multi‑User Cloud','Version 3.26 • Public Multi‑User Cloud',html)
           OUT.joinpath('index.html').write_text(html, encoding='utf-8')
-          OUT.joinpath('MIRROR_BUILD.txt').write_text('KAMU Inventory Stock Checker v3.25\nSource: '+BASE+'\nBuilt: '+time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())+'\n', encoding='utf-8')
+          OUT.joinpath('MIRROR_BUILD.txt').write_text('KAMU Inventory Stock Checker v3.26\nSource: '+BASE+'\nBuilt: '+time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())+'\n', encoding='utf-8')
           print('Built mirror with', len(refs), 'production assets')
           PY
 
@@ -87,5 +89,5 @@ jobs:
             echo "No mirror changes"
             exit 0
           fi
-          git commit -m "Build KAMU Inventory Stock Checker v3.25 mirror"
+          git commit -m "Build KAMU Inventory Stock Checker v3.26 mirror"
           git push origin HEAD:main
