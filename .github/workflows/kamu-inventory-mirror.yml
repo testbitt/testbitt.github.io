@@ -8,6 +8,7 @@ on:
       - 'tools/kamu-inventory-patch34.js'
       - 'tools/kamu-inventory-patch35.js'
       - 'tools/kamu-inventory-patch36.js'
+      - 'tools/kamu-inventory-patch37.js'
       - '.github/workflows/kamu-inventory-mirror.yml'
   workflow_dispatch:
 
@@ -38,6 +39,7 @@ jobs:
             ('patch34.js','tools/kamu-inventory-patch34.js','324'),
             ('patch35.js','tools/kamu-inventory-patch35.js','324'),
             ('patch36.js','tools/kamu-inventory-patch36.js','325'),
+            ('patch37.js','tools/kamu-inventory-patch37.js','325'),
           ]
           if OUT.exists(): shutil.rmtree(OUT)
           OUT.mkdir(parents=True, exist_ok=True)
