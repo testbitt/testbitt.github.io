@@ -100,32 +100,146 @@
     $('aoBody').innerHTML='<tr><td colspan="11" class="summary-empty">ยังไม่แสดงข้อมูลจนกว่าจะเลือก Filter</td></tr>';
   }
 
+  const REPORT_SHEET_ID='1vEqeMB2WYka2p64LpV8fvuUuX-MAHHuJlPAydUPuguQ';
+  const reportCache={travel:{rows:null,ts:0},ot:{rows:null,ts:0}};
+  const REPORT_CACHE_MS=60000;
+
+  function gvizTable(sheetName){
+    return new Promise((resolve,reject)=>{
+      const cb='__kamuGviz_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+      const script=document.createElement('script');
+      let finished=false;
+      const cleanup=()=>{
+        try{delete window[cb];}catch(_){window[cb]=undefined;}
+        if(script.parentNode)script.parentNode.removeChild(script);
+      };
+      const timer=setTimeout(()=>{
+        if(finished)return;finished=true;cleanup();
+        reject(Error('โหลดข้อมูล Google Sheet ใช้เวลานานเกินไป'));
+      },15000);
+      window[cb]=data=>{
+        if(finished)return;finished=true;clearTimeout(timer);cleanup();
+        if(!data||data.status==='error'||!data.table){
+          const msg=data&&data.errors&&data.errors[0]&&data.errors[0].detailed_message;
+          reject(Error(msg||'Google Sheet ตอบกลับไม่ถูกต้อง'));
+          return;
+        }
+        resolve(data.table);
+      };
+      script.onerror=()=>{
+        if(finished)return;finished=true;clearTimeout(timer);cleanup();
+        reject(Error('เชื่อมต่อ Google Sheet ไม่สำเร็จ'));
+      };
+      const tqx='out:json;responseHandler:'+cb;
+      script.src='https://docs.google.com/spreadsheets/d/'+REPORT_SHEET_ID+
+        '/gviz/tq?sheet='+encodeURIComponent(sheetName)+
+        '&headers=1&tqx='+encodeURIComponent(tqx)+'&_='+Date.now();
+      document.head.appendChild(script);
+    });
+  }
+
+  function cobj(row,i){return row&&row.c&&row.c[i]?row.c[i]:null;}
+  function ctext(row,i){
+    const c=cobj(row,i);if(!c)return '';
+    if(c.f!==undefined&&c.f!==null&&String(c.f)!=='')return String(c.f).trim();
+    if(Array.isArray(c.v))return c.v.join(':');
+    return c.v===null||c.v===undefined?'':String(c.v).trim();
+  }
+  function cnum(row,i){
+    const c=cobj(row,i);if(!c)return 0;
+    if(typeof c.v==='number'&&Number.isFinite(c.v))return c.v;
+    const n=Number(String(c.f!==undefined&&c.f!==null?c.f:c.v||'').replace(/,/g,''));
+    return Number.isFinite(n)?n:0;
+  }
+  function cdate(row,i){
+    const c=cobj(row,i);if(!c)return '';
+    if(c.v instanceof Date&&!isNaN(c.v)){
+      return c.v.getFullYear()+'-'+String(c.v.getMonth()+1).padStart(2,'0')+'-'+String(c.v.getDate()).padStart(2,'0');
+    }
+    const raw=c.v===null||c.v===undefined?'':String(c.v).trim();
+    let m=raw.match(/^Date\((\d{4}),(\d{1,2}),(\d{1,2})/);
+    if(m)return m[1]+'-'+String(Number(m[2])+1).padStart(2,'0')+'-'+String(Number(m[3])).padStart(2,'0');
+    const f=ctext(row,i);
+    if(/^\d{4}-\d{2}-\d{2}$/.test(f))return f;
+    m=f.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+    if(m)return m[3]+'-'+String(Number(m[2])).padStart(2,'0')+'-'+String(Number(m[1])).padStart(2,'0');
+    return f;
+  }
+  function ctime(row,i){
+    const c=cobj(row,i);if(!c)return '';
+    if(Array.isArray(c.v))return String(c.v[0]||0).padStart(2,'0')+':'+String(c.v[1]||0).padStart(2,'0');
+    const raw=c.v===null||c.v===undefined?'':String(c.v).trim();
+    const m=raw.match(/^Date\([^,]+,[^,]+,[^,]+,(\d{1,2}),(\d{1,2})/);
+    if(m)return String(Number(m[1])).padStart(2,'0')+':'+String(Number(m[2])).padStart(2,'0');
+    return ctext(row,i);
+  }
+
+  function parseTravelTable(table){
+    return (table.rows||[]).map(r=>({
+      timestamp:ctext(r,0),recordId:ctext(r,1),date:cdate(r,2),
+      origin:ctext(r,3),destination:ctext(r,4),employeeId:ctext(r,5),
+      employeeName:ctext(r,6),transportType:ctext(r,7),
+      distanceOut:cnum(r,8),receiptOutUrl:ctext(r,9),distanceBack:cnum(r,10),
+      receiptBackUrl:ctext(r,11),totalKm:cnum(r,12),amount:cnum(r,13),
+      status:ctext(r,14),travelReason:ctext(r,15)
+    })).filter(r=>r.date||r.recordId||r.employeeId);
+  }
+  function parseOTTable(table){
+    return (table.rows||[]).map(r=>({
+      timestamp:ctext(r,0),recordId:ctext(r,1),employeeId:ctext(r,2),
+      employeeName:ctext(r,3),branch:ctext(r,4),date:cdate(r,5),
+      startTime:ctime(r,6),endTime:ctime(r,7),hours:cnum(r,8),
+      otType:ctext(r,9),reason:ctext(r,10),status:ctext(r,11)
+    })).filter(r=>r.date||r.recordId||r.employeeId);
+  }
+  async function reportRows(type){
+    const cache=reportCache[type];
+    if(cache.rows&&Date.now()-cache.ts<REPORT_CACHE_MS)return cache.rows;
+    const table=await gvizTable(type==='travel'?'Travel Expense':'OT Record');
+    const rows=type==='travel'?parseTravelTable(table):parseOTTable(table);
+    cache.rows=rows;cache.ts=Date.now();
+    return rows;
+  }
+  function matchReport(r,f,type){
+    if(f.month&&String(r.date||'').slice(0,7)!==f.month)return false;
+    if(f.start&&String(r.date||'')<f.start)return false;
+    if(f.end&&String(r.date||'')>f.end)return false;
+    if(f.employee&&String(r.employeeId||'').trim().toUpperCase()!==f.employee.trim().toUpperCase())return false;
+    if(f.branch){
+      const b=f.branch.trim().toUpperCase();
+      if(type==='travel'){
+        if(String(r.origin||'').trim().toUpperCase()!==b&&String(r.destination||'').trim().toUpperCase()!==b)return false;
+      }else if(String(r.branch||'').trim().toUpperCase()!==b)return false;
+    }
+    return true;
+  }
+
   async function searchTravel(){
     const f=filters('tr');if(!hasFilter(f)){clearTravel();return alert('กรุณาเลือก Filter ค่าเดินทางอย่างน้อย 1 รายการ');}if(!validDates(f))return;
     $('trSearch').disabled=true;$('trStatus').textContent='⏳ กำลังโหลดข้อมูลค่าเดินทาง...';
     try{
-      const x=await api({action:'getAdminSummary',adminCode,month:f.month,startDate:f.start,endDate:f.end,employeeId:f.employee,branch:f.branch});
-      travelRows=x.travelRecords||[];
-      const km=travelRows.reduce((s,r)=>s+Number(r.totalKm||0),0), amount=travelRows.reduce((s,r)=>s+Number(r.amount||0),0);
+      const all=await reportRows('travel');
+      travelRows=all.filter(r=>matchReport(r,f,'travel')).sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.recordId).localeCompare(String(a.recordId)));
+      const km=travelRows.reduce((sum,r)=>sum+Number(r.totalKm||0),0),amount=travelRows.reduce((sum,r)=>sum+Number(r.amount||0),0);
       $('trCount').textContent=travelRows.length.toLocaleString('th-TH');$('trKm').textContent=num(km)+' กม.';$('trAmount').textContent=num(amount)+' บาท';
       $('trBody').innerHTML=travelRows.length?travelRows.map(r=>`<tr><td>${esc(r.timestamp||'-')}</td><td>${esc(r.date)}</td><td>${esc(r.recordId)}</td><td>${esc(r.employeeId)}</td><td>${esc(r.employeeName)}</td><td>${esc(r.origin)} → ${esc(r.destination)}</td><td>${esc(r.travelReason||'-')}</td><td>${esc(r.transportType)}</td><td>${num(r.totalKm)} กม.</td><td>${num(r.amount)} บาท</td><td>${esc(r.status||'-')}</td></tr>`).join(''):'<tr><td colspan="11" class="summary-empty">ไม่พบข้อมูลตาม Filter</td></tr>';
       $('trStatus').textContent='✓ พบ '+travelRows.length.toLocaleString('th-TH')+' รายการตาม Filter';
-    }catch(e){$('trStatus').textContent='⚠️ '+e.message;travelRows=[];}finally{$('trSearch').disabled=false;}
+    }catch(e){$('trStatus').textContent='⚠️ '+(e.message||'โหลดข้อมูลค่าเดินทางไม่สำเร็จ');travelRows=[];}finally{$('trSearch').disabled=false;}
   }
 
   async function searchOT(){
     const f=filters('ao');if(!hasFilter(f)){clearOT();return alert('กรุณาเลือก Filter OT อย่างน้อย 1 รายการ');}if(!validDates(f))return;
     $('aoSearch').disabled=true;$('aoStatus').textContent='⏳ กำลังโหลดข้อมูล OT...';
     try{
-      const x=await api({action:'getAdminSummary',adminCode,month:f.month,startDate:f.start,endDate:f.end,employeeId:f.employee,branch:f.branch});
-      otRows=x.otRecords||[];
-      const comp=otRows.reduce((s,r)=>/ชดชั่วโมง/i.test(String(r.otType||''))?s+Number(r.hours||0):s,0);
-      const paid=otRows.reduce((s,r)=>/ทำจ่ายเงิน/i.test(String(r.otType||''))?s+Number(r.hours||0):s,0);
-      const total=otRows.reduce((s,r)=>s+Number(r.hours||0),0);
+      const all=await reportRows('ot');
+      otRows=all.filter(r=>matchReport(r,f,'ot')).sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.recordId).localeCompare(String(a.recordId)));
+      const comp=otRows.reduce((sum,r)=>/ชดชั่วโมง/i.test(String(r.otType||''))?sum+Number(r.hours||0):sum,0);
+      const paid=otRows.reduce((sum,r)=>/ทำจ่ายเงิน/i.test(String(r.otType||''))?sum+Number(r.hours||0):sum,0);
+      const total=otRows.reduce((sum,r)=>sum+Number(r.hours||0),0);
       $('aoComp').textContent=num(comp)+' ชม.';$('aoPaid').textContent=num(paid)+' ชม.';$('aoTotal').textContent=num(total)+' ชม.';
       $('aoBody').innerHTML=otRows.length?otRows.map(r=>`<tr><td>${esc(r.timestamp||'-')}</td><td>${esc(r.date)}</td><td>${esc(r.recordId)}</td><td>${esc(r.employeeId)}</td><td>${esc(r.employeeName)}</td><td>${esc(r.branch)}</td><td>${esc(r.startTime)} - ${esc(r.endTime)}</td><td>${num(r.hours)}</td><td>${esc(r.otType)}</td><td>${esc(r.reason)}</td><td>${esc(r.status||'-')}</td></tr>`).join(''):'<tr><td colspan="11" class="summary-empty">ไม่พบข้อมูลตาม Filter</td></tr>';
       $('aoStatus').textContent='✓ พบ '+otRows.length.toLocaleString('th-TH')+' รายการตาม Filter';
-    }catch(e){$('aoStatus').textContent='⚠️ '+e.message;otRows=[];}finally{$('aoSearch').disabled=false;}
+    }catch(e){$('aoStatus').textContent='⚠️ '+(e.message||'โหลดข้อมูล OT ไม่สำเร็จ');otRows=[];}finally{$('aoSearch').disabled=false;}
   }
 
   function csvCell(v){return '"'+String(v??'').replace(/"/g,'""')+'"';}
