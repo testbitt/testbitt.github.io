@@ -30,7 +30,7 @@
       resultLabel:txt(x?.resultLabel)||'รอตรวจ', reason:txt(x?.reason)
     })).filter(x=>x.item):[];
     return {
-      id:txt(r.id)||uid(), branch:txt(r.branch), checkedAt:txt(r.checkedAt), rows,
+      id:txt(r.id)||uid(), branch:txt(r.branch), checkedAt:txt(r.checkedAt), shiftEmployee:txt(r.shiftEmployee), inspector:txt(r.inspector), rows,
       summary:summaryFromRows(rows), createdAt:txt(r.createdAt)||txt(r.updatedAt)||new Date().toISOString(),
       updatedAt:txt(r.updatedAt)||txt(r.createdAt)||new Date().toISOString()
     };
@@ -115,7 +115,7 @@
     const now=new Date().toISOString();
     const existing=editingId?history.find(r=>r.id===editingId):null;
     return {
-      id:existing?.id||uid(), branch, checkedAt, rows, summary:summaryFromRows(rows),
+      id:existing?.id||uid(), branch, checkedAt, shiftEmployee:txt(document.getElementById('eaShiftEmployee')?.value), inspector:txt(document.getElementById('eaInspector')?.value), rows, summary:summaryFromRows(rows),
       createdAt:existing?.createdAt||now, updatedAt:now
     };
   }
@@ -191,6 +191,25 @@
     toastMsg('เปิดรายงานย้อนหลังสำหรับแก้ไขแล้ว','success');
   }
 
+  function reportPeople(report){
+    let stored={};
+    try{ stored=getState()?.expiryAuditMeta?.[report?.id]||{}; }catch(_){}
+    if(!txt(stored.shiftEmployee)&&!txt(stored.inspector)){
+      try{
+        const local=JSON.parse(localStorage.getItem('KSL_EXPIRY_INSPECTION_META_V63')||'{}')||{};
+        stored=local?.[report?.id]||stored;
+      }catch(_){}
+    }
+    const current=editingId===report?.id?{
+      shiftEmployee:txt(document.getElementById('eaShiftEmployee')?.value),
+      inspector:txt(document.getElementById('eaInspector')?.value)
+    }:{};
+    return {
+      shiftEmployee:txt(report?.shiftEmployee)||txt(stored?.shiftEmployee)||txt(current.shiftEmployee)||'-',
+      inspector:txt(report?.inspector)||txt(stored?.inspector)||txt(current.inspector)||'-'
+    };
+  }
+
   function resultText(code,label){ const map={pass:'ผ่าน',fail:'ไม่ผ่าน',manual:'ตรวจฉลาก',pending:'รอตรวจ'}; return txt(label)||map[code]||'รอตรวจ'; }
   function previewHtml(report){
     const s=summaryFromRows(report.rows);
@@ -212,8 +231,8 @@
   }
 
   function reportHtml(report){
-    const s=summaryFromRows(report.rows);
-    return `<!doctype html><html lang="th"><head><meta charset="utf-8"><title>KSL Expiry Audit ${esc(report.id)}</title><style>@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font-family:Tahoma,"Noto Sans Thai",Arial,sans-serif;margin:0;color:#173d30;font-size:8pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}.head{display:flex;justify-content:space-between;border-bottom:2px solid #176e52;padding-bottom:4mm;margin-bottom:4mm}.brand{display:flex;gap:4mm;align-items:center}.logo{width:15mm;height:15mm;border-radius:4mm;background:#176e52;color:#fff;display:grid;place-items:center;font-size:14pt;font-weight:900}h1{font-size:17pt;margin:0}.sub{color:#6b8077;margin-top:1mm}.meta{text-align:right;line-height:1.6}.sum{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;margin-bottom:4mm}.sum div{border:1px solid #d8e8e0;border-radius:2mm;padding:2.5mm;text-align:center;background:#f8fcfa}.sum b{display:block;font-size:13pt}table{width:100%;border-collapse:collapse;table-layout:fixed}thead{display:table-header-group}tr{break-inside:avoid}th{background:#e9f6ef;color:#285a47;padding:2mm;border:1px solid #cbded5;text-align:left;font-size:7pt}td{padding:1.8mm;border:1px solid #dfe9e4;vertical-align:top;line-height:1.35}.pass{color:#11784d}.fail{color:#a33131}.manual{color:#8c6415}.pending{color:#708077}.foot{margin-top:3mm;color:#71847b;font-size:7pt}</style></head><body><div class="head"><div class="brand"><div class="logo">KSL</div><div><h1>รายงานตรวจสอบวันหมดอายุ</h1><div class="sub">Kamu Kamu Standard Libary • Online Expiry Audit History</div></div></div><div class="meta"><b>สาขา:</b> ${esc(report.branch)}<br><b>วันที่ตรวจ:</b> ${esc(formatThai(report.checkedAt))}<br><b>Report ID:</b> ${esc(report.id)}</div></div><div class="sum"><div><b>${s.all}</b>ทั้งหมด</div><div><b>${s.pass}</b>ผ่าน</div><div><b>${s.fail}</b>ไม่ผ่าน</div><div><b>${s.manual}</b>ตรวจฉลาก</div></div><table><thead><tr><th style="width:4%">#</th><th style="width:18%">วัตถุดิบ</th><th style="width:19%">ประเภท / สถานะ</th><th style="width:10%">Holding Time</th><th style="width:18%">เริ่มต้นวันหมดอายุ</th><th style="width:18%">วันหมดอายุ</th><th style="width:13%">ผลตรวจ</th></tr></thead><tbody>${report.rows.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.item)}</b></td><td>${esc(r.status||'-')}</td><td>${esc(r.holding||'-')}</td><td>${esc(formatThai(r.start))}</td><td>${esc(formatThai(r.expiry))}</td><td class="${esc(r.resultCode)}"><b>${esc(resultText(r.resultCode,r.resultLabel))}</b>${r.reason?`<br><small>${esc(r.reason)}</small>`:''}</td></tr>`).join('')}</tbody></table><div class="foot">ข้อมูลจากประวัติรายงานผลตรวจ Online • แก้ไขล่าสุด ${esc(formatThai(report.updatedAt))}</div><script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));<\/script></body></html>`;
+    const s=summaryFromRows(report.rows), people=reportPeople(report);
+    return `<!doctype html><html lang="th"><head><meta charset="utf-8"><title>KSL Expiry Audit ${esc(report.id)}</title><style>@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font-family:Tahoma,"Noto Sans Thai",Arial,sans-serif;margin:0;color:#173d30;font-size:8pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}.head{display:flex;justify-content:space-between;border-bottom:2px solid #176e52;padding-bottom:4mm;margin-bottom:4mm}.brand{display:flex;gap:4mm;align-items:center}.logo{width:15mm;height:15mm;border-radius:4mm;background:#176e52;color:#fff;display:grid;place-items:center;font-size:14pt;font-weight:900}h1{font-size:17pt;margin:0}.sub{color:#6b8077;margin-top:1mm}.meta{text-align:right;line-height:1.6}.sum{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;margin-bottom:4mm}.sum div{border:1px solid #d8e8e0;border-radius:2mm;padding:2.5mm;text-align:center;background:#f8fcfa}.sum b{display:block;font-size:13pt}table{width:100%;border-collapse:collapse;table-layout:fixed}thead{display:table-header-group}tr{break-inside:avoid}th{background:#e9f6ef;color:#285a47;padding:2mm;border:1px solid #cbded5;text-align:left;font-size:7pt}td{padding:1.8mm;border:1px solid #dfe9e4;vertical-align:top;line-height:1.35}.pass{color:#11784d}.fail{color:#a33131}.manual{color:#8c6415}.pending{color:#708077}.foot{margin-top:3mm;color:#71847b;font-size:7pt}</style></head><body><div class="head"><div class="brand"><div class="logo">KSL</div><div><h1>รายงานตรวจสอบวันหมดอายุ</h1><div class="sub">Kamu Kamu Standard Libary • Online Expiry Audit History</div></div></div><div class="meta"><b>สาขา:</b> ${esc(report.branch)}<br><b>วันที่ตรวจ:</b> ${esc(formatThai(report.checkedAt))}<br><b>พนักงานประจำกะ:</b> ${esc(people.shiftEmployee)}<br><b>ชื่อผู้ตรวจ:</b> ${esc(people.inspector)}<br><b>Report ID:</b> ${esc(report.id)}</div></div><div class="sum"><div><b>${s.all}</b>ทั้งหมด</div><div><b>${s.pass}</b>ผ่าน</div><div><b>${s.fail}</b>ไม่ผ่าน</div><div><b>${s.manual}</b>ตรวจฉลาก</div></div><table><thead><tr><th style="width:4%">#</th><th style="width:18%">วัตถุดิบ</th><th style="width:19%">ประเภท / สถานะ</th><th style="width:10%">Holding Time</th><th style="width:18%">เริ่มต้นวันหมดอายุ</th><th style="width:18%">วันหมดอายุ</th><th style="width:13%">ผลตรวจ</th></tr></thead><tbody>${report.rows.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.item)}</b></td><td>${esc(r.status||'-')}</td><td>${esc(r.holding||'-')}</td><td>${esc(formatThai(r.start))}</td><td>${esc(formatThai(r.expiry))}</td><td class="${esc(r.resultCode)}"><b>${esc(resultText(r.resultCode,r.resultLabel))}</b>${r.reason?`<br><small>${esc(r.reason)}</small>`:''}</td></tr>`).join('')}</tbody></table><div class="foot">ข้อมูลจากประวัติรายงานผลตรวจ Online • แก้ไขล่าสุด ${esc(formatThai(report.updatedAt))}</div><script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));<\/script></body></html>`;
   }
   function exportPdfReport(report){
     const w=window.open('','_blank');if(!w){toastMsg('Browser บล็อกหน้าต่าง Export กรุณาอนุญาต Pop-up','warn');return;}
@@ -222,12 +241,12 @@
   function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight,maxLines=2){ const chars=Array.from(String(text||''));let line='',lines=[];for(const ch of chars){const t=line+ch;if(ctx.measureText(t).width>maxWidth&&line){lines.push(line);line=ch;if(lines.length>=maxLines-1)break}else line=t}if(line&&lines.length<maxLines)lines.push(line);lines.forEach((l,i)=>ctx.fillText(l,x,y+i*lineHeight));return lines.length; }
   function drawCell(ctx,text,x,y,w,h,opt={}){ctx.strokeStyle='#d9e6df';ctx.lineWidth=1;ctx.strokeRect(x,y,w,h);ctx.fillStyle=opt.fill||'#173d30';ctx.font=`${opt.bold?'700':'400'} ${opt.size||19}px Tahoma, Arial, sans-serif`;ctx.textBaseline='top';wrapCanvasText(ctx,text,x+8,y+8,w-16,opt.lineHeight||23,opt.lines||2);}
   function exportJpgReport(report){
-    const rows=report.rows||[], PAGE_W=2480,PAGE_H=1754,M=60,HEAD=250,HEADER_H=56,ROW_H=74; const cols=[70,350,390,220,390,390,390];
+    const rows=report.rows||[], people=reportPeople(report), PAGE_W=2480,PAGE_H=1754,M=60,HEAD=330,HEADER_H=56,ROW_H=74; const cols=[70,350,390,220,390,390,390];
     const perPage=Math.max(1,Math.floor((PAGE_H-M-HEAD-HEADER_H-80)/ROW_H)), pages=Math.max(1,Math.ceil(rows.length/perPage));
     for(let p=0;p<pages;p++) setTimeout(()=>{
       const canvas=document.createElement('canvas');canvas.width=PAGE_W;canvas.height=PAGE_H;const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,PAGE_W,PAGE_H);
-      ctx.fillStyle='#176e52';ctx.fillRect(M,M,88,88);ctx.fillStyle='#fff';ctx.font='700 36px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('KSL',M+44,M+44);ctx.textAlign='left';ctx.textBaseline='top';ctx.fillStyle='#173d30';ctx.font='700 40px Tahoma, Arial';ctx.fillText('รายงานตรวจสอบวันหมดอายุ',M+115,M+3);ctx.fillStyle='#6b8077';ctx.font='21px Tahoma, Arial';ctx.fillText('Online Expiry Audit History',M+115,M+55);ctx.fillStyle='#173d30';ctx.font='700 22px Tahoma, Arial';ctx.fillText(`สาขา: ${report.branch}`,M+115,M+100);ctx.font='20px Tahoma, Arial';ctx.fillText(`วันที่ตรวจ: ${formatThai(report.checkedAt)}`,M+115,M+135);ctx.fillText(`Report ID: ${report.id}`,M+115,M+170);ctx.fillText(`หน้า ${p+1}/${pages}`,PAGE_W-M-150,M+5);
-      const s=summaryFromRows(rows);ctx.fillStyle='#f1f8f4';ctx.fillRect(M,M+205,PAGE_W-M*2,38);ctx.fillStyle='#315d4b';ctx.font='700 19px Tahoma, Arial';ctx.fillText(`ทั้งหมด ${s.all}   ผ่าน ${s.pass}   ไม่ผ่าน ${s.fail}   ตรวจฉลาก ${s.manual}`,M+12,M+214);
+      ctx.fillStyle='#176e52';ctx.fillRect(M,M,88,88);ctx.fillStyle='#fff';ctx.font='700 36px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('KSL',M+44,M+44);ctx.textAlign='left';ctx.textBaseline='top';ctx.fillStyle='#173d30';ctx.font='700 40px Tahoma, Arial';ctx.fillText('รายงานตรวจสอบวันหมดอายุ',M+115,M+3);ctx.fillStyle='#6b8077';ctx.font='21px Tahoma, Arial';ctx.fillText('Online Expiry Audit History',M+115,M+55);ctx.fillStyle='#173d30';ctx.font='700 22px Tahoma, Arial';ctx.fillText(`สาขา: ${report.branch}`,M+115,M+100);ctx.font='20px Tahoma, Arial';ctx.fillText(`วันที่ตรวจ: ${formatThai(report.checkedAt)}`,M+115,M+135);ctx.fillText(`พนักงานประจำกะ: ${people.shiftEmployee}`,M+115,M+170);ctx.fillText(`ชื่อผู้ตรวจ: ${people.inspector}`,M+115,M+205);ctx.fillText(`Report ID: ${report.id}`,M+115,M+240);ctx.fillText(`หน้า ${p+1}/${pages}`,PAGE_W-M-150,M+5);
+      const s=summaryFromRows(rows);ctx.fillStyle='#f1f8f4';ctx.fillRect(M,M+275,PAGE_W-M*2,38);ctx.fillStyle='#315d4b';ctx.font='700 19px Tahoma, Arial';ctx.fillText(`ทั้งหมด ${s.all}   ผ่าน ${s.pass}   ไม่ผ่าน ${s.fail}   ตรวจฉลาก ${s.manual}`,M+12,M+284);
       let y=M+HEAD,x=M;const headers=['#','วัตถุดิบ','ประเภท/สถานะ','Holding Time','เริ่มต้นวันหมดอายุ','วันหมดอายุ','ผลตรวจ'];headers.forEach((h,i)=>{ctx.fillStyle='#e9f6ef';ctx.fillRect(x,y,cols[i],HEADER_H);drawCell(ctx,h,x,y,cols[i],HEADER_H,{bold:true,size:18});x+=cols[i]});y+=HEADER_H;
       rows.slice(p*perPage,(p+1)*perPage).forEach((r,idx)=>{x=M;const vals=[String(p*perPage+idx+1),r.item,r.status||'-',r.holding||'-',formatThai(r.start),formatThai(r.expiry),resultText(r.resultCode,r.resultLabel)];vals.forEach((v,i)=>{const fill=i===6?(r.resultCode==='pass'?'#11784d':r.resultCode==='fail'?'#a33131':r.resultCode==='manual'?'#8c6415':'#708077'):'#173d30';drawCell(ctx,v,x,y,cols[i],ROW_H,{bold:i===1||i===6,size:18,fill,lines:2});x+=cols[i]});y+=ROW_H;});
       ctx.fillStyle='#71847b';ctx.font='17px Tahoma, Arial';ctx.fillText(`แก้ไขล่าสุด ${formatThai(report.updatedAt)}`,M,PAGE_H-M+5);
