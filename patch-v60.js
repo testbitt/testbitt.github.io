@@ -16,6 +16,73 @@
 
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const cloneRows = rows => Array.isArray(rows) ? rows.map(r => (r && typeof r === 'object' ? {...r} : r)) : [];
+  const FRESHNESS_KEY = 'KSL_UPLOAD_FRESHNESS_V63';
+  const FRESHNESS_MAX_AGE = 10 * 60 * 1000;
+
+  function stampMs(v){
+    if (!v) return 0;
+    const n = Date.parse(String(v));
+    return Number.isFinite(n) ? n : 0;
+  }
+  function readFreshness(){
+    try {
+      const raw = JSON.parse(localStorage.getItem(FRESHNESS_KEY) || '{}');
+      return raw && typeof raw === 'object' ? raw : {};
+    } catch (_) { return {}; }
+  }
+  function writeFreshness(value){
+    try { localStorage.setItem(FRESHNESS_KEY, JSON.stringify(value || {})); } catch (_) {}
+  }
+  function markUploadFresh(type, updatedAt){
+    const map = readFreshness();
+    map[type] = {updatedAt:String(updatedAt || new Date().toISOString()), markedAt:Date.now()};
+    writeFreshness(map);
+  }
+  window.KSL_MARK_UPLOAD_FRESH = markUploadFresh;
+
+  function protectLocalFreshData(snapshot){
+    const data = snapshot?.data || {};
+    const meta = snapshot?.meta || {};
+    let state = null;
+    try { if (typeof appState !== 'undefined') state = appState; } catch (_) {}
+    if (!state || typeof state !== 'object') return {data, protectedTypes:new Set()};
+
+    const next = {
+      holdingTime: cloneRows(data.holdingTime),
+      productionRecipes: cloneRows(data.productionRecipes),
+      drinkRecipes: cloneRows(data.drinkRecipes)
+    };
+    const fresh = readFreshness();
+    const protectedTypes = new Set();
+    const now = Date.now();
+    const defs = {
+      holding:{remote:'holdingTime', local:'data', stamp:'updatedAt', meta:'holdingTime'},
+      production:{remote:'productionRecipes', local:'productionData', stamp:'productionUpdatedAt', meta:'productionRecipes'},
+      drink:{remote:'drinkRecipes', local:'drinkData', stamp:'drinkUpdatedAt', meta:'drinkRecipes'}
+    };
+
+    Object.entries(defs).forEach(([type,d]) => {
+      const guard = fresh[type];
+      if (!guard) return;
+      const guardStamp = stampMs(guard.updatedAt);
+      const markedAt = Number(guard.markedAt || guardStamp || 0);
+      if (!guardStamp || (markedAt && now - markedAt > FRESHNESS_MAX_AGE)) {
+        delete fresh[type];
+        return;
+      }
+      const remoteStamp = stampMs(meta?.[d.meta]?.updatedAt);
+      if (remoteStamp && remoteStamp >= guardStamp) {
+        delete fresh[type];
+        return;
+      }
+      if (Array.isArray(state[d.local])) {
+        next[d.remote] = cloneRows(state[d.local]);
+        protectedTypes.add(type);
+      }
+    });
+    writeFreshness(fresh);
+    return {data:next, protectedTypes};
+  }
 
   function replaceArray(target, rows){
     if (!Array.isArray(target) || !Array.isArray(rows)) return false;
@@ -221,17 +288,25 @@
     if (window.__KSL_TRAINING_UPLOAD_IN_PROGRESS__) return false;
     const sig = signatureOf(snapshot);
     if (!force && sig && sig === lastSignature) return true;
-    if (!patchState(snapshot.data || {})) throw new Error('appState ยังไม่พร้อม');
+
+    const protectedResult = protectLocalFreshData(snapshot);
+    const effectiveData = protectedResult.data || snapshot.data || {};
+    if (!patchState(effectiveData)) throw new Error('appState ยังไม่พร้อม');
 
     const updatedAt = updatedAtOf(snapshot);
     try {
+      const m = snapshot?.meta || {};
+      if (!protectedResult.protectedTypes.has('holding') && m.holdingTime?.updatedAt) appState.updatedAt = m.holdingTime.updatedAt;
+      if (!protectedResult.protectedTypes.has('production') && m.productionRecipes?.updatedAt) appState.productionUpdatedAt = m.productionRecipes.updatedAt;
+      if (!protectedResult.protectedTypes.has('drink') && m.drinkRecipes?.updatedAt) appState.drinkUpdatedAt = m.drinkRecipes.updatedAt;
       appState.centralSync = {
-        version:'6.0', source:'Google Sheets JSONP', updatedAt,
+        version:'6.3', source:'Google Sheets JSONP', updatedAt,
         rows:{
-          holding:snapshot.data.holdingTime.length,
-          production:snapshot.data.productionRecipes.length,
-          drink:snapshot.data.drinkRecipes.length
+          holding:effectiveData.holdingTime?.length || 0,
+          production:effectiveData.productionRecipes?.length || 0,
+          drink:effectiveData.drinkRecipes?.length || 0
         },
+        protected:[...protectedResult.protectedTypes],
         checkedAt:new Date().toISOString()
       };
       localStorage.setItem('KSL_CENTRAL_SYNC_META', JSON.stringify(appState.centralSync));
@@ -242,9 +317,10 @@
     refreshViews();
     setTimeout(refreshViews, 150);
     setTimeout(refreshViews, 700);
-    setStatus('ok', `เชื่อมส่วนกลางแล้ว • Holding ${snapshot.data.holdingTime.length} • ผลิต ${snapshot.data.productionRecipes.length} • สูตรชง ${snapshot.data.drinkRecipes.length}`, updatedAt);
-    window.dispatchEvent(new CustomEvent('ksl-central-synced',{detail:{source:'Google Sheets JSONP',meta:snapshot.meta||{}}}));
-    console.info('[KSL V6.0] live central data applied', appState.centralSync);
+    const protectedText = protectedResult.protectedTypes.size ? ' • รักษาข้อมูล Upload ล่าสุด' : '';
+    setStatus('ok', `เชื่อมส่วนกลางแล้ว • Holding ${effectiveData.holdingTime?.length || 0} • ผลิต ${effectiveData.productionRecipes?.length || 0} • สูตรชง ${effectiveData.drinkRecipes?.length || 0}${protectedText}`, updatedAt);
+    window.dispatchEvent(new CustomEvent('ksl-central-synced',{detail:{source:'Google Sheets JSONP',meta:snapshot.meta||{},protected:[...protectedResult.protectedTypes]}}));
+    console.info('[KSL V6.3] live central data applied', appState.centralSync);
     return true;
   }
 
