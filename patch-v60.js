@@ -218,6 +218,7 @@
   }
 
   async function applySnapshot(snapshot, force=false){
+    if (window.__KSL_TRAINING_UPLOAD_IN_PROGRESS__) return false;
     const sig = signatureOf(snapshot);
     if (!force && sig && sig === lastSignature) return true;
     if (!patchState(snapshot.data || {})) throw new Error('appState ยังไม่พร้อม');
@@ -248,6 +249,7 @@
   }
 
   async function syncCentral(force=false){
+    if (window.__KSL_TRAINING_UPLOAD_IN_PROGRESS__) return false;
     if (activePromise && !force) return activePromise;
     activePromise = (async () => {
       try {
