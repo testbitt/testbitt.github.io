@@ -19,7 +19,7 @@ const app=()=>{try{return typeof appState!=='undefined'&&appState?appState:windo
 const unique=a=>[...new Set((a||[]).map(text).filter(Boolean))];
 
 const defaults=()=>({
-  id:uid(),name:'สื่อการสอน',type:'drink',template:'modern',orientation:'portrait',
+  id:uid(),name:'สื่อการสอน',type:'drink',template:'branch-grid',orientation:'landscape',
   perPage:4,title:'',subtitle:'',selected:[],images:{},createdAt:now(),updatedAt:now()
 });
 let draft=defaults(), search='', targetImage='';
@@ -89,64 +89,61 @@ function lineList(values,max=6){
   return vals.slice(0,max).map(v=>'<li>'+esc(v)+'</li>').join('')+(vals.length>max?'<li class="mb-more">+'+(vals.length-max)+' รายการ</li>':'');
 }
 function drinkCard(item){
-  const variants=unique(item.rows.map(r=>r.Variant||r.variant));
-  const ingredients=item.rows.map(r=>{
-    const ing=text(r.Ingredient||r.ingredient),q=text(r.Quantity||r.quantity),u=text(r.Unit||r.unit);
-    return ing?(ing+(q?' — '+q+(u?' '+u:''):'')):'';
-  }).filter(Boolean);
-  const instructions=unique(item.rows.map(r=>r.Instructions||r.instructions));
-  return cardShell(item,
-    (variants.length?'<div class="mb-pills">'+variants.slice(0,4).map(v=>'<span>'+esc(v)+'</span>').join('')+'</div>':'')+
-    '<div class="mb-section"><b>🥤 วัตถุดิบ</b><ul>'+lineList(ingredients,6)+'</ul></div>'+
-    (instructions.length?'<div class="mb-section mb-method"><b>✨ ขั้นตอน</b><ol>'+lineList(instructions,3)+'</ol></div>':'')
-  );
+  const img=draft.images?.[item.id];
+  const variants=unique(item.rows.map(r=>r.Variant||r.variant)).slice(0,2);
+  const rows=item.rows.slice(0,9).map(r=>{
+    const ing=text(r.Ingredient||r.ingredient)||'-';
+    const q=text(r.Quantity||r.quantity);
+    const u=text(r.Unit||r.unit);
+    const variant=text(r.Variant||r.variant);
+    return '<tr><td class="mb-r-name">'+esc(ing)+'</td><td class="mb-r-qty">'+esc(q||'-')+'</td><td class="mb-r-unit">'+esc(u||'')+'</td>'+(variants.length>1?'<td class="mb-r-var">'+esc(variant)+'</td>':'')+'</tr>';
+  }).join('');
+  const notes=unique(item.rows.map(r=>r.Notes||r.notes||r.Instructions||r.instructions)).filter(Boolean).slice(0,1);
+  return '<article class="mb-card mb-table-card">'+
+    '<div class="mb-black-title">'+esc(item.name)+'</div>'+
+    '<div class="mb-table-body">'+
+      '<div class="mb-left-photo">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">'+(draft.type==='drink'?'🧋':'')+'</div>')+'</div>'+
+      '<div class="mb-table-side">'+
+        (variants.length?'<div class="mb-variant-head">'+variants.map(v=>'<span>'+esc(v)+'</span>').join('')+'</div>':'')+
+        '<table class="mb-recipe-table"><tbody>'+rows+'</tbody></table>'+
+        (notes.length?'<div class="mb-note-line">'+esc(notes[0])+'</div>':'')+
+      '</div>'+
+    '</div>'+
+  '</article>';
 }
 function productionCard(item){
+  const img=draft.images?.[item.id];
+  const rows=item.rows.slice(0,9).map((r,i)=>{
+    const name=text(r.ingredients)||text(r.variant)||('ขั้นตอน '+(i+1));
+    const qty=text(r.yield_amount);
+    const unit=text(r.yield_unit);
+    return '<tr><td class="mb-r-name">'+esc(name||'-')+'</td><td class="mb-r-qty">'+esc(qty||'')+'</td><td class="mb-r-unit">'+esc(unit||'')+'</td></tr>';
+  }).join('');
   const first=item.rows[0]||{};
-  const variants=unique(item.rows.map(r=>r.variant));
-  const ingredients=unique(item.rows.map(r=>r.ingredients));
-  const methods=unique(item.rows.map(r=>r.method));
-  const meta=[
-    text(first.yield_amount)?'Yield '+text(first.yield_amount)+' '+text(first.yield_unit):'',
-    text(first.shelf_life)?'⏳ '+text(first.shelf_life):'',
-    text(first.storage_condition)?'❄️ '+text(first.storage_condition):''
-  ].filter(Boolean);
-  return cardShell(item,
-    (variants.length?'<div class="mb-pills">'+variants.slice(0,4).map(v=>'<span>'+esc(v)+'</span>').join('')+'</div>':'')+
-    (meta.length?'<div class="mb-meta">'+meta.map(v=>'<span>'+esc(v)+'</span>').join('')+'</div>':'')+
-    (ingredients.length?'<div class="mb-section"><b>🥣 ส่วนผสม</b><ul>'+lineList(ingredients,4)+'</ul></div>':'')+
-    (methods.length?'<div class="mb-section mb-method"><b>🔥 วิธีผลิต</b><ol>'+lineList(methods,3)+'</ol></div>':'')
-  );
+  const notes=[text(first.temperature_c)?'อุณหภูมิ '+text(first.temperature_c)+'°C':'',text(first.shelf_life)?'อายุ '+text(first.shelf_life):'',text(first.storage_condition)?text(first.storage_condition):''].filter(Boolean).join(' • ');
+  return '<article class="mb-card mb-table-card">'+
+    '<div class="mb-black-title">'+esc(item.name)+'</div>'+
+    '<div class="mb-table-body">'+
+      '<div class="mb-left-photo">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">🧑‍🍳</div>')+'</div>'+
+      '<div class="mb-table-side"><table class="mb-recipe-table"><tbody>'+rows+'</tbody></table>'+(notes?'<div class="mb-note-line">'+esc(notes)+'</div>':'')+'</div>'+
+    '</div>'+
+  '</article>';
 }
 function holdingCard(item){
-  const rows=item.rows.slice(0,7);
-  const body=rows.map(r=>'<tr><td>'+esc(r['สถานะ']||'-')+'</td><td><b>'+esc(r['อายุการจัดเก็บ']||'-')+'</b></td><td>'+esc(r['อุณหภูมิ/สถานที่จัดเก็บ']||'-')+'</td></tr>').join('');
-  return cardShell(item,
-    '<div class="mb-section"><table class="mb-holding"><thead><tr><th>สถานะ</th><th>Holding Time</th><th>จัดเก็บ</th></tr></thead><tbody>'+body+'</tbody></table>'+
-    (item.rows.length>7?'<div class="mb-more">+'+(item.rows.length-7)+' เงื่อนไข</div>':'')+'</div>'
-  );
-}
-function cardShell(item,body){
   const img=draft.images?.[item.id];
-  const en=item.en&&item.en!==item.name?'<div class="mb-en">'+esc(item.en)+'</div>':'';
-  return '<article class="mb-card">'+
-    '<div class="mb-card-head"><div class="mb-icon">'+(draft.type==='drink'?'🧋':draft.type==='production'?'🧑‍🍳':'⏳')+'</div><div class="mb-title-wrap"><h2>'+esc(item.name)+'</h2>'+en+'</div>'+
-    (img?'<div class="mb-img"><img src="'+img+'" alt=""></div>':'')+
-    '</div>'+body+'</article>';
+  const rows=item.rows.slice(0,9).map(r=>'<tr><td class="mb-r-name">'+esc(r['สถานะ']||'-')+'</td><td class="mb-r-qty">'+esc(r['อายุการจัดเก็บ']||'-')+'</td><td class="mb-r-unit">'+esc(r['อุณหภูมิ/สถานที่จัดเก็บ']||'')+'</td></tr>').join('');
+  return '<article class="mb-card mb-table-card">'+
+    '<div class="mb-black-title">'+esc(item.name)+'</div>'+
+    '<div class="mb-table-body">'+
+      '<div class="mb-left-photo">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">⏳</div>')+'</div>'+
+      '<div class="mb-table-side"><table class="mb-recipe-table"><tbody>'+rows+'</tbody></table></div>'+
+    '</div>'+
+  '</article>';
 }
 function itemCard(item){return draft.type==='drink'?drinkCard(item):draft.type==='production'?productionCard(item):holdingCard(item)}
 
 function columnsFor(count){
-  if(count<=1)return 1;
-  if(draft.orientation==='landscape'){
-    if(count<=4)return 2;
-    if(count<=9)return 3;
-    if(count<=16)return 4;
-    return 5;
-  }
-  if(count<=4)return 2;
-  if(count<=9)return 3;
-  return 4;
+  return Math.max(1,Math.ceil(Math.min(20,Math.max(1,count))/2));
 }
 function densityFor(count){
   if(count<=4)return 'mb-density-roomy';
@@ -161,7 +158,7 @@ function buildPage(items,index,total){
   return '<section class="ksl-media-page '+size+' '+density+' mb-template-'+esc(draft.template)+'" data-page="'+index+'">'+
     '<header class="mb-page-head"><div><div class="mb-kamu">KAMU KAMU • TRAINING</div><h1>'+esc(pageTitle())+'</h1>'+
     (draft.subtitle?'<p>'+esc(draft.subtitle)+'</p>':'')+'</div><div class="mb-page-no">'+(index+1)+' / '+total+'</div></header>'+
-    '<div class="mb-grid" style="--mb-cols:'+cols+'">'+items.map(itemCard).join('')+'</div>'+
+    '<div class="mb-grid mb-two-rows" style="--mb-cols:'+cols+'">'+items.map(itemCard).join('')+'</div>'+
     '<footer class="mb-footer"><span>'+esc(typeLabel())+'</span><span>ข้อมูลจาก KSL • '+new Intl.DateTimeFormat('th-TH',{dateStyle:'medium'}).format(new Date())+'</span></footer>'+
     '</section>';
 }
@@ -199,6 +196,25 @@ const CSS=`
 .mb-density-medium .mb-grid{gap:8px}.mb-density-medium .mb-card{padding:9px;border-radius:12px}.mb-density-medium .mb-card h2{font-size:13px}.mb-density-medium .mb-icon{width:28px;height:28px;font-size:15px}.mb-density-medium .mb-img{width:46px;height:36px;flex-basis:46px}.mb-density-medium .mb-section{font-size:8.5px}.mb-density-medium .mb-en{font-size:8px}
 .mb-density-compact .mb-page-head{padding-bottom:8px;margin-bottom:8px}.mb-density-compact .mb-page-head h1{font-size:22px}.mb-density-compact .mb-grid{gap:6px}.mb-density-compact .mb-card{padding:7px;border-radius:9px}.mb-density-compact .mb-card-head{gap:5px;margin-bottom:4px}.mb-density-compact .mb-card h2{font-size:11px}.mb-density-compact .mb-icon{width:24px;height:24px;border-radius:7px;font-size:13px}.mb-density-compact .mb-img{width:38px;height:30px;flex-basis:38px;border-radius:6px}.mb-density-compact .mb-section{font-size:7px;line-height:1.2}.mb-density-compact .mb-en{font-size:7px}.mb-density-compact .mb-pills span,.mb-density-compact .mb-meta span{font-size:6px;padding:2px 4px}.mb-density-compact .mb-holding{font-size:6.5px}.mb-density-compact .mb-footer{margin-top:6px}
 .mb-density-max{padding:22px}.mb-density-max .mb-page-head{padding-bottom:6px;margin-bottom:6px}.mb-density-max .mb-page-head h1{font-size:19px}.mb-density-max .mb-kamu,.mb-density-max .mb-page-no{font-size:8px}.mb-density-max .mb-grid{gap:4px}.mb-density-max .mb-card{padding:5px;border-radius:7px}.mb-density-max .mb-card-head{gap:4px;margin-bottom:3px}.mb-density-max .mb-card h2{font-size:9px;line-height:1.1}.mb-density-max .mb-icon{width:19px;height:19px;border-radius:6px;font-size:10px}.mb-density-max .mb-en{font-size:5.8px}.mb-density-max .mb-img{width:30px;height:24px;flex-basis:30px;border-radius:4px}.mb-density-max .mb-pills,.mb-density-max .mb-meta{gap:2px;margin-bottom:2px}.mb-density-max .mb-pills span,.mb-density-max .mb-meta span{font-size:5.5px;padding:1px 3px}.mb-density-max .mb-section{font-size:5.8px;line-height:1.1;margin-top:2px}.mb-density-max .mb-section>b{margin-bottom:1px}.mb-density-max .mb-section ul,.mb-density-max .mb-section ol{padding-left:10px;margin-top:1px}.mb-density-max .mb-holding{font-size:5.4px}.mb-density-max .mb-holding th,.mb-density-max .mb-holding td{padding:2px}.mb-density-max .mb-footer{font-size:6px;margin-top:4px;padding-top:4px}.mb-density-max .mb-more{font-size:5.5px}
+
+.mb-grid.mb-two-rows{grid-template-columns:repeat(var(--mb-cols),minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));grid-auto-flow:row;align-items:stretch;gap:10px}
+.mb-template-branch-grid{padding:18px}.mb-template-branch-grid .mb-page-head{padding-bottom:7px;margin-bottom:8px;border-bottom:1px solid #222}.mb-template-branch-grid .mb-page-head h1{font-size:18px}.mb-template-branch-grid .mb-kamu{font-size:8px}.mb-template-branch-grid .mb-footer{margin-top:7px;padding-top:4px}
+.mb-template-branch-grid .mb-card{border:2px solid #111;border-radius:0;padding:0;background:#fff;min-height:0}
+.mb-black-title{height:25px;background:#050505;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:900;font-size:11px;padding:2px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none}
+.mb-table-body{display:grid;grid-template-columns:62px minmax(0,1fr);min-height:0;height:calc(100% - 25px)}
+.mb-left-photo{display:flex;align-items:center;justify-content:center;border-right:1px solid #d6d6d6;overflow:hidden;background:#fff;padding:3px}
+.mb-left-photo img{max-width:54px;max-height:120px;width:auto;height:auto;object-fit:contain}
+.mb-photo-placeholder{font-size:25px;opacity:.35}
+.mb-table-side{min-width:0;overflow:hidden;display:flex;flex-direction:column}
+.mb-variant-head{display:flex;justify-content:center;gap:12px;min-height:17px;border-bottom:1px solid #d5d5d5;color:#e22;font-size:7px;font-weight:800;padding:2px 4px}
+.mb-recipe-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:7.5px;line-height:1.15}
+.mb-recipe-table td{border-bottom:1px solid #e3e3e3;border-right:1px solid #ededed;padding:2px 3px;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:16px}
+.mb-recipe-table td:last-child{border-right:0}.mb-r-name{width:auto;text-align:left}.mb-r-qty{width:30px;text-align:center;color:#111}.mb-r-unit{width:32px;text-align:left}.mb-r-var{width:36px;text-align:center;color:#d22}
+.mb-note-line{margin-top:auto;background:#fff36b;color:#d00;font-weight:800;font-size:6.5px;padding:2px 4px;min-height:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mb-template-branch-grid.mb-density-medium .mb-table-body{grid-template-columns:52px minmax(0,1fr)}.mb-template-branch-grid.mb-density-medium .mb-left-photo img{max-width:46px;max-height:95px}.mb-template-branch-grid.mb-density-medium .mb-recipe-table{font-size:6.8px}
+.mb-template-branch-grid.mb-density-compact .mb-table-body{grid-template-columns:43px minmax(0,1fr)}.mb-template-branch-grid.mb-density-compact .mb-left-photo img{max-width:38px;max-height:78px}.mb-template-branch-grid.mb-density-compact .mb-black-title{height:21px;font-size:8px}.mb-template-branch-grid.mb-density-compact .mb-table-body{height:calc(100% - 21px)}.mb-template-branch-grid.mb-density-compact .mb-recipe-table{font-size:5.9px}.mb-template-branch-grid.mb-density-compact .mb-recipe-table td{height:13px;padding:1px 2px}.mb-template-branch-grid.mb-density-compact .mb-r-qty{width:23px}.mb-template-branch-grid.mb-density-compact .mb-r-unit{width:25px}
+.mb-template-branch-grid.mb-density-max{padding:12px}.mb-template-branch-grid.mb-density-max .mb-page-head{margin-bottom:5px;padding-bottom:4px}.mb-template-branch-grid.mb-density-max .mb-page-head h1{font-size:14px}.mb-template-branch-grid.mb-density-max .mb-grid{gap:4px}.mb-template-branch-grid.mb-density-max .mb-table-body{grid-template-columns:30px minmax(0,1fr)}.mb-template-branch-grid.mb-density-max .mb-left-photo{padding:1px}.mb-template-branch-grid.mb-density-max .mb-left-photo img{max-width:27px;max-height:54px}.mb-template-branch-grid.mb-density-max .mb-photo-placeholder{font-size:14px}.mb-template-branch-grid.mb-density-max .mb-black-title{height:17px;font-size:5.8px;padding:1px 2px}.mb-template-branch-grid.mb-density-max .mb-table-body{height:calc(100% - 17px)}.mb-template-branch-grid.mb-density-max .mb-variant-head{font-size:4.8px;min-height:11px;padding:1px 2px;gap:4px}.mb-template-branch-grid.mb-density-max .mb-recipe-table{font-size:4.7px}.mb-template-branch-grid.mb-density-max .mb-recipe-table td{height:10px;padding:1px;line-height:1}.mb-template-branch-grid.mb-density-max .mb-r-qty{width:17px}.mb-template-branch-grid.mb-density-max .mb-r-unit{width:19px}.mb-template-branch-grid.mb-density-max .mb-r-var{width:20px}.mb-template-branch-grid.mb-density-max .mb-note-line{font-size:4.5px;min-height:10px;padding:1px 2px}
+
 @media(max-width:900px){.mb-shell{grid-template-columns:1fr;height:auto}.mb-controls{border-right:0;border-bottom:1px solid #d4e7dc}.mb-preview-wrap{align-items:flex-start}.ksl-media-page{transform-origin:top left;transform:scale(.72);margin-bottom:-300px}}
 @media print{body>*{display:none!important}#kslMediaPrintRoot{display:block!important}.ksl-media-page{box-shadow:none;page-break-after:always;margin:0}.ksl-media-page:last-child{page-break-after:auto}}
 `;
@@ -259,7 +275,7 @@ function builderHtml(){
  '<div class="mb-actions"><span class="mb-count" id="kslMediaPageCount">1 หน้า A4</span><button class="mb-btn" id="kslMediaSaveProject">💾 บันทึกงาน</button><button class="mb-btn" id="kslMediaPrint">📄 PDF / Print</button><button class="mb-btn" id="kslMediaJpg">🖼 JPG</button><button class="mb-btn" id="kslMediaPng">PNG</button><button class="mb-btn danger" id="kslMediaClose">✕ ปิด</button></div></div>'+
  '<div class="mb-shell"><aside class="mb-controls">'+
  '<div class="mb-block"><h3>1. ประเภทสื่อ</h3><div class="mb-field"><select class="mb-select" id="kslMediaType"><option value="drink">🧋 สูตรการชงเครื่องดื่ม</option><option value="production">🧑‍🍳 สูตรการผลิต</option><option value="holding">⏳ ตารางวันหมดอายุ</option></select></div>'+
- '<div class="mb-inline"><div class="mb-field"><label>Template</label><select class="mb-select" id="kslMediaTemplate"><option value="modern">KAMU Modern</option><option value="visual">Visual Training</option><option value="compact">Compact SOP</option></select></div><div class="mb-field"><label>แนวกระดาษ</label><select class="mb-select" id="kslMediaOrientation"><option value="portrait">A4 แนวตั้ง</option><option value="landscape">A4 แนวนอน</option></select></div></div>'+
+ '<div class="mb-inline"><div class="mb-field"><label>Template</label><select class="mb-select" id="kslMediaTemplate"><option value="branch-grid">Branch Grid (ตามตัวอย่าง)</option><option value="modern">KAMU Modern</option><option value="visual">Visual Training</option><option value="compact">Compact SOP</option></select></div><div class="mb-field"><label>แนวกระดาษ</label><select class="mb-select" id="kslMediaOrientation"><option value="portrait">A4 แนวตั้ง</option><option value="landscape">A4 แนวนอน</option></select></div></div>'+
  '<div class="mb-field"><label>จำนวนเมนูต่อ A4 (สูงสุด 20)</label><select class="mb-select" id="kslMediaPerPage"><option value="1">1 เมนู</option><option value="2">2 เมนู</option><option value="3">3 เมนู</option><option value="4">4 เมนู</option><option value="5">5 เมนู</option><option value="6">6 เมนู</option><option value="7">7 เมนู</option><option value="8">8 เมนู</option><option value="9">9 เมนู</option><option value="10">10 เมนู</option><option value="11">11 เมนู</option><option value="12">12 เมนู</option><option value="13">13 เมนู</option><option value="14">14 เมนู</option><option value="15">15 เมนู</option><option value="16">16 เมนู</option><option value="17">17 เมนู</option><option value="18">18 เมนู</option><option value="19">19 เมนู</option><option value="20">20 เมนู</option></select><div class="mb-note">1 หน้า A4 เลือกได้สูงสุด 20 เมนู ระบบจะลดขนาด Grid / ตัวอักษร / รูปประกอบให้พอดีอัตโนมัติ และถ้าเลือกเกินจำนวนต่อหน้าจะสร้าง A4 หน้าถัดไป</div></div></div>'+
  '<div class="mb-block"><h3>2. เลือกเมนูจากฐานข้อมูล <span class="mb-count" id="kslMediaSelectedCount">0 เมนู</span></h3><div class="mb-field"><input class="mb-input" id="kslMediaSearch" placeholder="ค้นหาเมนู..."></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaSelectAll">เลือกทั้งหมดที่ค้นหา</button><button class="mb-link" id="kslMediaClearSel">ล้างการเลือก</button></div><div id="kslMediaItemList"></div></div>'+
  '<div class="mb-block"><h3>3. หัวเรื่อง</h3><div class="mb-field"><label>หัวเรื่องหลัก</label><input class="mb-input" id="kslMediaTitle" placeholder="ใช้ชื่อประเภทสื่ออัตโนมัติ"></div><div class="mb-field"><label>ข้อความรอง</label><input class="mb-input" id="kslMediaSubtitle" placeholder="เช่น สำหรับพนักงานใหม่ / Updated..."></div></div>'+
@@ -350,6 +366,8 @@ function exportPageImage(page,format,index){
 function openBuilder(type){
  installBuilder();loadDraft();
  if(type&&['drink','production','holding'].includes(type)){draft.type=type;cleanSelection()}
+ draft.template='branch-grid';
+ draft.orientation='landscape';
  const ov=document.getElementById('kslMediaOverlay');ov.classList.add('show');
  syncUI();setTimeout(()=>document.getElementById('kslMediaPreview')?.scrollTo(0,0),30);
 }
