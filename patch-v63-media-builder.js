@@ -138,13 +138,27 @@ function itemCard(item){return draft.type==='drink'?drinkCard(item):draft.type==
 
 function columnsFor(count){
   if(count<=1)return 1;
-  if(draft.orientation==='landscape')return count<=4?2:3;
-  return 2;
+  if(draft.orientation==='landscape'){
+    if(count<=4)return 2;
+    if(count<=9)return 3;
+    if(count<=16)return 4;
+    return 5;
+  }
+  if(count<=4)return 2;
+  if(count<=9)return 3;
+  return 4;
+}
+function densityFor(count){
+  if(count<=4)return 'mb-density-roomy';
+  if(count<=8)return 'mb-density-medium';
+  if(count<=12)return 'mb-density-compact';
+  return 'mb-density-max';
 }
 function buildPage(items,index,total){
   const cols=columnsFor(items.length);
   const size=draft.orientation==='landscape'?'mb-landscape':'mb-portrait';
-  return '<section class="ksl-media-page '+size+' mb-template-'+esc(draft.template)+'" data-page="'+index+'">'+
+  const density=densityFor(items.length);
+  return '<section class="ksl-media-page '+size+' '+density+' mb-template-'+esc(draft.template)+'" data-page="'+index+'">'+
     '<header class="mb-page-head"><div><div class="mb-kamu">KAMU KAMU • TRAINING</div><h1>'+esc(pageTitle())+'</h1>'+
     (draft.subtitle?'<p>'+esc(draft.subtitle)+'</p>':'')+'</div><div class="mb-page-no">'+(index+1)+' / '+total+'</div></header>'+
     '<div class="mb-grid" style="--mb-cols:'+cols+'">'+items.map(itemCard).join('')+'</div>'+
@@ -152,7 +166,7 @@ function buildPage(items,index,total){
     '</section>';
 }
 function previewHtml(){
-  const items=selectedItems(),per=Math.max(1,Number(draft.perPage)||4),pages=chunk(items,per);
+  const items=selectedItems(),per=Math.min(20,Math.max(1,Number(draft.perPage)||4)),pages=chunk(items,per);
   return pages.map((p,i)=>buildPage(p,i,pages.length)).join('');
 }
 
@@ -182,6 +196,9 @@ const CSS=`
 .mb-footer{border-top:1px solid #dce9e2;margin-top:12px;padding-top:7px;display:flex;justify-content:space-between;color:#779086;font-size:8px}
 .mb-template-compact .mb-card{border-radius:9px;padding:9px}.mb-template-compact .mb-card h2{font-size:14px}.mb-template-compact .mb-img{height:70px}.mb-template-compact .mb-section{font-size:9px}
 .mb-template-visual .mb-card{background:linear-gradient(145deg,#f8fffb,#eef8f3);border:2px solid #bcdcca}.mb-template-visual .mb-card h2{color:#0f6b4f}.mb-template-visual .mb-img{height:110px}
+.mb-density-medium .mb-grid{gap:8px}.mb-density-medium .mb-card{padding:9px;border-radius:12px}.mb-density-medium .mb-card h2{font-size:13px}.mb-density-medium .mb-icon{width:28px;height:28px;font-size:15px}.mb-density-medium .mb-img{height:66px}.mb-density-medium .mb-section{font-size:8.5px}.mb-density-medium .mb-en{font-size:8px}
+.mb-density-compact .mb-page-head{padding-bottom:8px;margin-bottom:8px}.mb-density-compact .mb-page-head h1{font-size:22px}.mb-density-compact .mb-grid{gap:6px}.mb-density-compact .mb-card{padding:7px;border-radius:9px}.mb-density-compact .mb-card-head{gap:5px;margin-bottom:4px}.mb-density-compact .mb-card h2{font-size:11px}.mb-density-compact .mb-icon{width:24px;height:24px;border-radius:7px;font-size:13px}.mb-density-compact .mb-img{height:50px;margin-bottom:5px}.mb-density-compact .mb-section{font-size:7px;line-height:1.2}.mb-density-compact .mb-en{font-size:7px}.mb-density-compact .mb-pills span,.mb-density-compact .mb-meta span{font-size:6px;padding:2px 4px}.mb-density-compact .mb-holding{font-size:6.5px}.mb-density-compact .mb-footer{margin-top:6px}
+.mb-density-max{padding:22px}.mb-density-max .mb-page-head{padding-bottom:6px;margin-bottom:6px}.mb-density-max .mb-page-head h1{font-size:19px}.mb-density-max .mb-kamu,.mb-density-max .mb-page-no{font-size:8px}.mb-density-max .mb-grid{gap:4px}.mb-density-max .mb-card{padding:5px;border-radius:7px}.mb-density-max .mb-card-head{gap:4px;margin-bottom:3px}.mb-density-max .mb-card h2{font-size:9px;line-height:1.1}.mb-density-max .mb-icon{width:19px;height:19px;border-radius:6px;font-size:10px}.mb-density-max .mb-en{font-size:5.8px}.mb-density-max .mb-img{height:34px;margin-bottom:3px;border-radius:5px}.mb-density-max .mb-pills,.mb-density-max .mb-meta{gap:2px;margin-bottom:2px}.mb-density-max .mb-pills span,.mb-density-max .mb-meta span{font-size:5.5px;padding:1px 3px}.mb-density-max .mb-section{font-size:5.8px;line-height:1.1;margin-top:2px}.mb-density-max .mb-section>b{margin-bottom:1px}.mb-density-max .mb-section ul,.mb-density-max .mb-section ol{padding-left:10px;margin-top:1px}.mb-density-max .mb-holding{font-size:5.4px}.mb-density-max .mb-holding th,.mb-density-max .mb-holding td{padding:2px}.mb-density-max .mb-footer{font-size:6px;margin-top:4px;padding-top:4px}.mb-density-max .mb-more{font-size:5.5px}
 @media(max-width:900px){.mb-shell{grid-template-columns:1fr;height:auto}.mb-controls{border-right:0;border-bottom:1px solid #d4e7dc}.mb-preview-wrap{align-items:flex-start}.ksl-media-page{transform-origin:top left;transform:scale(.72);margin-bottom:-300px}}
 @media print{body>*{display:none!important}#kslMediaPrintRoot{display:block!important}.ksl-media-page{box-shadow:none;page-break-after:always;margin:0}.ksl-media-page:last-child{page-break-after:auto}}
 `;
@@ -243,7 +260,7 @@ function builderHtml(){
  '<div class="mb-shell"><aside class="mb-controls">'+
  '<div class="mb-block"><h3>1. ประเภทสื่อ</h3><div class="mb-field"><select class="mb-select" id="kslMediaType"><option value="drink">🧋 สูตรการชงเครื่องดื่ม</option><option value="production">🧑‍🍳 สูตรการผลิต</option><option value="holding">⏳ ตารางวันหมดอายุ</option></select></div>'+
  '<div class="mb-inline"><div class="mb-field"><label>Template</label><select class="mb-select" id="kslMediaTemplate"><option value="modern">KAMU Modern</option><option value="visual">Visual Training</option><option value="compact">Compact SOP</option></select></div><div class="mb-field"><label>แนวกระดาษ</label><select class="mb-select" id="kslMediaOrientation"><option value="portrait">A4 แนวตั้ง</option><option value="landscape">A4 แนวนอน</option></select></div></div>'+
- '<div class="mb-field"><label>จำนวนเมนูต่อ A4</label><select class="mb-select" id="kslMediaPerPage"><option value="1">1 เมนู</option><option value="2">2 เมนู</option><option value="4">4 เมนู</option><option value="6">6 เมนู</option><option value="8">8 เมนู</option></select><div class="mb-note">เลือกหลายเมนูได้ ระบบจะแบ่งหลายแผ่น A4 อัตโนมัติเมื่อเกินจำนวนต่อหน้า</div></div></div>'+
+ '<div class="mb-field"><label>จำนวนเมนูต่อ A4 (สูงสุด 20)</label><select class="mb-select" id="kslMediaPerPage"><option value="1">1 เมนู</option><option value="2">2 เมนู</option><option value="3">3 เมนู</option><option value="4">4 เมนู</option><option value="5">5 เมนู</option><option value="6">6 เมนู</option><option value="7">7 เมนู</option><option value="8">8 เมนู</option><option value="9">9 เมนู</option><option value="10">10 เมนู</option><option value="11">11 เมนู</option><option value="12">12 เมนู</option><option value="13">13 เมนู</option><option value="14">14 เมนู</option><option value="15">15 เมนู</option><option value="16">16 เมนู</option><option value="17">17 เมนู</option><option value="18">18 เมนู</option><option value="19">19 เมนู</option><option value="20">20 เมนู</option></select><div class="mb-note">1 หน้า A4 เลือกได้สูงสุด 20 เมนู ระบบจะลดขนาด Grid / ตัวอักษร / รูปประกอบให้พอดีอัตโนมัติ และถ้าเลือกเกินจำนวนต่อหน้าจะสร้าง A4 หน้าถัดไป</div></div></div>'+
  '<div class="mb-block"><h3>2. เลือกเมนูจากฐานข้อมูล <span class="mb-count" id="kslMediaSelectedCount">0 เมนู</span></h3><div class="mb-field"><input class="mb-input" id="kslMediaSearch" placeholder="ค้นหาเมนู..."></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaSelectAll">เลือกทั้งหมดที่ค้นหา</button><button class="mb-link" id="kslMediaClearSel">ล้างการเลือก</button></div><div id="kslMediaItemList"></div></div>'+
  '<div class="mb-block"><h3>3. หัวเรื่อง</h3><div class="mb-field"><label>หัวเรื่องหลัก</label><input class="mb-input" id="kslMediaTitle" placeholder="ใช้ชื่อประเภทสื่ออัตโนมัติ"></div><div class="mb-field"><label>ข้อความรอง</label><input class="mb-input" id="kslMediaSubtitle" placeholder="เช่น สำหรับพนักงานใหม่ / Updated..."></div></div>'+
  '<div class="mb-block"><h3>4. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">ระบบย่อรูปก่อนบันทึกเพื่อให้เปิดสื่อและ Export ได้เร็ว</div></div>'+
@@ -260,7 +277,7 @@ function installBuilder(){
   bind('kslMediaType','change',e=>onTypeChange(e.target.value));
   bind('kslMediaTemplate','change',e=>{draft.template=e.target.value;renderPreview();persistDraft()});
   bind('kslMediaOrientation','change',e=>{draft.orientation=e.target.value;renderPreview();persistDraft()});
-  bind('kslMediaPerPage','change',e=>{draft.perPage=Number(e.target.value)||4;renderPreview();persistDraft()});
+  bind('kslMediaPerPage','change',e=>{draft.perPage=Math.min(20,Math.max(1,Number(e.target.value)||4));renderPreview();persistDraft()});
   bind('kslMediaTitle','input',e=>{draft.title=e.target.value;renderPreview();persistDraft()});
   bind('kslMediaSubtitle','input',e=>{draft.subtitle=e.target.value;renderPreview();persistDraft()});
   bind('kslMediaSearch','input',e=>{search=e.target.value;renderControls()});
