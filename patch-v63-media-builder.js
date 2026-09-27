@@ -827,7 +827,7 @@ const CSS=`
   margin:0!important;
 }
 .mb-equal-row>.mb-card:only-child{
-  grid-column:1/-1;
+  grid-column:auto;
 }
 .mb-equal-row .mb-table-body{
   flex:1;
