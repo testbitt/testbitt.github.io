@@ -803,6 +803,27 @@ const CSS=`
 }
 
 
+/* V6.3.25 larger menu titles */
+.mb-template-branch-grid .mb-black-title{
+  font-size:15px!important;
+  line-height:1.18!important;
+  font-weight:900!important;
+  min-height:34px!important;
+  padding:6px 8px!important;
+}
+.mb-template-branch-grid.mb-density-medium .mb-black-title{
+  font-size:14px!important;
+  min-height:32px!important;
+}
+.mb-template-branch-grid.mb-density-compact .mb-black-title{
+  font-size:12.5px!important;
+  min-height:29px!important;
+}
+.mb-template-branch-grid.mb-density-max .mb-black-title{
+  font-size:11px!important;
+  min-height:27px!important;
+}
+
 /* V6.3.21 equal-height paired rows, no blank placeholders */
 .mb-empty-slot{display:none!important}
 .mb-export-columns,.mb-export-col{display:none!important}
