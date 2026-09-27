@@ -118,7 +118,7 @@ function drinkCard(item){
   return '<article class="mb-card mb-table-card">'+
     '<div class="mb-black-title">'+esc(item.name)+'</div>'+
     '<div class="mb-table-body">'+
-      '<div class="mb-left-photo">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">🧋</div>')+'</div>'+
+      '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">🧋</div>')+'</div></div>'+
       '<div class="mb-table-side">'+
         '<div class="mb-cup-title">ประเภทแก้ว</div>'+
         '<table class="mb-recipe-table mb-drink-table">'+head+'<tbody>'+rows+'</tbody></table>'+
@@ -140,7 +140,7 @@ function productionCard(item){
   return '<article class="mb-card mb-table-card">'+
     '<div class="mb-black-title">'+esc(item.name)+'</div>'+
     '<div class="mb-table-body">'+
-      '<div class="mb-left-photo">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">🧑‍🍳</div>')+'</div>'+
+      '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">🧑‍🍳</div>')+'</div></div>'+
       '<div class="mb-table-side"><table class="mb-recipe-table"><tbody>'+rows+'</tbody></table>'+(notes?'<div class="mb-note-line">'+esc(notes)+'</div>':'')+'</div>'+
     '</div>'+
   '</article>';
@@ -151,15 +151,18 @@ function holdingCard(item){
   return '<article class="mb-card mb-table-card">'+
     '<div class="mb-black-title">'+esc(item.name)+'</div>'+
     '<div class="mb-table-body">'+
-      '<div class="mb-left-photo">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">⏳</div>')+'</div>'+
+      '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">⏳</div>')+'</div></div>'+
       '<div class="mb-table-side"><table class="mb-recipe-table"><tbody>'+rows+'</tbody></table></div>'+
     '</div>'+
   '</article>';
 }
 function itemCard(item){return draft.type==='drink'?drinkCard(item):draft.type==='production'?productionCard(item):holdingCard(item)}
 
+function rowsFor(){
+  return draft.orientation==='landscape' ? 3 : 2;
+}
 function columnsFor(count){
-  return Math.max(1,Math.ceil(Math.min(20,Math.max(1,count))/2));
+  return Math.max(1,Math.ceil(Math.min(20,Math.max(1,count))/rowsFor()));
 }
 function densityFor(count){
   if(count<=4)return 'mb-density-roomy';
@@ -171,10 +174,11 @@ function buildPage(items,index,total){
   const cols=columnsFor(items.length);
   const size=draft.orientation==='landscape'?'mb-landscape':'mb-portrait';
   const density=densityFor(items.length);
+  const rows=rowsFor();
   return '<section class="ksl-media-page '+size+' '+density+' mb-template-'+esc(draft.template)+'" data-page="'+index+'">'+
     '<header class="mb-page-head"><div><div class="mb-kamu">KAMU KAMU • TRAINING</div><h1>'+esc(pageTitle())+'</h1>'+
     (draft.subtitle?'<p>'+esc(draft.subtitle)+'</p>':'')+'</div><div class="mb-page-no">'+(index+1)+' / '+total+'</div></header>'+
-    '<div class="mb-grid mb-two-rows" style="--mb-cols:'+cols+'">'+items.map(itemCard).join('')+'</div>'+
+    '<div class="mb-grid mb-dynamic-rows" style="--mb-cols:'+cols+';--mb-rows:'+rows+'">'+items.map(itemCard).join('')+'</div>'+
     '<footer class="mb-footer"><span>'+esc(typeLabel())+'</span><span>ข้อมูลจาก KSL • '+new Intl.DateTimeFormat('th-TH',{dateStyle:'medium'}).format(new Date())+'</span></footer>'+
     '</section>';
 }
@@ -233,6 +237,130 @@ const CSS=`
 .mb-template-branch-grid.mb-density-medium .mb-table-body{grid-template-columns:52px minmax(0,1fr)}.mb-template-branch-grid.mb-density-medium .mb-left-photo img{max-width:46px;max-height:95px}.mb-template-branch-grid.mb-density-medium .mb-recipe-table{font-size:6.8px}
 .mb-template-branch-grid.mb-density-compact .mb-table-body{grid-template-columns:43px minmax(0,1fr)}.mb-template-branch-grid.mb-density-compact .mb-left-photo img{max-width:38px;max-height:78px}.mb-template-branch-grid.mb-density-compact .mb-black-title{min-height:21px;height:auto;font-size:8px;padding:3px 4px}.mb-template-branch-grid.mb-density-compact .mb-table-body{height:auto}.mb-template-branch-grid.mb-density-compact .mb-recipe-table{font-size:5.9px}.mb-template-branch-grid.mb-density-compact .mb-cup-title{font-size:5.8px}.mb-template-branch-grid.mb-density-compact .mb-drink-table thead th{font-size:5.4px;height:12px;padding:1px}.mb-template-branch-grid.mb-density-compact .mb-recipe-table td{height:13px;padding:1px 2px}.mb-template-branch-grid.mb-density-compact .mb-r-qty{width:23px}.mb-template-branch-grid.mb-density-compact .mb-r-unit{width:25px}
 .mb-template-branch-grid.mb-density-max{padding:12px}.mb-template-branch-grid.mb-density-max .mb-page-head{margin-bottom:5px;padding-bottom:4px}.mb-template-branch-grid.mb-density-max .mb-page-head h1{font-size:14px}.mb-template-branch-grid.mb-density-max .mb-grid{gap:4px}.mb-template-branch-grid.mb-density-max .mb-table-body{grid-template-columns:30px minmax(0,1fr)}.mb-template-branch-grid.mb-density-max .mb-left-photo{padding:1px}.mb-template-branch-grid.mb-density-max .mb-left-photo img{max-width:27px;max-height:54px}.mb-template-branch-grid.mb-density-max .mb-photo-placeholder{font-size:14px}.mb-template-branch-grid.mb-density-max .mb-black-title{min-height:17px;height:auto;font-size:5.8px;padding:2px 3px}.mb-template-branch-grid.mb-density-max .mb-table-body{height:auto}.mb-template-branch-grid.mb-density-max .mb-variant-head{font-size:4.8px;min-height:11px;padding:1px 2px;gap:4px}.mb-template-branch-grid.mb-density-max .mb-recipe-table{font-size:4.7px}.mb-template-branch-grid.mb-density-max .mb-cup-title{font-size:4.4px;padding:1px}.mb-template-branch-grid.mb-density-max .mb-drink-table thead th{font-size:4.1px;height:9px;padding:1px}.mb-template-branch-grid.mb-density-max .mb-cup-unit{width:18px}.mb-template-branch-grid.mb-density-max .mb-cup-qty{width:16px}.mb-template-branch-grid.mb-density-max .mb-recipe-table td{height:10px;padding:1px;line-height:1}.mb-template-branch-grid.mb-density-max .mb-r-qty{width:17px}.mb-template-branch-grid.mb-density-max .mb-r-unit{width:19px}.mb-template-branch-grid.mb-density-max .mb-r-var{width:20px}.mb-template-branch-grid.mb-density-max .mb-note-line{font-size:4.5px;min-height:10px;padding:1px 2px}
+
+
+/* V6.3.7 readability + orientation rows */
+.mb-grid.mb-dynamic-rows{
+  display:grid;
+  grid-template-columns:repeat(var(--mb-cols),minmax(0,1fr));
+  grid-template-rows:repeat(var(--mb-rows),max-content);
+  grid-auto-flow:row;
+  align-items:start;
+  align-content:start;
+  gap:9px;
+}
+.mb-template-branch-grid .mb-card{overflow:visible}
+.mb-template-branch-grid .mb-black-title{
+  font-size:13px;
+  line-height:1.22;
+  padding:5px 7px;
+  min-height:30px;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  overflow-wrap:anywhere;
+}
+.mb-template-branch-grid .mb-table-side{overflow:visible}
+.mb-template-branch-grid .mb-recipe-table{
+  table-layout:auto;
+  font-size:10px;
+  line-height:1.22;
+}
+.mb-template-branch-grid .mb-recipe-table td,
+.mb-template-branch-grid .mb-drink-table thead th{
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+.mb-template-branch-grid .mb-recipe-table td{
+  padding:4px 4px;
+  height:auto;
+  min-height:22px;
+}
+.mb-template-branch-grid .mb-r-name{font-size:10px;font-weight:700}
+.mb-template-branch-grid .mb-r-qty,
+.mb-template-branch-grid .mb-r-unit,
+.mb-template-branch-grid .mb-cup-qty{font-size:10px}
+.mb-template-branch-grid .mb-cup-title{
+  font-size:10px;
+  line-height:1.15;
+  padding:4px 3px 3px;
+}
+.mb-template-branch-grid .mb-drink-table thead th{
+  font-size:9px;
+  line-height:1.15;
+  padding:4px 3px;
+  height:auto;
+}
+.mb-template-branch-grid .mb-note-line{
+  font-size:9px;
+  line-height:1.2;
+  padding:4px 5px;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  overflow-wrap:anywhere;
+}
+.mb-template-branch-grid .mb-table-body{
+  grid-template-columns:82px minmax(0,1fr);
+  align-items:stretch;
+}
+.mb-template-branch-grid .mb-left-photo{
+  padding:5px;
+  overflow:visible;
+}
+.mb-template-branch-grid .mb-photo-frame{
+  width:70px;
+  height:105px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#fff;
+  overflow:hidden;
+  flex:none;
+}
+.mb-template-branch-grid .mb-photo-frame img{
+  width:100%;
+  height:100%;
+  max-width:none;
+  max-height:none;
+  object-fit:contain;
+  object-position:center;
+  display:block;
+}
+.mb-template-branch-grid.mb-density-medium .mb-black-title{font-size:12px}
+.mb-template-branch-grid.mb-density-medium .mb-recipe-table{font-size:9px}
+.mb-template-branch-grid.mb-density-medium .mb-r-name,
+.mb-template-branch-grid.mb-density-medium .mb-r-qty,
+.mb-template-branch-grid.mb-density-medium .mb-r-unit,
+.mb-template-branch-grid.mb-density-medium .mb-cup-qty{font-size:9px}
+.mb-template-branch-grid.mb-density-medium .mb-table-body{grid-template-columns:70px minmax(0,1fr)}
+.mb-template-branch-grid.mb-density-medium .mb-photo-frame{width:58px;height:88px}
+
+.mb-template-branch-grid.mb-density-compact .mb-black-title{font-size:10px}
+.mb-template-branch-grid.mb-density-compact .mb-recipe-table{font-size:8px}
+.mb-template-branch-grid.mb-density-compact .mb-r-name,
+.mb-template-branch-grid.mb-density-compact .mb-r-qty,
+.mb-template-branch-grid.mb-density-compact .mb-r-unit,
+.mb-template-branch-grid.mb-density-compact .mb-cup-qty{font-size:8px}
+.mb-template-branch-grid.mb-density-compact .mb-cup-title{font-size:8px}
+.mb-template-branch-grid.mb-density-compact .mb-drink-table thead th{font-size:7.5px}
+.mb-template-branch-grid.mb-density-compact .mb-table-body{grid-template-columns:58px minmax(0,1fr)}
+.mb-template-branch-grid.mb-density-compact .mb-photo-frame{width:48px;height:72px}
+
+.mb-template-branch-grid.mb-density-max .mb-black-title{font-size:9px;line-height:1.15}
+.mb-template-branch-grid.mb-density-max .mb-recipe-table{font-size:7px;line-height:1.12}
+.mb-template-branch-grid.mb-density-max .mb-r-name,
+.mb-template-branch-grid.mb-density-max .mb-r-qty,
+.mb-template-branch-grid.mb-density-max .mb-r-unit,
+.mb-template-branch-grid.mb-density-max .mb-cup-qty{font-size:7px}
+.mb-template-branch-grid.mb-density-max .mb-cup-title{font-size:7px}
+.mb-template-branch-grid.mb-density-max .mb-drink-table thead th{font-size:6.5px;height:auto}
+.mb-template-branch-grid.mb-density-max .mb-note-line{font-size:6.5px}
+.mb-template-branch-grid.mb-density-max .mb-table-body{grid-template-columns:46px minmax(0,1fr)}
+.mb-template-branch-grid.mb-density-max .mb-photo-frame{width:38px;height:58px}
 
 @media(max-width:900px){.mb-shell{grid-template-columns:1fr;height:auto}.mb-controls{border-right:0;border-bottom:1px solid #d4e7dc}.mb-preview-wrap{align-items:flex-start}.ksl-media-page{transform-origin:top left;transform:scale(.72);margin-bottom:-300px}}
 @media print{body>*{display:none!important}#kslMediaPrintRoot{display:block!important}.ksl-media-page{box-shadow:none;page-break-after:always;margin:0}.ksl-media-page:last-child{page-break-after:auto}}
