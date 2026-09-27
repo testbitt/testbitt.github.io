@@ -819,6 +819,65 @@ const CSS=`
 
 
 
+/* V6.3.29 full-page theme, always clipped inside A4 */
+.ksl-media-page,
+.ksl-media-page *{
+  box-sizing:border-box!important;
+}
+.ksl-media-page{
+  background:var(--mb-theme-bg,#fff)!important;
+  background-clip:border-box!important;
+  overflow:hidden!important;
+}
+.ksl-media-page.mb-portrait{
+  width:794px!important;
+  height:1123px!important;
+  min-width:794px!important;
+  max-width:794px!important;
+  min-height:1123px!important;
+  max-height:1123px!important;
+}
+.ksl-media-page.mb-landscape{
+  width:1123px!important;
+  height:794px!important;
+  min-width:1123px!important;
+  max-width:1123px!important;
+  min-height:794px!important;
+  max-height:794px!important;
+}
+.ksl-media-page .mb-page-head,
+.ksl-media-page .mb-equal-rows,
+.ksl-media-page .mb-equal-row,
+.ksl-media-page .mb-card,
+.ksl-media-page .mb-table-body,
+.ksl-media-page .mb-table-side,
+.ksl-media-page .mb-recipe-table,
+.ksl-media-page .mb-footer{
+  min-width:0!important;
+  max-width:100%!important;
+}
+.ksl-media-page .mb-equal-rows{
+  overflow:hidden!important;
+}
+.ksl-media-page .mb-equal-row{
+  width:100%!important;
+}
+.ksl-media-page .mb-card{
+  width:100%!important;
+  overflow:hidden!important;
+}
+.ksl-media-page .mb-table-body,
+.ksl-media-page .mb-table-side{
+  overflow:hidden!important;
+}
+.ksl-media-page .mb-recipe-table{
+  width:100%!important;
+  table-layout:fixed!important;
+}
+.ksl-media-page img{
+  max-width:100%!important;
+}
+
 /* V6.3.28 wider ingredient column + compact cup/unit columns */
 .mb-template-branch-grid .mb-cup-label,
 .ksl-media-page .mb-cup-label{
