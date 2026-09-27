@@ -377,7 +377,7 @@ function buildPage(items,index,total){
   const rowGroups=[];
   for(let i=0;i<items.length;i+=displayCols)rowGroups.push(items.slice(i,i+displayCols));
   const rowsHtml=rowGroups.map(group=>
-    '<div class="mb-equal-row" style="--mb-row-cols:'+Math.max(1,group.length)+'">'+group.map(itemCard).join('')+'</div>'
+    '<div class="mb-equal-row" style="--mb-row-cols:'+displayCols+'">'+group.map(itemCard).join('')+'</div>'
   ).join('');
 
   return '<section class="ksl-media-page '+size+' '+density+' mb-template-'+esc(draft.template)+' mb-theme-'+esc(draft.theme||'1')+' mb-count-'+items.length+'" data-page="'+index+'">'+
@@ -827,7 +827,9 @@ const CSS=`
   margin:0!important;
 }
 .mb-equal-row>.mb-card:only-child{
-  grid-column:auto;
+  grid-column:auto!important;
+  width:100%;
+  max-width:100%;
 }
 .mb-equal-row .mb-table-body{
   flex:1;
