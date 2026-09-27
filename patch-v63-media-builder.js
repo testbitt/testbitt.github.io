@@ -373,23 +373,17 @@ function buildPage(items,index,total){
   const size=draft.orientation==='landscape'?'mb-landscape':'mb-portrait';
   const density=densityFor(items.length);
 
-  // Pack cards independently in each column so a short card does not
-  // create a blank row under the neighboring taller card.
-  const columnGroups=Array.from({length:cols},()=>[]);
-  items.forEach((item,i)=>columnGroups[i%cols].push(item));
-
-  // Pad shorter columns with visual blank slots so the layout stays balanced.
-  const maxLen=Math.max(0,...columnGroups.map(g=>g.length));
-  const columnsHtml=columnGroups.map(group=>{
-    const cards=group.map(itemCard);
-    while(cards.length<maxLen)cards.push('<div class="mb-empty-slot" aria-hidden="true"></div>');
-    return '<div class="mb-export-col">'+cards.join('')+'</div>';
-  }).join('');
+  const displayCols=draft.orientation==='portrait'?2:Math.max(1,cols);
+  const rowGroups=[];
+  for(let i=0;i<items.length;i+=displayCols)rowGroups.push(items.slice(i,i+displayCols));
+  const rowsHtml=rowGroups.map(group=>
+    '<div class="mb-equal-row" style="--mb-row-cols:'+Math.max(1,group.length)+'">'+group.map(itemCard).join('')+'</div>'
+  ).join('');
 
   return '<section class="ksl-media-page '+size+' '+density+' mb-template-'+esc(draft.template)+' mb-theme-'+esc(draft.theme||'1')+' mb-count-'+items.length+'" data-page="'+index+'">'+
     '<header class="mb-page-head"><div><div class="mb-kamu">KAMU KAMU • TRAINING</div><h1>'+esc(pageTitle())+'</h1>'+
     (draft.subtitle?'<p>'+esc(draft.subtitle)+'</p>':'')+'</div><div class="mb-page-no">'+(index+1)+' / '+total+'</div></header>'+
-    '<div class="mb-export-columns" style="--mb-export-cols:'+cols+'">'+columnsHtml+'</div>'+
+    '<div class="mb-equal-rows">'+rowsHtml+'</div>'+
     '<footer class="mb-footer"><span>'+esc(typeLabel())+'</span><span>ข้อมูลจาก KSL • '+new Intl.DateTimeFormat('th-TH',{dateStyle:'medium'}).format(new Date())+'</span></footer>'+
     '</section>';
 }
@@ -808,6 +802,41 @@ const CSS=`
   font-size:6px;
 }
 
+
+/* V6.3.21 equal-height paired rows, no blank placeholders */
+.mb-empty-slot{display:none!important}
+.mb-export-columns,.mb-export-col{display:none!important}
+
+.mb-equal-rows{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  min-height:0;
+  align-items:stretch;
+  align-content:start;
+}
+.mb-equal-row{
+  display:grid;
+  grid-template-columns:repeat(var(--mb-row-cols),minmax(0,1fr));
+  gap:7px;
+  align-items:stretch;
+}
+.mb-equal-row>.mb-card{
+  height:100%!important;
+  align-self:stretch!important;
+  margin:0!important;
+}
+.mb-equal-row>.mb-card:only-child{
+  grid-column:1/-1;
+}
+.mb-equal-row .mb-table-body{
+  flex:1;
+}
+.mb-template-branch-grid.mb-portrait .mb-equal-row{
+  grid-template-columns:repeat(var(--mb-row-cols),minmax(0,1fr));
+}
+.mb-template-branch-grid.mb-landscape .mb-equal-rows,
+.mb-template-branch-grid.mb-landscape .mb-equal-row{gap:8px}
 
 /* V6.3.20 balanced blank slots */
 .mb-empty-slot{
