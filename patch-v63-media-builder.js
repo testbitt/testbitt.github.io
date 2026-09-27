@@ -49,6 +49,59 @@ function persistDraft(immediate=false){
 }
 function setSaveStatus(t){const el=document.getElementById('kslMediaSaveState');if(el)el.textContent=t}
 
+function imageFor(id){
+  if(draft.images?.[id])return draft.images[id];
+  try{
+    const s=app();
+    if(s?.mediaImages?.[id])return s.mediaImages[id];
+  }catch(_){}
+  return '';
+}
+async function persistImageAuto(id,data){
+  if(!id)return;
+  setSaveStatus(data?'กำลังบันทึกรูป...':'กำลังลบรูป...');
+  if(data)draft.images[id]=data;else delete draft.images[id];
+  draft.updatedAt=now();
+
+  try{localStorage.setItem(STORE,JSON.stringify(draft))}catch(_){}
+
+  try{
+    let local=[];try{local=JSON.parse(localStorage.getItem(PROJECTS)||'[]')}catch(_){}
+    const pi=local.findIndex(x=>x?.id===draft.id);
+    if(pi>=0){
+      local[pi]={...local[pi],images:{...(local[pi].images||{})},updatedAt:draft.updatedAt};
+      if(data)local[pi].images[id]=data;else delete local[pi].images[id];
+      localStorage.setItem(PROJECTS,JSON.stringify(local.slice(0,50)));
+    }
+  }catch(_){}
+
+  try{
+    const s=app();
+    if(s){
+      s.mediaImages=s.mediaImages&&typeof s.mediaImages==='object'?s.mediaImages:{};
+      if(data)s.mediaImages[id]=data;else delete s.mediaImages[id];
+      s.mediaBuilderV1=clone(draft);
+
+      if(Array.isArray(s.mediaProjects)){
+        const i=s.mediaProjects.findIndex(x=>x?.id===draft.id);
+        if(i>=0){
+          const p=clone(s.mediaProjects[i]);
+          p.images=p.images&&typeof p.images==='object'?p.images:{};
+          if(data)p.images[id]=data;else delete p.images[id];
+          p.updatedAt=draft.updatedAt;
+          s.mediaProjects[i]=p;
+        }
+      }
+
+      if(typeof dbSet==='function')await Promise.resolve(dbSet(s));
+    }
+    setSaveStatus(data?'บันทึกรูปอัตโนมัติ ✓':'ลบรูปและบันทึกแล้ว ✓');
+  }catch(e){
+    console.warn('[KSL Media] image autosave',e);
+    setSaveStatus('บันทึกรูปในเครื่องแล้ว');
+  }
+}
+
 function stableId(type,name){return type+'::'+text(name).toLowerCase()}
 function sourceItems(type=draft.type){
   const s=app()||{};
@@ -89,7 +142,7 @@ function lineList(values,max=6){
   return vals.slice(0,max).map(v=>'<li>'+esc(v)+'</li>').join('')+(vals.length>max?'<li class="mb-more">+'+(vals.length-max)+' รายการ</li>':'');
 }
 function drinkCard(item){
-  const img=draft.images?.[item.id];
+  const img=imageFor(item.id);
   let variants=unique(item.rows.map(r=>r.Variant||r.variant).filter(Boolean));
   if(!variants.length)variants=['STD'];
   variants=variants.slice(0,4);
@@ -128,7 +181,7 @@ function drinkCard(item){
   '</article>';
 }
 function productionCard(item){
-  const img=draft.images?.[item.id];
+  const img=imageFor(item.id);
   const rows=item.rows.slice(0,9).map((r,i)=>{
     const name=text(r.ingredients)||text(r.variant)||('ขั้นตอน '+(i+1));
     const qty=text(r.yield_amount);
@@ -146,7 +199,7 @@ function productionCard(item){
   '</article>';
 }
 function holdingCard(item){
-  const img=draft.images?.[item.id];
+  const img=imageFor(item.id);
   const rows=item.rows.slice(0,9).map(r=>'<tr><td class="mb-r-name">'+esc(r['สถานะ']||'-')+'</td><td class="mb-r-qty">'+esc(r['อายุการจัดเก็บ']||'-')+'</td><td class="mb-r-unit">'+esc(r['อุณหภูมิ/สถานที่จัดเก็บ']||'')+'</td></tr>').join('');
   return '<article class="mb-card mb-table-card">'+
     '<div class="mb-black-title">'+esc(item.name)+'</div>'+
@@ -388,7 +441,7 @@ function renderControls(){
 }
 function renderImageThumb(){
   const box=document.getElementById('kslMediaImageThumb');if(!box)return;
-  const src=targetImage&&draft.images?.[targetImage];
+  const src=targetImage?imageFor(targetImage):'';
   box.innerHTML=src?'<img src="'+src+'" alt="">':'<span class="mb-note">ยังไม่มีรูปประกอบ</span>';
 }
 function renderPreview(){
@@ -426,7 +479,7 @@ function builderHtml(){
  '<div class="mb-field"><label>จำนวนเมนูต่อ A4 (สูงสุด 20)</label><select class="mb-select" id="kslMediaPerPage"><option value="1">1 เมนู</option><option value="2">2 เมนู</option><option value="3">3 เมนู</option><option value="4">4 เมนู</option><option value="5">5 เมนู</option><option value="6">6 เมนู</option><option value="7">7 เมนู</option><option value="8">8 เมนู</option><option value="9">9 เมนู</option><option value="10">10 เมนู</option><option value="11">11 เมนู</option><option value="12">12 เมนู</option><option value="13">13 เมนู</option><option value="14">14 เมนู</option><option value="15">15 เมนู</option><option value="16">16 เมนู</option><option value="17">17 เมนู</option><option value="18">18 เมนู</option><option value="19">19 เมนู</option><option value="20">20 เมนู</option></select><div class="mb-note">1 หน้า A4 เลือกได้สูงสุด 20 เมนู ระบบจะลดขนาด Grid / ตัวอักษร / รูปประกอบให้พอดีอัตโนมัติ และถ้าเลือกเกินจำนวนต่อหน้าจะสร้าง A4 หน้าถัดไป</div></div></div>'+
  '<div class="mb-block"><h3>2. เลือกเมนูจากฐานข้อมูล <span class="mb-count" id="kslMediaSelectedCount">0 เมนู</span></h3><div class="mb-field"><input class="mb-input" id="kslMediaSearch" placeholder="ค้นหาเมนู..."></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaSelectAll">เลือกทั้งหมดที่ค้นหา</button><button class="mb-link" id="kslMediaClearSel">ล้างการเลือก</button></div><div id="kslMediaItemList"></div></div>'+
  '<div class="mb-block"><h3>3. หัวเรื่อง</h3><div class="mb-field"><label>หัวเรื่องหลัก</label><input class="mb-input" id="kslMediaTitle" placeholder="ใช้ชื่อประเภทสื่ออัตโนมัติ"></div><div class="mb-field"><label>ข้อความรอง</label><input class="mb-input" id="kslMediaSubtitle" placeholder="เช่น สำหรับพนักงานใหม่ / Updated..."></div></div>'+
- '<div class="mb-block"><h3>4. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">ระบบย่อรูปก่อนบันทึกเพื่อให้เปิดสื่อและ Export ได้เร็ว</div></div>'+
+ '<div class="mb-block"><h3>4. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">Auto Save ทันที • Upload รูปใหม่ในเมนูเดิมจะบันทึกทับรูปเดิมอัตโนมัติ</div></div>'+
  '</aside><main class="mb-preview-wrap" id="kslMediaPreview"></main></div></div>';
 }
 
@@ -449,8 +502,27 @@ function installBuilder(){
   bind('kslMediaClearSel','click',()=>{draft.selected=[];targetImage='';renderControls();renderPreview();persistDraft()});
   bind('kslMediaImageTarget','change',e=>{targetImage=e.target.value;renderImageThumb()});
   bind('kslMediaChooseImage','click',()=>document.getElementById('kslMediaImageInput')?.click());
-  bind('kslMediaImageInput','change',async e=>{const f=e.target.files?.[0];if(!f||!targetImage)return;try{draft.images[targetImage]=await compressImage(f);renderImageThumb();renderPreview();persistDraft()}catch(err){alert('เพิ่มรูปไม่สำเร็จ: '+err.message)}e.target.value=''});
-  bind('kslMediaRemoveImage','click',()=>{if(targetImage){delete draft.images[targetImage];renderImageThumb();renderPreview();persistDraft()}});
+  bind('kslMediaImageInput','change',async e=>{
+    const f=e.target.files?.[0];if(!f||!targetImage)return;
+    const id=targetImage;
+    try{
+      const data=await compressImage(f);
+      await persistImageAuto(id,data); // same menu id = overwrite previous image automatically
+      renderImageThumb();
+      renderPreview();
+    }catch(err){
+      console.error('[KSL Media] image upload',err);
+      alert('เพิ่มรูปไม่สำเร็จ: '+err.message);
+    }
+    e.target.value='';
+  });
+  bind('kslMediaRemoveImage','click',async()=>{
+    if(!targetImage)return;
+    const id=targetImage;
+    await persistImageAuto(id,'');
+    renderImageThumb();
+    renderPreview();
+  });
   bind('kslMediaSaveProject','click',saveProject);
   bind('kslMediaPrint','click',printPdf);
   bind('kslMediaJpg','click',()=>exportImages('jpeg'));
