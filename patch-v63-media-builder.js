@@ -623,30 +623,30 @@ const CSS=`
 .mb-template-branch-grid.mb-density-max .mb-black-title{font-size:8.5px;min-height:23px}
 
 
-/* V6.3.14 portrait layout = 2 columns x 10 rows */
+/* V6.3.15 portrait layout fix: 2 columns, content-driven rows */
 .mb-template-branch-grid.mb-portrait{
   padding:14px 16px 10px;
 }
 .mb-template-branch-grid.mb-portrait .mb-page-head{
-  margin-bottom:6px;
-  padding-bottom:5px;
+  margin-bottom:8px;
+  padding-bottom:6px;
 }
 .mb-template-branch-grid.mb-portrait .mb-export-rows{
-  display:grid;
-  grid-template-rows:repeat(10,minmax(0,1fr));
-  gap:4px;
+  display:flex;
+  flex-direction:column;
+  gap:7px;
   min-height:0;
-  height:100%;
-  align-content:stretch;
+  height:auto;
+  align-items:stretch;
 }
 .mb-template-branch-grid.mb-portrait .mb-export-row{
   width:100%!important;
   max-width:100%;
-  height:100%;
   margin:0;
+  display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:5px;
-  align-items:stretch;
+  gap:7px;
+  align-items:start;
 }
 .mb-template-branch-grid.mb-portrait .mb-export-row:has(.mb-card:only-child){
   width:50%!important;
@@ -654,49 +654,55 @@ const CSS=`
   grid-template-columns:1fr;
 }
 .mb-template-branch-grid.mb-portrait .mb-card{
-  height:100%;
   min-height:0;
+  height:auto;
   overflow:hidden;
 }
 .mb-template-branch-grid.mb-portrait .mb-black-title{
-  min-height:20px;
-  font-size:8px;
-  line-height:1.05;
-  padding:3px 4px;
+  min-height:24px;
+  height:auto;
+  font-size:10px;
+  line-height:1.12;
+  padding:4px 6px;
 }
 .mb-template-branch-grid.mb-portrait .mb-table-body{
-  grid-template-columns:42px minmax(0,1fr);
-  height:100%;
+  grid-template-columns:48px minmax(0,1fr);
+  height:auto;
+  min-height:0;
 }
 .mb-template-branch-grid.mb-portrait .mb-left-photo{
-  padding:2px;
+  padding:3px;
 }
 .mb-template-branch-grid.mb-portrait .mb-photo-frame{
-  width:34px;
-  height:46px;
+  width:38px;
+  height:56px;
 }
 .mb-template-branch-grid.mb-portrait .mb-recipe-table{
-  font-size:6.3px;
-  line-height:1.05;
+  width:100%;
+  table-layout:fixed;
+  font-size:7px;
+  line-height:1.1;
 }
 .mb-template-branch-grid.mb-portrait .mb-recipe-table td{
-  padding:1.5px 2px;
+  padding:2px 3px;
+  height:auto;
 }
 .mb-template-branch-grid.mb-portrait .mb-cup-title{
-  font-size:6.2px;
-  padding:2px;
-}
-.mb-template-branch-grid.mb-portrait .mb-drink-table thead th{
-  font-size:5.9px;
-  padding:1.5px 2px;
-}
-.mb-template-branch-grid.mb-portrait .mb-note-line{
-  font-size:5.8px;
-  line-height:1.05;
+  font-size:6.8px;
   padding:2px 3px;
 }
+.mb-template-branch-grid.mb-portrait .mb-drink-table thead th{
+  font-size:6.6px;
+  padding:2px 3px;
+  height:auto;
+}
+.mb-template-branch-grid.mb-portrait .mb-note-line{
+  font-size:6.3px;
+  line-height:1.08;
+  padding:2px 4px;
+}
 .mb-template-branch-grid.mb-portrait .mb-footer{
-  margin-top:4px;
+  margin-top:6px;
   font-size:6px;
 }
 
@@ -955,24 +961,57 @@ async function exportImages(format){
  const pages=[...document.querySelectorAll('#kslMediaPreview .ksl-media-page')];
  if(!pages.length)return;
  for(let i=0;i<pages.length;i++){
-   try{await exportPageImage(pages[i],format,i+1)}catch(e){console.error(e);alert('Export รูปไม่สำเร็จ: '+e.message);break}
+   try{await exportPageImage(pages[i],format,i+1)}catch(e){console.error(e);alert('Export รูปไม่สำเร็จ: '+(e?.message||'Render A4 ไม่สำเร็จ'));break}
    await new Promise(r=>setTimeout(r,180));
  }
 }
-function exportPageImage(page,format,index){
- return new Promise((resolve,reject)=>{
-   const landscape=draft.orientation==='landscape',w=landscape?1123:794,h=landscape?794:1123;
-   const xml='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>'+CSS.replace(/#kslMediaOverlay[^}]*}/g,'')+'</style>'+page.outerHTML+'</div></foreignObject></svg>';
-   const blob=new Blob([xml],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob),img=new Image();
-   img.onload=()=>{
-     try{
-       const scale=2,c=document.createElement('canvas');c.width=w*scale;c.height=h*scale;const ctx=c.getContext('2d');ctx.scale(scale,scale);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);URL.revokeObjectURL(url);
-       const mime=format==='png'?'image/png':'image/jpeg',ext=format==='png'?'png':'jpg';
-       c.toBlob(b=>{if(!b)return reject(new Error('สร้างไฟล์ไม่สำเร็จ'));const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(pageTitle().replace(/[\\/:*?"<>|]+/g,'-')||'KSL-Media')+'-A4-'+index+'.'+ext;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);resolve()},mime,.93);
-     }catch(e){reject(e)}
-   };
-   img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Render A4 ไม่สำเร็จ'))};img.src=url;
- });
+let html2canvasPromise=null;
+async function getHtml2Canvas(){
+  if(window.html2canvas)return window.html2canvas;
+  if(!html2canvasPromise){
+    html2canvasPromise=new Promise((resolve,reject)=>{
+      const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+      s.onload=()=>window.html2canvas?resolve(window.html2canvas):reject(new Error('โหลดตัว Export ไม่สำเร็จ'));
+      s.onerror=()=>reject(new Error('โหลดตัว Export ไม่สำเร็จ'));
+      document.head.appendChild(s);
+    }).catch(e=>{html2canvasPromise=null;throw e});
+  }
+  return html2canvasPromise;
+}
+async function waitForMediaReady(root){
+  try{if(document.fonts?.ready)await document.fonts.ready}catch(_){}
+  const imgs=[...root.querySelectorAll('img')];
+  await Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=r;img.onerror=r})));
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+}
+async function exportPageImage(page,format,index){
+  const h2c=await getHtml2Canvas();
+  await waitForMediaReady(page);
+  const canvas=await h2c(page,{
+    backgroundColor:'#ffffff',
+    scale:2,
+    useCORS:true,
+    allowTaint:true,
+    logging:false,
+    imageTimeout:15000,
+    width:page.scrollWidth,
+    height:page.scrollHeight,
+    windowWidth:page.scrollWidth,
+    windowHeight:page.scrollHeight
+  });
+  const mime=format==='png'?'image/png':'image/jpeg',ext=format==='png'?'png':'jpg';
+  await new Promise((resolve,reject)=>{
+    canvas.toBlob(b=>{
+      if(!b)return reject(new Error('สร้างไฟล์ไม่สำเร็จ'));
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(b);
+      a.download=(pageTitle().replace(/[\\/:*?"<>|]+/g,'-')||'KSL-Media')+'-A4-'+index+'.'+ext;
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+      resolve();
+    },mime,.93);
+  });
 }
 
 function openBuilder(type){
