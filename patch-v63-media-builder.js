@@ -803,6 +803,31 @@ const CSS=`
 }
 
 
+/* V6.3.26 larger red cup-type labels */
+.mb-template-branch-grid .mb-cup-title{
+  color:#d60000!important;
+  font-size:12px!important;
+  font-weight:900!important;
+  line-height:1.15!important;
+}
+.mb-template-branch-grid .mb-cup-type{
+  color:#d60000!important;
+  font-size:12px!important;
+  font-weight:900!important;
+}
+.mb-template-branch-grid.mb-density-medium .mb-cup-title,
+.mb-template-branch-grid.mb-density-medium .mb-cup-type{
+  font-size:11px!important;
+}
+.mb-template-branch-grid.mb-density-compact .mb-cup-title,
+.mb-template-branch-grid.mb-density-compact .mb-cup-type{
+  font-size:10px!important;
+}
+.mb-template-branch-grid.mb-density-max .mb-cup-title,
+.mb-template-branch-grid.mb-density-max .mb-cup-type{
+  font-size:9px!important;
+}
+
 /* V6.3.25 larger menu titles */
 .mb-template-branch-grid .mb-black-title{
   font-size:15px!important;
