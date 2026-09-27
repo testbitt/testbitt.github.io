@@ -819,6 +819,83 @@ const CSS=`
 
 
 
+/* V6.3.28 wider ingredient column + compact cup/unit columns */
+.mb-template-branch-grid .mb-cup-label,
+.ksl-media-page .mb-cup-label{
+  width:58%!important;
+  min-width:0!important;
+  text-align:left!important;
+}
+.mb-template-branch-grid .mb-cup-type,
+.ksl-media-page .mb-cup-type{
+  width:auto!important;
+  min-width:34px!important;
+  max-width:54px!important;
+  padding:3px 2px!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  line-height:1.08!important;
+}
+.mb-template-branch-grid .mb-cup-qty,
+.ksl-media-page .mb-cup-qty{
+  width:auto!important;
+  min-width:30px!important;
+  max-width:48px!important;
+  padding:3px 2px!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  overflow-wrap:anywhere!important;
+}
+.mb-template-branch-grid .mb-cup-unit,
+.ksl-media-page .mb-cup-unit{
+  width:13%!important;
+  min-width:34px!important;
+  max-width:52px!important;
+  padding:3px 2px!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+}
+.mb-template-branch-grid .mb-r-name,
+.ksl-media-page .mb-r-name{
+  width:auto!important;
+  min-width:0!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  overflow-wrap:anywhere!important;
+}
+.mb-template-branch-grid .mb-r-unit,
+.ksl-media-page .mb-r-unit{
+  width:13%!important;
+  min-width:34px!important;
+  max-width:52px!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  overflow-wrap:anywhere!important;
+}
+.mb-template-branch-grid .mb-r-qty,
+.ksl-media-page .mb-r-qty{
+  width:14%!important;
+  min-width:34px!important;
+  max-width:52px!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+.mb-template-branch-grid .mb-drink-table,
+.ksl-media-page .mb-drink-table{
+  table-layout:fixed!important;
+  width:100%!important;
+}
+
 /* V6.3.27 — 30 templates. Template changes never reduce typography */
 .ksl-media-page .mb-black-title{font-size:15px!important;line-height:1.18!important;font-weight:900!important;min-height:34px!important;padding:6px 8px!important}
 .ksl-media-page .mb-cup-title{font-size:12px!important;line-height:1.15!important;font-weight:900!important;color:#d60000!important}
