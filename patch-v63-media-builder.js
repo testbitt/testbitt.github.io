@@ -709,14 +709,43 @@ function syncUI(){
 }
 function onTypeChange(v){draft.type=v;draft.selected=[];draft.images={};targetImage='';draft.title='';search='';const q=document.getElementById('kslMediaSearch');if(q)q.value='';syncUI()}
 
-async function compressImage(file){
-  const url=URL.createObjectURL(file);
+const BG_REMOVE_MODULE='https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm';
+let bgRemoveModulePromise=null;
+async function getBackgroundRemover(){
+  if(!bgRemoveModulePromise){
+    bgRemoveModulePromise=import(BG_REMOVE_MODULE).then(mod=>mod.default||mod.removeBackground).catch(err=>{
+      bgRemoveModulePromise=null;
+      throw err;
+    });
+  }
+  return bgRemoveModulePromise;
+}
+async function transparentBlobToDataURL(blob){
+  const url=URL.createObjectURL(blob);
   try{
     const img=await new Promise((ok,fail)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=fail;im.src=url});
-    const scale=Math.min(1,MAX_IMG/Math.max(img.width,img.height)),w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
-    const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
-    return c.toDataURL('image/jpeg',.8);
+    const scale=Math.min(1,MAX_IMG/Math.max(img.width,img.height));
+    const w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
+    const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+    const ctx=canvas.getContext('2d',{alpha:true});
+    ctx.clearRect(0,0,w,h);
+    ctx.drawImage(img,0,0,w,h);
+    return canvas.toDataURL('image/png');
   }finally{URL.revokeObjectURL(url)}
+}
+async function compressImage(file){
+  setSaveStatus('กำลังโหลดระบบลบพื้นหลัง...');
+  const removeBackground=await getBackgroundRemover();
+  setSaveStatus('กำลังลบพื้นหลังอัตโนมัติ...');
+  const result=await removeBackground(file,{
+    progress:(key,current,total)=>{
+      if(!total)return;
+      const pct=Math.max(0,Math.min(100,Math.round((current/total)*100)));
+      if(key&&/model|wasm|onnx|asset/i.test(String(key)))setSaveStatus('กำลังเตรียม AI ลบพื้นหลัง '+pct+'%');
+    }
+  });
+  setSaveStatus('กำลังจัดขนาดรูปโปร่งใส...');
+  return transparentBlobToDataURL(result);
 }
 
 function builderHtml(){
@@ -730,7 +759,7 @@ function builderHtml(){
  '<div class="mb-block"><h3>2. เลือกเมนูจากฐานข้อมูล <span class="mb-count" id="kslMediaSelectedCount">0 เมนู</span></h3><div class="mb-field"><input class="mb-input" id="kslMediaSearch" placeholder="ค้นหาเมนู..."></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaSelectAll">เลือกทั้งหมดที่ค้นหา</button><button class="mb-link" id="kslMediaClearSel">ล้างการเลือก</button></div><div id="kslMediaItemList"></div></div>'+
  '<div class="mb-block"><h3>3. หัวเรื่อง</h3><div class="mb-field"><label>หัวเรื่องหลัก</label><input class="mb-input" id="kslMediaTitle" placeholder="ใช้ชื่อประเภทสื่ออัตโนมัติ"></div><div class="mb-field"><label>ข้อความรอง</label><input class="mb-input" id="kslMediaSubtitle" placeholder="เช่น สำหรับพนักงานใหม่ / Updated..."></div></div>'+
  '<div class="mb-block"><h3>4. แก้ไขข้อมูลรายเมนู</h3><div class="mb-field"><label>เมนูที่จะแก้ไข</label><select class="mb-select" id="kslMediaEditTarget"></select></div><div id="kslMediaEditor"></div><div class="mb-note">แก้ไขแล้ว Auto Save เข้า Online Database • ไม่เปลี่ยนฐานสูตรต้นฉบับที่ Upload</div></div>'+ 
- '<div class="mb-block"><h3>5. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">Auto Save ทันที • Upload รูปใหม่ในเมนูเดิมจะบันทึกทับรูปเดิมอัตโนมัติ</div></div>'+
+ '<div class="mb-block"><h3>5. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">ลบพื้นหลังอัตโนมัติทุกครั้ง • บันทึกเป็น PNG โปร่งใส • Auto Save และ Upload รูปใหม่เมนูเดิมจะทับรูปเดิม</div></div>'+
  '</aside><main class="mb-preview-wrap" id="kslMediaPreview"></main></div></div>';
 }
 
@@ -772,9 +801,11 @@ function installBuilder(){
     const id=targetImage;
     try{
       const data=await compressImage(f);
-      await persistImageAuto(id,data); // same menu id = overwrite previous image automatically
+      setSaveStatus('กำลังบันทึกรูปที่ลบพื้นหลังแล้ว...');
+      await persistImageAuto(id,data); // same menu id = overwrite previous transparent image automatically
       renderImageThumb();
       renderPreview();
+      setSaveStatus('ลบพื้นหลังและบันทึกรูปอัตโนมัติ ✓');
     }catch(err){
       console.error('[KSL Media] image upload',err);
       alert('เพิ่มรูปไม่สำเร็จ: '+err.message);
