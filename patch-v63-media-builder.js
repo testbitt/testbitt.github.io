@@ -69,8 +69,7 @@ async function persistImageAuto(id,data){
     let local=[];try{local=JSON.parse(localStorage.getItem(PROJECTS)||'[]')}catch(_){}
     const pi=local.findIndex(x=>x?.id===draft.id);
     if(pi>=0){
-      local[pi]={...local[pi],images:{...(local[pi].images||{})},updatedAt:draft.updatedAt};
-      if(data)local[pi].images[id]=data;else delete local[pi].images[id];
+      local[pi]={...local[pi],updatedAt:draft.updatedAt};
       localStorage.setItem(PROJECTS,JSON.stringify(local.slice(0,50)));
     }
   }catch(_){}
@@ -86,8 +85,6 @@ async function persistImageAuto(id,data){
         const i=s.mediaProjects.findIndex(x=>x?.id===draft.id);
         if(i>=0){
           const p=clone(s.mediaProjects[i]);
-          p.images=p.images&&typeof p.images==='object'?p.images:{};
-          if(data)p.images[id]=data;else delete p.images[id];
           p.updatedAt=draft.updatedAt;
           s.mediaProjects[i]=p;
         }
@@ -734,6 +731,7 @@ function renderControls(){
     const current=editSel.value&&sels.some(x=>x.id===editSel.value)?editSel.value:(targetImage||sels[0]?.id||'');
     editSel.innerHTML=sels.length?sels.map(x=>'<option value="'+esc(x.id)+'" '+(x.id===current?'selected':'')+'>'+esc(x.name)+'</option>').join(''):'<option value="">เลือกเมนูก่อน</option>';
   }
+  renderSavedProjects();
   renderMediaEditor();
   renderImageThumb();
 }
@@ -850,8 +848,9 @@ function builderHtml(){
  '<div class="mb-field"><label>Theme สำหรับ Preview / Export (15 แบบ)</label><select class="mb-select" id="kslMediaTheme"><option value="1">01 KAMU Green</option><option value="2">02 Classic Black</option><option value="3">03 Matcha</option><option value="4">04 Mint</option><option value="5">05 Forest</option><option value="6">06 Cream</option><option value="7">07 Latte</option><option value="8">08 Taro</option><option value="9">09 Thai Tea</option><option value="10">10 Sky</option><option value="11">11 Navy</option><option value="12">12 Rose</option><option value="13">13 Sakura</option><option value="14">14 Minimal Gray</option><option value="15">15 High Contrast</option></select></div><div class="mb-field"><label>จำนวนเมนูต่อ A4 (สูงสุด 20)</label><select class="mb-select" id="kslMediaPerPage"><option value="1">1 เมนู</option><option value="2">2 เมนู</option><option value="3">3 เมนู</option><option value="4">4 เมนู</option><option value="5">5 เมนู</option><option value="6">6 เมนู</option><option value="7">7 เมนู</option><option value="8">8 เมนู</option><option value="9">9 เมนู</option><option value="10">10 เมนู</option><option value="11">11 เมนู</option><option value="12">12 เมนู</option><option value="13">13 เมนู</option><option value="14">14 เมนู</option><option value="15">15 เมนู</option><option value="16">16 เมนู</option><option value="17">17 เมนู</option><option value="18">18 เมนู</option><option value="19">19 เมนู</option><option value="20">20 เมนู</option></select><div class="mb-note">แนวตั้งแสดงสูงสุด 20 เมนูต่อหน้าแบบ 2×10 • แนวนอนเลือกได้สูงสุด 20 เมนู • ถ้าเกินจะสร้างหน้าถัดไปอัตโนมัติ</div></div></div>'+
  '<div class="mb-block"><h3>2. เลือกเมนูจากฐานข้อมูล <span class="mb-count" id="kslMediaSelectedCount">0 เมนู</span></h3><div class="mb-field"><input class="mb-input" id="kslMediaSearch" placeholder="ค้นหาเมนู..."></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaSelectAll">เลือกทั้งหมดที่ค้นหา</button><button class="mb-link" id="kslMediaClearSel">ล้างการเลือก</button></div><div id="kslMediaItemList"></div></div>'+
  '<div class="mb-block"><h3>3. หัวเรื่อง</h3><div class="mb-field"><label>หัวเรื่องหลัก</label><input class="mb-input" id="kslMediaTitle" placeholder="ใช้ชื่อประเภทสื่ออัตโนมัติ"></div><div class="mb-field"><label>ข้อความรอง</label><input class="mb-input" id="kslMediaSubtitle" placeholder="เช่น สำหรับพนักงานใหม่ / Updated..."></div></div>'+
- '<div class="mb-block"><h3>4. แก้ไขข้อมูลรายเมนู</h3><div class="mb-field"><label>เมนูที่จะแก้ไข</label><select class="mb-select" id="kslMediaEditTarget"></select></div><div id="kslMediaEditor"></div><div class="mb-note">แก้ไขแล้ว Auto Save เข้า Online Database • ไม่เปลี่ยนฐานสูตรต้นฉบับที่ Upload</div></div>'+ 
- '<div class="mb-block"><h3>5. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">ลบพื้นหลังอัตโนมัติทุกครั้ง • บันทึกเป็น PNG โปร่งใส • Auto Save และ Upload รูปใหม่เมนูเดิมจะทับรูปเดิม</div></div>'+
+ '<div class="mb-block"><h3>4. งานที่บันทึกไว้</h3><div class="mb-field"><select class="mb-select" id="kslMediaSavedProjects"></select></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaLoadProject" type="button">เปิดแก้ไข</button><button class="mb-link" id="kslMediaDeleteProject" type="button">ลบงาน</button></div><div class="mb-note">เปิดงานเดิมแล้วสามารถเพิ่ม/ลดเมนู แก้รายละเอียด เปลี่ยนรูป และบันทึกทับงานเดิมได้</div></div>'+ 
+ '<div class="mb-block"><h3>5. แก้ไขข้อมูลรายเมนู</h3><div class="mb-field"><label>เมนูที่จะแก้ไข</label><select class="mb-select" id="kslMediaEditTarget"></select></div><div id="kslMediaEditor"></div><div class="mb-note">แก้ไขแล้ว Auto Save เข้า Online Database • ไม่เปลี่ยนฐานสูตรต้นฉบับที่ Upload</div></div>'+ 
+ '<div class="mb-block"><h3>6. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">ลบพื้นหลังอัตโนมัติทุกครั้ง • บันทึกเป็น PNG โปร่งใส • Auto Save และ Upload รูปใหม่เมนูเดิมจะทับรูปเดิม</div></div>'+
  '</aside><main class="mb-preview-wrap" id="kslMediaPreview"></main></div></div>';
 }
 
@@ -873,6 +872,12 @@ function installBuilder(){
   bind('kslMediaItemList','change',e=>{const cb=e.target.closest('[data-mb-item]');if(!cb)return;const id=cb.dataset.mbItem;if(cb.checked&&!draft.selected.includes(id))draft.selected.push(id);if(!cb.checked)draft.selected=draft.selected.filter(x=>x!==id);renderControls();renderPreview();persistDraft()});
   bind('kslMediaSelectAll','click',()=>{const q=search.toLowerCase();sourceItems().filter(x=>!q||(x.name+' '+x.en).toLowerCase().includes(q)).forEach(x=>{if(!draft.selected.includes(x.id))draft.selected.push(x.id)});renderControls();renderPreview();persistDraft()});
   bind('kslMediaClearSel','click',()=>{draft.selected=[];targetImage='';renderControls();renderPreview();persistDraft()});
+  bind('kslMediaLoadProject','click',()=>{
+    const id=document.getElementById('kslMediaSavedProjects')?.value;if(id)loadSavedProject(id);
+  });
+  bind('kslMediaDeleteProject','click',async()=>{
+    const id=document.getElementById('kslMediaSavedProjects')?.value;if(id&&confirm('ลบงานที่บันทึกนี้หรือไม่?'))await deleteSavedProject(id);
+  });
   bind('kslMediaEditTarget','change',()=>renderMediaEditor());
   bind('kslMediaEditor','input',()=>scheduleEditorSave());
   bind('kslMediaEditor','click',e=>{
@@ -928,22 +933,114 @@ function installBuilder(){
   bind('kslMediaPng','click',()=>exportImages('png'));
 }
 
+function projectSnapshot(){
+  return {
+    id:draft.id,
+    name:draft.name,
+    type:draft.type,
+    template:draft.template,
+    orientation:draft.orientation,
+    perPage:draft.perPage,
+    theme:draft.theme,
+    title:draft.title,
+    subtitle:draft.subtitle,
+    selected:[...(draft.selected||[])],
+    overrides:clone(draft.overrides||{}),
+    createdAt:draft.createdAt,
+    updatedAt:draft.updatedAt
+  };
+}
+function localProjects(){
+  try{
+    const v=JSON.parse(localStorage.getItem(PROJECTS)||'[]');
+    return Array.isArray(v)?v:[];
+  }catch(_){return []}
+}
+function getSavedProjects(){
+  const map=new Map();
+  localProjects().forEach(p=>p?.id&&map.set(p.id,p));
+  try{
+    const s=app();
+    (Array.isArray(s?.mediaProjects)?s.mediaProjects:[]).forEach(p=>{
+      if(!p?.id)return;
+      const old=map.get(p.id);
+      if(!old||String(p.updatedAt||'')>String(old.updatedAt||''))map.set(p.id,p);
+    });
+  }catch(_){}
+  return [...map.values()].sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
+}
+function renderSavedProjects(){
+  const sel=document.getElementById('kslMediaSavedProjects');if(!sel)return;
+  const list=getSavedProjects();
+  sel.innerHTML=list.length?list.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name||'สื่อการสอน')+' • '+esc(typeLabel(p.type))+'</option>').join(''):'<option value="">ยังไม่มีงานที่บันทึก</option>';
+}
+function loadSavedProject(id){
+  const p=getSavedProjects().find(x=>x.id===id);if(!p)return;
+  const keepImages=draft.images||{};
+  draft={...defaults(),...clone(p),images:keepImages,overrides:clone(p.overrides||{}),selected:Array.isArray(p.selected)?[...p.selected]:[]};
+  targetImage='';
+  cleanSelection();
+  syncUI();
+  setSaveStatus('เปิดงานที่บันทึกแล้ว ✓');
+}
+async function deleteSavedProject(id){
+  if(!id)return;
+  const local=localProjects().filter(p=>p?.id!==id);
+  try{localStorage.setItem(PROJECTS,JSON.stringify(local))}catch(_){}
+  try{
+    const s=app();
+    if(s&&Array.isArray(s.mediaProjects)){
+      s.mediaProjects=s.mediaProjects.filter(p=>p?.id!==id);
+      if(typeof dbSet==='function')await Promise.resolve(dbSet(s));
+    }
+  }catch(e){console.warn('[KSL Media] delete project sync',e)}
+  if(draft.id===id)draft=defaults();
+  renderSavedProjects();syncUI();
+  setSaveStatus('ลบงานที่บันทึกแล้ว ✓');
+}
+
 async function saveProject(){
   const suggested=draft.name&&draft.name!=='สื่อการสอน'?draft.name:pageTitle()+' '+new Intl.DateTimeFormat('th-TH',{dateStyle:'short'}).format(new Date());
   const name=prompt('ชื่อสื่อสำหรับบันทึก',suggested);if(!name)return;
   draft.name=name;draft.updatedAt=now();
+
+  // Save lightweight project first. Images stay in mediaImages by menu id.
+  const snap=projectSnapshot();
+  let localOK=false,onlineOK=false;
+
   try{
-    const s=app();if(s){
+    let local=localProjects();
+    const i=local.findIndex(x=>x.id===snap.id);
+    if(i>=0)local[i]=snap;else local.unshift(snap);
+    local=local.slice(0,50);
+    localStorage.setItem(PROJECTS,JSON.stringify(local));
+    localStorage.setItem(STORE,JSON.stringify({...draft,images:{}}));
+    localOK=true;
+    setSaveStatus('บันทึกงานในเครื่องแล้ว • กำลัง Sync Online...');
+  }catch(e){
+    console.warn('[KSL Media] local project save',e);
+  }
+
+  try{
+    const s=app();
+    if(s){
       s.mediaProjects=Array.isArray(s.mediaProjects)?s.mediaProjects:[];
-      const i=s.mediaProjects.findIndex(x=>x.id===draft.id);
-      const copy=clone(draft);if(i>=0)s.mediaProjects[i]=copy;else s.mediaProjects.unshift(copy);
+      const i=s.mediaProjects.findIndex(x=>x.id===snap.id);
+      if(i>=0)s.mediaProjects[i]=clone(snap);else s.mediaProjects.unshift(clone(snap));
       s.mediaProjects=s.mediaProjects.slice(0,50);
+      s.mediaBuilderV1={...clone(snap),images:{}};
       if(typeof dbSet==='function')await Promise.resolve(dbSet(s));
+      onlineOK=true;
     }
-    let local=[];try{local=JSON.parse(localStorage.getItem(PROJECTS)||'[]')}catch(_){}
-    const i=local.findIndex(x=>x.id===draft.id);if(i>=0)local[i]=clone(draft);else local.unshift(clone(draft));local=local.slice(0,50);localStorage.setItem(PROJECTS,JSON.stringify(local));
-    persistDraft(true);setSaveStatus('บันทึกงานแล้ว ✓');
-  }catch(e){console.warn(e);alert('บันทึกงานไม่สำเร็จ')}
+  }catch(e){
+    console.warn('[KSL Media] online project save',e);
+  }
+
+  renderSavedProjects();
+  if(localOK&&onlineOK)setSaveStatus('บันทึกงานและ Sync Online แล้ว ✓');
+  else if(localOK)setSaveStatus('บันทึกงานแล้ว ✓ • รอ Sync Online');
+  else if(onlineOK)setSaveStatus('บันทึกงาน Online แล้ว ✓');
+  else{alert('บันทึกงานไม่สำเร็จ กรุณาลองอีกครั้ง');return}
 }
 
 function printCss(){
