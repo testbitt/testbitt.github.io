@@ -90,22 +90,38 @@ function lineList(values,max=6){
 }
 function drinkCard(item){
   const img=draft.images?.[item.id];
-  const variants=unique(item.rows.map(r=>r.Variant||r.variant)).slice(0,2);
-  const rows=item.rows.slice(0,9).map(r=>{
-    const ing=text(r.Ingredient||r.ingredient)||'-';
-    const q=text(r.Quantity||r.quantity);
-    const u=text(r.Unit||r.unit);
-    const variant=text(r.Variant||r.variant);
-    return '<tr><td class="mb-r-name">'+esc(ing)+'</td><td class="mb-r-qty">'+esc(q||'-')+'</td><td class="mb-r-unit">'+esc(u||'')+'</td>'+(variants.length>1?'<td class="mb-r-var">'+esc(variant)+'</td>':'')+'</tr>';
+  let variants=unique(item.rows.map(r=>r.Variant||r.variant).filter(Boolean));
+  if(!variants.length)variants=['STD'];
+  variants=variants.slice(0,4);
+
+  const ingredientMap=new Map();
+  item.rows.forEach(r=>{
+    const ing=text(r.Ingredient||r.ingredient);
+    if(!ing)return;
+    const variant=text(r.Variant||r.variant)||variants[0];
+    if(!variants.includes(variant))return;
+    const q=text(r.Quantity||r.quantity),u=text(r.Unit||r.unit);
+    if(!ingredientMap.has(ing))ingredientMap.set(ing,{name:ing,unit:u,qty:{}});
+    const rec=ingredientMap.get(ing);
+    if(!rec.unit&&u)rec.unit=u;
+    rec.qty[variant]=q||'-';
+  });
+
+  const rows=[...ingredientMap.values()].slice(0,10).map(rec=>{
+    const qs=variants.map(v=>'<td class="mb-cup-qty">'+esc(rec.qty[v]||'-')+'</td>').join('');
+    return '<tr><td class="mb-r-name">'+esc(rec.name)+'</td>'+qs+'<td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>';
   }).join('');
+
+  const head='<thead><tr><th class="mb-cup-label">วัตถุดิบ</th>'+variants.map(v=>'<th class="mb-cup-type">'+esc(v)+'</th>').join('')+'<th class="mb-cup-unit">หน่วย</th></tr></thead>';
   const notes=unique(item.rows.map(r=>r.Notes||r.notes||r.Instructions||r.instructions)).filter(Boolean).slice(0,1);
+
   return '<article class="mb-card mb-table-card">'+
     '<div class="mb-black-title">'+esc(item.name)+'</div>'+
     '<div class="mb-table-body">'+
-      '<div class="mb-left-photo">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">'+(draft.type==='drink'?'🧋':'')+'</div>')+'</div>'+
+      '<div class="mb-left-photo">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">🧋</div>')+'</div>'+
       '<div class="mb-table-side">'+
-        (variants.length?'<div class="mb-variant-head">'+variants.map(v=>'<span>'+esc(v)+'</span>').join('')+'</div>':'')+
-        '<table class="mb-recipe-table"><tbody>'+rows+'</tbody></table>'+
+        '<div class="mb-cup-title">ประเภทแก้ว</div>'+
+        '<table class="mb-recipe-table mb-drink-table">'+head+'<tbody>'+rows+'</tbody></table>'+
         (notes.length?'<div class="mb-note-line">'+esc(notes[0])+'</div>':'')+
       '</div>'+
     '</div>'+
@@ -210,10 +226,13 @@ const CSS=`
 .mb-recipe-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:7.5px;line-height:1.15}
 .mb-recipe-table td{border-bottom:1px solid #e3e3e3;border-right:1px solid #ededed;padding:2px 3px;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:16px}
 .mb-recipe-table td:last-child{border-right:0}.mb-r-name{width:auto;text-align:left}.mb-r-qty{width:30px;text-align:center;color:#111}.mb-r-unit{width:32px;text-align:left}.mb-r-var{width:36px;text-align:center;color:#d22}
+.mb-cup-title{text-align:center;color:#d22;font-weight:900;font-size:7px;line-height:1;padding:2px 2px 1px;border-bottom:1px solid #ddd;background:#fff}
+.mb-drink-table thead th{font-size:6.8px;font-weight:900;border-bottom:1px solid #d0d0d0;border-right:1px solid #e3e3e3;padding:2px 2px;text-align:center;background:#fff;height:16px}
+.mb-drink-table thead th:last-child{border-right:0}.mb-cup-label{text-align:left!important;color:#333}.mb-cup-type{color:#e22}.mb-cup-unit{color:#555;width:30px}.mb-cup-qty{text-align:center;color:#111;width:28px}
 .mb-note-line{margin-top:auto;background:#fff36b;color:#d00;font-weight:800;font-size:6.5px;padding:2px 4px;min-height:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mb-template-branch-grid.mb-density-medium .mb-table-body{grid-template-columns:52px minmax(0,1fr)}.mb-template-branch-grid.mb-density-medium .mb-left-photo img{max-width:46px;max-height:95px}.mb-template-branch-grid.mb-density-medium .mb-recipe-table{font-size:6.8px}
-.mb-template-branch-grid.mb-density-compact .mb-table-body{grid-template-columns:43px minmax(0,1fr)}.mb-template-branch-grid.mb-density-compact .mb-left-photo img{max-width:38px;max-height:78px}.mb-template-branch-grid.mb-density-compact .mb-black-title{height:21px;font-size:8px}.mb-template-branch-grid.mb-density-compact .mb-table-body{height:calc(100% - 21px)}.mb-template-branch-grid.mb-density-compact .mb-recipe-table{font-size:5.9px}.mb-template-branch-grid.mb-density-compact .mb-recipe-table td{height:13px;padding:1px 2px}.mb-template-branch-grid.mb-density-compact .mb-r-qty{width:23px}.mb-template-branch-grid.mb-density-compact .mb-r-unit{width:25px}
-.mb-template-branch-grid.mb-density-max{padding:12px}.mb-template-branch-grid.mb-density-max .mb-page-head{margin-bottom:5px;padding-bottom:4px}.mb-template-branch-grid.mb-density-max .mb-page-head h1{font-size:14px}.mb-template-branch-grid.mb-density-max .mb-grid{gap:4px}.mb-template-branch-grid.mb-density-max .mb-table-body{grid-template-columns:30px minmax(0,1fr)}.mb-template-branch-grid.mb-density-max .mb-left-photo{padding:1px}.mb-template-branch-grid.mb-density-max .mb-left-photo img{max-width:27px;max-height:54px}.mb-template-branch-grid.mb-density-max .mb-photo-placeholder{font-size:14px}.mb-template-branch-grid.mb-density-max .mb-black-title{height:17px;font-size:5.8px;padding:1px 2px}.mb-template-branch-grid.mb-density-max .mb-table-body{height:calc(100% - 17px)}.mb-template-branch-grid.mb-density-max .mb-variant-head{font-size:4.8px;min-height:11px;padding:1px 2px;gap:4px}.mb-template-branch-grid.mb-density-max .mb-recipe-table{font-size:4.7px}.mb-template-branch-grid.mb-density-max .mb-recipe-table td{height:10px;padding:1px;line-height:1}.mb-template-branch-grid.mb-density-max .mb-r-qty{width:17px}.mb-template-branch-grid.mb-density-max .mb-r-unit{width:19px}.mb-template-branch-grid.mb-density-max .mb-r-var{width:20px}.mb-template-branch-grid.mb-density-max .mb-note-line{font-size:4.5px;min-height:10px;padding:1px 2px}
+.mb-template-branch-grid.mb-density-compact .mb-table-body{grid-template-columns:43px minmax(0,1fr)}.mb-template-branch-grid.mb-density-compact .mb-left-photo img{max-width:38px;max-height:78px}.mb-template-branch-grid.mb-density-compact .mb-black-title{height:21px;font-size:8px}.mb-template-branch-grid.mb-density-compact .mb-table-body{height:calc(100% - 21px)}.mb-template-branch-grid.mb-density-compact .mb-recipe-table{font-size:5.9px}.mb-template-branch-grid.mb-density-compact .mb-cup-title{font-size:5.8px}.mb-template-branch-grid.mb-density-compact .mb-drink-table thead th{font-size:5.4px;height:12px;padding:1px}.mb-template-branch-grid.mb-density-compact .mb-recipe-table td{height:13px;padding:1px 2px}.mb-template-branch-grid.mb-density-compact .mb-r-qty{width:23px}.mb-template-branch-grid.mb-density-compact .mb-r-unit{width:25px}
+.mb-template-branch-grid.mb-density-max{padding:12px}.mb-template-branch-grid.mb-density-max .mb-page-head{margin-bottom:5px;padding-bottom:4px}.mb-template-branch-grid.mb-density-max .mb-page-head h1{font-size:14px}.mb-template-branch-grid.mb-density-max .mb-grid{gap:4px}.mb-template-branch-grid.mb-density-max .mb-table-body{grid-template-columns:30px minmax(0,1fr)}.mb-template-branch-grid.mb-density-max .mb-left-photo{padding:1px}.mb-template-branch-grid.mb-density-max .mb-left-photo img{max-width:27px;max-height:54px}.mb-template-branch-grid.mb-density-max .mb-photo-placeholder{font-size:14px}.mb-template-branch-grid.mb-density-max .mb-black-title{height:17px;font-size:5.8px;padding:1px 2px}.mb-template-branch-grid.mb-density-max .mb-table-body{height:calc(100% - 17px)}.mb-template-branch-grid.mb-density-max .mb-variant-head{font-size:4.8px;min-height:11px;padding:1px 2px;gap:4px}.mb-template-branch-grid.mb-density-max .mb-recipe-table{font-size:4.7px}.mb-template-branch-grid.mb-density-max .mb-cup-title{font-size:4.4px;padding:1px}.mb-template-branch-grid.mb-density-max .mb-drink-table thead th{font-size:4.1px;height:9px;padding:1px}.mb-template-branch-grid.mb-density-max .mb-cup-unit{width:18px}.mb-template-branch-grid.mb-density-max .mb-cup-qty{width:16px}.mb-template-branch-grid.mb-density-max .mb-recipe-table td{height:10px;padding:1px;line-height:1}.mb-template-branch-grid.mb-density-max .mb-r-qty{width:17px}.mb-template-branch-grid.mb-density-max .mb-r-unit{width:19px}.mb-template-branch-grid.mb-density-max .mb-r-var{width:20px}.mb-template-branch-grid.mb-density-max .mb-note-line{font-size:4.5px;min-height:10px;padding:1px 2px}
 
 @media(max-width:900px){.mb-shell{grid-template-columns:1fr;height:auto}.mb-controls{border-right:0;border-bottom:1px solid #d4e7dc}.mb-preview-wrap{align-items:flex-start}.ksl-media-page{transform-origin:top left;transform:scale(.72);margin-bottom:-300px}}
 @media print{body>*{display:none!important}#kslMediaPrintRoot{display:block!important}.ksl-media-page{box-shadow:none;page-break-after:always;margin:0}.ksl-media-page:last-child{page-break-after:auto}}
