@@ -1074,14 +1074,14 @@ async function compressImage(file){
 function builderHtml(){
  return '<div id="kslMediaOverlay">'+
  '<div class="mb-topbar"><div><h2>🎨 สร้างสื่อการสอน</h2><small id="kslMediaSaveState">บันทึกอัตโนมัติ ✓</small></div>'+
- '<div class="mb-actions"><span class="mb-count" id="kslMediaPageCount">1 หน้า A4</span><button class="mb-btn" id="kslMediaHistory">🕘 ประวัติการบันทึก</button><button class="mb-btn" id="kslMediaSaveProject">💾 บันทึกงาน</button><button class="mb-btn" id="kslMediaPrint">📄 PDF / Print</button><button class="mb-btn" id="kslMediaJpg">🖼 JPG</button><button class="mb-btn" id="kslMediaPng">PNG</button><button class="mb-btn danger" id="kslMediaClose">✕ ปิด</button></div></div>'+
+ '<div class="mb-actions"><span class="mb-count" id="kslMediaPageCount">1 หน้า A4</span><button class="mb-btn" id="kslMediaHistory">🕘 ประวัติการบันทึก</button><button class="mb-btn primary" id="kslMediaSaveNew">＋ บันทึกงานใหม่</button><button class="mb-btn" id="kslMediaSaveOverwrite">💾 บันทึกทับงานเดิม</button><button class="mb-btn" id="kslMediaPrint">📄 PDF / Print</button><button class="mb-btn" id="kslMediaJpg">🖼 JPG</button><button class="mb-btn" id="kslMediaPng">PNG</button><button class="mb-btn danger" id="kslMediaClose">✕ ปิด</button></div></div>'+
  '<div class="mb-shell"><aside class="mb-controls">'+
  '<div class="mb-block"><h3>1. ประเภทสื่อ</h3><div class="mb-field"><select class="mb-select" id="kslMediaType"><option value="drink">🧋 สูตรการชงเครื่องดื่ม</option><option value="production">🧑‍🍳 สูตรการผลิต</option><option value="holding">⏳ ตารางวันหมดอายุ</option></select></div>'+
  '<div class="mb-inline"><div class="mb-field"><label>Template</label><select class="mb-select" id="kslMediaTemplate"><option value="branch-grid">Branch Grid (ตามตัวอย่าง)</option><option value="modern">KAMU Modern</option><option value="visual">Visual Training</option><option value="compact">Compact SOP</option></select></div><div class="mb-field"><label>แนวกระดาษ</label><select class="mb-select" id="kslMediaOrientation"><option value="portrait">A4 แนวตั้ง</option><option value="landscape">A4 แนวนอน</option></select></div></div>'+
  '<div class="mb-field"><label>Theme สำหรับ Preview / Export (15 แบบ)</label><select class="mb-select" id="kslMediaTheme"><option value="1">01 KAMU Green</option><option value="2">02 Classic Black</option><option value="3">03 Matcha</option><option value="4">04 Mint</option><option value="5">05 Forest</option><option value="6">06 Cream</option><option value="7">07 Latte</option><option value="8">08 Taro</option><option value="9">09 Thai Tea</option><option value="10">10 Sky</option><option value="11">11 Navy</option><option value="12">12 Rose</option><option value="13">13 Sakura</option><option value="14">14 Minimal Gray</option><option value="15">15 High Contrast</option></select></div><div class="mb-field"><label>จำนวนเมนูต่อ A4 (สูงสุด 20)</label><select class="mb-select" id="kslMediaPerPage"><option value="1">1 เมนู</option><option value="2">2 เมนู</option><option value="3">3 เมนู</option><option value="4">4 เมนู</option><option value="5">5 เมนู</option><option value="6">6 เมนู</option><option value="7">7 เมนู</option><option value="8">8 เมนู</option><option value="9">9 เมนู</option><option value="10">10 เมนู</option><option value="11">11 เมนู</option><option value="12">12 เมนู</option><option value="13">13 เมนู</option><option value="14">14 เมนู</option><option value="15">15 เมนู</option><option value="16">16 เมนู</option><option value="17">17 เมนู</option><option value="18">18 เมนู</option><option value="19">19 เมนู</option><option value="20">20 เมนู</option></select><div class="mb-note">แนวตั้งแสดงสูงสุด 20 เมนูต่อหน้าแบบ 2×10 • แนวนอนเลือกได้สูงสุด 20 เมนู • ถ้าเกินจะสร้างหน้าถัดไปอัตโนมัติ</div></div></div>'+
  '<div class="mb-block"><h3>2. เลือกเมนูจากฐานข้อมูล <span class="mb-count" id="kslMediaSelectedCount">0 เมนู</span></h3><div class="mb-field"><input class="mb-input" id="kslMediaSearch" placeholder="ค้นหาเมนู..."></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaSelectAll">เลือกทั้งหมดที่ค้นหา</button><button class="mb-link" id="kslMediaClearSel">ล้างการเลือก</button></div><div id="kslMediaItemList"></div></div>'+
  '<div class="mb-block"><h3>3. หัวเรื่อง</h3><div class="mb-field"><label>หัวเรื่องหลัก</label><input class="mb-input" id="kslMediaTitle" placeholder="ใช้ชื่อประเภทสื่ออัตโนมัติ"></div><div class="mb-field"><label>ข้อความรอง</label><input class="mb-input" id="kslMediaSubtitle" placeholder="เช่น สำหรับพนักงานใหม่ / Updated..."></div></div>'+
- '<div class="mb-block"><h3>4. งานที่บันทึกไว้</h3><div class="mb-field"><select class="mb-select" id="kslMediaSavedProjects"></select></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaLoadProject" type="button">เปิดแก้ไข</button><button class="mb-link" id="kslMediaDeleteProject" type="button">ลบงาน</button></div><div class="mb-note">เปิดงานเดิมแล้วสามารถเพิ่ม/ลดเมนู แก้รายละเอียด เปลี่ยนรูป และบันทึกทับงานเดิมได้</div></div>'+ 
+ '<div class="mb-block"><h3>4. งานที่บันทึกไว้</h3><div class="mb-field"><select class="mb-select" id="kslMediaSavedProjects"></select></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaLoadProject" type="button">เปิดแก้ไข</button><button class="mb-link" id="kslMediaDeleteProject" type="button">ลบงาน</button></div><div class="mb-note">เปิดงานเดิมแล้วสามารถเพิ่ม/ลดเมนู แก้รายละเอียด เปลี่ยนรูป แล้วกด “บันทึกทับงานเดิม” • หากต้องการแยกเป็นอีกงานให้กด “บันทึกงานใหม่”</div></div>'+ 
  '<div class="mb-block"><h3>5. แก้ไขข้อมูลรายเมนู</h3><div class="mb-field"><label>เมนูที่จะแก้ไข</label><select class="mb-select" id="kslMediaEditTarget"></select></div><div id="kslMediaEditor"></div><div class="mb-note">แก้ไขแล้ว Auto Save เข้า Online Database • ไม่เปลี่ยนฐานสูตรต้นฉบับที่ Upload</div></div>'+ 
  '<div class="mb-block"><h3>6. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">ลบพื้นหลังอัตโนมัติทุกครั้ง • บันทึกเป็น PNG โปร่งใส • Auto Save และ Upload รูปใหม่เมนูเดิมจะทับรูปเดิม</div></div>'+
  '</aside><main class="mb-preview-wrap" id="kslMediaPreview"></main></div>'+
@@ -1103,6 +1103,12 @@ function installBuilder(){
     if(e.target.closest('.mb-history-open')){
       loadSavedProject(id);
       closeHistoryPage();
+      return;
+    }
+    if(e.target.closest('.mb-history-copy')){
+      loadSavedProject(id);
+      closeHistoryPage();
+      setTimeout(()=>saveProjectNew(),50);
       return;
     }
     if(e.target.closest('.mb-history-delete')){
@@ -1178,7 +1184,8 @@ function installBuilder(){
     renderImageThumb();
     renderPreview();
   });
-  bind('kslMediaSaveProject','click',saveProject);
+  bind('kslMediaSaveNew','click',saveProjectNew);
+  bind('kslMediaSaveOverwrite','click',saveProjectOverwrite);
   bind('kslMediaPrint','click',printPdf);
   bind('kslMediaJpg','click',()=>exportImages('jpeg'));
   bind('kslMediaPng','click',()=>exportImages('png'));
@@ -1237,7 +1244,7 @@ function loadSavedProject(id){
   targetImage='';
   cleanSelection();
   syncUI();
-  setSaveStatus('เปิดงานที่บันทึกแล้ว ✓');
+  setSaveStatus('กำลังแก้ไขงานเดิม: '+(draft.name||'สื่อการสอน')+' • ใช้ “บันทึกทับงานเดิม” เพื่ออัปเดต');
 }
 async function deleteSavedProject(id){
   if(!id)return;
@@ -1276,7 +1283,7 @@ function renderHistoryPage(){
     return '<article class="mb-history-card" data-history-id="'+esc(p.id)+'">'+
       '<div class="mb-history-card-top"><div><h3>'+esc(p.name||'สื่อการสอน')+'</h3><div class="mb-history-meta">'+esc(typeLabel(p.type))+' • '+orient+' • Theme '+esc(p.theme||'1')+'</div></div><span class="mb-count">'+count+' เมนู</span></div>'+
       '<div class="mb-history-date">แก้ไขล่าสุด '+esc(projectDate(p.updatedAt||p.createdAt))+'</div>'+
-      '<div class="mb-history-actions"><button class="mb-btn primary mb-history-open" type="button">เปิดแก้ไข</button><button class="mb-btn danger mb-history-delete" type="button">ลบ</button></div>'+
+      '<div class="mb-history-actions"><button class="mb-btn primary mb-history-open" type="button">เปิดแก้ไข</button><button class="mb-btn mb-history-copy" type="button">สร้างงานใหม่จากชุดนี้</button><button class="mb-btn danger mb-history-delete" type="button">ลบ</button></div>'+
     '</article>';
   }).join('')+'</div>';
 }
@@ -1290,28 +1297,11 @@ function closeHistoryPage(){
   document.getElementById('kslMediaHistoryPage')?.classList.remove('show');
 }
 
-async function saveProject(){
-  const suggested=draft.name&&draft.name!=='สื่อการสอน'?draft.name:pageTitle()+' '+new Intl.DateTimeFormat('th-TH',{dateStyle:'short'}).format(new Date());
-  const inputName=prompt('ชื่อสื่อสำหรับบันทึก',suggested);if(!inputName)return;
-  const name=text(inputName);if(!name)return;
-
-  const existingByName=getSavedProjects().find(p=>text(p?.name).toLowerCase()===name.toLowerCase());
-  const sameCurrentName=text(draft.name).toLowerCase()===name.toLowerCase();
-
-  if(existingByName){
-    // Same saved name = update only that project.
-    draft.id=existingByName.id;
-    draft.createdAt=existingByName.createdAt||draft.createdAt||now();
-  }else if(!sameCurrentName && draft.name!=='สื่อการสอน'){
-    // New name from an existing/renamed work = create a separate project.
-    draft.id=uid();
-    draft.createdAt=now();
-  }
-
-  draft.name=name;
+function currentSavedProject(){
+  return getSavedProjects().find(p=>p?.id===draft.id)||null;
+}
+async function persistCurrentProject(){
   draft.updatedAt=now();
-
-  // Save lightweight project first. Each project name is stored separately.
   const snap=projectSnapshot();
   let localOK=false,onlineOK=false;
 
@@ -1345,10 +1335,41 @@ async function saveProject(){
   }
 
   renderSavedProjects();
-  if(localOK&&onlineOK)setSaveStatus('บันทึกแยกตามชื่อและ Sync Online แล้ว ✓');
-  else if(localOK)setSaveStatus('บันทึกงานแล้ว ✓ • รอ Sync Online');
-  else if(onlineOK)setSaveStatus('บันทึกงาน Online แล้ว ✓');
-  else{alert('บันทึกงานไม่สำเร็จ กรุณาลองอีกครั้ง');return}
+  renderHistoryPage();
+  if(localOK&&onlineOK){setSaveStatus('บันทึกและ Sync Online แล้ว ✓');return true}
+  if(localOK){setSaveStatus('บันทึกงานแล้ว ✓ • รอ Sync Online');return true}
+  if(onlineOK){setSaveStatus('บันทึกงาน Online แล้ว ✓');return true}
+  alert('บันทึกงานไม่สำเร็จ กรุณาลองอีกครั้ง');
+  return false;
+}
+async function saveProjectNew(){
+  const suggested=(draft.name&&draft.name!=='สื่อการสอน'?draft.name+' - Copy':pageTitle()+' '+new Intl.DateTimeFormat('th-TH',{dateStyle:'short'}).format(new Date()));
+  const inputName=prompt('ชื่อสำหรับงานใหม่',suggested);if(!inputName)return;
+  const name=text(inputName);if(!name)return;
+
+  // Always create a fresh project ID. Never overwrite an older project.
+  draft.id=uid();
+  draft.name=name;
+  draft.createdAt=now();
+  draft.updatedAt=now();
+
+  const ok=await persistCurrentProject();
+  if(ok)setSaveStatus('สร้างงานใหม่ “'+name+'” แล้ว ✓');
+}
+async function saveProjectOverwrite(){
+  const existing=currentSavedProject();
+  if(!existing){
+    alert('งานนี้ยังไม่เคยบันทึก กรุณากด “บันทึกงานใหม่” ก่อน');
+    return;
+  }
+  // Preserve the existing project identity/name; overwrite only this project.
+  draft.id=existing.id;
+  draft.name=existing.name||draft.name;
+  draft.createdAt=existing.createdAt||draft.createdAt||now();
+  draft.updatedAt=now();
+
+  const ok=await persistCurrentProject();
+  if(ok)setSaveStatus('บันทึกทับงานเดิม “'+draft.name+'” แล้ว ✓');
 }
 
 function printCss(){
