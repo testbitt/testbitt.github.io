@@ -277,11 +277,17 @@ function buildPage(items,index,total){
   const cols=columnsFor(items.length);
   const size=draft.orientation==='landscape'?'mb-landscape':'mb-portrait';
   const density=densityFor(items.length);
-  const rows=rowsFor();
-  return '<section class="ksl-media-page '+size+' '+density+' mb-template-'+esc(draft.template)+' mb-theme-'+esc(draft.theme||'1')+'" data-page="'+index+'">'+
+  const rowGroups=[];
+  for(let i=0;i<items.length;i+=cols)rowGroups.push(items.slice(i,i+cols));
+  const rowsHtml=rowGroups.map(group=>{
+    const n=Math.max(1,group.length);
+    const width=(n/cols)*100;
+    return '<div class="mb-export-row" style="--row-cols:'+n+';--row-width:'+width+'%">'+group.map(itemCard).join('')+'</div>';
+  }).join('');
+  return '<section class="ksl-media-page '+size+' '+density+' mb-template-'+esc(draft.template)+' mb-theme-'+esc(draft.theme||'1')+' mb-count-'+items.length+'" data-page="'+index+'">'+
     '<header class="mb-page-head"><div><div class="mb-kamu">KAMU KAMU • TRAINING</div><h1>'+esc(pageTitle())+'</h1>'+
     (draft.subtitle?'<p>'+esc(draft.subtitle)+'</p>':'')+'</div><div class="mb-page-no">'+(index+1)+' / '+total+'</div></header>'+
-    '<div class="mb-grid mb-dynamic-rows" style="--mb-cols:'+cols+';--mb-rows:'+rows+'">'+items.map(itemCard).join('')+'</div>'+
+    '<div class="mb-export-rows">'+rowsHtml+'</div>'+
     '<footer class="mb-footer"><span>'+esc(typeLabel())+'</span><span>ข้อมูลจาก KSL • '+new Intl.DateTimeFormat('th-TH',{dateStyle:'medium'}).format(new Date())+'</span></footer>'+
     '</section>';
 }
@@ -488,6 +494,130 @@ const CSS=`
 .mb-theme-13{--mb-theme-bg:#fffafb;--mb-theme-card:#fff;--mb-theme-title:#a85f73;--mb-theme-title-text:#fff;--mb-theme-accent:#cf8297;--mb-theme-soft:#f9e8ee}
 .mb-theme-14{--mb-theme-bg:#fafafa;--mb-theme-card:#fff;--mb-theme-title:#555;--mb-theme-title-text:#fff;--mb-theme-accent:#777;--mb-theme-soft:#eee}
 .mb-theme-15{--mb-theme-bg:#fff;--mb-theme-card:#fff;--mb-theme-title:#000;--mb-theme-title-text:#fff;--mb-theme-accent:#000;--mb-theme-soft:#fff}
+
+
+/* V6.3.10 polished export layout */
+.mb-template-branch-grid{
+  padding:14px 18px 12px;
+  grid-template-rows:auto minmax(0,1fr) auto;
+}
+.mb-template-branch-grid .mb-page-head{
+  margin-bottom:9px;
+  padding-bottom:7px;
+}
+.mb-template-branch-grid .mb-page-head h1{
+  font-size:20px;
+  line-height:1.12;
+}
+.mb-template-branch-grid .mb-footer{
+  position:relative;
+  z-index:2;
+  margin-top:8px;
+  padding-top:5px;
+  background:var(--mb-theme-bg);
+  font-size:7.5px;
+}
+.mb-export-rows{
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  align-items:stretch;
+  justify-content:flex-start;
+}
+.mb-export-row{
+  width:var(--row-width);
+  max-width:100%;
+  margin-inline:auto;
+  display:grid;
+  grid-template-columns:repeat(var(--row-cols),minmax(0,1fr));
+  gap:10px;
+  align-items:stretch;
+}
+.mb-export-row .mb-card{
+  width:100%;
+  min-width:0;
+  height:100%;
+  align-self:stretch;
+  overflow:hidden;
+}
+.mb-template-branch-grid .mb-table-body{
+  grid-template-columns:64px minmax(0,1fr);
+  min-width:0;
+  height:100%;
+}
+.mb-template-branch-grid .mb-left-photo{
+  min-width:0;
+  padding:5px 4px;
+  align-items:center;
+  justify-content:center;
+}
+.mb-template-branch-grid .mb-photo-frame{
+  width:52px;
+  height:82px;
+  max-width:100%;
+  flex:none;
+}
+.mb-template-branch-grid .mb-table-side{
+  min-width:0;
+  overflow:hidden;
+}
+.mb-template-branch-grid .mb-recipe-table{
+  width:100%;
+  table-layout:fixed;
+  border-collapse:collapse;
+}
+.mb-template-branch-grid .mb-recipe-table td,
+.mb-template-branch-grid .mb-drink-table thead th{
+  min-width:0;
+  max-width:100%;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+.mb-template-branch-grid .mb-r-name{width:auto}
+.mb-template-branch-grid .mb-r-unit{
+  width:18%;
+  text-align:left;
+}
+.mb-template-branch-grid .mb-r-qty{
+  width:18%;
+  text-align:center;
+}
+.mb-template-branch-grid .mb-cup-label{width:46%}
+.mb-template-branch-grid .mb-cup-unit{width:16%}
+.mb-template-branch-grid .mb-cup-qty{
+  width:auto;
+  text-align:center;
+}
+.mb-template-branch-grid .mb-black-title{
+  width:100%;
+  min-width:0;
+}
+.mb-template-branch-grid .mb-note-line{
+  margin-top:auto;
+  border-top:1px solid #eadb57;
+}
+.mb-template-branch-grid.mb-density-medium .mb-export-rows{gap:8px}
+.mb-template-branch-grid.mb-density-medium .mb-export-row{gap:8px}
+.mb-template-branch-grid.mb-density-medium .mb-table-body{grid-template-columns:56px minmax(0,1fr)}
+.mb-template-branch-grid.mb-density-medium .mb-photo-frame{width:46px;height:72px}
+.mb-template-branch-grid.mb-density-medium .mb-recipe-table{font-size:8.8px;line-height:1.15}
+.mb-template-branch-grid.mb-density-medium .mb-recipe-table td{padding:3px 4px}
+.mb-template-branch-grid.mb-density-medium .mb-black-title{font-size:11.5px;min-height:29px}
+.mb-template-branch-grid.mb-density-compact .mb-export-rows{gap:7px}
+.mb-template-branch-grid.mb-density-compact .mb-export-row{gap:7px}
+.mb-template-branch-grid.mb-density-compact .mb-table-body{grid-template-columns:50px minmax(0,1fr)}
+.mb-template-branch-grid.mb-density-compact .mb-photo-frame{width:40px;height:64px}
+.mb-template-branch-grid.mb-density-compact .mb-recipe-table{font-size:7.7px}
+.mb-template-branch-grid.mb-density-max .mb-export-rows{gap:5px}
+.mb-template-branch-grid.mb-density-max .mb-export-row{gap:5px}
+.mb-template-branch-grid.mb-density-max .mb-table-body{grid-template-columns:42px minmax(0,1fr)}
+.mb-template-branch-grid.mb-density-max .mb-photo-frame{width:33px;height:52px}
+.mb-template-branch-grid.mb-density-max .mb-recipe-table{font-size:6.6px}
+.mb-template-branch-grid.mb-density-max .mb-black-title{font-size:8.5px;min-height:23px}
 
 @media(max-width:900px){.mb-shell{grid-template-columns:1fr;height:auto}.mb-controls{border-right:0;border-bottom:1px solid #d4e7dc}.mb-preview-wrap{align-items:flex-start}.ksl-media-page{transform-origin:top left;transform:scale(.72);margin-bottom:-300px}}
 @media print{body>*{display:none!important}#kslMediaPrintRoot{display:block!important}.ksl-media-page{box-shadow:none;page-break-after:always;margin:0}.ksl-media-page:last-child{page-break-after:auto}}
