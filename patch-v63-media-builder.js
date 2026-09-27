@@ -1244,10 +1244,26 @@ function closeHistoryPage(){
 
 async function saveProject(){
   const suggested=draft.name&&draft.name!=='สื่อการสอน'?draft.name:pageTitle()+' '+new Intl.DateTimeFormat('th-TH',{dateStyle:'short'}).format(new Date());
-  const name=prompt('ชื่อสื่อสำหรับบันทึก',suggested);if(!name)return;
-  draft.name=name;draft.updatedAt=now();
+  const inputName=prompt('ชื่อสื่อสำหรับบันทึก',suggested);if(!inputName)return;
+  const name=text(inputName);if(!name)return;
 
-  // Save lightweight project first. Images stay in mediaImages by menu id.
+  const existingByName=getSavedProjects().find(p=>text(p?.name).toLowerCase()===name.toLowerCase());
+  const sameCurrentName=text(draft.name).toLowerCase()===name.toLowerCase();
+
+  if(existingByName){
+    // Same saved name = update only that project.
+    draft.id=existingByName.id;
+    draft.createdAt=existingByName.createdAt||draft.createdAt||now();
+  }else if(!sameCurrentName && draft.name!=='สื่อการสอน'){
+    // New name from an existing/renamed work = create a separate project.
+    draft.id=uid();
+    draft.createdAt=now();
+  }
+
+  draft.name=name;
+  draft.updatedAt=now();
+
+  // Save lightweight project first. Each project name is stored separately.
   const snap=projectSnapshot();
   let localOK=false,onlineOK=false;
 
@@ -1281,7 +1297,7 @@ async function saveProject(){
   }
 
   renderSavedProjects();
-  if(localOK&&onlineOK)setSaveStatus('บันทึกงานและ Sync Online แล้ว ✓');
+  if(localOK&&onlineOK)setSaveStatus('บันทึกแยกตามชื่อและ Sync Online แล้ว ✓');
   else if(localOK)setSaveStatus('บันทึกงานแล้ว ✓ • รอ Sync Online');
   else if(onlineOK)setSaveStatus('บันทึกงาน Online แล้ว ✓');
   else{alert('บันทึกงานไม่สำเร็จ กรุณาลองอีกครั้ง');return}
