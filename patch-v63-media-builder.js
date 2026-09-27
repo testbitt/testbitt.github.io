@@ -10,6 +10,11 @@ window.__KSL_MEDIA_BUILDER_V1__=1;
 const STORE='KSL_MEDIA_BUILDER_V1';
 const PROJECTS='KSL_MEDIA_PROJECTS_V1';
 const MAX_IMG=900;
+const MEDIA_SUPA_URL='https://hcswjuemjluozmyejhnu.supabase.co';
+const MEDIA_SUPA_KEY='sb_publishable_C4yHaRSzzgln3d9lplwIpg_QaWlG4ne';
+const MEDIA_BUCKET='ksl-media';
+let onlineImages={};
+let remoteProjects=[];
 const text=v=>String(v??'').trim();
 const esc=v=>text(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const clone=v=>{try{return JSON.parse(JSON.stringify(v))}catch(_){return v}};
@@ -41,7 +46,8 @@ function persistDraft(immediate=false){
       const s=app();if(!s)return;
       s.mediaBuilderV1=clone(draft);
       if(typeof dbSet==='function')await Promise.resolve(dbSet(s));
-      setSaveStatus('บันทึกอัตโนมัติ ✓');
+      try{await syncProjectOnline(projectSnapshot())}catch(e){console.warn('[KSL Media] project autosave online',e)}
+      setSaveStatus('บันทึกอัตโนมัติ Online ✓');
     }catch(e){console.warn('[KSL Media] autosave',e);setSaveStatus('บันทึกในเครื่องแล้ว');}
   };
   if(immediate)run();else saveTimer=setTimeout(run,550);
@@ -49,7 +55,110 @@ function persistDraft(immediate=false){
 }
 function setSaveStatus(t){const el=document.getElementById('kslMediaSaveState');if(el)el.textContent=t}
 
+
+function mediaHeaders(extra={}){
+  return {
+    'apikey':MEDIA_SUPA_KEY,
+    'Authorization':'Bearer '+MEDIA_SUPA_KEY,
+    ...extra
+  };
+}
+async function mediaFetch(path,opts={}){
+  const res=await fetch(MEDIA_SUPA_URL+path,{...opts,headers:mediaHeaders(opts.headers||{})});
+  if(!res.ok){
+    const msg=await res.text().catch(()=>res.statusText);
+    throw new Error('Media Online '+res.status+': '+msg);
+  }
+  const ct=res.headers.get('content-type')||'';
+  return ct.includes('application/json')?res.json():res.text();
+}
+function dataUrlToBlob(data){
+  const [head,body]=String(data||'').split(',');
+  if(!body)throw new Error('รูปไม่ถูกต้อง');
+  const mime=(head.match(/data:([^;]+)/)||[])[1]||'image/png';
+  const bin=atob(body),arr=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+  return new Blob([arr],{type:mime});
+}
+function mediaPathFor(id){
+  const bytes=new TextEncoder().encode(String(id));
+  let bin='';for(const b of bytes)bin+=String.fromCharCode(b);
+  const key=btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  return 'menus/'+key+'.png';
+}
+function publicMediaUrl(path,stamp=''){
+  return MEDIA_SUPA_URL+'/storage/v1/object/public/'+MEDIA_BUCKET+'/'+path+(stamp?'?v='+encodeURIComponent(stamp):'');
+}
+async function uploadImageOnline(id,data){
+  const path=mediaPathFor(id),blob=dataUrlToBlob(data),stamp=Date.now();
+  await mediaFetch('/storage/v1/object/'+MEDIA_BUCKET+'/'+path,{
+    method:'POST',
+    headers:{'Content-Type':'image/png','x-upsert':'true'},
+    body:blob
+  });
+  const url=publicMediaUrl(path,stamp);
+  await mediaFetch('/rest/v1/ksl_media_images?on_conflict=menu_id',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+    body:JSON.stringify([{menu_id:id,object_path:path,public_url:url,updated_at:new Date().toISOString()}])
+  });
+  onlineImages[id]=url;
+  return url;
+}
+async function deleteImageOnline(id){
+  const path=mediaPathFor(id);
+  try{await mediaFetch('/storage/v1/object/'+MEDIA_BUCKET+'/'+path,{method:'DELETE'})}catch(e){console.warn('[KSL Media] storage delete',e)}
+  try{await mediaFetch('/rest/v1/ksl_media_images?menu_id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{'Prefer':'return=minimal'}})}catch(e){console.warn('[KSL Media] image row delete',e)}
+  delete onlineImages[id];
+}
+async function syncProjectOnline(project){
+  const p=clone(project);
+  await mediaFetch('/rest/v1/ksl_media_projects?on_conflict=id',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+    body:JSON.stringify([{
+      id:p.id,
+      name:p.name||'สื่อการสอน',
+      media_type:p.type||'drink',
+      orientation:p.orientation||'landscape',
+      theme:String(p.theme||'1'),
+      item_count:Array.isArray(p.selected)?p.selected.length:0,
+      data:p,
+      created_at:p.createdAt||new Date().toISOString(),
+      updated_at:p.updatedAt||new Date().toISOString()
+    }])
+  });
+  const i=remoteProjects.findIndex(x=>x.id===p.id);
+  if(i>=0)remoteProjects[i]=p;else remoteProjects.unshift(p);
+}
+async function loadOnlineMediaState(){
+  try{
+    const [imgs,projects]=await Promise.all([
+      mediaFetch('/rest/v1/ksl_media_images?select=menu_id,public_url,updated_at&order=updated_at.desc'),
+      mediaFetch('/rest/v1/ksl_media_projects?select=id,data,updated_at&order=updated_at.desc')
+    ]);
+    onlineImages={};
+    (Array.isArray(imgs)?imgs:[]).forEach(x=>{if(x?.menu_id&&x?.public_url)onlineImages[x.menu_id]=x.public_url+(String(x.public_url).includes('?')?'&':'?')+'v='+encodeURIComponent(x.updated_at||Date.now())});
+    remoteProjects=(Array.isArray(projects)?projects:[]).map(x=>{
+      const p=x?.data&&typeof x.data==='object'?clone(x.data):{};
+      if(x?.id&&!p.id)p.id=x.id;
+      if(x?.updated_at)p.updatedAt=x.updated_at;
+      return p;
+    }).filter(x=>x?.id);
+  }catch(e){
+    console.warn('[KSL Media] load online state',e);
+  }
+}
+async function migrateLocalImagesOnline(){
+  const entries=Object.entries(draft.images||{}).filter(([id,v])=>String(v||'').startsWith('data:image')&&!onlineImages[id]);
+  for(const [id,data] of entries){
+    try{await uploadImageOnline(id,data)}catch(e){console.warn('[KSL Media] migrate image',id,e)}
+  }
+  if(entries.length){renderPreview();renderImageThumb()}
+}
+
 function imageFor(id){
+  if(onlineImages[id])return onlineImages[id];
   if(draft.images?.[id])return draft.images[id];
   try{
     const s=app();
@@ -59,43 +168,31 @@ function imageFor(id){
 }
 async function persistImageAuto(id,data){
   if(!id)return;
-  setSaveStatus(data?'กำลังบันทึกรูป...':'กำลังลบรูป...');
+  setSaveStatus(data?'กำลังบันทึกรูป Online...':'กำลังลบรูป Online...');
+  draft.images=draft.images&&typeof draft.images==='object'?draft.images:{};
   if(data)draft.images[id]=data;else delete draft.images[id];
   draft.updatedAt=now();
 
   try{localStorage.setItem(STORE,JSON.stringify(draft))}catch(_){}
 
   try{
-    let local=[];try{local=JSON.parse(localStorage.getItem(PROJECTS)||'[]')}catch(_){}
-    const pi=local.findIndex(x=>x?.id===draft.id);
-    if(pi>=0){
-      local[pi]={...local[pi],updatedAt:draft.updatedAt};
-      localStorage.setItem(PROJECTS,JSON.stringify(local.slice(0,50)));
+    if(data){
+      const url=await uploadImageOnline(id,data);
+      // Keep only URL in runtime state after successful permanent upload.
+      draft.images[id]=url;
+    }else{
+      await deleteImageOnline(id);
     }
-  }catch(_){}
-
-  try{
     const s=app();
     if(s){
       s.mediaImages=s.mediaImages&&typeof s.mediaImages==='object'?s.mediaImages:{};
-      if(data)s.mediaImages[id]=data;else delete s.mediaImages[id];
-      s.mediaBuilderV1=clone(draft);
-
-      if(Array.isArray(s.mediaProjects)){
-        const i=s.mediaProjects.findIndex(x=>x?.id===draft.id);
-        if(i>=0){
-          const p=clone(s.mediaProjects[i]);
-          p.updatedAt=draft.updatedAt;
-          s.mediaProjects[i]=p;
-        }
-      }
-
-      if(typeof dbSet==='function')await Promise.resolve(dbSet(s));
+      if(data)s.mediaImages[id]=onlineImages[id]||draft.images[id];else delete s.mediaImages[id];
     }
-    setSaveStatus(data?'บันทึกรูปอัตโนมัติ ✓':'ลบรูปและบันทึกแล้ว ✓');
+    setSaveStatus(data?'บันทึกรูป Online แล้ว ✓':'ลบรูป Online แล้ว ✓');
   }catch(e){
-    console.warn('[KSL Media] image autosave',e);
-    setSaveStatus('บันทึกรูปในเครื่องแล้ว');
+    console.warn('[KSL Media] online image save',e);
+    setSaveStatus('Online ไม่สำเร็จ • เก็บรูปในเครื่องไว้ก่อน');
+    throw e;
   }
 }
 
@@ -179,7 +276,8 @@ async function persistOverrideAuto(id,o){
       }
       if(typeof dbSet==='function')await Promise.resolve(dbSet(s));
     }
-    setSaveStatus('บันทึกข้อมูลอัตโนมัติ ✓');
+    try{await syncProjectOnline(projectSnapshot())}catch(e){console.warn('[KSL Media] override online sync',e)}
+    setSaveStatus('บันทึกข้อมูล Online อัตโนมัติ ✓');
   }catch(e){
     console.warn('[KSL Media] override autosave',e);
     setSaveStatus('บันทึกข้อมูลในเครื่องแล้ว');
@@ -987,6 +1085,11 @@ function localProjects(){
 function getSavedProjects(){
   const map=new Map();
   localProjects().forEach(p=>p?.id&&map.set(p.id,p));
+  remoteProjects.forEach(p=>{
+    if(!p?.id)return;
+    const old=map.get(p.id);
+    if(!old||String(p.updatedAt||'')>String(old.updatedAt||''))map.set(p.id,p);
+  });
   try{
     const s=app();
     (Array.isArray(s?.mediaProjects)?s.mediaProjects:[]).forEach(p=>{
@@ -1015,6 +1118,10 @@ async function deleteSavedProject(id){
   if(!id)return;
   const local=localProjects().filter(p=>p?.id!==id);
   try{localStorage.setItem(PROJECTS,JSON.stringify(local))}catch(_){}
+  try{
+    await mediaFetch('/rest/v1/ksl_media_projects?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{'Prefer':'return=minimal'}});
+    remoteProjects=remoteProjects.filter(p=>p?.id!==id);
+  }catch(e){console.warn('[KSL Media] delete online project',e)}
   try{
     const s=app();
     if(s&&Array.isArray(s.mediaProjects)){
@@ -1048,8 +1155,10 @@ function renderHistoryPage(){
     '</article>';
   }).join('')+'</div>';
 }
-function openHistoryPage(){
+async function openHistoryPage(){
+  await loadOnlineMediaState();
   renderHistoryPage();
+  renderSavedProjects();
   document.getElementById('kslMediaHistoryPage')?.classList.add('show');
 }
 function closeHistoryPage(){
@@ -1079,6 +1188,7 @@ async function saveProject(){
   }
 
   try{
+    await syncProjectOnline(snap);
     const s=app();
     if(s){
       s.mediaProjects=Array.isArray(s.mediaProjects)?s.mediaProjects:[];
@@ -1086,9 +1196,9 @@ async function saveProject(){
       if(i>=0)s.mediaProjects[i]=clone(snap);else s.mediaProjects.unshift(clone(snap));
       s.mediaProjects=s.mediaProjects.slice(0,50);
       s.mediaBuilderV1={...clone(snap),images:{}};
-      if(typeof dbSet==='function')await Promise.resolve(dbSet(s));
-      onlineOK=true;
+      try{if(typeof dbSet==='function')await Promise.resolve(dbSet(s))}catch(_){}
     }
+    onlineOK=true;
   }catch(e){
     console.warn('[KSL Media] online project save',e);
   }
@@ -1206,13 +1316,18 @@ async function exportPageImage(page,format,index){
   }
 }
 
-function openBuilder(type){
+async function openBuilder(type){
  installBuilder();loadDraft();
  if(type&&['drink','production','holding'].includes(type)){draft.type=type;cleanSelection()}
  draft.template='branch-grid';
  draft.orientation='landscape';
  const ov=document.getElementById('kslMediaOverlay');ov.classList.add('show');
- syncUI();setTimeout(()=>document.getElementById('kslMediaPreview')?.scrollTo(0,0),30);
+ setSaveStatus('กำลังโหลดข้อมูล Media Online...');
+ await loadOnlineMediaState();
+ syncUI();
+ migrateLocalImagesOnline().catch(e=>console.warn('[KSL Media] migrate local images',e));
+ setSaveStatus('เชื่อม Media Online แล้ว ✓');
+ setTimeout(()=>document.getElementById('kslMediaPreview')?.scrollTo(0,0),30);
 }
 window.KSL_OPEN_MEDIA_BUILDER=openBuilder;
 
@@ -1225,7 +1340,7 @@ function installAdminCard(){
  return true;
 }
 
-loadDraft();ensureStyles();installBuilder();installAdminCard();
+loadDraft();ensureStyles();installBuilder();installAdminCard();loadOnlineMediaState().then(()=>{renderSavedProjects();renderPreview()}).catch(()=>{});
 let tries=0;const timer=setInterval(()=>{tries++;installAdminCard();if(tries>180)clearInterval(timer)},1000);
 console.info('[KSL] Admin Media Builder V1 ready • multi-menu A4 export');
 })();
