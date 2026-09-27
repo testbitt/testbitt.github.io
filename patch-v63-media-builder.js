@@ -703,6 +703,16 @@ const CSS=`
   font-size:6px;
 }
 
+
+/* V6.3.17 full-A4 export + saved history */
+#kslMediaHistoryPage{display:none;position:absolute;inset:64px 0 0;background:#f2f7f4;z-index:8;overflow:auto;padding:22px}
+#kslMediaHistoryPage.show{display:block}
+.mb-history-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;max-width:1200px;margin:0 auto 18px;background:#fff;border:1px solid #d5e7de;border-radius:16px;padding:18px}.mb-history-head h2{margin:3px 0 4px;color:#174c39}.mb-history-head p{margin:0;color:#6d8178}
+.mb-history-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}.mb-history-card{background:#fff;border:1px solid #d4e5dc;border-radius:14px;padding:15px}.mb-history-card-top{display:flex;justify-content:space-between;gap:10px}.mb-history-card h3{margin:0;color:#174b39;font-size:16px}.mb-history-meta,.mb-history-date{font-size:11px;color:#71877d;margin-top:5px}.mb-history-actions{display:flex;gap:8px;margin-top:13px}.mb-history-empty{max-width:1200px;margin:auto;background:#fff;border:1px dashed #bfd8ca;border-radius:14px;padding:32px;text-align:center;color:#71877d}
+.ksl-media-page{box-sizing:border-box}
+.ksl-media-page.mb-portrait{width:794px;height:1123px;min-width:794px;min-height:1123px;max-width:794px;max-height:1123px}
+.ksl-media-page.mb-landscape{width:1123px;height:794px;min-width:1123px;min-height:794px;max-width:1123px;max-height:794px}
+
 @media(max-width:900px){.mb-shell{grid-template-columns:1fr;height:auto}.mb-controls{border-right:0;border-bottom:1px solid #d4e7dc}.mb-preview-wrap{align-items:flex-start}.ksl-media-page{transform-origin:top left;transform:scale(.72);margin-bottom:-300px}}
 @media print{body>*{display:none!important}#kslMediaPrintRoot{display:block!important}.ksl-media-page{box-shadow:none;page-break-after:always;margin:0}.ksl-media-page:last-child{page-break-after:auto}}
 `;
@@ -841,7 +851,7 @@ async function compressImage(file){
 function builderHtml(){
  return '<div id="kslMediaOverlay">'+
  '<div class="mb-topbar"><div><h2>🎨 สร้างสื่อการสอน</h2><small id="kslMediaSaveState">บันทึกอัตโนมัติ ✓</small></div>'+
- '<div class="mb-actions"><span class="mb-count" id="kslMediaPageCount">1 หน้า A4</span><button class="mb-btn" id="kslMediaSaveProject">💾 บันทึกงาน</button><button class="mb-btn" id="kslMediaPrint">📄 PDF / Print</button><button class="mb-btn" id="kslMediaJpg">🖼 JPG</button><button class="mb-btn" id="kslMediaPng">PNG</button><button class="mb-btn danger" id="kslMediaClose">✕ ปิด</button></div></div>'+
+ '<div class="mb-actions"><span class="mb-count" id="kslMediaPageCount">1 หน้า A4</span><button class="mb-btn" id="kslMediaHistory">🕘 ประวัติการบันทึก</button><button class="mb-btn" id="kslMediaSaveProject">💾 บันทึกงาน</button><button class="mb-btn" id="kslMediaPrint">📄 PDF / Print</button><button class="mb-btn" id="kslMediaJpg">🖼 JPG</button><button class="mb-btn" id="kslMediaPng">PNG</button><button class="mb-btn danger" id="kslMediaClose">✕ ปิด</button></div></div>'+
  '<div class="mb-shell"><aside class="mb-controls">'+
  '<div class="mb-block"><h3>1. ประเภทสื่อ</h3><div class="mb-field"><select class="mb-select" id="kslMediaType"><option value="drink">🧋 สูตรการชงเครื่องดื่ม</option><option value="production">🧑‍🍳 สูตรการผลิต</option><option value="holding">⏳ ตารางวันหมดอายุ</option></select></div>'+
  '<div class="mb-inline"><div class="mb-field"><label>Template</label><select class="mb-select" id="kslMediaTemplate"><option value="branch-grid">Branch Grid (ตามตัวอย่าง)</option><option value="modern">KAMU Modern</option><option value="visual">Visual Training</option><option value="compact">Compact SOP</option></select></div><div class="mb-field"><label>แนวกระดาษ</label><select class="mb-select" id="kslMediaOrientation"><option value="portrait">A4 แนวตั้ง</option><option value="landscape">A4 แนวนอน</option></select></div></div>'+
@@ -851,7 +861,8 @@ function builderHtml(){
  '<div class="mb-block"><h3>4. งานที่บันทึกไว้</h3><div class="mb-field"><select class="mb-select" id="kslMediaSavedProjects"></select></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaLoadProject" type="button">เปิดแก้ไข</button><button class="mb-link" id="kslMediaDeleteProject" type="button">ลบงาน</button></div><div class="mb-note">เปิดงานเดิมแล้วสามารถเพิ่ม/ลดเมนู แก้รายละเอียด เปลี่ยนรูป และบันทึกทับงานเดิมได้</div></div>'+ 
  '<div class="mb-block"><h3>5. แก้ไขข้อมูลรายเมนู</h3><div class="mb-field"><label>เมนูที่จะแก้ไข</label><select class="mb-select" id="kslMediaEditTarget"></select></div><div id="kslMediaEditor"></div><div class="mb-note">แก้ไขแล้ว Auto Save เข้า Online Database • ไม่เปลี่ยนฐานสูตรต้นฉบับที่ Upload</div></div>'+ 
  '<div class="mb-block"><h3>6. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">ลบพื้นหลังอัตโนมัติทุกครั้ง • บันทึกเป็น PNG โปร่งใส • Auto Save และ Upload รูปใหม่เมนูเดิมจะทับรูปเดิม</div></div>'+
- '</aside><main class="mb-preview-wrap" id="kslMediaPreview"></main></div></div>';
+ '</aside><main class="mb-preview-wrap" id="kslMediaPreview"></main></div>'+
+ '<section id="kslMediaHistoryPage"><div class="mb-history-head"><div><div class="mb-kamu">KAMU KAMU • MEDIA</div><h2>ประวัติการบันทึกสื่อ</h2><p>เรียกงานเดิมกลับมาแก้ไข เพิ่ม/ลดรายการ เปลี่ยนรูป Theme และบันทึกทับได้</p></div><button class="mb-btn" id="kslMediaHistoryClose">← กลับหน้าสร้างสื่อ</button></div><div id="kslMediaHistoryList"></div></section></div>';
 }
 
 function installBuilder(){
@@ -861,6 +872,23 @@ function installBuilder(){
 
   const bind=(id,ev,fn)=>document.getElementById(id)?.addEventListener(ev,fn);
   bind('kslMediaClose','click',()=>ov.classList.remove('show'));
+  bind('kslMediaHistory','click',openHistoryPage);
+  bind('kslMediaHistoryClose','click',closeHistoryPage);
+  bind('kslMediaHistoryList','click',async e=>{
+    const card=e.target.closest('[data-history-id]');if(!card)return;
+    const id=card.dataset.historyId;
+    if(e.target.closest('.mb-history-open')){
+      loadSavedProject(id);
+      closeHistoryPage();
+      return;
+    }
+    if(e.target.closest('.mb-history-delete')){
+      if(confirm('ลบประวัติงานนี้หรือไม่?')){
+        await deleteSavedProject(id);
+        renderHistoryPage();
+      }
+    }
+  });
   bind('kslMediaType','change',e=>onTypeChange(e.target.value));
   bind('kslMediaTemplate','change',e=>{draft.template=e.target.value;renderPreview();persistDraft()});
   bind('kslMediaTheme','change',e=>{draft.theme=e.target.value;renderPreview();persistDraft(true)});
@@ -999,6 +1027,35 @@ async function deleteSavedProject(id){
   setSaveStatus('ลบงานที่บันทึกแล้ว ✓');
 }
 
+
+function projectDate(v){
+  try{return new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v))}catch(_){return text(v)}
+}
+function renderHistoryPage(){
+  const box=document.getElementById('kslMediaHistoryList');if(!box)return;
+  const list=getSavedProjects();
+  if(!list.length){
+    box.innerHTML='<div class="mb-history-empty">ยังไม่มีประวัติการบันทึก</div>';
+    return;
+  }
+  box.innerHTML='<div class="mb-history-grid">'+list.map(p=>{
+    const count=Array.isArray(p.selected)?p.selected.length:0;
+    const orient=p.orientation==='portrait'?'แนวตั้ง':'แนวนอน';
+    return '<article class="mb-history-card" data-history-id="'+esc(p.id)+'">'+
+      '<div class="mb-history-card-top"><div><h3>'+esc(p.name||'สื่อการสอน')+'</h3><div class="mb-history-meta">'+esc(typeLabel(p.type))+' • '+orient+' • Theme '+esc(p.theme||'1')+'</div></div><span class="mb-count">'+count+' เมนู</span></div>'+
+      '<div class="mb-history-date">แก้ไขล่าสุด '+esc(projectDate(p.updatedAt||p.createdAt))+'</div>'+
+      '<div class="mb-history-actions"><button class="mb-btn primary mb-history-open" type="button">เปิดแก้ไข</button><button class="mb-btn danger mb-history-delete" type="button">ลบ</button></div>'+
+    '</article>';
+  }).join('')+'</div>';
+}
+function openHistoryPage(){
+  renderHistoryPage();
+  document.getElementById('kslMediaHistoryPage')?.classList.add('show');
+}
+function closeHistoryPage(){
+  document.getElementById('kslMediaHistoryPage')?.classList.remove('show');
+}
+
 async function saveProject(){
   const suggested=draft.name&&draft.name!=='สื่อการสอน'?draft.name:pageTitle()+' '+new Intl.DateTimeFormat('th-TH',{dateStyle:'short'}).format(new Date());
   const name=prompt('ชื่อสื่อสำหรับบันทึก',suggested);if(!name)return;
@@ -1044,13 +1101,27 @@ async function saveProject(){
 }
 
 function printCss(){
- const landscape=draft.orientation==='landscape';
- return CSS+'\n@page{size:A4 '+(landscape?'landscape':'portrait')+';margin:0}html,body{margin:0!important;background:#fff!important}.ksl-media-page{width:'+(landscape?'297mm':'210mm')+'!important;height:'+(landscape?'210mm':'297mm')+'!important;box-shadow:none!important;page-break-after:always}.ksl-media-page:last-child{page-break-after:auto}';
+  const landscape=draft.orientation==='landscape';
+  const w=landscape?'297mm':'210mm',h=landscape?'210mm':'297mm';
+  return CSS+'\n'+
+    '@page{size:A4 '+(landscape?'landscape':'portrait')+';margin:0;}'+
+    'html,body{margin:0!important;padding:0!important;background:#fff!important;width:'+w+';min-height:'+h+';}'+
+    '#kslMediaPrintRoot{display:block!important;margin:0!important;padding:0!important;width:'+w+';}'+
+    '#kslMediaPrintRoot .ksl-media-page{display:grid!important;transform:none!important;margin:0!important;width:'+w+'!important;height:'+h+'!important;min-width:'+w+'!important;min-height:'+h+'!important;max-width:'+w+'!important;max-height:'+h+'!important;box-shadow:none!important;page-break-after:always;break-after:page;overflow:hidden!important;}'+
+    '#kslMediaPrintRoot .ksl-media-page:last-child{page-break-after:auto;break-after:auto;}'+
+    '@media print{body>*{display:none!important}#kslMediaPrintRoot{display:block!important}#kslMediaPrintRoot *{visibility:visible!important}}';
 }
-function printPdf(){
- if(!draft.selected.length){alert('กรุณาเลือกอย่างน้อย 1 เมนู');return}
- const w=window.open('','_blank');if(!w){alert('Browser ปิดกั้นหน้าต่าง Export');return}
- w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(pageTitle())+'</title><style>'+printCss()+'</style></head><body>'+previewHtml()+'<script>window.onload=()=>setTimeout(()=>window.print(),350)<\/script></body></html>');w.document.close();
+async function printPdf(){
+  if(!draft.selected.length){alert('กรุณาเลือกอย่างน้อย 1 เมนู');return}
+  const source=[...document.querySelectorAll('#kslMediaPreview .ksl-media-page')];
+  if(!source.length){alert('ไม่พบข้อมูลสำหรับ PDF');return}
+  await Promise.all(source.map(waitForMediaReady));
+  const w=window.open('','_blank');
+  if(!w){alert('Browser ปิดกั้นหน้าต่าง Export');return}
+  const pages=source.map(p=>p.outerHTML).join('');
+  w.document.open();
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(pageTitle())+'</title><style>'+printCss()+'</style></head><body><div id="kslMediaPrintRoot">'+pages+'</div><script>window.onload=async()=>{try{if(document.fonts&&document.fonts.ready)await document.fonts.ready;const imgs=[...document.images];await Promise.all(imgs.map(i=>i.complete?Promise.resolve():new Promise(r=>{i.onload=r;i.onerror=r})));setTimeout(()=>window.print(),250)}catch(e){setTimeout(()=>window.print(),400)}}<\/script></body></html>');
+  w.document.close();
 }
 
 async function exportImages(format){
@@ -1084,31 +1155,55 @@ async function waitForMediaReady(root){
 }
 async function exportPageImage(page,format,index){
   const h2c=await getHtml2Canvas();
-  await waitForMediaReady(page);
-  const canvas=await h2c(page,{
-    backgroundColor:'#ffffff',
-    scale:2,
-    useCORS:true,
-    allowTaint:true,
-    logging:false,
-    imageTimeout:15000,
-    width:page.scrollWidth,
-    height:page.scrollHeight,
-    windowWidth:page.scrollWidth,
-    windowHeight:page.scrollHeight
-  });
-  const mime=format==='png'?'image/png':'image/jpeg',ext=format==='png'?'png':'jpg';
-  await new Promise((resolve,reject)=>{
-    canvas.toBlob(b=>{
-      if(!b)return reject(new Error('สร้างไฟล์ไม่สำเร็จ'));
-      const a=document.createElement('a');
-      a.href=URL.createObjectURL(b);
-      a.download=(pageTitle().replace(/[\\/:*?"<>|]+/g,'-')||'KSL-Media')+'-A4-'+index+'.'+ext;
-      document.body.appendChild(a);a.click();a.remove();
-      setTimeout(()=>URL.revokeObjectURL(a.href),1500);
-      resolve();
-    },mime,.93);
-  });
+  const landscape=draft.orientation==='landscape';
+  const w=landscape?1123:794,h=landscape?794:1123;
+
+  const host=document.createElement('div');
+  host.style.cssText='position:fixed;left:-20000px;top:0;width:'+w+'px;height:'+h+'px;background:#fff;z-index:-1;overflow:hidden;';
+  const clonePage=page.cloneNode(true);
+  clonePage.style.transform='none';
+  clonePage.style.margin='0';
+  clonePage.style.width=w+'px';
+  clonePage.style.height=h+'px';
+  clonePage.style.minWidth=w+'px';
+  clonePage.style.minHeight=h+'px';
+  clonePage.style.maxWidth=w+'px';
+  clonePage.style.maxHeight=h+'px';
+  clonePage.style.boxShadow='none';
+  host.appendChild(clonePage);
+  document.body.appendChild(host);
+
+  try{
+    await waitForMediaReady(clonePage);
+    const canvas=await h2c(clonePage,{
+      backgroundColor:'#ffffff',
+      scale:2,
+      useCORS:true,
+      allowTaint:true,
+      logging:false,
+      imageTimeout:15000,
+      width:w,
+      height:h,
+      windowWidth:w,
+      windowHeight:h,
+      scrollX:0,
+      scrollY:0
+    });
+    const mime=format==='png'?'image/png':'image/jpeg',ext=format==='png'?'png':'jpg';
+    await new Promise((resolve,reject)=>{
+      canvas.toBlob(b=>{
+        if(!b)return reject(new Error('สร้างไฟล์ไม่สำเร็จ'));
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(b);
+        a.download=(pageTitle().replace(/[\\/:*?"<>|]+/g,'-')||'KSL-Media')+'-A4-'+index+'.'+ext;
+        document.body.appendChild(a);a.click();a.remove();
+        setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+        resolve();
+      },mime,.93);
+    });
+  }finally{
+    host.remove();
+  }
 }
 
 function openBuilder(type){
