@@ -20,7 +20,7 @@ const unique=a=>[...new Set((a||[]).map(text).filter(Boolean))];
 
 const defaults=()=>({
   id:uid(),name:'สื่อการสอน',type:'drink',template:'branch-grid',orientation:'landscape',
-  perPage:4,title:'',subtitle:'',selected:[],images:{},createdAt:now(),updatedAt:now()
+  perPage:4,theme:'1',title:'',subtitle:'',selected:[],images:{},overrides:{},createdAt:now(),updatedAt:now()
 });
 let draft=defaults(), search='', targetImage='';
 let saveTimer=null;
@@ -29,7 +29,7 @@ function loadDraft(){
   try{
     const s=app();
     const v=s?.mediaBuilderV1 || JSON.parse(localStorage.getItem(STORE)||'null');
-    if(v&&typeof v==='object')draft={...defaults(),...v,images:v.images||{},selected:Array.isArray(v.selected)?v.selected:[]};
+    if(v&&typeof v==='object')draft={...defaults(),...v,images:v.images||{},overrides:v.overrides||{},selected:Array.isArray(v.selected)?v.selected:[]};
   }catch(_){}
 }
 function persistDraft(immediate=false){
@@ -102,6 +102,93 @@ async function persistImageAuto(id,data){
   }
 }
 
+
+function overrideFor(id){
+  if(draft.overrides?.[id])return draft.overrides[id];
+  try{
+    const s=app();
+    if(s?.mediaOverrides?.[id])return s.mediaOverrides[id];
+  }catch(_){}
+  return null;
+}
+function defaultOverride(item){
+  const o={title:item.name,headers:[],rows:[],note:''};
+  if(draft.type==='drink'){
+    let variants=unique(item.rows.map(r=>r.Variant||r.variant).filter(Boolean));
+    if(!variants.length)variants=['STD'];
+    variants=variants.slice(0,4);
+    o.headers=variants;
+    const map=new Map();
+    item.rows.forEach(r=>{
+      const label=text(r.Ingredient||r.ingredient);if(!label)return;
+      const variant=text(r.Variant||r.variant)||variants[0];
+      if(!map.has(label))map.set(label,{label,values:Array(variants.length).fill(''),unit:text(r.Unit||r.unit)});
+      const rec=map.get(label),ix=variants.indexOf(variant);
+      if(ix>=0)rec.values[ix]=text(r.Quantity||r.quantity);
+      if(!rec.unit)rec.unit=text(r.Unit||r.unit);
+    });
+    o.rows=[...map.values()];
+    o.note=unique(item.rows.map(r=>r.Notes||r.notes||r.Instructions||r.instructions)).filter(Boolean)[0]||'';
+  }else if(draft.type==='production'){
+    o.rows=item.rows.slice(0,12).map((r,i)=>({
+      label:text(r.ingredients)||text(r.variant)||('ขั้นตอน '+(i+1)),
+      values:[text(r.yield_amount)],
+      unit:text(r.yield_unit)
+    }));
+    const f=item.rows[0]||{};
+    o.note=[text(f.temperature_c)?'อุณหภูมิ '+text(f.temperature_c)+'°C':'',text(f.shelf_life)?'อายุ '+text(f.shelf_life):'',text(f.storage_condition)].filter(Boolean).join(' • ');
+  }else{
+    o.headers=['Holding Time'];
+    o.rows=item.rows.slice(0,12).map(r=>({
+      label:text(r['สถานะ'])||'-',
+      values:[text(r['อายุการจัดเก็บ'])],
+      unit:text(r['อุณหภูมิ/สถานที่จัดเก็บ'])
+    }));
+  }
+  return o;
+}
+function effectiveOverride(item){
+  const base=defaultOverride(item),o=overrideFor(item.id);
+  if(!o)return base;
+  return {
+    title:text(o.title)||base.title,
+    headers:Array.isArray(o.headers)?o.headers:base.headers,
+    rows:Array.isArray(o.rows)?o.rows:base.rows,
+    note:o.note!==undefined?text(o.note):base.note
+  };
+}
+async function persistOverrideAuto(id,o){
+  if(!id)return;
+  draft.overrides=draft.overrides&&typeof draft.overrides==='object'?draft.overrides:{};
+  draft.overrides[id]=clone(o);
+  draft.updatedAt=now();
+  try{localStorage.setItem(STORE,JSON.stringify(draft))}catch(_){}
+  setSaveStatus('กำลังบันทึกข้อมูล...');
+  try{
+    const s=app();
+    if(s){
+      s.mediaOverrides=s.mediaOverrides&&typeof s.mediaOverrides==='object'?s.mediaOverrides:{};
+      s.mediaOverrides[id]=clone(o);
+      s.mediaBuilderV1=clone(draft);
+      if(Array.isArray(s.mediaProjects)){
+        const i=s.mediaProjects.findIndex(x=>x?.id===draft.id);
+        if(i>=0){
+          const p=clone(s.mediaProjects[i]);
+          p.overrides=p.overrides&&typeof p.overrides==='object'?p.overrides:{};
+          p.overrides[id]=clone(o);
+          p.updatedAt=draft.updatedAt;
+          s.mediaProjects[i]=p;
+        }
+      }
+      if(typeof dbSet==='function')await Promise.resolve(dbSet(s));
+    }
+    setSaveStatus('บันทึกข้อมูลอัตโนมัติ ✓');
+  }catch(e){
+    console.warn('[KSL Media] override autosave',e);
+    setSaveStatus('บันทึกข้อมูลในเครื่องแล้ว');
+  }
+}
+
 function stableId(type,name){return type+'::'+text(name).toLowerCase()}
 function sourceItems(type=draft.type){
   const s=app()||{};
@@ -142,72 +229,35 @@ function lineList(values,max=6){
   return vals.slice(0,max).map(v=>'<li>'+esc(v)+'</li>').join('')+(vals.length>max?'<li class="mb-more">+'+(vals.length-max)+' รายการ</li>':'');
 }
 function drinkCard(item){
-  const img=imageFor(item.id);
-  let variants=unique(item.rows.map(r=>r.Variant||r.variant).filter(Boolean));
-  if(!variants.length)variants=['STD'];
-  variants=variants.slice(0,4);
-
-  const ingredientMap=new Map();
-  item.rows.forEach(r=>{
-    const ing=text(r.Ingredient||r.ingredient);
-    if(!ing)return;
-    const variant=text(r.Variant||r.variant)||variants[0];
-    if(!variants.includes(variant))return;
-    const q=text(r.Quantity||r.quantity),u=text(r.Unit||r.unit);
-    if(!ingredientMap.has(ing))ingredientMap.set(ing,{name:ing,unit:u,qty:{}});
-    const rec=ingredientMap.get(ing);
-    if(!rec.unit&&u)rec.unit=u;
-    rec.qty[variant]=q||'-';
-  });
-
-  const rows=[...ingredientMap.values()].slice(0,10).map(rec=>{
-    const qs=variants.map(v=>'<td class="mb-cup-qty">'+esc(rec.qty[v]||'-')+'</td>').join('');
-    return '<tr><td class="mb-r-name">'+esc(rec.name)+'</td>'+qs+'<td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>';
+  const img=imageFor(item.id),o=effectiveOverride(item);
+  let variants=(o.headers||[]).map(text).filter(Boolean);if(!variants.length)variants=['STD'];variants=variants.slice(0,6);
+  const rows=(o.rows||[]).slice(0,14).map(rec=>{
+    const vals=Array.isArray(rec.values)?rec.values:[text(rec.value)];
+    const qs=variants.map((v,i)=>'<td class="mb-cup-qty">'+esc(vals[i]||'-')+'</td>').join('');
+    return '<tr><td class="mb-r-name">'+esc(rec.label||'-')+'</td>'+qs+'<td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>';
   }).join('');
-
   const head='<thead><tr><th class="mb-cup-label">วัตถุดิบ</th>'+variants.map(v=>'<th class="mb-cup-type">'+esc(v)+'</th>').join('')+'<th class="mb-cup-unit">หน่วย</th></tr></thead>';
-  const notes=unique(item.rows.map(r=>r.Notes||r.notes||r.Instructions||r.instructions)).filter(Boolean).slice(0,1);
-
   return '<article class="mb-card mb-table-card">'+
-    '<div class="mb-black-title">'+esc(item.name)+'</div>'+
+    '<div class="mb-black-title">'+esc(o.title||item.name)+'</div>'+
     '<div class="mb-table-body">'+
       '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">🧋</div>')+'</div></div>'+
-      '<div class="mb-table-side">'+
-        '<div class="mb-cup-title">ประเภทแก้ว</div>'+
-        '<table class="mb-recipe-table mb-drink-table">'+head+'<tbody>'+rows+'</tbody></table>'+
-        (notes.length?'<div class="mb-note-line">'+esc(notes[0])+'</div>':'')+
-      '</div>'+
-    '</div>'+
-  '</article>';
+      '<div class="mb-table-side"><div class="mb-cup-title">ประเภทแก้ว</div><table class="mb-recipe-table mb-drink-table">'+head+'<tbody>'+rows+'</tbody></table>'+
+      (o.note?'<div class="mb-note-line">'+esc(o.note)+'</div>':'')+'</div>'+
+    '</div></article>';
 }
 function productionCard(item){
-  const img=imageFor(item.id);
-  const rows=item.rows.slice(0,9).map((r,i)=>{
-    const name=text(r.ingredients)||text(r.variant)||('ขั้นตอน '+(i+1));
-    const qty=text(r.yield_amount);
-    const unit=text(r.yield_unit);
-    return '<tr><td class="mb-r-name">'+esc(name||'-')+'</td><td class="mb-r-qty">'+esc(qty||'')+'</td><td class="mb-r-unit">'+esc(unit||'')+'</td></tr>';
-  }).join('');
-  const first=item.rows[0]||{};
-  const notes=[text(first.temperature_c)?'อุณหภูมิ '+text(first.temperature_c)+'°C':'',text(first.shelf_life)?'อายุ '+text(first.shelf_life):'',text(first.storage_condition)?text(first.storage_condition):''].filter(Boolean).join(' • ');
-  return '<article class="mb-card mb-table-card">'+
-    '<div class="mb-black-title">'+esc(item.name)+'</div>'+
-    '<div class="mb-table-body">'+
-      '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">🧑‍🍳</div>')+'</div></div>'+
-      '<div class="mb-table-side"><table class="mb-recipe-table"><tbody>'+rows+'</tbody></table>'+(notes?'<div class="mb-note-line">'+esc(notes)+'</div>':'')+'</div>'+
-    '</div>'+
-  '</article>';
+  const img=imageFor(item.id),o=effectiveOverride(item);
+  const rows=(o.rows||[]).slice(0,14).map(rec=>'<tr><td class="mb-r-name">'+esc(rec.label||'-')+'</td><td class="mb-r-qty">'+esc((rec.values||[])[0]||'')+'</td><td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>').join('');
+  return '<article class="mb-card mb-table-card"><div class="mb-black-title">'+esc(o.title||item.name)+'</div><div class="mb-table-body">'+
+    '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">🧑‍🍳</div>')+'</div></div>'+
+    '<div class="mb-table-side"><table class="mb-recipe-table"><tbody>'+rows+'</tbody></table>'+(o.note?'<div class="mb-note-line">'+esc(o.note)+'</div>':'')+'</div></div></article>';
 }
 function holdingCard(item){
-  const img=imageFor(item.id);
-  const rows=item.rows.slice(0,9).map(r=>'<tr><td class="mb-r-name">'+esc(r['สถานะ']||'-')+'</td><td class="mb-r-qty">'+esc(r['อายุการจัดเก็บ']||'-')+'</td><td class="mb-r-unit">'+esc(r['อุณหภูมิ/สถานที่จัดเก็บ']||'')+'</td></tr>').join('');
-  return '<article class="mb-card mb-table-card">'+
-    '<div class="mb-black-title">'+esc(item.name)+'</div>'+
-    '<div class="mb-table-body">'+
-      '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">⏳</div>')+'</div></div>'+
-      '<div class="mb-table-side"><table class="mb-recipe-table"><tbody>'+rows+'</tbody></table></div>'+
-    '</div>'+
-  '</article>';
+  const img=imageFor(item.id),o=effectiveOverride(item);
+  const rows=(o.rows||[]).slice(0,14).map(rec=>'<tr><td class="mb-r-name">'+esc(rec.label||'-')+'</td><td class="mb-r-qty">'+esc((rec.values||[])[0]||'')+'</td><td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>').join('');
+  return '<article class="mb-card mb-table-card"><div class="mb-black-title">'+esc(o.title||item.name)+'</div><div class="mb-table-body">'+
+    '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">⏳</div>')+'</div></div>'+
+    '<div class="mb-table-side"><table class="mb-recipe-table"><tbody>'+rows+'</tbody></table>'+(o.note?'<div class="mb-note-line">'+esc(o.note)+'</div>':'')+'</div></div></article>';
 }
 function itemCard(item){return draft.type==='drink'?drinkCard(item):draft.type==='production'?productionCard(item):holdingCard(item)}
 
@@ -228,7 +278,7 @@ function buildPage(items,index,total){
   const size=draft.orientation==='landscape'?'mb-landscape':'mb-portrait';
   const density=densityFor(items.length);
   const rows=rowsFor();
-  return '<section class="ksl-media-page '+size+' '+density+' mb-template-'+esc(draft.template)+'" data-page="'+index+'">'+
+  return '<section class="ksl-media-page '+size+' '+density+' mb-template-'+esc(draft.template)+' mb-theme-'+esc(draft.theme||'1')+'" data-page="'+index+'">'+
     '<header class="mb-page-head"><div><div class="mb-kamu">KAMU KAMU • TRAINING</div><h1>'+esc(pageTitle())+'</h1>'+
     (draft.subtitle?'<p>'+esc(draft.subtitle)+'</p>':'')+'</div><div class="mb-page-no">'+(index+1)+' / '+total+'</div></header>'+
     '<div class="mb-grid mb-dynamic-rows" style="--mb-cols:'+cols+';--mb-rows:'+rows+'">'+items.map(itemCard).join('')+'</div>'+
@@ -415,6 +465,30 @@ const CSS=`
 .mb-template-branch-grid.mb-density-max .mb-table-body{grid-template-columns:46px minmax(0,1fr)}
 .mb-template-branch-grid.mb-density-max .mb-photo-frame{width:38px;height:58px}
 
+
+.mb-edit-list{display:grid;gap:6px;margin:7px 0}.mb-edit-row{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1.2fr) minmax(0,1fr) auto;gap:5px;align-items:center}.mb-edit-row .mb-input{padding:7px;font-size:10px}
+.ksl-media-page{--mb-theme-bg:#fff;--mb-theme-card:#fff;--mb-theme-title:#050505;--mb-theme-title-text:#fff;--mb-theme-accent:#176b4d;--mb-theme-soft:#eef8f3;background:var(--mb-theme-bg)}
+.ksl-media-page .mb-black-title{background:var(--mb-theme-title);color:var(--mb-theme-title-text)}
+.ksl-media-page .mb-card{background:var(--mb-theme-card);border-color:var(--mb-theme-title)}
+.ksl-media-page .mb-page-head{border-color:var(--mb-theme-accent)}
+.ksl-media-page .mb-kamu,.ksl-media-page .mb-page-head h1{color:var(--mb-theme-accent)}
+.ksl-media-page .mb-cup-title,.ksl-media-page .mb-cup-type{color:var(--mb-theme-accent)}
+.mb-theme-1{--mb-theme-bg:#fff;--mb-theme-card:#fff;--mb-theme-title:#0c4f38;--mb-theme-title-text:#fff;--mb-theme-accent:#176b4d;--mb-theme-soft:#eaf6ef}
+.mb-theme-2{--mb-theme-bg:#fff;--mb-theme-card:#fff;--mb-theme-title:#050505;--mb-theme-title-text:#fff;--mb-theme-accent:#111;--mb-theme-soft:#eee}
+.mb-theme-3{--mb-theme-bg:#fbfff8;--mb-theme-card:#fff;--mb-theme-title:#46752f;--mb-theme-title-text:#fff;--mb-theme-accent:#6f9d45;--mb-theme-soft:#eef7e8}
+.mb-theme-4{--mb-theme-bg:#f7fffc;--mb-theme-card:#fff;--mb-theme-title:#2b806d;--mb-theme-title-text:#fff;--mb-theme-accent:#49a58e;--mb-theme-soft:#e8f7f2}
+.mb-theme-5{--mb-theme-bg:#f8fcf8;--mb-theme-card:#fff;--mb-theme-title:#183d2b;--mb-theme-title-text:#fff;--mb-theme-accent:#285b3d;--mb-theme-soft:#e8f0eb}
+.mb-theme-6{--mb-theme-bg:#fffdf4;--mb-theme-card:#fffef8;--mb-theme-title:#75622e;--mb-theme-title-text:#fff;--mb-theme-accent:#9b823d;--mb-theme-soft:#f7f0d9}
+.mb-theme-7{--mb-theme-bg:#fffaf5;--mb-theme-card:#fff;--mb-theme-title:#694a37;--mb-theme-title-text:#fff;--mb-theme-accent:#8a6249;--mb-theme-soft:#f4e9df}
+.mb-theme-8{--mb-theme-bg:#fdf9ff;--mb-theme-card:#fff;--mb-theme-title:#69427d;--mb-theme-title-text:#fff;--mb-theme-accent:#8d61a4;--mb-theme-soft:#f0e7f5}
+.mb-theme-9{--mb-theme-bg:#fff9f3;--mb-theme-card:#fff;--mb-theme-title:#a14f22;--mb-theme-title-text:#fff;--mb-theme-accent:#c96c36;--mb-theme-soft:#faeadf}
+.mb-theme-10{--mb-theme-bg:#f7fbff;--mb-theme-card:#fff;--mb-theme-title:#2e6f9c;--mb-theme-title-text:#fff;--mb-theme-accent:#458dbd;--mb-theme-soft:#e5f2fb}
+.mb-theme-11{--mb-theme-bg:#f8f9fc;--mb-theme-card:#fff;--mb-theme-title:#183354;--mb-theme-title-text:#fff;--mb-theme-accent:#294f79;--mb-theme-soft:#e8eef5}
+.mb-theme-12{--mb-theme-bg:#fff8fa;--mb-theme-card:#fff;--mb-theme-title:#94455e;--mb-theme-title-text:#fff;--mb-theme-accent:#b7647d;--mb-theme-soft:#f7e8ed}
+.mb-theme-13{--mb-theme-bg:#fffafb;--mb-theme-card:#fff;--mb-theme-title:#a85f73;--mb-theme-title-text:#fff;--mb-theme-accent:#cf8297;--mb-theme-soft:#f9e8ee}
+.mb-theme-14{--mb-theme-bg:#fafafa;--mb-theme-card:#fff;--mb-theme-title:#555;--mb-theme-title-text:#fff;--mb-theme-accent:#777;--mb-theme-soft:#eee}
+.mb-theme-15{--mb-theme-bg:#fff;--mb-theme-card:#fff;--mb-theme-title:#000;--mb-theme-title-text:#fff;--mb-theme-accent:#000;--mb-theme-soft:#fff}
+
 @media(max-width:900px){.mb-shell{grid-template-columns:1fr;height:auto}.mb-controls{border-right:0;border-bottom:1px solid #d4e7dc}.mb-preview-wrap{align-items:flex-start}.ksl-media-page{transform-origin:top left;transform:scale(.72);margin-bottom:-300px}}
 @media print{body>*{display:none!important}#kslMediaPrintRoot{display:block!important}.ksl-media-page{box-shadow:none;page-break-after:always;margin:0}.ksl-media-page:last-child{page-break-after:auto}}
 `;
@@ -437,8 +511,54 @@ function renderControls(){
     const sels=selectedItems();if(!targetImage||!sels.some(x=>x.id===targetImage))targetImage=sels[0]?.id||'';
     imgSel.innerHTML=sels.length?sels.map(x=>'<option value="'+esc(x.id)+'" '+(x.id===targetImage?'selected':'')+'>'+esc(x.name)+'</option>').join(''):'<option value="">เลือกเมนูก่อน</option>';
   }
+  const editSel=document.getElementById('kslMediaEditTarget');
+  if(editSel){
+    const sels=selectedItems();
+    const current=editSel.value&&sels.some(x=>x.id===editSel.value)?editSel.value:(targetImage||sels[0]?.id||'');
+    editSel.innerHTML=sels.length?sels.map(x=>'<option value="'+esc(x.id)+'" '+(x.id===current?'selected':'')+'>'+esc(x.name)+'</option>').join(''):'<option value="">เลือกเมนูก่อน</option>';
+  }
+  renderMediaEditor();
   renderImageThumb();
 }
+function editorItem(){
+  const id=document.getElementById('kslMediaEditTarget')?.value||'';
+  return selectedItems().find(x=>x.id===id)||null;
+}
+function renderMediaEditor(){
+  const box=document.getElementById('kslMediaEditor');if(!box)return;
+  const item=editorItem();if(!item){box.innerHTML='<div class="mb-note">เลือกเมนูที่ต้องการแก้ไขก่อน</div>';return}
+  const o=effectiveOverride(item),headers=(o.headers||[]).join(', ');
+  box.innerHTML='<div class="mb-field"><label>ชื่อที่แสดง</label><input class="mb-input" id="mbEditTitle" value="'+esc(o.title||item.name)+'"></div>'+
+    (draft.type==='drink'?'<div class="mb-field"><label>ประเภทแก้ว (คั่นด้วย ,)</label><input class="mb-input" id="mbEditHeaders" value="'+esc(headers)+'"></div>':'')+
+    '<div class="mb-edit-list" id="mbEditRows">'+(o.rows||[]).map((r,i)=>editRowHtml(r,i)).join('')+'</div>'+
+    '<button class="mb-link" id="mbAddDetail" type="button">＋ เพิ่มรายละเอียด</button>'+
+    '<div class="mb-field"><label>หมายเหตุ</label><textarea class="mb-input" id="mbEditNote" rows="2">'+esc(o.note||'')+'</textarea></div>';
+}
+function editRowHtml(r,i){
+  const vals=Array.isArray(r.values)?r.values.join(' | '):text(r.value);
+  return '<div class="mb-edit-row" data-edit-row="'+i+'"><input class="mb-input mb-er-label" value="'+esc(r.label||'')+'" placeholder="รายละเอียด / วัตถุดิบ"><input class="mb-input mb-er-value" value="'+esc(vals)+'" placeholder="'+(draft.type==='drink'?'ค่าตามประเภทแก้ว คั่นด้วย |':'ค่า / ปริมาณ')+'"><input class="mb-input mb-er-unit" value="'+esc(r.unit||'')+'" placeholder="หน่วย / ข้อมูลเสริม"><button class="mb-link mb-er-del" type="button">ลบ</button></div>';
+}
+function collectEditorOverride(){
+  const item=editorItem();if(!item)return null;
+  const title=text(document.getElementById('mbEditTitle')?.value)||item.name;
+  const headers=draft.type==='drink'?text(document.getElementById('mbEditHeaders')?.value).split(',').map(text).filter(Boolean):(effectiveOverride(item).headers||[]);
+  const rows=[...document.querySelectorAll('#mbEditRows .mb-edit-row')].map(el=>({
+    label:text(el.querySelector('.mb-er-label')?.value),
+    values:text(el.querySelector('.mb-er-value')?.value).split('|').map(text),
+    unit:text(el.querySelector('.mb-er-unit')?.value)
+  })).filter(r=>r.label||r.values.some(Boolean)||r.unit);
+  return {title,headers,rows,note:text(document.getElementById('mbEditNote')?.value)};
+}
+let editSaveTimer=null;
+function scheduleEditorSave(){
+  clearTimeout(editSaveTimer);
+  editSaveTimer=setTimeout(async()=>{
+    const item=editorItem(),o=collectEditorOverride();if(!item||!o)return;
+    await persistOverrideAuto(item.id,o);
+    renderPreview();
+  },450);
+}
+
 function renderImageThumb(){
   const box=document.getElementById('kslMediaImageThumb');if(!box)return;
   const src=targetImage?imageFor(targetImage):'';
@@ -454,7 +574,7 @@ function renderPreview(){
 function syncUI(){
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v};
   set('kslMediaType',draft.type);set('kslMediaTemplate',draft.template);set('kslMediaOrientation',draft.orientation);
-  set('kslMediaPerPage',String(draft.perPage));set('kslMediaTitle',draft.title);set('kslMediaSubtitle',draft.subtitle);
+  set('kslMediaPerPage',String(draft.perPage));set('kslMediaTheme',String(draft.theme||'1'));set('kslMediaTitle',draft.title);set('kslMediaSubtitle',draft.subtitle);
   renderControls();renderPreview();persistDraft();
 }
 function onTypeChange(v){draft.type=v;draft.selected=[];draft.images={};targetImage='';draft.title='';search='';const q=document.getElementById('kslMediaSearch');if(q)q.value='';syncUI()}
@@ -476,10 +596,11 @@ function builderHtml(){
  '<div class="mb-shell"><aside class="mb-controls">'+
  '<div class="mb-block"><h3>1. ประเภทสื่อ</h3><div class="mb-field"><select class="mb-select" id="kslMediaType"><option value="drink">🧋 สูตรการชงเครื่องดื่ม</option><option value="production">🧑‍🍳 สูตรการผลิต</option><option value="holding">⏳ ตารางวันหมดอายุ</option></select></div>'+
  '<div class="mb-inline"><div class="mb-field"><label>Template</label><select class="mb-select" id="kslMediaTemplate"><option value="branch-grid">Branch Grid (ตามตัวอย่าง)</option><option value="modern">KAMU Modern</option><option value="visual">Visual Training</option><option value="compact">Compact SOP</option></select></div><div class="mb-field"><label>แนวกระดาษ</label><select class="mb-select" id="kslMediaOrientation"><option value="portrait">A4 แนวตั้ง</option><option value="landscape">A4 แนวนอน</option></select></div></div>'+
- '<div class="mb-field"><label>จำนวนเมนูต่อ A4 (สูงสุด 20)</label><select class="mb-select" id="kslMediaPerPage"><option value="1">1 เมนู</option><option value="2">2 เมนู</option><option value="3">3 เมนู</option><option value="4">4 เมนู</option><option value="5">5 เมนู</option><option value="6">6 เมนู</option><option value="7">7 เมนู</option><option value="8">8 เมนู</option><option value="9">9 เมนู</option><option value="10">10 เมนู</option><option value="11">11 เมนู</option><option value="12">12 เมนู</option><option value="13">13 เมนู</option><option value="14">14 เมนู</option><option value="15">15 เมนู</option><option value="16">16 เมนู</option><option value="17">17 เมนู</option><option value="18">18 เมนู</option><option value="19">19 เมนู</option><option value="20">20 เมนู</option></select><div class="mb-note">1 หน้า A4 เลือกได้สูงสุด 20 เมนู ระบบจะลดขนาด Grid / ตัวอักษร / รูปประกอบให้พอดีอัตโนมัติ และถ้าเลือกเกินจำนวนต่อหน้าจะสร้าง A4 หน้าถัดไป</div></div></div>'+
+ '<div class="mb-field"><label>Theme สำหรับ Preview / Export (15 แบบ)</label><select class="mb-select" id="kslMediaTheme"><option value="1">01 KAMU Green</option><option value="2">02 Classic Black</option><option value="3">03 Matcha</option><option value="4">04 Mint</option><option value="5">05 Forest</option><option value="6">06 Cream</option><option value="7">07 Latte</option><option value="8">08 Taro</option><option value="9">09 Thai Tea</option><option value="10">10 Sky</option><option value="11">11 Navy</option><option value="12">12 Rose</option><option value="13">13 Sakura</option><option value="14">14 Minimal Gray</option><option value="15">15 High Contrast</option></select></div><div class="mb-field"><label>จำนวนเมนูต่อ A4 (สูงสุด 20)</label><select class="mb-select" id="kslMediaPerPage"><option value="1">1 เมนู</option><option value="2">2 เมนู</option><option value="3">3 เมนู</option><option value="4">4 เมนู</option><option value="5">5 เมนู</option><option value="6">6 เมนู</option><option value="7">7 เมนู</option><option value="8">8 เมนู</option><option value="9">9 เมนู</option><option value="10">10 เมนู</option><option value="11">11 เมนู</option><option value="12">12 เมนู</option><option value="13">13 เมนู</option><option value="14">14 เมนู</option><option value="15">15 เมนู</option><option value="16">16 เมนู</option><option value="17">17 เมนู</option><option value="18">18 เมนู</option><option value="19">19 เมนู</option><option value="20">20 เมนู</option></select><div class="mb-note">1 หน้า A4 เลือกได้สูงสุด 20 เมนู ระบบจะลดขนาด Grid / ตัวอักษร / รูปประกอบให้พอดีอัตโนมัติ และถ้าเลือกเกินจำนวนต่อหน้าจะสร้าง A4 หน้าถัดไป</div></div></div>'+
  '<div class="mb-block"><h3>2. เลือกเมนูจากฐานข้อมูล <span class="mb-count" id="kslMediaSelectedCount">0 เมนู</span></h3><div class="mb-field"><input class="mb-input" id="kslMediaSearch" placeholder="ค้นหาเมนู..."></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaSelectAll">เลือกทั้งหมดที่ค้นหา</button><button class="mb-link" id="kslMediaClearSel">ล้างการเลือก</button></div><div id="kslMediaItemList"></div></div>'+
  '<div class="mb-block"><h3>3. หัวเรื่อง</h3><div class="mb-field"><label>หัวเรื่องหลัก</label><input class="mb-input" id="kslMediaTitle" placeholder="ใช้ชื่อประเภทสื่ออัตโนมัติ"></div><div class="mb-field"><label>ข้อความรอง</label><input class="mb-input" id="kslMediaSubtitle" placeholder="เช่น สำหรับพนักงานใหม่ / Updated..."></div></div>'+
- '<div class="mb-block"><h3>4. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">Auto Save ทันที • Upload รูปใหม่ในเมนูเดิมจะบันทึกทับรูปเดิมอัตโนมัติ</div></div>'+
+ '<div class="mb-block"><h3>4. แก้ไขข้อมูลรายเมนู</h3><div class="mb-field"><label>เมนูที่จะแก้ไข</label><select class="mb-select" id="kslMediaEditTarget"></select></div><div id="kslMediaEditor"></div><div class="mb-note">แก้ไขแล้ว Auto Save เข้า Online Database • ไม่เปลี่ยนฐานสูตรต้นฉบับที่ Upload</div></div>'+ 
+ '<div class="mb-block"><h3>5. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">Auto Save ทันที • Upload รูปใหม่ในเมนูเดิมจะบันทึกทับรูปเดิมอัตโนมัติ</div></div>'+
  '</aside><main class="mb-preview-wrap" id="kslMediaPreview"></main></div></div>';
 }
 
@@ -492,6 +613,7 @@ function installBuilder(){
   bind('kslMediaClose','click',()=>ov.classList.remove('show'));
   bind('kslMediaType','change',e=>onTypeChange(e.target.value));
   bind('kslMediaTemplate','change',e=>{draft.template=e.target.value;renderPreview();persistDraft()});
+  bind('kslMediaTheme','change',e=>{draft.theme=e.target.value;renderPreview();persistDraft(true)});
   bind('kslMediaOrientation','change',e=>{draft.orientation=e.target.value;renderPreview();persistDraft()});
   bind('kslMediaPerPage','change',e=>{draft.perPage=Math.min(20,Math.max(1,Number(e.target.value)||4));renderPreview();persistDraft()});
   bind('kslMediaTitle','input',e=>{draft.title=e.target.value;renderPreview();persistDraft()});
@@ -500,6 +622,19 @@ function installBuilder(){
   bind('kslMediaItemList','change',e=>{const cb=e.target.closest('[data-mb-item]');if(!cb)return;const id=cb.dataset.mbItem;if(cb.checked&&!draft.selected.includes(id))draft.selected.push(id);if(!cb.checked)draft.selected=draft.selected.filter(x=>x!==id);renderControls();renderPreview();persistDraft()});
   bind('kslMediaSelectAll','click',()=>{const q=search.toLowerCase();sourceItems().filter(x=>!q||(x.name+' '+x.en).toLowerCase().includes(q)).forEach(x=>{if(!draft.selected.includes(x.id))draft.selected.push(x.id)});renderControls();renderPreview();persistDraft()});
   bind('kslMediaClearSel','click',()=>{draft.selected=[];targetImage='';renderControls();renderPreview();persistDraft()});
+  bind('kslMediaEditTarget','change',()=>renderMediaEditor());
+  bind('kslMediaEditor','input',()=>scheduleEditorSave());
+  bind('kslMediaEditor','click',e=>{
+    if(e.target?.id==='mbAddDetail'){
+      const item=editorItem();if(!item)return;
+      const o=collectEditorOverride()||effectiveOverride(item);
+      o.rows=o.rows||[];o.rows.push({label:'',values:[''],unit:''});
+      draft.overrides[item.id]=clone(o);renderMediaEditor();scheduleEditorSave();return;
+    }
+    const del=e.target.closest('.mb-er-del');if(del){
+      del.closest('.mb-edit-row')?.remove();scheduleEditorSave();
+    }
+  });
   bind('kslMediaImageTarget','change',e=>{targetImage=e.target.value;renderImageThumb()});
   bind('kslMediaChooseImage','click',()=>document.getElementById('kslMediaImageInput')?.click());
   bind('kslMediaImageInput','change',async e=>{
