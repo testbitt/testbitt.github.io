@@ -292,7 +292,10 @@ function buildPage(items,index,total){
     '</section>';
 }
 function previewHtml(){
-  const items=selectedItems(),per=Math.min(20,Math.max(1,Number(draft.perPage)||4)),pages=chunk(items,per);
+  const items=selectedItems();
+  const requested=Math.min(20,Math.max(1,Number(draft.perPage)||4));
+  const per=draft.orientation==='portrait'?Math.min(4,requested):requested;
+  const pages=chunk(items,per);
   return pages.map((p,i)=>buildPage(p,i,pages.length)).join('');
 }
 
@@ -619,6 +622,77 @@ const CSS=`
 .mb-template-branch-grid.mb-density-max .mb-recipe-table{font-size:6.6px}
 .mb-template-branch-grid.mb-density-max .mb-black-title{font-size:8.5px;min-height:23px}
 
+
+/* V6.3.13 portrait layout = 2 columns x 2 rows */
+.mb-template-branch-grid.mb-portrait{
+  padding:18px 20px 14px;
+}
+.mb-template-branch-grid.mb-portrait .mb-page-head{
+  margin-bottom:10px;
+  padding-bottom:8px;
+}
+.mb-template-branch-grid.mb-portrait .mb-export-rows{
+  display:grid;
+  grid-template-rows:repeat(2,minmax(0,1fr));
+  gap:12px;
+  min-height:0;
+  height:100%;
+}
+.mb-template-branch-grid.mb-portrait .mb-export-row{
+  width:100%!important;
+  max-width:100%;
+  height:100%;
+  margin:0;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  align-items:stretch;
+}
+.mb-template-branch-grid.mb-portrait .mb-export-row:has(.mb-card:only-child){
+  width:50%!important;
+  margin-inline:auto;
+  grid-template-columns:1fr;
+}
+.mb-template-branch-grid.mb-portrait .mb-card{
+  height:100%;
+  min-height:0;
+  overflow:hidden;
+}
+.mb-template-branch-grid.mb-portrait .mb-black-title{
+  min-height:34px;
+  font-size:13px;
+  padding:6px 8px;
+}
+.mb-template-branch-grid.mb-portrait .mb-table-body{
+  grid-template-columns:72px minmax(0,1fr);
+  height:100%;
+}
+.mb-template-branch-grid.mb-portrait .mb-photo-frame{
+  width:58px;
+  height:96px;
+}
+.mb-template-branch-grid.mb-portrait .mb-recipe-table{
+  font-size:9px;
+  line-height:1.15;
+}
+.mb-template-branch-grid.mb-portrait .mb-recipe-table td{
+  padding:4px 5px;
+}
+.mb-template-branch-grid.mb-portrait .mb-cup-title{
+  font-size:9px;
+  padding:4px 3px;
+}
+.mb-template-branch-grid.mb-portrait .mb-drink-table thead th{
+  font-size:8.5px;
+  padding:4px 3px;
+}
+.mb-template-branch-grid.mb-portrait .mb-note-line{
+  font-size:8px;
+  padding:4px 5px;
+}
+.mb-template-branch-grid.mb-portrait .mb-footer{
+  margin-top:8px;
+}
+
 @media(max-width:900px){.mb-shell{grid-template-columns:1fr;height:auto}.mb-controls{border-right:0;border-bottom:1px solid #d4e7dc}.mb-preview-wrap{align-items:flex-start}.ksl-media-page{transform-origin:top left;transform:scale(.72);margin-bottom:-300px}}
 @media print{body>*{display:none!important}#kslMediaPrintRoot{display:block!important}.ksl-media-page{box-shadow:none;page-break-after:always;margin:0}.ksl-media-page:last-child{page-break-after:auto}}
 `;
@@ -760,7 +834,7 @@ function builderHtml(){
  '<div class="mb-shell"><aside class="mb-controls">'+
  '<div class="mb-block"><h3>1. ประเภทสื่อ</h3><div class="mb-field"><select class="mb-select" id="kslMediaType"><option value="drink">🧋 สูตรการชงเครื่องดื่ม</option><option value="production">🧑‍🍳 สูตรการผลิต</option><option value="holding">⏳ ตารางวันหมดอายุ</option></select></div>'+
  '<div class="mb-inline"><div class="mb-field"><label>Template</label><select class="mb-select" id="kslMediaTemplate"><option value="branch-grid">Branch Grid (ตามตัวอย่าง)</option><option value="modern">KAMU Modern</option><option value="visual">Visual Training</option><option value="compact">Compact SOP</option></select></div><div class="mb-field"><label>แนวกระดาษ</label><select class="mb-select" id="kslMediaOrientation"><option value="portrait">A4 แนวตั้ง</option><option value="landscape">A4 แนวนอน</option></select></div></div>'+
- '<div class="mb-field"><label>Theme สำหรับ Preview / Export (15 แบบ)</label><select class="mb-select" id="kslMediaTheme"><option value="1">01 KAMU Green</option><option value="2">02 Classic Black</option><option value="3">03 Matcha</option><option value="4">04 Mint</option><option value="5">05 Forest</option><option value="6">06 Cream</option><option value="7">07 Latte</option><option value="8">08 Taro</option><option value="9">09 Thai Tea</option><option value="10">10 Sky</option><option value="11">11 Navy</option><option value="12">12 Rose</option><option value="13">13 Sakura</option><option value="14">14 Minimal Gray</option><option value="15">15 High Contrast</option></select></div><div class="mb-field"><label>จำนวนเมนูต่อ A4 (สูงสุด 20)</label><select class="mb-select" id="kslMediaPerPage"><option value="1">1 เมนู</option><option value="2">2 เมนู</option><option value="3">3 เมนู</option><option value="4">4 เมนู</option><option value="5">5 เมนู</option><option value="6">6 เมนู</option><option value="7">7 เมนู</option><option value="8">8 เมนู</option><option value="9">9 เมนู</option><option value="10">10 เมนู</option><option value="11">11 เมนู</option><option value="12">12 เมนู</option><option value="13">13 เมนู</option><option value="14">14 เมนู</option><option value="15">15 เมนู</option><option value="16">16 เมนู</option><option value="17">17 เมนู</option><option value="18">18 เมนู</option><option value="19">19 เมนู</option><option value="20">20 เมนู</option></select><div class="mb-note">1 หน้า A4 เลือกได้สูงสุด 20 เมนู ระบบจะลดขนาด Grid / ตัวอักษร / รูปประกอบให้พอดีอัตโนมัติ และถ้าเลือกเกินจำนวนต่อหน้าจะสร้าง A4 หน้าถัดไป</div></div></div>'+
+ '<div class="mb-field"><label>Theme สำหรับ Preview / Export (15 แบบ)</label><select class="mb-select" id="kslMediaTheme"><option value="1">01 KAMU Green</option><option value="2">02 Classic Black</option><option value="3">03 Matcha</option><option value="4">04 Mint</option><option value="5">05 Forest</option><option value="6">06 Cream</option><option value="7">07 Latte</option><option value="8">08 Taro</option><option value="9">09 Thai Tea</option><option value="10">10 Sky</option><option value="11">11 Navy</option><option value="12">12 Rose</option><option value="13">13 Sakura</option><option value="14">14 Minimal Gray</option><option value="15">15 High Contrast</option></select></div><div class="mb-field"><label>จำนวนเมนูต่อ A4 (สูงสุด 20)</label><select class="mb-select" id="kslMediaPerPage"><option value="1">1 เมนู</option><option value="2">2 เมนู</option><option value="3">3 เมนู</option><option value="4">4 เมนู</option><option value="5">5 เมนู</option><option value="6">6 เมนู</option><option value="7">7 เมนู</option><option value="8">8 เมนู</option><option value="9">9 เมนู</option><option value="10">10 เมนู</option><option value="11">11 เมนู</option><option value="12">12 เมนู</option><option value="13">13 เมนู</option><option value="14">14 เมนู</option><option value="15">15 เมนู</option><option value="16">16 เมนู</option><option value="17">17 เมนู</option><option value="18">18 เมนู</option><option value="19">19 เมนู</option><option value="20">20 เมนู</option></select><div class="mb-note">แนวตั้งแสดง 4 เมนูต่อหน้า (2×2) ตาม Layout ตัวอย่าง • แนวนอนเลือกได้สูงสุด 20 เมนู • ถ้าเกินจะสร้างหน้าถัดไปอัตโนมัติ</div></div></div>'+
  '<div class="mb-block"><h3>2. เลือกเมนูจากฐานข้อมูล <span class="mb-count" id="kslMediaSelectedCount">0 เมนู</span></h3><div class="mb-field"><input class="mb-input" id="kslMediaSearch" placeholder="ค้นหาเมนู..."></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaSelectAll">เลือกทั้งหมดที่ค้นหา</button><button class="mb-link" id="kslMediaClearSel">ล้างการเลือก</button></div><div id="kslMediaItemList"></div></div>'+
  '<div class="mb-block"><h3>3. หัวเรื่อง</h3><div class="mb-field"><label>หัวเรื่องหลัก</label><input class="mb-input" id="kslMediaTitle" placeholder="ใช้ชื่อประเภทสื่ออัตโนมัติ"></div><div class="mb-field"><label>ข้อความรอง</label><input class="mb-input" id="kslMediaSubtitle" placeholder="เช่น สำหรับพนักงานใหม่ / Updated..."></div></div>'+
  '<div class="mb-block"><h3>4. แก้ไขข้อมูลรายเมนู</h3><div class="mb-field"><label>เมนูที่จะแก้ไข</label><select class="mb-select" id="kslMediaEditTarget"></select></div><div id="kslMediaEditor"></div><div class="mb-note">แก้ไขแล้ว Auto Save เข้า Online Database • ไม่เปลี่ยนฐานสูตรต้นฉบับที่ Upload</div></div>'+ 
