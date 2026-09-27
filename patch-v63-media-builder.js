@@ -377,9 +377,14 @@ function buildPage(items,index,total){
   // create a blank row under the neighboring taller card.
   const columnGroups=Array.from({length:cols},()=>[]);
   items.forEach((item,i)=>columnGroups[i%cols].push(item));
-  const columnsHtml=columnGroups.map(group=>
-    '<div class="mb-export-col">'+group.map(itemCard).join('')+'</div>'
-  ).join('');
+
+  // Pad shorter columns with visual blank slots so the layout stays balanced.
+  const maxLen=Math.max(0,...columnGroups.map(g=>g.length));
+  const columnsHtml=columnGroups.map(group=>{
+    const cards=group.map(itemCard);
+    while(cards.length<maxLen)cards.push('<div class="mb-empty-slot" aria-hidden="true"></div>');
+    return '<div class="mb-export-col">'+cards.join('')+'</div>';
+  }).join('');
 
   return '<section class="ksl-media-page '+size+' '+density+' mb-template-'+esc(draft.template)+' mb-theme-'+esc(draft.theme||'1')+' mb-count-'+items.length+'" data-page="'+index+'">'+
     '<header class="mb-page-head"><div><div class="mb-kamu">KAMU KAMU • TRAINING</div><h1>'+esc(pageTitle())+'</h1>'+
@@ -803,6 +808,18 @@ const CSS=`
   font-size:6px;
 }
 
+
+/* V6.3.20 balanced blank slots */
+.mb-empty-slot{
+  min-height:72px;
+  border:2px dashed #d8e7df;
+  background:rgba(248,252,250,.62);
+  border-radius:0;
+}
+.mb-template-branch-grid.mb-portrait .mb-empty-slot{min-height:72px}
+.mb-template-branch-grid.mb-landscape .mb-empty-slot{min-height:64px}
+.mb-density-compact .mb-empty-slot{min-height:54px}
+.mb-density-max .mb-empty-slot{min-height:44px}
 
 /* V6.3.19 packed card columns */
 .mb-export-columns{
