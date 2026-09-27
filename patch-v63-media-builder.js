@@ -372,17 +372,19 @@ function buildPage(items,index,total){
   const cols=columnsFor(items.length);
   const size=draft.orientation==='landscape'?'mb-landscape':'mb-portrait';
   const density=densityFor(items.length);
-  const rowGroups=[];
-  for(let i=0;i<items.length;i+=cols)rowGroups.push(items.slice(i,i+cols));
-  const rowsHtml=rowGroups.map(group=>{
-    const n=Math.max(1,group.length);
-    const width=(n/cols)*100;
-    return '<div class="mb-export-row" style="--row-cols:'+n+';--row-width:'+width+'%">'+group.map(itemCard).join('')+'</div>';
-  }).join('');
+
+  // Pack cards independently in each column so a short card does not
+  // create a blank row under the neighboring taller card.
+  const columnGroups=Array.from({length:cols},()=>[]);
+  items.forEach((item,i)=>columnGroups[i%cols].push(item));
+  const columnsHtml=columnGroups.map(group=>
+    '<div class="mb-export-col">'+group.map(itemCard).join('')+'</div>'
+  ).join('');
+
   return '<section class="ksl-media-page '+size+' '+density+' mb-template-'+esc(draft.template)+' mb-theme-'+esc(draft.theme||'1')+' mb-count-'+items.length+'" data-page="'+index+'">'+
     '<header class="mb-page-head"><div><div class="mb-kamu">KAMU KAMU • TRAINING</div><h1>'+esc(pageTitle())+'</h1>'+
     (draft.subtitle?'<p>'+esc(draft.subtitle)+'</p>':'')+'</div><div class="mb-page-no">'+(index+1)+' / '+total+'</div></header>'+
-    '<div class="mb-export-rows">'+rowsHtml+'</div>'+
+    '<div class="mb-export-columns" style="--mb-export-cols:'+cols+'">'+columnsHtml+'</div>'+
     '<footer class="mb-footer"><span>'+esc(typeLabel())+'</span><span>ข้อมูลจาก KSL • '+new Intl.DateTimeFormat('th-TH',{dateStyle:'medium'}).format(new Date())+'</span></footer>'+
     '</section>';
 }
@@ -801,6 +803,35 @@ const CSS=`
   font-size:6px;
 }
 
+
+/* V6.3.19 packed card columns */
+.mb-export-columns{
+  display:grid;
+  grid-template-columns:repeat(var(--mb-export-cols),minmax(0,1fr));
+  gap:7px;
+  min-height:0;
+  align-items:start;
+  align-content:start;
+}
+.mb-export-col{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  min-width:0;
+  align-items:stretch;
+}
+.mb-export-col .mb-card{
+  height:auto!important;
+  align-self:stretch;
+  margin:0!important;
+}
+.mb-template-branch-grid.mb-portrait .mb-export-columns{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+}
+.mb-template-branch-grid.mb-portrait .mb-export-col{gap:7px}
+.mb-template-branch-grid.mb-landscape .mb-export-columns{gap:8px}
+.mb-template-branch-grid.mb-landscape .mb-export-col{gap:8px}
 
 /* V6.3.17 full-A4 export + saved history */
 #kslMediaHistoryPage{display:none;position:absolute;inset:64px 0 0;background:#f2f7f4;z-index:8;overflow:auto;padding:22px}
