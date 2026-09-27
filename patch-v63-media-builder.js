@@ -262,7 +262,7 @@ function holdingCard(item){
 function itemCard(item){return draft.type==='drink'?drinkCard(item):draft.type==='production'?productionCard(item):holdingCard(item)}
 
 function rowsFor(){
-  return draft.orientation==='landscape' ? 3 : 2;
+  return draft.orientation==='landscape' ? 4 : 2;
 }
 function columnsFor(count){
   return Math.max(1,Math.ceil(Math.min(20,Math.max(1,count))/rowsFor()));
@@ -472,7 +472,7 @@ const CSS=`
 .mb-template-branch-grid.mb-density-max .mb-photo-frame{width:38px;height:58px}
 
 
-.mb-edit-list{display:grid;gap:6px;margin:7px 0}.mb-edit-row{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1.2fr) minmax(0,1fr) auto;gap:5px;align-items:center}.mb-edit-row .mb-input{padding:7px;font-size:10px}
+.mb-edit-list{display:grid;gap:6px;margin:7px 0}.mb-edit-row{display:grid;grid-template-columns:auto minmax(0,1.7fr) minmax(0,1.2fr) minmax(0,1fr) auto;gap:5px;align-items:center}.mb-edit-row .mb-input{padding:7px;font-size:10px}.mb-row-move{display:grid;grid-template-columns:1fr 1fr;gap:3px}.mb-row-move .mb-link{padding:6px 7px;font-size:13px;line-height:1}
 .ksl-media-page{--mb-theme-bg:#fff;--mb-theme-card:#fff;--mb-theme-title:#050505;--mb-theme-title-text:#fff;--mb-theme-accent:#176b4d;--mb-theme-soft:#eef8f3;background:var(--mb-theme-bg)}
 .ksl-media-page .mb-black-title{background:var(--mb-theme-title);color:var(--mb-theme-title-text)}
 .ksl-media-page .mb-card{background:var(--mb-theme-card);border-color:var(--mb-theme-title)}
@@ -666,7 +666,12 @@ function renderMediaEditor(){
 }
 function editRowHtml(r,i){
   const vals=Array.isArray(r.values)?r.values.join(' | '):text(r.value);
-  return '<div class="mb-edit-row" data-edit-row="'+i+'"><input class="mb-input mb-er-label" value="'+esc(r.label||'')+'" placeholder="รายละเอียด / วัตถุดิบ"><input class="mb-input mb-er-value" value="'+esc(vals)+'" placeholder="'+(draft.type==='drink'?'ค่าตามประเภทแก้ว คั่นด้วย |':'ค่า / ปริมาณ')+'"><input class="mb-input mb-er-unit" value="'+esc(r.unit||'')+'" placeholder="หน่วย / ข้อมูลเสริม"><button class="mb-link mb-er-del" type="button">ลบ</button></div>';
+  return '<div class="mb-edit-row" data-edit-row="'+i+'">'+
+    '<div class="mb-row-move"><button class="mb-link mb-er-up" type="button" title="เลื่อนขึ้น">↑</button><button class="mb-link mb-er-down" type="button" title="เลื่อนลง">↓</button></div>'+
+    '<input class="mb-input mb-er-label" value="'+esc(r.label||'')+'" placeholder="รายละเอียด / วัตถุดิบ">'+
+    '<input class="mb-input mb-er-value" value="'+esc(vals)+'" placeholder="'+(draft.type==='drink'?'ค่าตามประเภทแก้ว คั่นด้วย |':'ค่า / ปริมาณ')+'">'+
+    '<input class="mb-input mb-er-unit" value="'+esc(r.unit||'')+'" placeholder="หน่วย / ข้อมูลเสริม">'+
+    '<button class="mb-link mb-er-del" type="button">ลบ</button></div>';
 }
 function collectEditorOverride(){
   const item=editorItem();if(!item)return null;
@@ -789,6 +794,17 @@ function installBuilder(){
       const o=collectEditorOverride()||effectiveOverride(item);
       o.rows=o.rows||[];o.rows.push({label:'',values:[''],unit:''});
       draft.overrides[item.id]=clone(o);renderMediaEditor();scheduleEditorSave();return;
+    }
+    const row=e.target.closest('.mb-edit-row');
+    if(e.target.closest('.mb-er-up')&&row){
+      const prev=row.previousElementSibling;
+      if(prev){row.parentElement.insertBefore(row,prev);scheduleEditorSave();}
+      return;
+    }
+    if(e.target.closest('.mb-er-down')&&row){
+      const next=row.nextElementSibling;
+      if(next){row.parentElement.insertBefore(next,row);scheduleEditorSave();}
+      return;
     }
     const del=e.target.closest('.mb-er-del');if(del){
       del.closest('.mb-edit-row')?.remove();scheduleEditorSave();
