@@ -385,11 +385,14 @@ function buildPage(items,index,total){
   const rowGroups=[];
   for(let i=0;i<items.length;i+=displayCols)rowGroups.push(items.slice(i,i+displayCols));
   const fit=fitFor(items.length,displayCols);
+  const targetPerPage=Math.min(20,Math.max(1,Number(draft.perPage)||4));
+  const isFullLayout=items.length===targetPerPage;
+  const layoutClass=isFullLayout?'mb-layout-full':'mb-layout-partial';
   const rowsHtml=rowGroups.map(group=>
     '<div class="mb-equal-row" style="--mb-row-cols:'+displayCols+'">'+group.map(itemCard).join('')+'</div>'
   ).join('');
 
-  return '<section class="ksl-media-page '+size+' '+density+' '+fit+' mb-template-'+esc(draft.template)+' mb-theme-'+esc(draft.theme||'1')+' mb-count-'+items.length+'" style="--mb-fit-rows:'+rowGroups.length+';--mb-fit-cols:'+displayCols+'" data-page="'+index+'">'+
+  return '<section class="ksl-media-page '+size+' '+density+' '+fit+' '+layoutClass+' mb-template-'+esc(draft.template)+' mb-theme-'+esc(draft.theme||'1')+' mb-count-'+items.length+'" style="--mb-fit-rows:'+rowGroups.length+';--mb-fit-cols:'+displayCols+'" data-page="'+index+'">'+
     '<header class="mb-page-head"><div><div class="mb-kamu">KAMU KAMU • TRAINING</div><h1>'+esc(pageTitle())+'</h1>'+
     (draft.subtitle?'<p>'+esc(draft.subtitle)+'</p>':'')+'</div><div class="mb-page-no">'+(index+1)+' / '+total+'</div></header>'+
     '<div class="mb-equal-rows">'+rowsHtml+'</div>'+
@@ -1610,6 +1613,46 @@ const CSS=`
 /* V6.3.36 hide Review reorder arrows */
 .mb-review-tools{
   display:none!important;
+}
+
+/* V6.3.37 only stretch rows when selected data fills chosen layout */
+.ksl-media-page.mb-layout-full .mb-equal-rows{
+  display:grid!important;
+  grid-template-rows:repeat(var(--mb-fit-rows),minmax(0,1fr))!important;
+  height:100%!important;
+  align-content:stretch!important;
+}
+.ksl-media-page.mb-layout-full .mb-equal-row{
+  height:100%!important;
+  align-items:stretch!important;
+}
+.ksl-media-page.mb-layout-full .mb-equal-row>.mb-card{
+  height:100%!important;
+  max-height:100%!important;
+  align-self:stretch!important;
+}
+
+/* Partial layout: keep natural row/card height; do not expand blank space */
+.ksl-media-page.mb-layout-partial .mb-equal-rows{
+  display:flex!important;
+  flex-direction:column!important;
+  height:auto!important;
+  min-height:0!important;
+  align-content:flex-start!important;
+  justify-content:flex-start!important;
+  gap:var(--mb-fit-gap,7px)!important;
+  overflow:hidden!important;
+}
+.ksl-media-page.mb-layout-partial .mb-equal-row{
+  height:auto!important;
+  min-height:0!important;
+  align-items:stretch!important;
+}
+.ksl-media-page.mb-layout-partial .mb-equal-row>.mb-card{
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  align-self:stretch!important;
 }
 `;
 
