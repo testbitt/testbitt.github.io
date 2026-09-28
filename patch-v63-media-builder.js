@@ -819,6 +819,74 @@ const CSS=`
 
 
 
+/* V6.3.31 ingredient / unit / cup-type tuning */
+.mb-template-branch-grid .mb-r-name,
+.ksl-media-page .mb-r-name{
+  text-align:center!important;
+  color:#0b57d0!important;
+  font-size:11.5px!important;
+  font-weight:800!important;
+  line-height:1.15!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+}
+.mb-template-branch-grid .mb-r-unit,
+.ksl-media-page .mb-r-unit,
+.mb-template-branch-grid .mb-cup-unit,
+.ksl-media-page .mb-cup-unit{
+  text-align:center!important;
+  color:#1f2937!important;
+  font-size:11px!important;
+  font-weight:700!important;
+  line-height:1.1!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+}
+.mb-template-branch-grid .mb-cup-title,
+.ksl-media-page .mb-cup-title{
+  font-size:9px!important;
+  line-height:1.05!important;
+  font-weight:800!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  overflow-wrap:anywhere!important;
+}
+.mb-template-branch-grid .mb-cup-type,
+.ksl-media-page .mb-cup-type{
+  font-size:9px!important;
+  line-height:1.05!important;
+  font-weight:800!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  text-align:center!important;
+}
+.mb-template-branch-grid .mb-drink-table thead th,
+.ksl-media-page .mb-drink-table thead th{
+  text-align:center!important;
+  vertical-align:middle!important;
+}
+.mb-template-branch-grid .mb-r-unit,
+.ksl-media-page .mb-r-unit{
+  vertical-align:middle!important;
+}
+.mb-template-branch-grid .mb-drink-table tbody td:first-child,
+.ksl-media-page .mb-drink-table tbody td:first-child{
+  text-align:center!important;
+  color:#0b57d0!important;
+  font-size:11.5px!important;
+  font-weight:800!important;
+}
+
 /* V6.3.30 responsive builder — mobile / tablet / desktop */
 #kslMediaOverlay{
   width:100vw!important;
