@@ -1477,6 +1477,35 @@ const CSS=`
   padding-left:1px!important;
   padding-right:1px!important;
 }
+
+/* V6.3.34 quantity values stay on one line */
+.ksl-media-page .mb-drink-table td.mb-cup-qty,
+.mb-template-branch-grid .mb-drink-table td.mb-cup-qty{
+  font-size:8.2px!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
+  padding-left:1px!important;
+  padding-right:1px!important;
+  text-align:center!important;
+  min-width:0!important;
+}
+.ksl-media-page .mb-r-qty,
+.mb-template-branch-grid .mb-r-qty{
+  font-size:8.2px!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
+  padding-left:1px!important;
+  padding-right:1px!important;
+  text-align:center!important;
+}
 `;
 
 function ensureStyles(){if(document.getElementById('kslMediaCss'))return;const s=document.createElement('style');s.id='kslMediaCss';s.textContent=CSS;document.head.appendChild(s)}
