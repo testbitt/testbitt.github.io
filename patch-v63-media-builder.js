@@ -1654,6 +1654,72 @@ const CSS=`
   max-height:none!important;
   align-self:stretch!important;
 }
+
+/* V6.3.38 theme-safe text visibility */
+.ksl-media-page .mb-card,
+.ksl-media-page .mb-table-body,
+.ksl-media-page .mb-table-side,
+.ksl-media-page .mb-recipe-table,
+.ksl-media-page .mb-recipe-table tbody,
+.ksl-media-page .mb-recipe-table tr,
+.ksl-media-page .mb-recipe-table td,
+.ksl-media-page .mb-drink-table thead,
+.ksl-media-page .mb-drink-table th,
+.ksl-media-page .mb-black-title,
+.ksl-media-page .mb-note-line{
+  text-overflow:clip!important;
+}
+
+/* Never hide recipe text because of a theme */
+.ksl-media-page .mb-table-side,
+.ksl-media-page .mb-recipe-table,
+.ksl-media-page .mb-recipe-table tbody,
+.ksl-media-page .mb-recipe-table tr,
+.ksl-media-page .mb-recipe-table td,
+.ksl-media-page .mb-drink-table th{
+  overflow:visible!important;
+}
+
+/* Allow content to wrap naturally where needed */
+.ksl-media-page .mb-r-name,
+.ksl-media-page .mb-r-unit,
+.ksl-media-page .mb-cup-unit,
+.ksl-media-page .mb-cup-label,
+.ksl-media-page .mb-note-line,
+.ksl-media-page .mb-black-title{
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+}
+
+/* Values and cup labels that must stay single-line */
+.ksl-media-page .mb-cup-qty,
+.ksl-media-page .mb-r-qty,
+.ksl-media-page .mb-cup-type{
+  white-space:nowrap!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
+}
+
+/* Card itself clips only decorative overflow, not inner text */
+.ksl-media-page .mb-card{
+  overflow:hidden!important;
+}
+.ksl-media-page .mb-table-side{
+  min-width:0!important;
+}
+.ksl-media-page .mb-recipe-table{
+  width:100%!important;
+  table-layout:fixed!important;
+}
+
+/* Theme decorations may not cover text */
+.ksl-media-page .mb-black-title,
+.ksl-media-page .mb-table-body,
+.ksl-media-page .mb-note-line{
+  position:relative!important;
+  z-index:2!important;
+}
 `;
 
 function ensureStyles(){if(document.getElementById('kslMediaCss'))return;const s=document.createElement('style');s.id='kslMediaCss';s.textContent=CSS;document.head.appendChild(s)}
