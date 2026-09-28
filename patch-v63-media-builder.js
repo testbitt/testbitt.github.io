@@ -1606,6 +1606,11 @@ const CSS=`
 @media print{
   .mb-review-tools{display:none!important}
 }
+
+/* V6.3.36 hide Review reorder arrows */
+.mb-review-tools{
+  display:none!important;
+}
 `;
 
 function ensureStyles(){if(document.getElementById('kslMediaCss'))return;const s=document.createElement('style');s.id='kslMediaCss';s.textContent=CSS;document.head.appendChild(s)}
@@ -1714,7 +1719,6 @@ function decorateReviewControls(){
 function renderPreview(){
   const wrap=document.getElementById('kslMediaPreview');if(!wrap)return;
   wrap.innerHTML=previewHtml();
-  decorateReviewControls();
   const pages=wrap.querySelectorAll('.ksl-media-page').length;
   const badge=document.getElementById('kslMediaPageCount');if(badge)badge.textContent=pages+' หน้า A4';
 }
