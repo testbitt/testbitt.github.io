@@ -1443,6 +1443,40 @@ const CSS=`
 
 @media(max-width:900px){.mb-shell{grid-template-columns:1fr;height:auto}.mb-controls{border-right:0;border-bottom:1px solid #d4e7dc}.mb-preview-wrap{align-items:flex-start}.ksl-media-page{transform-origin:top left;transform:scale(.72);margin-bottom:-300px}}
 @media print{body>*{display:none!important}#kslMediaPrintRoot{display:block!important}.ksl-media-page{box-shadow:none;page-break-after:always;margin:0}.ksl-media-page:last-child{page-break-after:auto}}
+
+/* V6.3.33 FINAL precedence fix — ingredient header/details + cup label nowrap */
+.ksl-media-page .mb-drink-table thead th.mb-cup-label,
+.mb-template-branch-grid .mb-drink-table thead th.mb-cup-label{
+  text-align:center!important;
+  color:#0b57d0!important;
+  font-size:10px!important;
+  font-weight:900!important;
+}
+
+/* Ingredient detail rows: restore original left alignment / inherited color and typography */
+.ksl-media-page .mb-drink-table tbody td.mb-r-name,
+.mb-template-branch-grid .mb-drink-table tbody td.mb-r-name{
+  text-align:left!important;
+  color:inherit!important;
+  font-size:inherit!important;
+  font-weight:inherit!important;
+  line-height:inherit!important;
+}
+
+/* Cup type headers such as M(IB), PP(B) must stay on one line */
+.ksl-media-page .mb-drink-table thead th.mb-cup-type,
+.mb-template-branch-grid .mb-drink-table thead th.mb-cup-type{
+  font-size:7.2px!important;
+  line-height:1!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
+  padding-left:1px!important;
+  padding-right:1px!important;
+}
 `;
 
 function ensureStyles(){if(document.getElementById('kslMediaCss'))return;const s=document.createElement('style');s.id='kslMediaCss';s.textContent=CSS;document.head.appendChild(s)}
