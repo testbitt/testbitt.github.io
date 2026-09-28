@@ -819,6 +819,41 @@ const CSS=`
 
 
 
+/* V6.3.32 ingredient header only + single-line cup type */
+.mb-template-branch-grid .mb-drink-table thead th.mb-cup-label,
+.ksl-media-page .mb-drink-table thead th.mb-cup-label{
+  text-align:center!important;
+  color:#0b57d0!important;
+  font-size:10px!important;
+  font-weight:900!important;
+}
+
+/* restore ingredient detail cells */
+.mb-template-branch-grid .mb-drink-table tbody td:first-child,
+.ksl-media-page .mb-drink-table tbody td:first-child,
+.mb-template-branch-grid .mb-r-name,
+.ksl-media-page .mb-r-name{
+  text-align:left!important;
+  color:inherit!important;
+  font-size:10px!important;
+  font-weight:700!important;
+  line-height:1.15!important;
+}
+
+/* cup labels such as M(IB) stay on one line */
+.mb-template-branch-grid .mb-cup-type,
+.ksl-media-page .mb-cup-type{
+  font-size:7.5px!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+  min-width:28px!important;
+  max-width:46px!important;
+}
+
 /* V6.3.31 ingredient / unit / cup-type tuning */
 .mb-template-branch-grid .mb-r-name,
 .ksl-media-page .mb-r-name{
