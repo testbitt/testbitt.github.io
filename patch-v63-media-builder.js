@@ -2556,7 +2556,6 @@ async function exportPageImage(page,format,index){
   host.style.cssText='position:fixed;left:-20000px;top:0;width:'+w+'px;height:'+h+'px;background:#fff;z-index:-1;overflow:hidden;';
   const clonePage=page.cloneNode(true);
   clonePage.querySelectorAll('.mb-review-tools').forEach(x=>x.remove());
-  fitVisibleTableText(clonePage);
   clonePage.querySelectorAll('.mb-review-draggable').forEach(x=>{x.removeAttribute('draggable');x.classList.remove('mb-review-draggable','mb-dragging','mb-drop-target')});
   clonePage.style.transform='none';
   clonePage.style.margin='0';
@@ -2572,6 +2571,8 @@ async function exportPageImage(page,format,index){
 
   try{
     await waitForMediaReady(clonePage);
+    fitVisibleTableText(clonePage);
+    await new Promise(r=>requestAnimationFrame(r));
     const canvas=await h2c(clonePage,{
       backgroundColor:'#ffffff',
       scale:2,
