@@ -25,7 +25,7 @@ const unique=a=>[...new Set((a||[]).map(text).filter(Boolean))];
 
 const defaults=()=>({
   id:uid(),name:'สื่อการสอน',type:'drink',template:'branch-grid',orientation:'landscape',
-  perPage:4,theme:'1',title:'',subtitle:'',selected:[],images:{},overrides:{},createdAt:now(),updatedAt:now()
+  perPage:4,theme:'1',bgRemovalMode:'detail',title:'',subtitle:'',selected:[],images:{},overrides:{},createdAt:now(),updatedAt:now()
 });
 let draft=defaults(), search='', targetImage='';
 let saveTimer=null;
@@ -1860,7 +1860,7 @@ function reorderSelectedByDrag(from,to){
 function syncUI(){
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v};
   set('kslMediaType',draft.type);set('kslMediaTemplate',draft.template);set('kslMediaOrientation',draft.orientation);
-  set('kslMediaPerPage',String(draft.perPage));set('kslMediaTheme',String(draft.theme||'1'));set('kslMediaTitle',draft.title);set('kslMediaSubtitle',draft.subtitle);
+  set('kslMediaPerPage',String(draft.perPage));set('kslMediaTheme',String(draft.theme||'1'));set('kslMediaBgRemovalMode',String(draft.bgRemovalMode||'detail'));set('kslMediaTitle',draft.title);set('kslMediaSubtitle',draft.subtitle);
   renderControls();renderPreview();persistDraft();
 }
 function onTypeChange(v){draft.type=v;draft.selected=[];draft.images={};targetImage='';draft.title='';search='';const q=document.getElementById('kslMediaSearch');if(q)q.value='';syncUI()}
@@ -1879,74 +1879,190 @@ async function getBackgroundRemover(){
   }
   return bgRemoveModulePromise;
 }
-async function transparentBlobToDataURL(blob){
+async function imageSourceFromFile(file){
+  const url=URL.createObjectURL(file);
+  try{
+    return await new Promise((ok,fail)=>{
+      const im=new Image();
+      im.onload=()=>ok(im);
+      im.onerror=()=>fail(new Error('อ่านรูปไม่สำเร็จ'));
+      im.src=url;
+    });
+  }finally{
+    // The decoded image stays usable after load; release the temporary object URL.
+    setTimeout(()=>URL.revokeObjectURL(url),0);
+  }
+}
+function sampleCornerBackground(img){
+  try{
+    const s=document.createElement('canvas');s.width=32;s.height=32;
+    const x=s.getContext('2d',{alpha:false});x.drawImage(img,0,0,32,32);
+    const d=x.getImageData(0,0,32,32).data;
+    const zones=[[0,0],[27,0],[0,27],[27,27]];
+    let r=0,g=0,b=0,n=0;
+    for(const [sx,sy] of zones){
+      for(let yy=0;yy<5;yy++)for(let xx=0;xx<5;xx++){
+        const i=((sy+yy)*32+(sx+xx))*4;
+        r+=d[i];g+=d[i+1];b+=d[i+2];n++;
+      }
+    }
+    return [Math.round(r/n),Math.round(g/n),Math.round(b/n)];
+  }catch(_){return [248,248,248]}
+}
+async function prepareImageForRemoval(file,mode='detail'){
+  const img=await imageSourceFromFile(file);
+  const detailed=mode==='detail';
+  const maxSide=detailed?1800:1400;
+  const scale=Math.min(1,maxSide/Math.max(img.naturalWidth||img.width,img.naturalHeight||img.height));
+  const sw=Math.max(1,Math.round((img.naturalWidth||img.width)*scale));
+  const sh=Math.max(1,Math.round((img.naturalHeight||img.height)*scale));
+  const pad=Math.max(18,Math.round(Math.max(sw,sh)*(detailed?0.10:0.04)));
+  const canvas=document.createElement('canvas');canvas.width=sw+pad*2;canvas.height=sh+pad*2;
+  const ctx=canvas.getContext('2d',{alpha:false});
+  const [r,g,b]=sampleCornerBackground(img);
+  ctx.fillStyle='rgb('+r+','+g+','+b+')';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  ctx.drawImage(img,pad,pad,sw,sh);
+  return await new Promise((resolve,reject)=>canvas.toBlob(
+    b=>b?resolve(b):reject(new Error('เตรียมรูปสำหรับลบพื้นหลังไม่สำเร็จ')),
+    'image/png',1
+  ));
+}
+function refineTransparentCanvas(canvas,mode='detail'){
+  const ctx=canvas.getContext('2d',{alpha:true}),w=canvas.width,h=canvas.height;
+  if(!w||!h)return canvas;
+  const im=ctx.getImageData(0,0,w,h),d=im.data;
+  const srcA=new Uint8ClampedArray(w*h);
+  for(let i=0,p=0;i<d.length;i+=4,p++)srcA[p]=d[i+3];
+
+  if(mode==='detail'){
+    // Two conservative morphology passes. They close tiny holes and keep thin,
+    // connected garnish/topping details without growing a visible halo.
+    let current=srcA;
+    for(let pass=0;pass<2;pass++){
+      const next=new Uint8ClampedArray(current);
+      for(let y=1;y<h-1;y++){
+        for(let x=1;x<w-1;x++){
+          const p=y*w+x,a=current[p];
+          let maxA=0,sum=0,strong=0,visible=0;
+          for(let yy=-1;yy<=1;yy++)for(let xx=-1;xx<=1;xx++){
+            const v=current[(y+yy)*w+(x+xx)];
+            if(v>maxA)maxA=v;sum+=v;
+            if(v>215)strong++;
+            if(v>28)visible++;
+          }
+          const avg=sum/9;
+          if(a===0&&strong>=4&&maxA>235)next[p]=14;
+          else if(a<36&&visible>=4&&maxA>150)next[p]=Math.max(a,Math.min(72,Math.round(maxA*0.26)));
+          else if(a>=36&&a<245)next[p]=Math.max(a,Math.min(248,Math.round(a*0.72+avg*0.38)));
+        }
+      }
+      current=next;
+    }
+    for(let p=0,i=0;p<current.length;p++,i+=4)d[i+3]=current[p]<5?0:(current[p]>249?255:current[p]);
+  }else{
+    for(let p=0,i=0;p<srcA.length;p++,i+=4)d[i+3]=srcA[p]<7?0:(srcA[p]>248?255:srcA[p]);
+  }
+
+  // Edge colour decontamination: semi-transparent pixels borrow colour from
+  // nearby opaque foreground, reducing white/bright fringes after compositing.
+  const alpha=new Uint8ClampedArray(w*h);
+  for(let i=0,p=0;i<d.length;i+=4,p++)alpha[p]=d[i+3];
+  for(let y=2;y<h-2;y++){
+    for(let x=2;x<w-2;x++){
+      const p=y*w+x,a=alpha[p];
+      if(a<8||a>246)continue;
+      let rr=0,gg=0,bb=0,n=0;
+      for(let yy=-2;yy<=2;yy++)for(let xx=-2;xx<=2;xx++){
+        const q=(y+yy)*w+(x+xx);
+        if(alpha[q]>235){
+          const qi=q*4;rr+=d[qi];gg+=d[qi+1];bb+=d[qi+2];n++;
+        }
+      }
+      if(n){
+        const i=p*4,f=(1-a/255)*(mode==='detail'?0.58:0.38);
+        d[i]=Math.round(d[i]*(1-f)+(rr/n)*f);
+        d[i+1]=Math.round(d[i+1]*(1-f)+(gg/n)*f);
+        d[i+2]=Math.round(d[i+2]*(1-f)+(bb/n)*f);
+      }
+    }
+  }
+  ctx.putImageData(im,0,0);
+  return canvas;
+}
+function cropTransparentCanvas(canvas,mode='detail'){
+  const ctx=canvas.getContext('2d',{alpha:true}),w=canvas.width,h=canvas.height;
+  const d=ctx.getImageData(0,0,w,h).data;
+  let minX=w,minY=h,maxX=-1,maxY=-1;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    if(d[(y*w+x)*4+3]>7){
+      if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;
+    }
+  }
+  if(maxX<minX||maxY<minY)return canvas;
+  const safe=Math.max(8,Math.round(Math.max(w,h)*(mode==='detail'?0.035:0.02)));
+  minX=Math.max(0,minX-safe);minY=Math.max(0,minY-safe);
+  maxX=Math.min(w-1,maxX+safe);maxY=Math.min(h-1,maxY+safe);
+  const cw=maxX-minX+1,ch=maxY-minY+1;
+  const out=document.createElement('canvas');out.width=cw;out.height=ch;
+  const o=out.getContext('2d',{alpha:true});o.clearRect(0,0,cw,ch);o.drawImage(canvas,minX,minY,cw,ch,0,0,cw,ch);
+  return out;
+}
+async function transparentBlobToDataURL(blob,mode='detail'){
   const url=URL.createObjectURL(blob);
   try{
     const img=await new Promise((ok,fail)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=fail;im.src=url});
-    const scale=Math.min(1,MAX_IMG/Math.max(img.width,img.height));
-    const w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
-    const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
-    const ctx=canvas.getContext('2d',{alpha:true});
-    ctx.clearRect(0,0,w,h);
-    ctx.drawImage(img,0,0,w,h);
+    let canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;
+    let ctx=canvas.getContext('2d',{alpha:true});ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0);
+    canvas=refineTransparentCanvas(canvas,mode);
+    canvas=cropTransparentCanvas(canvas,mode);
 
-    // Edge refinement: keep thin/adjacent foreground details beside the cup
-    // (toppings, straw, spoon, garnish) while feathering jagged transparency.
-    try{
-      const im=ctx.getImageData(0,0,w,h),d=im.data,alpha=new Uint8ClampedArray(w*h);
-      for(let i=0,p=0;i<d.length;i+=4,p++)alpha[p]=d[i+3];
-      const src=new Uint8ClampedArray(alpha);
-      for(let y=1;y<h-1;y++){
-        for(let x=1;x<w-1;x++){
-          const p=y*w+x,a=src[p];
-          let maxA=0,sum=0,n=0;
-          for(let yy=-1;yy<=1;yy++)for(let xx=-1;xx<=1;xx++){
-            const v=src[(y+yy)*w+(x+xx)];
-            if(v>maxA)maxA=v; sum+=v; n++;
-          }
-          // Preserve fine connected details without creating a thick halo.
-          if(a<18 && maxA>210)alpha[p]=Math.max(a,34);
-          else if(a>=18 && a<238)alpha[p]=Math.max(a,Math.min(245,Math.round((sum/n)*0.72+a*0.45)));
-        }
-      }
-      for(let i=0,p=0;i<d.length;i+=4,p++)d[i+3]=alpha[p];
-      ctx.putImageData(im,0,0);
-    }catch(e){console.warn('[KSL Media] alpha refine skipped',e)}
-
+    const scale=Math.min(1,MAX_IMG/Math.max(canvas.width,canvas.height));
+    if(scale<1){
+      const out=document.createElement('canvas');
+      out.width=Math.max(1,Math.round(canvas.width*scale));out.height=Math.max(1,Math.round(canvas.height*scale));
+      const o=out.getContext('2d',{alpha:true});o.clearRect(0,0,out.width,out.height);
+      o.imageSmoothingEnabled=true;o.imageSmoothingQuality='high';o.drawImage(canvas,0,0,out.width,out.height);
+      canvas=out;
+    }
     return canvas.toDataURL('image/png');
   }finally{URL.revokeObjectURL(url)}
 }
-async function compressImage(file){
-  setSaveStatus('กำลังโหลดระบบลบพื้นหลังคุณภาพสูง...');
+async function compressImage(file,mode=draft.bgRemovalMode||'detail'){
+  const detailed=mode==='detail';
+  setSaveStatus(detailed?'กำลังเตรียมรูปและเพิ่มพื้นที่ปลอดภัยรอบวัตถุ...':'กำลังโหลดระบบลบพื้นหลัง...');
+  const prepared=await prepareImageForRemoval(file,mode);
   const bg=await getBackgroundRemover();
   if(typeof bg.removeBackground!=='function')throw new Error('ไม่พบระบบลบพื้นหลัง');
   const progress=(key,current,total)=>{
     if(!total)return;
     const pct=Math.max(0,Math.min(100,Math.round((current/total)*100)));
-    if(key&&/model|wasm|onnx|asset|compute/i.test(String(key)))setSaveStatus('AI กำลังแยกแก้วและวัตถุข้างเคียง '+pct+'%');
+    if(key&&/model|wasm|onnx|asset|compute/i.test(String(key))){
+      setSaveStatus((detailed?'AI กำลังรักษาแก้วและวัตถุประกอบ ':'AI กำลังลบพื้นหลัง ')+pct+'%');
+    }
   };
-  setSaveStatus('กำลังตรวจจับแก้วและวัตถุประกอบ...');
+  setSaveStatus(detailed?'กำลังตรวจจับ Product Composition ทั้งแก้ว ผลไม้ Topping และ Decoration...':'กำลังตรวจจับสินค้า...');
   let result;
   try{
-    // Highest-detail ISNet model first: better at keeping small adjacent objects.
-    result=await bg.removeBackground(file,{
-      model:'large',
+    result=await bg.removeBackground(prepared,{
+      model:detailed?'large':'medium',
       proxyToWorker:true,
       output:{format:'image/png',quality:1},
       progress
     });
   }catch(err){
-    console.warn('[KSL Media] large background model fallback',err);
+    console.warn('[KSL Media] background model fallback',err);
     setSaveStatus('กำลังใช้โมเดลสำรองคุณภาพสูง...');
-    result=await bg.removeBackground(file,{
+    result=await bg.removeBackground(prepared,{
       model:'medium',
       proxyToWorker:true,
       output:{format:'image/png',quality:1},
       progress
     });
   }
-  setSaveStatus('กำลังเก็บรายละเอียดขอบและวัตถุข้างแก้ว...');
-  return transparentBlobToDataURL(result);
+  setSaveStatus(detailed?'กำลังเก็บวัตถุเล็ก ปรับขอบแก้ว และล้างขอบสีขาว...':'กำลังปรับขอบรูป...');
+  return transparentBlobToDataURL(result,mode);
 }
 
 function builderHtml(){
@@ -1961,7 +2077,7 @@ function builderHtml(){
  '<div class="mb-block"><h3>3. หัวเรื่อง</h3><div class="mb-field"><label>หัวเรื่องหลัก</label><input class="mb-input" id="kslMediaTitle" placeholder="ใช้ชื่อประเภทสื่ออัตโนมัติ"></div><div class="mb-field"><label>ข้อความรอง</label><input class="mb-input" id="kslMediaSubtitle" placeholder="เช่น สำหรับพนักงานใหม่ / Updated..."></div></div>'+
  '<div class="mb-block"><h3>4. งานที่บันทึกไว้</h3><div class="mb-field"><select class="mb-select" id="kslMediaSavedProjects"></select></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaLoadProject" type="button">เปิดแก้ไข</button><button class="mb-link" id="kslMediaDeleteProject" type="button">ลบงาน</button></div><div class="mb-note">เปิดงานเดิมแล้วสามารถเพิ่ม/ลดเมนู แก้รายละเอียด เปลี่ยนรูป แล้วกด “บันทึกทับงานเดิม” • หากต้องการแยกเป็นอีกงานให้กด “บันทึกงานใหม่”</div></div>'+ 
  '<div class="mb-block"><h3>5. แก้ไขข้อมูลรายเมนู</h3><div class="mb-field"><label>เมนูที่จะแก้ไข</label><select class="mb-select" id="kslMediaEditTarget"></select></div><div id="kslMediaEditor"></div><div class="mb-note">แก้ไขแล้ว Auto Save เข้า Online Database • ไม่เปลี่ยนฐานสูตรต้นฉบับที่ Upload</div></div>'+ 
- '<div class="mb-block"><h3>6. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">ลบพื้นหลังอัตโนมัติทุกครั้ง • บันทึกเป็น PNG โปร่งใส • Auto Save และ Upload รูปใหม่เมนูเดิมจะทับรูปเดิม</div></div>'+
+ '<div class="mb-block"><h3>6. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-field"><label>โหมดลบพื้นหลัง</label><select class="mb-select" id="kslMediaBgRemovalMode"><option value="detail">ละเอียด / เก็บวัตถุข้างแก้ว</option><option value="standard">มาตรฐาน / เร็วขึ้น</option></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">โหมดละเอียดจะเพิ่ม Padding ก่อน AI, รักษาผลไม้/Topping/Packaging รอบแก้ว, ปรับ Alpha และลดขอบขาว • บันทึกเป็น PNG โปร่งใส • Auto Save และ Upload รูปใหม่เมนูเดิมจะทับรูปเดิม</div></div>'+
  '</aside><main class="mb-preview-wrap" id="kslMediaPreview"></main></div>'+
  '<section id="kslMediaHistoryPage"><div class="mb-history-head"><div><div class="mb-kamu">KAMU KAMU • MEDIA</div><h2>ประวัติการบันทึกสื่อ</h2><p>เรียกงานเดิมกลับมาแก้ไข เพิ่ม/ลดรายการ เปลี่ยนรูป Theme และบันทึกทับได้</p></div><button class="mb-btn" id="kslMediaHistoryClose">← กลับหน้าสร้างสื่อ</button></div><div id="kslMediaHistoryList"></div></section></div>';
 }
@@ -2064,12 +2180,13 @@ function installBuilder(){
     }
   });
   bind('kslMediaImageTarget','change',e=>{targetImage=e.target.value;renderImageThumb()});
+  bind('kslMediaBgRemovalMode','change',e=>{draft.bgRemovalMode=e.target.value==='standard'?'standard':'detail';persistDraft(true);setSaveStatus(draft.bgRemovalMode==='detail'?'โหมดละเอียด: เก็บวัตถุข้างแก้ว ✓':'โหมดมาตรฐาน ✓')});
   bind('kslMediaChooseImage','click',()=>document.getElementById('kslMediaImageInput')?.click());
   bind('kslMediaImageInput','change',async e=>{
     const f=e.target.files?.[0];if(!f||!targetImage)return;
     const id=targetImage;
     try{
-      const data=await compressImage(f);
+      const data=await compressImage(f,draft.bgRemovalMode||'detail');
       setSaveStatus('กำลังบันทึกรูปที่ลบพื้นหลังแล้ว...');
       await persistImageAuto(id,data); // same menu id = overwrite previous transparent image automatically
       renderImageThumb();
@@ -2104,6 +2221,7 @@ function projectSnapshot(){
     orientation:draft.orientation,
     perPage:draft.perPage,
     theme:draft.theme,
+    bgRemovalMode:draft.bgRemovalMode||'detail',
     title:draft.title,
     subtitle:draft.subtitle,
     selected:[...(draft.selected||[])],
