@@ -1721,6 +1721,80 @@ const CSS=`
   z-index:2!important;
 }
 
+
+/* V6.3.40 table text visibility — portrait + landscape */
+.ksl-media-page .mb-recipe-table tr,
+.ksl-media-page .mb-recipe-table td,
+.ksl-media-page .mb-drink-table th{
+  height:auto!important;
+  min-height:0!important;
+}
+.ksl-media-page .mb-recipe-table td{
+  vertical-align:middle!important;
+  text-overflow:clip!important;
+}
+.ksl-media-page .mb-r-name,
+.ksl-media-page .mb-r-unit,
+.ksl-media-page .mb-cup-unit,
+.ksl-media-page .mb-note-line{
+  white-space:normal!important;
+  overflow:visible!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  line-height:1.2!important;
+}
+.ksl-media-page .mb-cup-label{
+  white-space:normal!important;
+  overflow:visible!important;
+  overflow-wrap:anywhere!important;
+  line-height:1.1!important;
+}
+.ksl-media-page .mb-cup-type,
+.ksl-media-page .mb-cup-qty,
+.ksl-media-page .mb-r-qty{
+  white-space:nowrap!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+.ksl-media-page .mb-table-body,
+.ksl-media-page .mb-table-side,
+.ksl-media-page .mb-recipe-table,
+.ksl-media-page .mb-recipe-table tbody,
+.ksl-media-page .mb-recipe-table tr{
+  min-height:0!important;
+  max-height:none!important;
+}
+
+/* Do not use clipping as a way to fit table content. Auto-fit classes below
+   reduce typography first so every value remains readable inside A4. */
+.ksl-media-page .mb-card{
+  text-overflow:clip!important;
+}
+.ksl-media-page .mb-card.mb-table-fit-tight .mb-recipe-table td{font-size:6.4px!important;padding:1px 1.5px!important;line-height:1.08!important}
+.ksl-media-page .mb-card.mb-table-fit-tight .mb-drink-table thead th{font-size:5.8px!important;padding:1px!important;line-height:1!important}
+.ksl-media-page .mb-card.mb-table-fit-tight .mb-cup-type{font-size:5.8px!important}
+.ksl-media-page .mb-card.mb-table-fit-tight .mb-cup-qty,
+.ksl-media-page .mb-card.mb-table-fit-tight .mb-r-qty{font-size:6.4px!important}
+.ksl-media-page .mb-card.mb-table-fit-tight .mb-note-line{font-size:5.8px!important;padding:1px 2px!important;line-height:1.08!important}
+.ksl-media-page .mb-card.mb-table-fit-tight .mb-black-title{font-size:8px!important;min-height:18px!important;padding:2px 3px!important}
+
+.ksl-media-page .mb-card.mb-table-fit-x-tight .mb-recipe-table td{font-size:5.3px!important;padding:.5px 1px!important;line-height:1.03!important}
+.ksl-media-page .mb-card.mb-table-fit-x-tight .mb-drink-table thead th{font-size:4.9px!important;padding:.5px!important;line-height:1!important}
+.ksl-media-page .mb-card.mb-table-fit-x-tight .mb-cup-type{font-size:4.9px!important}
+.ksl-media-page .mb-card.mb-table-fit-x-tight .mb-cup-qty,
+.ksl-media-page .mb-card.mb-table-fit-x-tight .mb-r-qty{font-size:5.3px!important}
+.ksl-media-page .mb-card.mb-table-fit-x-tight .mb-note-line{font-size:4.9px!important;padding:.5px 1px!important;line-height:1.02!important}
+.ksl-media-page .mb-card.mb-table-fit-x-tight .mb-black-title{font-size:7px!important;min-height:16px!important;padding:1px 2px!important}
+
+/* Last safety level for very dense 16–20 item A4 layouts. */
+.ksl-media-page .mb-card.mb-table-fit-max .mb-recipe-table td{font-size:4.6px!important;padding:0 1px!important;line-height:1!important}
+.ksl-media-page .mb-card.mb-table-fit-max .mb-drink-table thead th{font-size:4.3px!important;padding:0 1px!important;line-height:1!important}
+.ksl-media-page .mb-card.mb-table-fit-max .mb-cup-type{font-size:4.3px!important}
+.ksl-media-page .mb-card.mb-table-fit-max .mb-cup-qty,
+.ksl-media-page .mb-card.mb-table-fit-max .mb-r-qty{font-size:4.6px!important}
+.ksl-media-page .mb-card.mb-table-fit-max .mb-note-line{font-size:4.3px!important;padding:0 1px!important;line-height:1!important}
+.ksl-media-page .mb-card.mb-table-fit-max .mb-black-title{font-size:6.2px!important;min-height:14px!important;padding:1px!important}
+
 /* V6.3.39 free drag-and-drop reorder in Review */
 .mb-review-draggable{
   cursor:grab!important;
@@ -1836,10 +1910,36 @@ function decorateReviewControls(){
     card.classList.add('mb-review-draggable');
   });
 }
+function fitVisibleTableText(root=document.getElementById('kslMediaPreview')){
+  if(!root)return;
+  const cards=[...root.querySelectorAll('.ksl-media-page .mb-card')];
+  const levels=['mb-table-fit-tight','mb-table-fit-x-tight','mb-table-fit-max'];
+  const overflowing=card=>{
+    const page=card.closest('.ksl-media-page');
+    const cardOverflow=card.scrollHeight>card.clientHeight+1 || card.scrollWidth>card.clientWidth+1;
+    const table=card.querySelector('.mb-table-side');
+    const tableOverflow=table&&(table.scrollHeight>table.clientHeight+1 || table.scrollWidth>table.clientWidth+1);
+    const pageBottom=page?card.getBoundingClientRect().bottom-page.getBoundingClientRect().bottom:0;
+    return cardOverflow||tableOverflow||pageBottom>1;
+  };
+  cards.forEach(card=>{
+    card.classList.remove(...levels);
+    // Only compress when content actually exceeds its allocated card/page area.
+    for(const level of levels){
+      if(!overflowing(card))break;
+      card.classList.add(level);
+      // Force layout before checking the next level.
+      void card.offsetHeight;
+    }
+  });
+}
+
 function renderPreview(){
   const wrap=document.getElementById('kslMediaPreview');if(!wrap)return;
   wrap.innerHTML=previewHtml();
   decorateReviewControls();
+  fitVisibleTableText(wrap);
+  requestAnimationFrame(()=>fitVisibleTableText(wrap));
   const pages=wrap.querySelectorAll('.ksl-media-page').length;
   const badge=document.getElementById('kslMediaPageCount');if(badge)badge.textContent=pages+' หน้า A4';
 }
@@ -2456,6 +2556,7 @@ async function exportPageImage(page,format,index){
   host.style.cssText='position:fixed;left:-20000px;top:0;width:'+w+'px;height:'+h+'px;background:#fff;z-index:-1;overflow:hidden;';
   const clonePage=page.cloneNode(true);
   clonePage.querySelectorAll('.mb-review-tools').forEach(x=>x.remove());
+  fitVisibleTableText(clonePage);
   clonePage.querySelectorAll('.mb-review-draggable').forEach(x=>{x.removeAttribute('draggable');x.classList.remove('mb-review-draggable','mb-dragging','mb-drop-target')});
   clonePage.style.transform='none';
   clonePage.style.margin='0';
