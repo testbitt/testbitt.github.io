@@ -1832,6 +1832,22 @@ const CSS=`
   padding:4px 6px!important;
 }
 
+
+/* V6.3.43 auto-grow table text when card has spare space */
+.ksl-media-page .mb-card.mb-table-grow-1 .mb-recipe-table td{font-size:calc(1em + 1px)!important;line-height:1.22!important}
+.ksl-media-page .mb-card.mb-table-grow-1 .mb-drink-table thead th{font-size:calc(1em + .8px)!important}
+.ksl-media-page .mb-card.mb-table-grow-1 .mb-cup-type,
+.ksl-media-page .mb-card.mb-table-grow-1 .mb-cup-qty,
+.ksl-media-page .mb-card.mb-table-grow-1 .mb-r-qty{font-size:calc(1em + .8px)!important}
+
+.ksl-media-page .mb-card.mb-table-grow-2 .mb-recipe-table td{font-size:calc(1em + 2px)!important;line-height:1.24!important}
+.ksl-media-page .mb-card.mb-table-grow-2 .mb-drink-table thead th{font-size:calc(1em + 1.5px)!important}
+.ksl-media-page .mb-card.mb-table-grow-2 .mb-cup-type,
+.ksl-media-page .mb-card.mb-table-grow-2 .mb-cup-qty,
+.ksl-media-page .mb-card.mb-table-grow-2 .mb-r-qty{font-size:calc(1em + 1.5px)!important}
+
+/* Title bar is intentionally excluded from auto-grow. */
+
 /* V6.3.39 free drag-and-drop reorder in Review */
 .mb-review-draggable{
   cursor:grab!important;
@@ -1950,7 +1966,8 @@ function decorateReviewControls(){
 function fitVisibleTableText(root=document.getElementById('kslMediaPreview')){
   if(!root)return;
   const cards=[...root.querySelectorAll('.ksl-media-page .mb-card')];
-  const levels=['mb-table-fit-tight','mb-table-fit-x-tight','mb-table-fit-max'];
+  const shrinkLevels=['mb-table-fit-tight','mb-table-fit-x-tight','mb-table-fit-max'];
+  const growLevels=['mb-table-grow-1','mb-table-grow-2'];
   const overflowing=card=>{
     const page=card.closest('.ksl-media-page');
     const cardOverflow=card.scrollHeight>card.clientHeight+1 || card.scrollWidth>card.clientWidth+1;
@@ -1959,14 +1976,36 @@ function fitVisibleTableText(root=document.getElementById('kslMediaPreview')){
     const pageBottom=page?card.getBoundingClientRect().bottom-page.getBoundingClientRect().bottom:0;
     return cardOverflow||tableOverflow||pageBottom>1;
   };
+  const spareVerticalSpace=card=>{
+    const table=card.querySelector('.mb-table-side');
+    if(!table)return 0;
+    const cardBox=card.getBoundingClientRect();
+    const tableBox=table.getBoundingClientRect();
+    const used=Math.max(table.scrollHeight,tableBox.height);
+    return Math.max(0,cardBox.height-used);
+  };
   cards.forEach(card=>{
-    card.classList.remove(...levels);
-    // Only compress when content actually exceeds its allocated card/page area.
-    for(const level of levels){
+    card.classList.remove(...shrinkLevels,...growLevels);
+
+    // First, keep all text inside the card/page.
+    for(const level of shrinkLevels){
       if(!overflowing(card))break;
       card.classList.add(level);
-      // Force layout before checking the next level.
       void card.offsetHeight;
+    }
+
+    // If no compression was needed and there is clearly spare room,
+    // grow table text one level at a time. Roll back immediately if it overflows.
+    if(!shrinkLevels.some(level=>card.classList.contains(level))){
+      for(const level of growLevels){
+        if(spareVerticalSpace(card)<18)break;
+        card.classList.add(level);
+        void card.offsetHeight;
+        if(overflowing(card)){
+          card.classList.remove(level);
+          break;
+        }
+      }
     }
   });
 }
