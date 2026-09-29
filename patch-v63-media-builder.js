@@ -1869,7 +1869,10 @@ const BG_REMOVE_MODULE='https://cdn.jsdelivr.net/npm/@imgly/background-removal@1
 let bgRemoveModulePromise=null;
 async function getBackgroundRemover(){
   if(!bgRemoveModulePromise){
-    bgRemoveModulePromise=import(BG_REMOVE_MODULE).then(mod=>mod.default||mod.removeBackground).catch(err=>{
+    bgRemoveModulePromise=import(BG_REMOVE_MODULE).then(mod=>({
+      removeBackground:mod.removeBackground||mod.default,
+      segmentForeground:mod.segmentForeground||mod.alphamask||null
+    })).catch(err=>{
       bgRemoveModulePromise=null;
       throw err;
     });
@@ -1886,21 +1889,63 @@ async function transparentBlobToDataURL(blob){
     const ctx=canvas.getContext('2d',{alpha:true});
     ctx.clearRect(0,0,w,h);
     ctx.drawImage(img,0,0,w,h);
+
+    // Edge refinement: keep thin/adjacent foreground details beside the cup
+    // (toppings, straw, spoon, garnish) while feathering jagged transparency.
+    try{
+      const im=ctx.getImageData(0,0,w,h),d=im.data,alpha=new Uint8ClampedArray(w*h);
+      for(let i=0,p=0;i<d.length;i+=4,p++)alpha[p]=d[i+3];
+      const src=new Uint8ClampedArray(alpha);
+      for(let y=1;y<h-1;y++){
+        for(let x=1;x<w-1;x++){
+          const p=y*w+x,a=src[p];
+          let maxA=0,sum=0,n=0;
+          for(let yy=-1;yy<=1;yy++)for(let xx=-1;xx<=1;xx++){
+            const v=src[(y+yy)*w+(x+xx)];
+            if(v>maxA)maxA=v; sum+=v; n++;
+          }
+          // Preserve fine connected details without creating a thick halo.
+          if(a<18 && maxA>210)alpha[p]=Math.max(a,34);
+          else if(a>=18 && a<238)alpha[p]=Math.max(a,Math.min(245,Math.round((sum/n)*0.72+a*0.45)));
+        }
+      }
+      for(let i=0,p=0;i<d.length;i+=4,p++)d[i+3]=alpha[p];
+      ctx.putImageData(im,0,0);
+    }catch(e){console.warn('[KSL Media] alpha refine skipped',e)}
+
     return canvas.toDataURL('image/png');
   }finally{URL.revokeObjectURL(url)}
 }
 async function compressImage(file){
-  setSaveStatus('กำลังโหลดระบบลบพื้นหลัง...');
-  const removeBackground=await getBackgroundRemover();
-  setSaveStatus('กำลังลบพื้นหลังอัตโนมัติ...');
-  const result=await removeBackground(file,{
-    progress:(key,current,total)=>{
-      if(!total)return;
-      const pct=Math.max(0,Math.min(100,Math.round((current/total)*100)));
-      if(key&&/model|wasm|onnx|asset/i.test(String(key)))setSaveStatus('กำลังเตรียม AI ลบพื้นหลัง '+pct+'%');
-    }
-  });
-  setSaveStatus('กำลังจัดขนาดรูปโปร่งใส...');
+  setSaveStatus('กำลังโหลดระบบลบพื้นหลังคุณภาพสูง...');
+  const bg=await getBackgroundRemover();
+  if(typeof bg.removeBackground!=='function')throw new Error('ไม่พบระบบลบพื้นหลัง');
+  const progress=(key,current,total)=>{
+    if(!total)return;
+    const pct=Math.max(0,Math.min(100,Math.round((current/total)*100)));
+    if(key&&/model|wasm|onnx|asset|compute/i.test(String(key)))setSaveStatus('AI กำลังแยกแก้วและวัตถุข้างเคียง '+pct+'%');
+  };
+  setSaveStatus('กำลังตรวจจับแก้วและวัตถุประกอบ...');
+  let result;
+  try{
+    // Highest-detail ISNet model first: better at keeping small adjacent objects.
+    result=await bg.removeBackground(file,{
+      model:'large',
+      proxyToWorker:true,
+      output:{format:'image/png',quality:1},
+      progress
+    });
+  }catch(err){
+    console.warn('[KSL Media] large background model fallback',err);
+    setSaveStatus('กำลังใช้โมเดลสำรองคุณภาพสูง...');
+    result=await bg.removeBackground(file,{
+      model:'medium',
+      proxyToWorker:true,
+      output:{format:'image/png',quality:1},
+      progress
+    });
+  }
+  setSaveStatus('กำลังเก็บรายละเอียดขอบและวัตถุข้างแก้ว...');
   return transparentBlobToDataURL(result);
 }
 
