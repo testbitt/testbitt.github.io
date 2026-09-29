@@ -1814,6 +1814,24 @@ const CSS=`
 .ksl-media-page .mb-card.mb-table-fit-max .mb-recipe-table td{font-size:6.2px!important}
 .ksl-media-page .mb-card.mb-table-fit-max .mb-drink-table thead th{font-size:5.8px!important}
 
+
+/* V6.3.42 lock table title bar size */
+.ksl-media-page .mb-black-title,
+.ksl-media-page.mb-fit-xl .mb-black-title,
+.ksl-media-page.mb-fit-lg .mb-black-title,
+.ksl-media-page.mb-fit-md .mb-black-title,
+.ksl-media-page.mb-fit-sm .mb-black-title,
+.ksl-media-page.mb-fit-xs .mb-black-title,
+.ksl-media-page .mb-card.mb-table-fit-tight .mb-black-title,
+.ksl-media-page .mb-card.mb-table-fit-x-tight .mb-black-title,
+.ksl-media-page .mb-card.mb-table-fit-max .mb-black-title{
+  font-size:11px!important;
+  line-height:1.15!important;
+  min-height:25px!important;
+  height:auto!important;
+  padding:4px 6px!important;
+}
+
 /* V6.3.39 free drag-and-drop reorder in Review */
 .mb-review-draggable{
   cursor:grab!important;
