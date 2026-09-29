@@ -1963,6 +1963,25 @@ function decorateReviewControls(){
     card.classList.add('mb-review-draggable');
   });
 }
+function equalizeRecipeTableRows(card){
+  if(!card)return;
+  const tables=[...card.querySelectorAll('.mb-recipe-table')];
+  tables.forEach(table=>{
+    const rows=[...table.querySelectorAll('tbody tr')];
+    if(!rows.length)return;
+    rows.forEach(row=>row.style.removeProperty('height'));
+    void table.offsetHeight;
+    let maxHeight=0;
+    rows.forEach(row=>{
+      const h=Math.ceil(Math.max(row.scrollHeight,row.getBoundingClientRect().height));
+      if(h>maxHeight)maxHeight=h;
+    });
+    if(maxHeight>0){
+      rows.forEach(row=>row.style.setProperty('height',maxHeight+'px','important'));
+    }
+  });
+}
+
 function fitVisibleTableText(root=document.getElementById('kslMediaPreview')){
   if(!root)return;
   const cards=[...root.querySelectorAll('.ksl-media-page .mb-card')];
@@ -1986,16 +2005,14 @@ function fitVisibleTableText(root=document.getElementById('kslMediaPreview')){
   };
   cards.forEach(card=>{
     card.classList.remove(...shrinkLevels,...growLevels);
+    card.querySelectorAll('.mb-recipe-table tbody tr').forEach(row=>row.style.removeProperty('height'));
 
-    // First, keep all text inside the card/page.
     for(const level of shrinkLevels){
       if(!overflowing(card))break;
       card.classList.add(level);
       void card.offsetHeight;
     }
 
-    // If no compression was needed and there is clearly spare room,
-    // grow table text one level at a time. Roll back immediately if it overflows.
     if(!shrinkLevels.some(level=>card.classList.contains(level))){
       for(const level of growLevels){
         if(spareVerticalSpace(card)<18)break;
@@ -2005,6 +2022,22 @@ function fitVisibleTableText(root=document.getElementById('kslMediaPreview')){
           card.classList.remove(level);
           break;
         }
+      }
+    }
+
+    equalizeRecipeTableRows(card);
+
+    // Equal rows may use more vertical space. If needed, reduce only the table text,
+    // re-equalizing after each step so all lines stay the same height.
+    if(overflowing(card)){
+      card.classList.remove(...growLevels);
+      for(const level of shrinkLevels){
+        if(card.classList.contains(level))continue;
+        card.classList.add(level);
+        card.querySelectorAll('.mb-recipe-table tbody tr').forEach(row=>row.style.removeProperty('height'));
+        void card.offsetHeight;
+        equalizeRecipeTableRows(card);
+        if(!overflowing(card))break;
       }
     }
   });
