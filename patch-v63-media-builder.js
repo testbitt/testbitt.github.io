@@ -1795,6 +1795,25 @@ const CSS=`
 .ksl-media-page .mb-card.mb-table-fit-max .mb-note-line{font-size:4.3px!important;padding:0 1px!important;line-height:1!important}
 .ksl-media-page .mb-card.mb-table-fit-max .mb-black-title{font-size:6.2px!important;min-height:14px!important;padding:1px!important}
 
+
+/* V6.3.41 larger readable table typography */
+.ksl-media-page.mb-fit-xl .mb-recipe-table td{font-size:12px!important;line-height:1.25!important}
+.ksl-media-page.mb-fit-lg .mb-recipe-table td{font-size:11px!important;line-height:1.23!important}
+.ksl-media-page.mb-fit-md .mb-recipe-table td{font-size:10px!important;line-height:1.20!important}
+.ksl-media-page.mb-fit-sm .mb-recipe-table td{font-size:9px!important;line-height:1.16!important}
+.ksl-media-page.mb-fit-xs .mb-recipe-table td{font-size:8px!important;line-height:1.12!important}
+.ksl-media-page.mb-fit-xl .mb-drink-table thead th{font-size:10.5px!important}
+.ksl-media-page.mb-fit-lg .mb-drink-table thead th{font-size:9.8px!important}
+.ksl-media-page.mb-fit-md .mb-drink-table thead th{font-size:9px!important}
+.ksl-media-page.mb-fit-sm .mb-drink-table thead th{font-size:8.2px!important}
+.ksl-media-page.mb-fit-xs .mb-drink-table thead th{font-size:7.4px!important}
+.ksl-media-page .mb-card.mb-table-fit-tight .mb-recipe-table td{font-size:8px!important}
+.ksl-media-page .mb-card.mb-table-fit-tight .mb-drink-table thead th{font-size:7.4px!important}
+.ksl-media-page .mb-card.mb-table-fit-x-tight .mb-recipe-table td{font-size:7px!important}
+.ksl-media-page .mb-card.mb-table-fit-x-tight .mb-drink-table thead th{font-size:6.5px!important}
+.ksl-media-page .mb-card.mb-table-fit-max .mb-recipe-table td{font-size:6.2px!important}
+.ksl-media-page .mb-card.mb-table-fit-max .mb-drink-table thead th{font-size:5.8px!important}
+
 /* V6.3.39 free drag-and-drop reorder in Review */
 .mb-review-draggable{
   cursor:grab!important;
