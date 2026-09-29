@@ -1899,6 +1899,140 @@ const CSS=`
   align-self:start!important;
 }
 
+
+/* V6.3.45 compact readable drink-table proportions based on reference */
+.ksl-media-page .mb-table-card .mb-table-body{
+  grid-template-columns:48px minmax(0,1fr)!important;
+}
+.ksl-media-page .mb-table-card .mb-left-photo{
+  padding:2px!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+.ksl-media-page .mb-table-card .mb-left-photo img{
+  max-width:42px!important;
+  max-height:92px!important;
+  width:auto!important;
+  height:auto!important;
+  object-fit:contain!important;
+}
+.ksl-media-page .mb-table-card .mb-photo-frame{
+  max-height:96px!important;
+  width:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+
+.ksl-media-page .mb-drink-table{
+  width:100%!important;
+  table-layout:fixed!important;
+  border-collapse:collapse!important;
+  font-size:10px!important;
+  line-height:1.12!important;
+}
+.ksl-media-page .mb-drink-table thead th{
+  height:20px!important;
+  min-height:20px!important;
+  padding:2px 3px!important;
+  font-size:10px!important;
+  line-height:1.05!important;
+  font-weight:800!important;
+  border-bottom:1px solid #d6d6d6!important;
+  border-right:1px solid #e1e1e1!important;
+  vertical-align:middle!important;
+  background:#fff!important;
+}
+.ksl-media-page .mb-drink-table thead th:last-child{
+  border-right:0!important;
+}
+.ksl-media-page .mb-drink-table th.mb-cup-label{
+  width:auto!important;
+  min-width:0!important;
+  color:#0b57d0!important;
+  text-align:center!important;
+  font-size:10px!important;
+  font-weight:900!important;
+}
+.ksl-media-page .mb-drink-table th.mb-cup-type{
+  width:48px!important;
+  min-width:48px!important;
+  max-width:48px!important;
+  color:#e00000!important;
+  text-align:center!important;
+  font-size:10px!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+}
+.ksl-media-page .mb-drink-table th.mb-cup-unit{
+  width:42px!important;
+  min-width:42px!important;
+  max-width:42px!important;
+  color:#222!important;
+  text-align:center!important;
+  font-size:10px!important;
+  font-weight:900!important;
+}
+
+.ksl-media-page .mb-drink-table tbody td{
+  height:20px!important;
+  min-height:20px!important;
+  padding:2px 3px!important;
+  font-size:10px!important;
+  line-height:1.08!important;
+  border-bottom:1px solid #dedede!important;
+  border-right:1px solid #e8e8e8!important;
+  vertical-align:middle!important;
+  background:#fff!important;
+}
+.ksl-media-page .mb-drink-table tbody td:last-child{
+  border-right:0!important;
+}
+.ksl-media-page .mb-drink-table tbody td.mb-r-name{
+  width:auto!important;
+  min-width:0!important;
+  text-align:left!important;
+  color:#263238!important;
+  font-size:10px!important;
+  font-weight:500!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+}
+.ksl-media-page .mb-drink-table tbody td.mb-cup-qty{
+  width:48px!important;
+  min-width:48px!important;
+  max-width:48px!important;
+  text-align:center!important;
+  color:#111!important;
+  font-size:10px!important;
+  font-weight:500!important;
+  white-space:nowrap!important;
+}
+.ksl-media-page .mb-drink-table tbody td.mb-r-unit{
+  width:42px!important;
+  min-width:42px!important;
+  max-width:42px!important;
+  text-align:center!important;
+  color:#263238!important;
+  font-size:10px!important;
+  font-weight:800!important;
+  white-space:nowrap!important;
+}
+
+/* Keep auto-grow from making this compact reference layout too loose. */
+.ksl-media-page .mb-card.mb-table-grow-1 .mb-drink-table tbody td,
+.ksl-media-page .mb-card.mb-table-grow-2 .mb-drink-table tbody td,
+.ksl-media-page .mb-card.mb-table-grow-1 .mb-drink-table thead th,
+.ksl-media-page .mb-card.mb-table-grow-2 .mb-drink-table thead th{
+  font-size:10px!important;
+}
+.ksl-media-page .mb-card.mb-table-grow-1 .mb-drink-table .mb-cup-type,
+.ksl-media-page .mb-card.mb-table-grow-2 .mb-drink-table .mb-cup-type,
+.ksl-media-page .mb-card.mb-table-grow-1 .mb-drink-table .mb-cup-qty,
+.ksl-media-page .mb-card.mb-table-grow-2 .mb-drink-table .mb-cup-qty{
+  font-size:10px!important;
+}
+
 /* V6.3.39 free drag-and-drop reorder in Review */
 .mb-review-draggable{
   cursor:grab!important;
