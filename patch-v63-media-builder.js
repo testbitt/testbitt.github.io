@@ -325,18 +325,17 @@ function lineList(values,max=6){
 }
 function drinkCard(item){
   const img=imageFor(item.id),o=effectiveOverride(item);
-  let variants=(o.headers||[]).map(text).filter(Boolean);if(!variants.length)variants=['STD'];variants=variants.slice(0,6);
   const rows=(o.rows||[]).slice(0,14).map(rec=>{
     const vals=Array.isArray(rec.values)?rec.values:[text(rec.value)];
-    const qs=variants.map((v,i)=>'<td class="mb-cup-qty">'+esc(vals[i]||'-')+'</td>').join('');
-    return '<tr><td class="mb-r-name">'+esc(rec.label||'-')+'</td>'+qs+'<td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>';
+    const qty=vals.map(text).find(Boolean)||'';
+    return '<tr><td class="mb-r-name">'+esc(rec.label||'-')+'</td><td class="mb-r-qty">'+esc(qty||'-')+'</td><td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>';
   }).join('');
-  const head='<thead><tr><th class="mb-cup-label">วัตถุดิบ</th>'+variants.map(v=>'<th class="mb-cup-type">'+esc(v)+'</th>').join('')+'<th class="mb-cup-unit">หน่วย</th></tr></thead>';
+  const head='<thead><tr><th class="mb-cup-label">วัตถุดิบ</th><th class="mb-r-qty">ปริมาณ</th><th class="mb-cup-unit">หน่วย</th></tr></thead>';
   return '<article class="mb-card mb-table-card">'+
     '<div class="mb-black-title">'+esc(o.title||item.name)+'</div>'+
     '<div class="mb-table-body">'+
       '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">🧋</div>')+'</div></div>'+
-      '<div class="mb-table-side"><div class="mb-cup-title">ประเภทแก้ว</div><table class="mb-recipe-table mb-drink-table">'+head+'<tbody>'+rows+'</tbody></table>'+
+      '<div class="mb-table-side"><table class="mb-recipe-table mb-drink-table">'+head+'<tbody>'+rows+'</tbody></table>'+
       (o.note?'<div class="mb-note-line">'+esc(o.note)+'</div>':'')+'</div>'+
     '</div></article>';
 }
