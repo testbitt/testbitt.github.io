@@ -361,8 +361,9 @@ function itemCard(item){return draft.type==='drink'?drinkCard(item):draft.type==
 function rowsFor(){
   return draft.orientation==='landscape' ? 4 : 2;
 }
-function columnsFor(count){
-  return Math.max(1,Math.ceil(Math.min(20,Math.max(1,count))/rowsFor()));
+function columnsForLayout(layoutCount){
+  const target=Math.min(20,Math.max(1,Number(layoutCount)||4));
+  return Math.max(1,Math.ceil(target/rowsFor()));
 }
 function densityFor(count){
   if(count<=4)return 'mb-density-roomy';
@@ -379,22 +380,27 @@ function fitFor(count,cols){
   return 'mb-fit-xs';
 }
 function buildPage(items,index,total){
-  const cols=columnsFor(items.length);
+  const targetPerPage=Math.min(20,Math.max(1,Number(draft.perPage)||4));
+  const layoutCols=columnsForLayout(targetPerPage);
+  const displayCols=draft.orientation==='portrait'?2:layoutCols;
+  const layoutRows=Math.max(1,Math.ceil(targetPerPage/displayCols));
   const size=draft.orientation==='landscape'?'mb-landscape':'mb-portrait';
-  const density=densityFor(items.length);
 
-  const displayCols=draft.orientation==='portrait'?2:Math.max(1,cols);
+  // Size, density and typography are always based on the selected Layout,
+  // never on how many tables happen to be present on this page.
+  const density=densityFor(targetPerPage);
+  const fit=fitFor(targetPerPage,displayCols);
+
   const rowGroups=[];
   for(let i=0;i<items.length;i+=displayCols)rowGroups.push(items.slice(i,i+displayCols));
-  const fit=fitFor(items.length,displayCols);
-  const targetPerPage=Math.min(20,Math.max(1,Number(draft.perPage)||4));
+
   const isFullLayout=items.length===targetPerPage;
   const layoutClass=isFullLayout?'mb-layout-full':'mb-layout-partial';
   const rowsHtml=rowGroups.map(group=>
     '<div class="mb-equal-row" style="--mb-row-cols:'+displayCols+'">'+group.map(itemCard).join('')+'</div>'
   ).join('');
 
-  return '<section class="ksl-media-page '+size+' '+density+' '+fit+' '+layoutClass+' mb-template-'+esc(draft.template)+' mb-theme-'+esc(draft.theme||'1')+' mb-count-'+items.length+'" style="--mb-fit-rows:'+rowGroups.length+';--mb-fit-cols:'+displayCols+'" data-page="'+index+'">'+
+  return '<section class="ksl-media-page '+size+' '+density+' '+fit+' '+layoutClass+' mb-template-'+esc(draft.template)+' mb-theme-'+esc(draft.theme||'1')+' mb-count-'+items.length+'" style="--mb-fit-rows:'+layoutRows+';--mb-fit-cols:'+displayCols+';--mb-layout-capacity:'+targetPerPage+'" data-page="'+index+'">'+
     '<header class="mb-page-head"><div><div class="mb-kamu">KAMU KAMU • TRAINING</div><h1>'+esc(pageTitle())+'</h1>'+
     (draft.subtitle?'<p>'+esc(draft.subtitle)+'</p>':'')+'</div><div class="mb-page-no">'+(index+1)+' / '+total+'</div></header>'+
     '<div class="mb-equal-rows">'+rowsHtml+'</div>'+
@@ -2031,6 +2037,40 @@ const CSS=`
 .ksl-media-page .mb-card.mb-table-grow-1 .mb-drink-table .mb-cup-qty,
 .ksl-media-page .mb-card.mb-table-grow-2 .mb-drink-table .mb-cup-qty{
   font-size:10px!important;
+}
+
+
+/* V6.3.46 selected-layout sizing: partial pages keep original table size */
+.ksl-media-page.mb-layout-partial .mb-equal-rows{
+  display:grid!important;
+  grid-template-rows:repeat(var(--mb-fit-rows),max-content)!important;
+  height:auto!important;
+  min-height:0!important;
+  align-content:start!important;
+  justify-content:stretch!important;
+  gap:var(--mb-fit-gap,7px)!important;
+  overflow:visible!important;
+}
+.ksl-media-page.mb-layout-partial .mb-equal-row{
+  display:grid!important;
+  grid-template-columns:repeat(var(--mb-fit-cols),minmax(0,1fr))!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  align-items:start!important;
+}
+.ksl-media-page.mb-layout-partial .mb-equal-row>.mb-card{
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  align-self:start!important;
+}
+/* The last incomplete row must keep the same column width as the selected layout. */
+.ksl-media-page.mb-layout-partial .mb-equal-row>.mb-card:only-child{
+  grid-column:auto!important;
+  width:100%!important;
+  max-width:100%!important;
 }
 
 /* V6.3.39 free drag-and-drop reorder in Review */
