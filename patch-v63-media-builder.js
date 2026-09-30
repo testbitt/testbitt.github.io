@@ -2131,6 +2131,93 @@ const CSS=`
   grid-template-columns:48px minmax(0,1fr)!important;
 }
 
+
+/* V6.3.49 exact A4 layout slots — full and partial pages use identical table size */
+.ksl-media-page .mb-equal-rows,
+.ksl-media-page.mb-layout-full .mb-equal-rows,
+.ksl-media-page.mb-layout-partial .mb-equal-rows{
+  display:grid!important;
+  grid-template-rows:repeat(var(--mb-fit-rows),minmax(0,1fr))!important;
+  height:100%!important;
+  min-height:0!important;
+  align-content:stretch!important;
+  justify-content:stretch!important;
+  gap:var(--mb-fit-gap,7px)!important;
+  overflow:visible!important;
+}
+.ksl-media-page .mb-equal-row,
+.ksl-media-page.mb-layout-full .mb-equal-row,
+.ksl-media-page.mb-layout-partial .mb-equal-row{
+  display:grid!important;
+  grid-template-columns:repeat(var(--mb-fit-cols),minmax(0,1fr))!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  align-items:stretch!important;
+  gap:var(--mb-fit-gap,7px)!important;
+}
+.ksl-media-page .mb-equal-row>.mb-card,
+.ksl-media-page.mb-layout-full .mb-equal-row>.mb-card,
+.ksl-media-page.mb-layout-partial .mb-equal-row>.mb-card{
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  max-height:100%!important;
+  align-self:stretch!important;
+  margin:0!important;
+}
+.ksl-media-page .mb-equal-row>.mb-card:only-child,
+.ksl-media-page.mb-layout-partial .mb-equal-row>.mb-card:only-child{
+  grid-column:auto!important;
+  width:100%!important;
+  max-width:100%!important;
+}
+
+/* Keep the selected-layout typography proportional to the chosen capacity. */
+.ksl-media-page.mb-density-roomy .mb-drink-table tbody td,
+.ksl-media-page.mb-density-roomy .mb-drink-table thead th{
+  font-size:10px!important;
+  line-height:1.10!important;
+  padding:2px 3px!important;
+}
+.ksl-media-page.mb-density-medium .mb-drink-table tbody td,
+.ksl-media-page.mb-density-medium .mb-drink-table thead th{
+  font-size:9px!important;
+  line-height:1.08!important;
+  padding:1.5px 2.5px!important;
+}
+.ksl-media-page.mb-density-compact .mb-drink-table tbody td,
+.ksl-media-page.mb-density-compact .mb-drink-table thead th{
+  font-size:8px!important;
+  line-height:1.06!important;
+  padding:1px 2px!important;
+}
+.ksl-media-page.mb-density-max .mb-drink-table tbody td,
+.ksl-media-page.mb-density-max .mb-drink-table thead th{
+  font-size:7px!important;
+  line-height:1.04!important;
+  padding:1px 1.5px!important;
+}
+
+/* Card height follows the A4 slot; table content stays visible inside that slot. */
+.ksl-media-page .mb-table-card{
+  overflow:visible!important;
+}
+.ksl-media-page .mb-table-card .mb-table-body{
+  height:calc(100% - 25px)!important;
+  min-height:0!important;
+  align-items:start!important;
+}
+.ksl-media-page .mb-table-card .mb-table-side{
+  min-height:0!important;
+  overflow:visible!important;
+}
+
+/* Partial pages intentionally leave unused layout slots blank rather than resizing cards. */
+.ksl-media-page.mb-layout-partial .mb-equal-rows{
+  grid-auto-rows:0!important;
+}
+
 /* V6.3.39 free drag-and-drop reorder in Review */
 .mb-review-draggable{
   cursor:grab!important;
