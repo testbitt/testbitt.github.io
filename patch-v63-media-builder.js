@@ -2218,6 +2218,42 @@ const CSS=`
   grid-auto-rows:0!important;
 }
 
+
+/* V6.3.50 center drink image within the full table height */
+.ksl-media-page .mb-table-card .mb-left-photo,
+.ksl-media-page .mb-card.mb-table-space-tight .mb-left-photo{
+  align-self:stretch!important;
+  height:100%!important;
+  min-height:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:2px!important;
+  overflow:visible!important;
+}
+.ksl-media-page .mb-table-card .mb-photo-frame,
+.ksl-media-page .mb-card.mb-table-space-tight .mb-photo-frame{
+  width:100%!important;
+  height:100%!important;
+  min-height:100%!important;
+  max-height:none!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:visible!important;
+}
+.ksl-media-page .mb-table-card .mb-photo-frame img,
+.ksl-media-page .mb-card.mb-table-space-tight .mb-photo-frame img{
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  margin:auto!important;
+}
+
 /* V6.3.39 free drag-and-drop reorder in Review */
 .mb-review-draggable{
   cursor:grab!important;
