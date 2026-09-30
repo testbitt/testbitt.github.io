@@ -29,6 +29,8 @@ const defaults=()=>({
 });
 let draft=defaults(), search='', targetImage='';
 let saveTimer=null;
+let cloudBaseUpdatedAt='';
+let cloudRefreshInFlight=false;
 
 function loadDraft(){
   try{
@@ -149,6 +151,75 @@ async function loadOnlineMediaState(){
     console.warn('[KSL Media] load online state',e);
   }
 }
+
+function tsValue(v){
+  const n=Date.parse(v||'');
+  return Number.isFinite(n)?n:0;
+}
+function newestRemoteProject(type){
+  return remoteProjects
+    .filter(p=>p?.id&&(!type||p.type===type))
+    .sort((a,b)=>tsValue(b.updatedAt)-tsValue(a.updatedAt))[0]||null;
+}
+function applyCloudProject(p,{force=false}={}){
+  if(!p?.id)return false;
+  const remoteTs=tsValue(p.updatedAt);
+  const localTs=tsValue(draft.updatedAt);
+  if(!force&&remoteTs<=localTs)return false;
+
+  const keepImages=draft.images||{};
+  draft={
+    ...defaults(),
+    ...clone(p),
+    images:keepImages,
+    overrides:clone(p.overrides||{}),
+    selected:Array.isArray(p.selected)?[...p.selected]:[]
+  };
+  cloudBaseUpdatedAt=p.updatedAt||'';
+  targetImage='';
+  cleanSelection();
+
+  try{localStorage.setItem(STORE,JSON.stringify({...draft,images:{}}))}catch(_){}
+  try{
+    const s=app();
+    if(s)s.mediaBuilderV1={...clone(projectSnapshot()),images:{}};
+  }catch(_){}
+  return true;
+}
+function reconcileDraftFromCloud(preferredType=''){
+  const same=remoteProjects.find(p=>p?.id===draft.id);
+  if(same){
+    cloudBaseUpdatedAt=same.updatedAt||'';
+    return applyCloudProject(same);
+  }
+
+  const latest=newestRemoteProject(preferredType||draft.type);
+  const localIsEmpty=!Array.isArray(draft.selected)||draft.selected.length===0;
+  if(latest&&(localIsEmpty||tsValue(latest.updatedAt)>tsValue(draft.updatedAt))){
+    return applyCloudProject(latest,{force:localIsEmpty});
+  }
+  return false;
+}
+async function refreshDraftFromCloud({force=false}={}){
+  if(cloudRefreshInFlight)return false;
+  cloudRefreshInFlight=true;
+  try{
+    await loadOnlineMediaState();
+    const same=remoteProjects.find(p=>p?.id===draft.id);
+    if(same&&(force||tsValue(same.updatedAt)>tsValue(draft.updatedAt))){
+      const changed=applyCloudProject(same,{force:true});
+      if(changed){
+        syncUI();
+        setSaveStatus('อัปเดตข้อมูลล่าสุดจาก Cloud แล้ว ✓');
+      }
+      return changed;
+    }
+    return false;
+  }finally{
+    cloudRefreshInFlight=false;
+  }
+}
+
 async function migrateLocalImagesOnline(){
   const entries=Object.entries(draft.images||{}).filter(([id,v])=>String(v||'').startsWith('data:image')&&!onlineImages[id]);
   for(const [id,data] of entries){
@@ -3111,15 +3182,30 @@ async function exportPageImage(page,format,index){
 
 async function openBuilder(type){
  installBuilder();loadDraft();
- if(type&&['drink','production','holding'].includes(type)){draft.type=type;cleanSelection()}
- draft.template='branch-grid';
- draft.orientation='landscape';
+ const requestedType=(type&&['drink','production','holding'].includes(type))?type:draft.type;
  const ov=document.getElementById('kslMediaOverlay');ov.classList.add('show');
- setSaveStatus('กำลังโหลดข้อมูล Media Online...');
+ setSaveStatus('กำลังดึงข้อมูลล่าสุดจาก Cloud...');
  await loadOnlineMediaState();
+
+ // Cloud-first: prefer the same project when it exists; on a new/empty device,
+ // open the newest saved project of the requested media type.
+ const same=remoteProjects.find(p=>p?.id===draft.id);
+ if(same){
+   applyCloudProject(same,{force:tsValue(same.updatedAt)>=tsValue(draft.updatedAt)});
+ }else{
+   const latest=newestRemoteProject(requestedType);
+   const localIsEmpty=!Array.isArray(draft.selected)||draft.selected.length===0;
+   if(latest&&(localIsEmpty||tsValue(latest.updatedAt)>tsValue(draft.updatedAt))){
+     applyCloudProject(latest,{force:true});
+   }else{
+     draft.type=requestedType;
+     cleanSelection();
+   }
+ }
+ draft.template=draft.template||'branch-grid';
  syncUI();
  migrateLocalImagesOnline().catch(e=>console.warn('[KSL Media] migrate local images',e));
- setSaveStatus('เชื่อม Media Online แล้ว ✓');
+ setSaveStatus('Sync Cloud ล่าสุดแล้ว ✓');
  setTimeout(()=>document.getElementById('kslMediaPreview')?.scrollTo(0,0),30);
 }
 window.KSL_OPEN_MEDIA_BUILDER=openBuilder;
@@ -3133,7 +3219,18 @@ function installAdminCard(){
  return true;
 }
 
-loadDraft();ensureStyles();installBuilder();installAdminCard();loadOnlineMediaState().then(()=>{renderSavedProjects();renderPreview()}).catch(()=>{});
+loadDraft();ensureStyles();installBuilder();installAdminCard();
+loadOnlineMediaState().then(()=>{
+  reconcileDraftFromCloud(draft.type);
+  renderSavedProjects();
+  syncUI();
+  renderPreview();
+}).catch(()=>{});
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&document.getElementById('kslMediaOverlay')?.classList.contains('show')){
+    refreshDraftFromCloud().catch(e=>console.warn('[KSL Media] refresh on focus',e));
+  }
+});
 let tries=0;const timer=setInterval(()=>{tries++;installAdminCard();if(tries>180)clearInterval(timer)},1000);
 console.info('[KSL] Admin Media Builder V1 ready • multi-menu A4 export');
 })();
