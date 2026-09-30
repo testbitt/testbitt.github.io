@@ -2100,6 +2100,37 @@ const CSS=`
   grid-template-columns:48px minmax(0,1fr)!important;
 }
 
+
+/* V6.3.48 show full drink image independent of table row count */
+.ksl-media-page .mb-table-card .mb-left-photo,
+.ksl-media-page .mb-card.mb-table-space-tight .mb-left-photo{
+  padding:2px!important;
+  align-self:start!important;
+  overflow:visible!important;
+}
+.ksl-media-page .mb-table-card .mb-photo-frame,
+.ksl-media-page .mb-card.mb-table-space-tight .mb-photo-frame{
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow:visible!important;
+  display:block!important;
+}
+.ksl-media-page .mb-table-card .mb-photo-frame img,
+.ksl-media-page .mb-card.mb-table-space-tight .mb-photo-frame img{
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  max-width:100%!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  object-position:center top!important;
+}
+.ksl-media-page .mb-card.mb-table-space-tight .mb-table-body{
+  grid-template-columns:48px minmax(0,1fr)!important;
+}
+
 /* V6.3.39 free drag-and-drop reorder in Review */
 .mb-review-draggable{
   cursor:grab!important;
