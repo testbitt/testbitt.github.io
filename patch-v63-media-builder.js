@@ -2073,6 +2073,33 @@ const CSS=`
   max-width:100%!important;
 }
 
+
+/* V6.3.47 keep drink image size fixed — never shrink in tight table mode */
+.ksl-media-page .mb-table-card .mb-left-photo,
+.ksl-media-page .mb-card.mb-table-space-tight .mb-left-photo{
+  padding:2px!important;
+}
+.ksl-media-page .mb-table-card .mb-left-photo img,
+.ksl-media-page .mb-card.mb-table-space-tight .mb-left-photo img{
+  max-width:42px!important;
+  max-height:92px!important;
+  width:auto!important;
+  height:auto!important;
+  object-fit:contain!important;
+}
+.ksl-media-page .mb-table-card .mb-photo-frame,
+.ksl-media-page .mb-card.mb-table-space-tight .mb-photo-frame{
+  max-height:96px!important;
+  min-height:0!important;
+  width:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+.ksl-media-page .mb-card.mb-table-space-tight .mb-table-body{
+  grid-template-columns:48px minmax(0,1fr)!important;
+}
+
 /* V6.3.39 free drag-and-drop reorder in Review */
 .mb-review-draggable{
   cursor:grab!important;
