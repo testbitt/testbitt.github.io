@@ -402,7 +402,9 @@ function drinkCard(item){
   const rows=(o.rows||[]).slice(0,14).map(rec=>{
     const vals=Array.isArray(rec.values)?rec.values:[text(rec.value)];
     const qs=variants.map((v,i)=>'<td class="mb-cup-qty">'+esc(vals[i]||'-')+'</td>').join('');
-    return '<tr><td class="mb-r-name">'+esc(rec.label||'-')+'</td>'+qs+'<td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>';
+    const label=text(rec.label||'-');
+    const toppingClass=/topping/i.test(label)?' mb-r-topping':'';
+    return '<tr><td class="mb-r-name'+toppingClass+'">'+esc(label)+'</td>'+qs+'<td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>';
   }).join('');
   const head='<thead><tr><th class="mb-cup-label">วัตถุดิบ</th>'+variants.map(v=>'<th class="mb-cup-type">'+esc(v)+'</th>').join('')+'<th class="mb-cup-unit">หน่วย</th></tr></thead>';
   return '<article class="mb-card mb-table-card">'+
@@ -2325,6 +2327,55 @@ const CSS=`
   margin:auto!important;
 }
 
+
+/* V6.3.51 fit all recipe rows inside selected A4 layout + Topping purple */
+.ksl-media-page .mb-drink-table tbody td{
+  height:auto!important;
+}
+.ksl-media-page.mb-density-roomy .mb-drink-table tbody td{
+  min-height:20px!important;
+}
+.ksl-media-page.mb-density-medium .mb-drink-table tbody td{
+  min-height:17px!important;
+}
+.ksl-media-page.mb-density-compact .mb-drink-table tbody td{
+  min-height:14px!important;
+}
+.ksl-media-page.mb-density-max .mb-drink-table tbody td{
+  min-height:12px!important;
+}
+
+.ksl-media-page.mb-density-roomy .mb-drink-table thead th{height:20px!important;min-height:20px!important}
+.ksl-media-page.mb-density-medium .mb-drink-table thead th{height:18px!important;min-height:18px!important}
+.ksl-media-page.mb-density-compact .mb-drink-table thead th{height:16px!important;min-height:16px!important}
+.ksl-media-page.mb-density-max .mb-drink-table thead th{height:14px!important;min-height:14px!important}
+
+.ksl-media-page .mb-recipe-table tbody tr{
+  height:auto!important;
+}
+.ksl-media-page .mb-recipe-table tbody tr td{
+  vertical-align:middle!important;
+}
+
+/* If a specific card still exceeds its A4 slot, compact spacing before anything can be clipped. */
+.ksl-media-page .mb-card.mb-table-content-tight .mb-drink-table tbody td,
+.ksl-media-page .mb-card.mb-table-content-tight .mb-drink-table thead th{
+  padding-top:0!important;
+  padding-bottom:0!important;
+  line-height:1.02!important;
+}
+.ksl-media-page .mb-card.mb-table-content-tight .mb-note-line{
+  padding-top:1px!important;
+  padding-bottom:1px!important;
+  margin-top:0!important;
+}
+
+/* Topping emphasis */
+.ksl-media-page .mb-drink-table tbody td.mb-r-topping{
+  color:#7b1fa2!important;
+  font-weight:800!important;
+}
+
 /* V6.3.39 free drag-and-drop reorder in Review */
 .mb-review-draggable{
   cursor:grab!important;
@@ -2466,8 +2517,10 @@ function fitVisibleTableText(root=document.getElementById('kslMediaPreview')){
   const legacyShrink=['mb-table-fit-tight','mb-table-fit-x-tight','mb-table-fit-max'];
   const overflowing=card=>{
     const table=card.querySelector('.mb-table-side');
+    const body=card.querySelector('.mb-table-body');
     const horizontal=card.scrollWidth>card.clientWidth+1 || (table&&table.scrollWidth>table.clientWidth+1);
-    return horizontal;
+    const vertical=!!(table&&body&&table.scrollHeight>body.clientHeight+1);
+    return horizontal||vertical;
   };
   const spareVerticalSpace=card=>{
     const table=card.querySelector('.mb-table-side');
@@ -2478,7 +2531,7 @@ function fitVisibleTableText(root=document.getElementById('kslMediaPreview')){
     return Math.max(0,cardBox.height-used);
   };
   cards.forEach(card=>{
-    card.classList.remove(...legacyShrink,...growLevels,'mb-table-space-tight');
+    card.classList.remove(...legacyShrink,...growLevels,'mb-table-space-tight','mb-table-content-tight');
     card.querySelectorAll('.mb-recipe-table tbody tr').forEach(row=>row.style.removeProperty('height'));
 
     // Keep every row equal using its largest natural row height.
@@ -2486,7 +2539,7 @@ function fitVisibleTableText(root=document.getElementById('kslMediaPreview')){
 
     // If horizontal room is tight, reclaim decorative space first; never shrink table text.
     if(overflowing(card)){
-      card.classList.add('mb-table-space-tight');
+      card.classList.add('mb-table-space-tight','mb-table-content-tight');
       card.querySelectorAll('.mb-recipe-table tbody tr').forEach(row=>row.style.removeProperty('height'));
       void card.offsetHeight;
       equalizeRecipeTableRows(card);
