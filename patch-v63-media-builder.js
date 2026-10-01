@@ -418,16 +418,16 @@ function drinkCard(item){
 function productionCard(item){
   const img=imageFor(item.id),o=effectiveOverride(item);
   const rows=(o.rows||[]).slice(0,14).map(rec=>'<tr><td class="mb-r-name">'+esc(rec.label||'-')+'</td><td class="mb-r-qty">'+esc((rec.values||[])[0]||'')+'</td><td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>').join('');
-  return '<article class="mb-card mb-table-card"><div class="mb-black-title">'+esc(o.title||item.name)+'</div><div class="mb-table-body">'+
+  return '<article class="mb-card mb-table-card mb-production-card"><div class="mb-black-title">'+esc(o.title||item.name)+'</div><div class="mb-table-body">'+
     '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">🧑‍🍳</div>')+'</div></div>'+
-    '<div class="mb-table-side"><table class="mb-recipe-table"><tbody>'+rows+'</tbody></table>'+(o.note?'<div class="mb-note-line">'+esc(o.note)+'</div>':'')+'</div></div></article>';
+    '<div class="mb-table-side"><table class="mb-recipe-table mb-production-table"><tbody>'+rows+'</tbody></table>'+(o.note?'<div class="mb-note-line">'+esc(o.note)+'</div>':'')+'</div></div></article>';
 }
 function holdingCard(item){
   const img=imageFor(item.id),o=effectiveOverride(item);
   const rows=(o.rows||[]).slice(0,14).map(rec=>'<tr><td class="mb-r-name">'+esc(rec.label||'-')+'</td><td class="mb-r-qty">'+esc((rec.values||[])[0]||'')+'</td><td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>').join('');
-  return '<article class="mb-card mb-table-card"><div class="mb-black-title">'+esc(o.title||item.name)+'</div><div class="mb-table-body">'+
+  return '<article class="mb-card mb-table-card mb-holding-card"><div class="mb-black-title">'+esc(o.title||item.name)+'</div><div class="mb-table-body">'+
     '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">⏳</div>')+'</div></div>'+
-    '<div class="mb-table-side"><table class="mb-recipe-table"><tbody>'+rows+'</tbody></table>'+(o.note?'<div class="mb-note-line">'+esc(o.note)+'</div>':'')+'</div></div></article>';
+    '<div class="mb-table-side"><table class="mb-recipe-table mb-holding-table"><tbody>'+rows+'</tbody></table>'+(o.note?'<div class="mb-note-line">'+esc(o.note)+'</div>':'')+'</div></div></article>';
 }
 function itemCard(item){return draft.type==='drink'?drinkCard(item):draft.type==='production'?productionCard(item):holdingCard(item)}
 
@@ -2374,6 +2374,124 @@ const CSS=`
 .ksl-media-page .mb-drink-table tbody td.mb-r-topping{
   color:#7b1fa2!important;
   font-weight:800!important;
+}
+
+
+/* V6.3.52 production + holding: layout-based A4 sizing */
+.ksl-media-page .mb-production-table,
+.ksl-media-page .mb-holding-table{
+  width:100%!important;
+  table-layout:fixed!important;
+  border-collapse:collapse!important;
+}
+.ksl-media-page .mb-production-table td,
+.ksl-media-page .mb-holding-table td{
+  height:auto!important;
+  min-height:0!important;
+  vertical-align:middle!important;
+  text-overflow:clip!important;
+  overflow:visible!important;
+}
+.ksl-media-page .mb-production-table .mb-r-name,
+.ksl-media-page .mb-holding-table .mb-r-name{
+  width:auto!important;
+  min-width:0!important;
+  text-align:left!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+}
+.ksl-media-page .mb-production-table .mb-r-qty,
+.ksl-media-page .mb-holding-table .mb-r-qty{
+  width:54px!important;
+  min-width:42px!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+}
+.ksl-media-page .mb-production-table .mb-r-unit,
+.ksl-media-page .mb-holding-table .mb-r-unit{
+  width:70px!important;
+  min-width:48px!important;
+  text-align:center!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+}
+
+/* Typography is based on selected Layout capacity, not actual card count. */
+.ksl-media-page.mb-density-roomy .mb-production-table td,
+.ksl-media-page.mb-density-roomy .mb-holding-table td{
+  font-size:10px!important;
+  line-height:1.15!important;
+  padding:3px 4px!important;
+  min-height:20px!important;
+}
+.ksl-media-page.mb-density-medium .mb-production-table td,
+.ksl-media-page.mb-density-medium .mb-holding-table td{
+  font-size:9px!important;
+  line-height:1.12!important;
+  padding:2px 3px!important;
+  min-height:17px!important;
+}
+.ksl-media-page.mb-density-compact .mb-production-table td,
+.ksl-media-page.mb-density-compact .mb-holding-table td{
+  font-size:8px!important;
+  line-height:1.08!important;
+  padding:1.5px 2px!important;
+  min-height:14px!important;
+}
+.ksl-media-page.mb-density-max .mb-production-table td,
+.ksl-media-page.mb-density-max .mb-holding-table td{
+  font-size:6.8px!important;
+  line-height:1.04!important;
+  padding:1px 1.5px!important;
+  min-height:12px!important;
+}
+
+/* Prevent generic auto-grow from making these layouts overflow A4. */
+.ksl-media-page.mb-density-roomy .mb-card.mb-table-grow-1 .mb-production-table td,
+.ksl-media-page.mb-density-roomy .mb-card.mb-table-grow-2 .mb-production-table td,
+.ksl-media-page.mb-density-roomy .mb-card.mb-table-grow-1 .mb-holding-table td,
+.ksl-media-page.mb-density-roomy .mb-card.mb-table-grow-2 .mb-holding-table td{font-size:10px!important}
+.ksl-media-page.mb-density-medium .mb-card.mb-table-grow-1 .mb-production-table td,
+.ksl-media-page.mb-density-medium .mb-card.mb-table-grow-2 .mb-production-table td,
+.ksl-media-page.mb-density-medium .mb-card.mb-table-grow-1 .mb-holding-table td,
+.ksl-media-page.mb-density-medium .mb-card.mb-table-grow-2 .mb-holding-table td{font-size:9px!important}
+.ksl-media-page.mb-density-compact .mb-card.mb-table-grow-1 .mb-production-table td,
+.ksl-media-page.mb-density-compact .mb-card.mb-table-grow-2 .mb-production-table td,
+.ksl-media-page.mb-density-compact .mb-card.mb-table-grow-1 .mb-holding-table td,
+.ksl-media-page.mb-density-compact .mb-card.mb-table-grow-2 .mb-holding-table td{font-size:8px!important}
+.ksl-media-page.mb-density-max .mb-card.mb-table-grow-1 .mb-production-table td,
+.ksl-media-page.mb-density-max .mb-card.mb-table-grow-2 .mb-production-table td,
+.ksl-media-page.mb-density-max .mb-card.mb-table-grow-1 .mb-holding-table td,
+.ksl-media-page.mb-density-max .mb-card.mb-table-grow-2 .mb-holding-table td{font-size:6.8px!important}
+
+/* When a specific card is dense, tighten spacing but keep all data visible. */
+.ksl-media-page .mb-production-card.mb-table-content-tight .mb-production-table td,
+.ksl-media-page .mb-holding-card.mb-table-content-tight .mb-holding-table td{
+  padding-top:0!important;
+  padding-bottom:0!important;
+  line-height:1!important;
+}
+.ksl-media-page .mb-production-card.mb-table-content-tight .mb-note-line,
+.ksl-media-page .mb-holding-card.mb-table-content-tight .mb-note-line{
+  padding-top:1px!important;
+  padding-bottom:1px!important;
+  margin-top:0!important;
+}
+
+/* Both portrait and landscape keep the exact slot size selected by Layout. */
+.ksl-media-page .mb-production-card,
+.ksl-media-page .mb-holding-card{
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  max-height:100%!important;
+}
+.ksl-media-page.mb-layout-partial .mb-production-card,
+.ksl-media-page.mb-layout-partial .mb-holding-card{
+  width:100%!important;
+  height:100%!important;
+  max-height:100%!important;
 }
 
 /* V6.3.39 free drag-and-drop reorder in Review */
