@@ -2494,6 +2494,63 @@ const CSS=`
   max-height:100%!important;
 }
 
+
+/* V6.3.53 larger black typography for Production + Holding */
+.ksl-media-page .mb-production-table td,
+.ksl-media-page .mb-holding-table td,
+.ksl-media-page .mb-production-table .mb-r-name,
+.ksl-media-page .mb-production-table .mb-r-qty,
+.ksl-media-page .mb-production-table .mb-r-unit,
+.ksl-media-page .mb-holding-table .mb-r-name,
+.ksl-media-page .mb-holding-table .mb-r-qty,
+.ksl-media-page .mb-holding-table .mb-r-unit{
+  color:#000!important;
+}
+
+/* Larger, easier-to-read text while still scaling by selected Layout. */
+.ksl-media-page.mb-density-roomy .mb-production-table td,
+.ksl-media-page.mb-density-roomy .mb-holding-table td{
+  font-size:11.5px!important;
+  line-height:1.18!important;
+  padding:3px 4px!important;
+}
+.ksl-media-page.mb-density-medium .mb-production-table td,
+.ksl-media-page.mb-density-medium .mb-holding-table td{
+  font-size:10.5px!important;
+  line-height:1.15!important;
+  padding:2px 3px!important;
+}
+.ksl-media-page.mb-density-compact .mb-production-table td,
+.ksl-media-page.mb-density-compact .mb-holding-table td{
+  font-size:9.5px!important;
+  line-height:1.10!important;
+  padding:1.5px 2px!important;
+}
+.ksl-media-page.mb-density-max .mb-production-table td,
+.ksl-media-page.mb-density-max .mb-holding-table td{
+  font-size:8px!important;
+  line-height:1.06!important;
+  padding:1px 1.5px!important;
+}
+
+/* Keep generic grow classes from overriding the selected-layout size. */
+.ksl-media-page.mb-density-roomy .mb-card.mb-table-grow-1 .mb-production-table td,
+.ksl-media-page.mb-density-roomy .mb-card.mb-table-grow-2 .mb-production-table td,
+.ksl-media-page.mb-density-roomy .mb-card.mb-table-grow-1 .mb-holding-table td,
+.ksl-media-page.mb-density-roomy .mb-card.mb-table-grow-2 .mb-holding-table td{font-size:11.5px!important}
+.ksl-media-page.mb-density-medium .mb-card.mb-table-grow-1 .mb-production-table td,
+.ksl-media-page.mb-density-medium .mb-card.mb-table-grow-2 .mb-production-table td,
+.ksl-media-page.mb-density-medium .mb-card.mb-table-grow-1 .mb-holding-table td,
+.ksl-media-page.mb-density-medium .mb-card.mb-table-grow-2 .mb-holding-table td{font-size:10.5px!important}
+.ksl-media-page.mb-density-compact .mb-card.mb-table-grow-1 .mb-production-table td,
+.ksl-media-page.mb-density-compact .mb-card.mb-table-grow-2 .mb-production-table td,
+.ksl-media-page.mb-density-compact .mb-card.mb-table-grow-1 .mb-holding-table td,
+.ksl-media-page.mb-density-compact .mb-card.mb-table-grow-2 .mb-holding-table td{font-size:9.5px!important}
+.ksl-media-page.mb-density-max .mb-card.mb-table-grow-1 .mb-production-table td,
+.ksl-media-page.mb-density-max .mb-card.mb-table-grow-2 .mb-production-table td,
+.ksl-media-page.mb-density-max .mb-card.mb-table-grow-1 .mb-holding-table td,
+.ksl-media-page.mb-density-max .mb-card.mb-table-grow-2 .mb-holding-table td{font-size:8px!important}
+
 /* V6.3.39 free drag-and-drop reorder in Review */
 .mb-review-draggable{
   cursor:grab!important;
