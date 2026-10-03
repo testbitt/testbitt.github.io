@@ -205,7 +205,9 @@ const API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-admin";
 const FILE_UPLOAD_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-file-upload";
 const THEMES=Array.from({length:50},(_,i)=>({id:i+1,name:"Theme "+String(i+1).padStart(2,"0"),className:["theme-soft","theme-square","theme-airy","theme-compact","theme-bold"][i%5]}));
 const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
-let displayPrefs={orientation:"portrait",items_per_page:20,theme_index:1,color_index:1};
+const DEFAULT_DISPLAY_PREFS={orientation:"portrait",items_per_page:20,theme_index:1,color_index:1};
+let displayPrefs={...DEFAULT_DISPLAY_PREFS};
+function displayPrefsKey(ds=dataset){return "display_preferences_"+ds}
 const DATASETS={
   production:{label:"สูตรการผลิต",fields:[
     ["record_id","Record ID","text"],["source_page","หน้า","number"],["category","หมวดหมู่","text"],["recipe_name","ชื่อสูตร","text"],
@@ -367,7 +369,7 @@ function initMenuDrag(){
 document.getElementById("tabs").addEventListener("click",e=>{
   const b=e.target.closest(".tab"); if(!b)return;
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
-  dataset=b.dataset.dataset;if(DATASETS[dataset])document.getElementById("uploadDataset").value=dataset;hideEditor();syncAttachmentSection();loadData();
+  dataset=b.dataset.dataset;if(DATASETS[dataset])document.getElementById("uploadDataset").value=dataset;hideEditor();syncAttachmentSection();loadDisplayPrefs().then(loadData);
 });
 document.getElementById("refreshBtn").onclick=loadData;
 document.getElementById("addBtn").onclick=()=>dataset==="users"?document.getElementById("userUsername")?.focus():dataset==="drinks"?openEditor({record_id:"DRK-"+Date.now(),recipe_id:"RECIPE-"+Date.now(),component_type:"Ingredient",sort_order:1,is_published:true}):openEditor(null);
@@ -859,9 +861,13 @@ function initLayoutControls(){
   document.getElementById("printBtn").onclick=()=>window.print();
 }
 async function loadDisplayPrefs(){
+  displayPrefs={...DEFAULT_DISPLAY_PREFS};
   try{
     const res=await api({action:"list",dataset:"settings"});
-    const row=(res.data||[]).find(x=>x.key==="display_preferences");
+    const data=res.data||[];
+    const own=data.find(x=>x.key===displayPrefsKey());
+    const legacy=data.find(x=>x.key==="display_preferences");
+    const row=own||legacy;
     if(row?.value) displayPrefs={...displayPrefs,...row.value};
   }catch{}
   applyDisplayPrefs();
@@ -899,8 +905,8 @@ async function onDisplayChange(){
   const info=document.getElementById("a4SizeInfo");
   if(info)info.textContent=displayPrefs.orientation==="landscape"?"ขนาด Export จริง: A4 297 × 210 mm":"ขนาด Export จริง: A4 210 × 297 mm";
   renderTable();
-  const m=document.getElementById("layoutMsg");m.textContent="กำลัง Auto Save Layout...";
-  try{await api({action:"save",dataset:"settings",row:{key:"display_preferences",value:displayPrefs}});m.textContent="Auto Save Layout แล้ว";m.className="msg ok"}catch(err){m.textContent=err.message;m.className="msg error"}
+  const m=document.getElementById("layoutMsg");m.textContent="กำลัง Auto Save Layout ของหน้านี้...";
+  try{await api({action:"save",dataset:"settings",row:{key:displayPrefsKey(),value:displayPrefs}});m.textContent="Auto Save Layout ของหน้านี้แล้ว";m.className="msg ok"}catch(err){m.textContent=err.message;m.className="msg error"}
 }
 validateStored();
 </script>
