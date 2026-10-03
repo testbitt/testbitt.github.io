@@ -315,6 +315,7 @@ function renderUsers(){
       <div class="user-import">
         <div class="field" style="max-width:420px"><label>Import User (CSV) — เพิ่มต่อจากข้อมูลเดิม ไม่เขียนทับ</label><input id="userImportFile" class="input" type="file" accept=".csv,text/csv"></div>
         <button class="btn secondary" onclick="importUsers()">Import</button>
+        <a class="btn secondary" href="templates/Yothe_User_Import_Template.csv" download style="text-decoration:none">ดาวน์โหลด Template CSV</a>
         <button class="btn secondary" onclick="exportUsers()">Export CSV</button>
       </div>
       <p class="help">คอลัมน์ Import: username,password,display_name,active • User ที่มีอยู่แล้วจะถูกข้าม ไม่แก้ข้อมูลเดิม • Password เก็บแบบ Hash และไม่ถูก Export กลับออกมา</p>
