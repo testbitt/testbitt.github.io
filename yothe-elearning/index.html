@@ -12,13 +12,13 @@ body{margin:0;font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,Arial,system-u
 button,input{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}.hidden{display:none!important}
 .login-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(145deg,#fff,#fff5f5)}
 .login-card{width:min(440px,100%);background:#fff;border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);padding:30px}
-.login-logo{width:92px;height:92px;object-fit:contain;display:block;margin:0 auto 8px}.login-card h1{text-align:center;margin:0;font-size:32px;color:var(--red)}.login-card p{text-align:center;color:var(--muted)}
+.login-logo{width:250px;max-width:88%;height:auto;object-fit:contain;display:block;margin:0 auto 12px;background:#d92c24;border-radius:14px;padding:8px 12px}.login-card h1{text-align:center;margin:0;font-size:25px;color:var(--red)}.login-card p{text-align:center;color:var(--muted)}
 .field{display:flex;flex-direction:column;gap:7px;margin:14px 0}.field label{font-size:13px;font-weight:800}.input{width:100%;border:1px solid #d1d5db;border-radius:14px;padding:13px 14px;background:#fff}
 .btn{border:0;border-radius:14px;padding:12px 16px;font-weight:800}.primary{background:var(--red);color:#fff;width:100%}.secondary{background:#fff;border:1px solid #fecdd3;color:var(--red)}
 .msg{font-size:13px;margin-top:10px}.error{color:#b91c1c}.ok{color:#15803d}
 .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.97);border-bottom:1px solid var(--line);backdrop-filter:blur(10px)}
 .nav{max-width:1240px;margin:auto;min-height:74px;padding:8px 20px;display:flex;align-items:center;gap:22px}
-.brand{display:flex;align-items:center;gap:10px;color:var(--red);font-size:24px;font-weight:900;white-space:nowrap}.brand img{width:52px;height:56px;object-fit:contain}
+.brand{display:flex;align-items:center;gap:10px;color:var(--red);font-size:20px;font-weight:900;white-space:nowrap}.brand img.brand-wordmark{width:132px;height:auto;object-fit:contain;background:#d92c24;border-radius:9px;padding:4px 7px}.brand span{white-space:nowrap}
 .navlinks{display:flex;gap:6px;flex:1;justify-content:center;flex-wrap:wrap}.navlinks button,.navlinks a{border:0;background:transparent;padding:10px 12px;border-radius:12px;font-weight:800;font-size:14px}.navlinks button:hover,.navlinks button.active{background:var(--red);color:#fff}
 .userbox{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
 main{max-width:1240px;margin:auto;padding:30px 20px 70px}.view{display:none}.view.active{display:block}
@@ -45,8 +45,8 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 <body>
 <section id="loginScreen" class="login-screen">
   <form id="loginForm" class="login-card">
-    <img src="assets/yothe-cat.svg" class="login-logo" alt="Yothé">
-    <h1>Yothé E-Learning</h1>
+    <img src="assets/yothe-wordmark.svg" class="login-logo" alt="Yothé">
+    <h1>E-Learning</h1>
     <p>กรุณา Login เพื่อเข้าใช้งาน</p>
     <div class="field"><label>User</label><input id="loginUser" class="input" autocomplete="username" required></div>
     <div class="field"><label>Password</label><input id="loginPass" class="input" type="password" autocomplete="current-password" required></div>
@@ -57,7 +57,7 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 
 <div id="appRoot" class="hidden">
 <header class="topbar"><div class="nav">
-  <button class="brand" data-view="home" style="border:0;background:none;padding:0"><img src="assets/yothe-cat.svg" alt="Yothé"><span>Yothé E-Learning</span></button>
+  <button class="brand" data-view="home" style="border:0;background:none;padding:0"><img class="brand-wordmark" src="assets/yothe-wordmark.svg" alt="Yothé"><span>E-Learning</span></button>
   <nav id="navLinks" class="navlinks">
     <button data-view="home" class="active">Home</button>
     <button data-view="production">สูตรการผลิต</button>
