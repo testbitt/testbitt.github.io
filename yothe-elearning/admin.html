@@ -10,7 +10,7 @@
 button,input,select,textarea{font:inherit}button{cursor:pointer}
 .top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
 .topin{max-width:1240px;margin:auto;height:68px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-.brand{display:flex;align-items:center;gap:10px;font-weight:900;color:var(--red);font-size:19px}.brand img.brand-wordmark{width:128px;height:auto;object-fit:contain;background:#d92c24;border-radius:9px;padding:4px 7px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:900;color:var(--red);font-size:19px}.brand img.brand-cat{width:32px;height:38px;object-fit:contain}.brand img.brand-wordmark{width:128px;height:auto;object-fit:contain;background:#d92c24;border-radius:9px;padding:4px 7px}.admin-login-brand{display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:14px}.admin-login-brand .brand-cat{width:58px;height:68px;object-fit:contain}.admin-login-brand .brand-wordmark{width:190px;height:auto;object-fit:contain;background:#d92c24;border-radius:12px;padding:7px 10px}
 .back{color:var(--red);font-weight:800;text-decoration:none}
 .wrap{max-width:1240px;margin:0 auto;padding:26px 20px 60px}
 .panel{background:#fff;border:var(--theme-border) solid var(--line);border-radius:var(--theme-radius);box-shadow:var(--theme-shadow);padding:22px}
@@ -112,12 +112,13 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 </head>
 <body>
 <header class="top"><div class="topin">
-  <div class="brand"><img class="brand-wordmark" src="assets/yothe-wordmark.svg" alt="Yothé"><span>Admin</span></div>
+  <div class="brand"><img class="brand-cat" src="assets/yothe-cat-red.png" alt="Yothé Cat"><img class="brand-wordmark" src="assets/yothe-wordmark.svg" alt="Yothé"><span>Admin</span></div>
   <a class="back" href="./">← กลับหน้า E-Learning</a>
 </div></header>
 
 <main class="wrap">
   <section id="loginPanel" class="panel login">
+    <div class="admin-login-brand"><img class="brand-cat" src="assets/yothe-cat-red.png" alt="Yothé Cat"><img class="brand-wordmark" src="assets/yothe-wordmark.svg" alt="Yothé"></div>
     <h1>เข้าสู่ระบบ Admin</h1>
     <p class="muted">กรอกรหัสเพื่อจัดการข้อมูลและ Upload ข้อมูล</p>
     <form id="loginForm">
