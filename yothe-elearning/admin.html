@@ -51,10 +51,10 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .drag-badge{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.9}.move-btn{padding:3px 6px!important;min-width:30px}
 .recipe-title{background:var(--red);color:#fff;font-weight:900;text-align:center;padding:12px 14px;font-size:20px;line-height:1.35;letter-spacing:.1px;position:relative;min-height:52px;display:flex;align-items:center;justify-content:center}
 .recipe-tools{display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid #d1d5db;background:#f8faf9}.recipe-tools .btn{min-height:36px;font-size:12px}
-.recipe-body{display:grid;grid-template-columns:145px 1fr;min-height:260px}
+.recipe-body{display:grid;grid-template-columns:145px minmax(0,1fr);min-height:0;height:auto;align-items:stretch}
 .recipe-photo{border-right:1px solid #d1d5db;display:flex;align-items:center;justify-content:center;padding:12px;background:#fff;min-height:220px}
 .recipe-photo img{width:100%;max-height:225px;object-fit:contain}.table-thumb{width:72px;height:72px;object-fit:contain;display:block;margin:auto}.layout-photo{min-height:175px;border-bottom:1px solid #d1d5db;display:flex;align-items:center;justify-content:center;padding:12px;background:#fff}.layout-photo img{max-width:100%;max-height:200px;object-fit:contain}.layout-photo .empty-photo{color:#9ca3af;font-size:12px;text-align:center}
-.recipe-photo .empty-photo{text-align:center;color:#9ca3af;font-size:12px}
+.recipe-photo .empty-photo{text-align:center;color:#9ca3af;font-size:12px}.recipe-body>div:last-child{min-width:0;height:auto;overflow:visible;display:flex;flex-direction:column}.recipe-body>div:last-child .recipe-table{flex:0 0 auto}.recipe-body>div:last-child .recipe-note{flex:0 0 auto}
 .recipe-table{width:100%;border-collapse:collapse;min-width:0}
 .recipe-table th,.recipe-table td{padding:9px 10px;border:1px solid #d1d5db;font-size:14px;line-height:1.5;min-height:42px;height:auto;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere;word-break:normal;vertical-align:middle}
 .recipe-table th{position:static;background:var(--red);color:#fff;font-weight:900;font-size:13.5px;letter-spacing:.05px;min-height:44px;text-align:center;vertical-align:middle}
@@ -62,7 +62,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .recipe-table th:nth-child(2){color:#fff;text-align:center}
 .recipe-table td:nth-child(2),.recipe-table td:nth-child(3){text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
 .recipe-table tr.topping-row td:first-child{color:#8b1aa8;font-weight:900}
-.recipe-note{background:#ffef57;color:#d91d0b;font-size:13.5px;font-weight:800;padding:10px 12px;line-height:1.5;letter-spacing:.02px;min-height:42px;display:flex;align-items:center}
+.recipe-note{background:#ffef57;color:#d91d0b;font-size:13.5px;font-weight:800;padding:10px 12px;line-height:1.5;letter-spacing:.02px;min-height:42px;height:auto;display:flex;align-items:center;white-space:normal!important;overflow:visible!important}
 .recipe-row-actions{white-space:nowrap;text-align:right}.recipe-row-actions .btn{padding:4px 7px;font-size:10px}
 @media(max-width:920px){.recipe-admin-grid{grid-template-columns:1fr}.recipe-title{font-size:19px}.recipe-table th,.recipe-table td{font-size:13.5px}}
 .layout-panel{margin:0 0 18px;padding:18px;background:#fff;border:1px solid var(--line);border-radius:18px}
@@ -74,7 +74,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .a4-page.landscape{width:297mm;height:210mm;min-height:210mm;max-height:210mm}
 .a4-page:last-child{break-after:auto;page-break-after:auto}
 .a4-page .page-title{font-weight:900;font-size:16px;line-height:1.35;margin:0 0 10px;color:#fff;background:var(--red);padding:9px 12px;border-radius:10px;letter-spacing:.05px;min-height:42px;display:flex;align-items:center}
-.a4-page table{min-width:0;max-width:100%;table-layout:fixed}.a4-page .page-content{flex:1;min-height:0;overflow:hidden;position:relative}.a4-page .page-content>*{max-width:100%;min-width:0}.a4-page .recipe-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%;min-width:0}.a4-page .recipe-sheet{min-width:0;max-width:100%;height:auto;overflow:visible!important}.a4-page .recipe-body{min-width:0}.a4-page .recipe-body>div{min-width:0}.a4-page table{width:100%;max-width:100%}
+.a4-page table{min-width:0;max-width:100%;table-layout:fixed}.a4-page .page-content{flex:1;min-height:0;overflow:hidden;position:relative}.a4-page .page-content>*{max-width:100%;min-width:0}.a4-page .recipe-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%;min-width:0}.a4-page .recipe-sheet{min-width:0;max-width:100%;height:auto;overflow:hidden!important;display:flex;flex-direction:column;align-self:start}.a4-page .edit-layout{height:auto;align-items:stretch}.a4-page .edit-content{height:auto;overflow:visible}.a4-page .recipe-body{height:auto;min-height:0}.a4-page .recipe-body{min-width:0}.a4-page .recipe-body>div{min-width:0}.a4-page table{width:100%;max-width:100%}
 .a4-page .recipe-admin-grid{padding:0;background:#fff}
 .a4-page.full-page{display:flex;flex-direction:column}
 .a4-page.full-page>.page-content{flex:1}
@@ -564,15 +564,13 @@ function waitReviewImages(root){
 }
 function fitReviewPage(page){
   const content=page.querySelector(".page-content");if(!content)return;
-  const inner=content.firstElementChild||content;
 
-  // Reset ก่อนวัดขนาดจริง
+  // Reset ทั้ง Grid ก่อนวัด ให้ทุกการ์ดขยายตามข้อมูลจริง
   content.style.transform="none";
+  content.style.transformOrigin="top left";
   content.style.width="100%";
-  content.style.height="";
-  inner.style.transform="none";
-  inner.style.transformOrigin="top left";
-  inner.style.width="100%";
+  content.style.height="auto";
+  content.style.maxHeight="none";
 
   const cs=getComputedStyle(page);
   const padX=(parseFloat(cs.paddingLeft)||0)+(parseFloat(cs.paddingRight)||0);
@@ -583,22 +581,23 @@ function fitReviewPage(page){
   const availW=Math.max(1,page.clientWidth-padX);
   const availH=Math.max(1,page.clientHeight-padY-titleH-8);
 
-  // วัดหลังข้อความ wrap ครบและรูปโหลดครบ
-  const rect=inner.getBoundingClientRect();
-  const needW=Math.max(inner.scrollWidth,rect.width,1);
-  const needH=Math.max(inner.scrollHeight,rect.height,1);
+  // วัดทั้ง Grid หลังข้อความ wrap และการ์ดทุกใบได้ความสูงจริงแล้ว
+  const rect=content.getBoundingClientRect();
+  const needW=Math.max(content.scrollWidth,rect.width,1);
+  const needH=Math.max(content.scrollHeight,rect.height,1);
 
   let scale=Math.min(1,availW/needW,availH/needH);
   if(!Number.isFinite(scale)||scale<=0)scale=1;
 
-  // ห้ามตัดข้อมูล: ยอมย่อได้มากเมื่อ Layout มีหลายตาราง
-  scale=Math.max(.12,scale*0.97);
+  // เผื่อ rounding ของ browser และยอมย่อได้เพื่อห้ามตัดข้อมูล
+  scale=Math.max(.10,scale*0.965);
 
-  inner.style.transform="scale("+scale+")";
-  inner.style.transformOrigin="top left";
-  inner.style.width=(100/scale)+"%";
-  content.style.height=(needH*scale+4)+"px";
+  content.style.transform="scale("+scale+")";
+  content.style.transformOrigin="top left";
+  // ไม่ขยาย width กลับ เพราะจะทำให้ Grid คำนวณความกว้างใหม่และล้น
+  content.style.width="100%";
   page.dataset.fitScale=scale.toFixed(3);
+  page.dataset.naturalHeight=String(needH);
 }
 function fitReviewSheetToViewport(page){
   const preview=page.closest(".a4-preview");if(!preview)return;
@@ -626,14 +625,13 @@ async function fitAllReviewPages(){
     await new Promise(r=>requestAnimationFrame(r));
 
     const content=page.querySelector(".page-content");
-    const inner=content?.firstElementChild;
-    if(content&&inner){
-      const cr=content.getBoundingClientRect(),ir=inner.getBoundingClientRect();
-      if(ir.right>cr.right-2||ir.bottom>cr.bottom-2){
-        const current=Number(page.dataset.fitScale||1);
-        const next=Math.max(.12,current*0.92);
-        inner.style.transform="scale("+next+")";
-        inner.style.width=(100/next)+"%";
+    if(content){
+      const pageRect=page.getBoundingClientRect();
+      const contentRect=content.getBoundingClientRect();
+      const current=Number(page.dataset.fitScale||1);
+      if(contentRect.right>pageRect.right-6||contentRect.bottom>pageRect.bottom-6){
+        const next=Math.max(.10,current*0.92);
+        content.style.transform="scale("+next+")";
         page.dataset.fitScale=next.toFixed(3);
       }
     }
