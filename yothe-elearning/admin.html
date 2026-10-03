@@ -38,7 +38,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .recipe-tools{display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap;padding:9px;border-bottom:1px solid #d1d5db;background:#f8faf9}.recipe-tools .btn{min-height:34px}
 .recipe-body{display:grid;grid-template-columns:125px 1fr;min-height:235px}
 .recipe-photo{border-right:1px solid #d1d5db;display:flex;align-items:center;justify-content:center;padding:8px;background:#fff}
-.recipe-photo img{width:100%;max-height:210px;object-fit:contain}
+.recipe-photo img{width:100%;max-height:210px;object-fit:contain}.table-thumb{width:64px;height:64px;object-fit:contain;display:block;margin:auto}.layout-photo{min-height:150px;border-bottom:1px solid #d1d5db;display:flex;align-items:center;justify-content:center;padding:8px;background:#fff}.layout-photo img{max-width:100%;max-height:180px;object-fit:contain}.layout-photo .empty-photo{color:#9ca3af;font-size:12px;text-align:center}
 .recipe-photo .empty-photo{text-align:center;color:#9ca3af;font-size:12px}
 .recipe-table{width:100%;border-collapse:collapse;min-width:0}
 .recipe-table th,.recipe-table td{padding:6px 8px;border:1px solid #d1d5db;font-size:12.5px;line-height:1.45;white-space:normal;overflow:visible;overflow-wrap:anywhere;word-break:normal;vertical-align:middle}
@@ -504,6 +504,7 @@ function renderProductionSheets(){
       <button class="btn small secondary" onclick="editRow(${items[0]?.id||'null'})">แก้หัวตาราง/หมายเหตุ</button>
       <button class="btn small primary" onclick="addProductionRow('${esc(name)}')">+ เพิ่มวัตถุดิบ</button>
     </div>
+    <div class="layout-photo">${items.find(x=>x.image_url)?.image_url?'<img src="'+esc(items.find(x=>x.image_url).image_url)+'" alt="'+esc(name)+'">':'<div class="empty-photo">ยังไม่มีรูปตัวอย่าง</div>'}</div>
     <table class="recipe-table"><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th><th>Servings</th><th class="actions"></th></tr></thead>
     <tbody>${items.map(r=>`<tr><td>${esc(r.ingredient||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td>${esc(r.servings||"-")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
 }
@@ -517,8 +518,8 @@ function renderToppingSheets(){
       <button class="btn small secondary" onclick="editRow(${items[0]?.id||'null'})">แก้หัวตาราง/หมายเหตุ</button>
       <button class="btn small primary" onclick="openEditor(null)">+ เพิ่ม Topping</button>
     </div>
-    <table class="recipe-table"><thead><tr><th>รายการ</th><th>จำนวน</th><th>หน่วย</th><th>ราคา</th><th class="actions"></th></tr></thead>
-    <tbody>${items.map(r=>`<tr><td>${esc(r.item_name||r.name||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td>${r.price_baht!=null?esc(r.price_baht)+" บาท":"-"}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
+    <table class="recipe-table"><thead><tr><th>รูป</th><th>รายการ</th><th>จำนวน</th><th>หน่วย</th><th>ราคา</th><th class="actions"></th></tr></thead>
+    <tbody>${items.map(r=>`<tr><td>${r.image_url?'<img class="table-thumb" src="'+esc(r.image_url)+'" alt="'+esc(r.item_name||r.name||"")+'">':'-'}</td><td>${esc(r.item_name||r.name||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td>${r.price_baht!=null?esc(r.price_baht)+" บาท":"-"}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
 }
 function renderExpirySheets(){
   const groups={};rows.forEach(r=>{(groups[r.category||"วันหมดอายุ"]??=[]).push(r)});
@@ -529,8 +530,8 @@ function renderExpirySheets(){
       <button class="btn small secondary" onclick="editRow(${items[0]?.id||'null'})">แก้หัวตาราง/หมายเหตุ</button>
       <button class="btn small primary" onclick="openEditor(null)">+ เพิ่มรายการ</button>
     </div>
-    <table class="recipe-table"><thead><tr><th>รายการ</th><th>การจัดเก็บ</th><th>ยังไม่เปิด</th><th>หลังเปิด</th><th class="actions"></th></tr></thead>
-    <tbody>${items.map(r=>`<tr><td>${esc(r.item_name||"")}</td><td>${esc(r.storage_condition||"")}</td><td>${esc(r.shelf_life_unopened||"-")}</td><td>${esc(r.shelf_life_opened||"-")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
+    <table class="recipe-table"><thead><tr><th>รูป</th><th>รายการ</th><th>การจัดเก็บ</th><th>ยังไม่เปิด</th><th>หลังเปิด</th><th class="actions"></th></tr></thead>
+    <tbody>${items.map(r=>`<tr><td>${r.image_url?'<img class="table-thumb" src="'+esc(r.image_url)+'" alt="'+esc(r.item_name||"")+'">':'-'}</td><td>${esc(r.item_name||"")}</td><td>${esc(r.storage_condition||"")}</td><td>${esc(r.shelf_life_unopened||"-")}</td><td>${esc(r.shelf_life_opened||"-")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
 }
 function renderUniformSheets(){
   const groups={};rows.forEach(r=>{(groups[r.category||"เครื่องแต่งกาย"]??=[]).push(r)});
@@ -541,8 +542,8 @@ function renderUniformSheets(){
       <button class="btn small secondary" onclick="editRow(${items[0]?.id||'null'})">แก้หัวตาราง/หมายเหตุ</button>
       <button class="btn small primary" onclick="openEditor(null)">+ เพิ่มรายการ</button>
     </div>
-    <table class="recipe-table"><thead><tr><th>รายการ</th><th>ขนาด</th><th>รายละเอียด</th><th class="actions"></th></tr></thead>
-    <tbody>${items.map(r=>`<tr><td>${esc(r.item_name||"")}</td><td>${esc(r.size_info||"-")}</td><td>${esc(r.description||r.usage_notes||"")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
+    <table class="recipe-table"><thead><tr><th>รูป</th><th>รายการ</th><th>ขนาด</th><th>รายละเอียด</th><th class="actions"></th></tr></thead>
+    <tbody>${items.map(r=>`<tr><td>${r.image_url?'<img class="table-thumb" src="'+esc(r.image_url)+'" alt="'+esc(r.item_name||"")+'">':'-'}</td><td>${esc(r.item_name||"")}</td><td>${esc(r.size_info||"-")}</td><td>${esc(r.description||r.usage_notes||"")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
 }
 
 function renderCourseSheets(){
