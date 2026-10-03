@@ -198,7 +198,7 @@ async function loadAttachments(section){
       const preview=info.type==="image"&&f.url
         ?'<div class="attachment-preview"><img src="'+esc(f.url)+'" alt="'+esc(f.title||f.file_name)+'" loading="lazy"></div>'
         :'<div class="attachment-preview"><div class="attachment-icon">'+info.icon+'</div></div>';
-      return '<article class="attachment-card">'+preview+'<div class="attachment-body"><div class="attachment-title">'+esc(f.title||f.file_name)+'</div><div class="attachment-file">'+esc(info.label)+' • '+esc(f.file_name)+'</div>'+(f.url?'<button class="attachment-open" type="button" onclick="openAttachmentViewer(\''+esc(section)+'\','+idx+')">เปิดไฟล์</button>':'')+'</div></article>'
+      return '<article class="attachment-card">'+preview+'<div class="attachment-body"><div class="attachment-title">'+esc(f.title||f.file_name)+'</div>'+(f.url?'<button class="attachment-open" type="button" onclick="openAttachmentViewer(\''+esc(section)+'\','+idx+')">เปิดไฟล์</button>':'')+'</div></article>'
     }).join("")+'</div>';
   }catch(e){el.innerHTML='<div class="state">โหลดไฟล์แนบไม่สำเร็จ: '+esc(e.message)+'</div>'}
 }
