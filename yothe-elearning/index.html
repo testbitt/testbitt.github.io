@@ -76,7 +76,6 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
   <nav id="navLinks" class="navlinks">
     <button data-view="home" class="active">Home</button>
     <button class="auth-only hidden-auth" data-view="uniforms">เครื่องแต่งกาย</button>
-    <button class="auth-only hidden-auth" data-view="drinkmenu">Menu เครื่องดื่ม</button>
     <button class="auth-only hidden-auth" data-view="production">สูตรการผลิต</button>
     <button class="auth-only hidden-auth" data-view="drinks">สูตรชง</button>
     <button class="auth-only hidden-auth" data-view="expiry">วันหมดอายุ</button>
@@ -96,11 +95,6 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
     <div id="homeEntry" class="home-entry">
       <button id="enterWebsiteBtn" class="enter-btn">Click เพื่อเข้าสู่ Website</button>
     </div>
-  </section>
-
-  <section id="view-drinkmenu" class="view">
-    <div class="section-head"><div><h2>Menu เครื่องดื่ม</h2></div></div>
-    <div id="drinkMenuList" class="cards"></div>
   </section>
 
   <section id="view-production" class="view"><div class="section-head"><div><h2>สูตรการผลิต</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="productionList" class="grid"></div><div id="attachments-production" class="attachments"></div></section>
@@ -276,43 +270,19 @@ function renderMenuOrder(order){
   const nav=document.getElementById("navLinks"),
     home=nav.querySelector('[data-view="home"]'),
     uniforms=nav.querySelector('[data-view="uniforms"]'),
-    drinkmenu=nav.querySelector('[data-view="drinkmenu"]'),
     coursesBtn=nav.querySelector('[data-view="courses"]'),
     admin=nav.querySelector('a[href="admin.html"]');
   const rest=order.filter(x=>["production","drinks","expiry","toppings"].includes(x));
   nav.insertBefore(home,nav.firstChild);
   if(uniforms) nav.insertBefore(uniforms,home.nextSibling);
-  if(drinkmenu) nav.insertBefore(drinkmenu,uniforms?uniforms.nextSibling:home.nextSibling);
   rest.forEach(k=>{const el=nav.querySelector('[data-view="'+k+'"]');if(el)nav.insertBefore(el,coursesBtn)});
   nav.appendChild(coursesBtn);
   nav.appendChild(admin);
 }
 function showView(view){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));document.getElementById("view-"+view)?.classList.add("active");document.querySelectorAll('#navLinks [data-view]').forEach(x=>x.classList.toggle("active",x.dataset.view===view));window.scrollTo({top:0,behavior:"smooth"});loadView(view)}
-async function loadDrinkMenuPage(){
-  const el=document.getElementById("drinkMenuList");
-  el.innerHTML='<div class="state">กำลังโหลด Menu เครื่องดื่ม...</div>';
-  try{
-    const [rows,metas]=await Promise.all([api("drinks"),api("drink_meta")]);
-    const metaMap=Object.fromEntries(metas.map(x=>[String(x.recipe_id),x]));
-    const groups={};
-    rows.forEach(r=>{const id=String(r.recipe_id||"");if(id&&!groups[id])groups[id]=r});
-    const entries=sortGroupedEntries("drinks",Object.entries(groups));
-    el.innerHTML=entries.map(([id,r])=>{
-      const m=metaMap[id]||{};
-      const img=m.image_url||"";
-      const name=r.menu_name||id;
-      const size=m.size_label||"";
-      return '<article class="drink-menu-card" data-drink-recipe="'+esc(id)+'">'+
-        (img?'<img src="'+esc(img)+'" alt="'+esc(name)+'">':'<div style="aspect-ratio:1/1;display:grid;place-items:center;background:#f8faf9;border-radius:14px;color:#9ca3af;margin-bottom:10px">ยังไม่มีรูป</div>')+
-        '<h3>'+esc(name)+'</h3>'+(size?'<div class="drink-menu-size">'+esc(size)+'</div>':'')+
-      '</article>';
-    }).join("")||'<div class="state">ยังไม่มี Menu เครื่องดื่ม</div>';
-  }catch(e){el.innerHTML='<div class="state">'+esc(e.message)+'</div>'}
-}
 async function loadView(view){
   try{
     if(view==="home"){if(token)await loadAttachments("home");else{const el=document.getElementById("attachments-home");if(el)el.innerHTML=""}return}
-    if(view==="drinkmenu"){await loadDrinkMenuPage();return}
     if(view==="production"){const r=await api("production");renderProduction(r);await loadAttachments("production");return}
     if(view==="drinks"){const [r,m]=await Promise.all([api("drinks"),api("drink_meta")]);renderDrinks(r,m);await loadAttachments("drinks");return}
     if(view==="toppings"){renderToppings(await api("toppings"));await loadAttachments("toppings");return}
@@ -408,13 +378,6 @@ document.getElementById("logoutBtn").onclick=async()=>{
   await loadPublicHome();
 };
 document.addEventListener("click",e=>{
-  const drinkCard=e.target.closest("[data-drink-recipe]");
-  if(drinkCard){
-    e.preventDefault();
-    if(!token){openLogin();return}
-    showView("drinks");
-    return;
-  }
   const lesson=e.target.closest("[data-open-view]");
   if(lesson){
     e.preventDefault();
