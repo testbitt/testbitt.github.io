@@ -252,6 +252,8 @@ document.getElementById("loginForm").addEventListener("submit",async e=>{
   try{
     const r=await post(LOGIN_API,{action:"login",username:document.getElementById("loginUser").value,password:document.getElementById("loginPass").value});
     token=r.token;currentUser=r.user;cache={};
+    sessionStorage.setItem("yothe_session_token",token);
+    sessionStorage.setItem("yothe_session_user",JSON.stringify(currentUser));
     closeLogin();
     setAuthUI(true);
     document.getElementById("currentUser").textContent=r.user.display_name||r.user.username;
@@ -265,6 +267,8 @@ document.getElementById("welcomeOkBtn").onclick=()=>document.getElementById("wel
 document.getElementById("logoutBtn").onclick=async()=>{
   try{await post(LOGIN_API,{action:"logout",token})}catch{}
   token="";cache={};currentUser=null;settingsMap={};
+  sessionStorage.removeItem("yothe_session_token");
+  sessionStorage.removeItem("yothe_session_user");
   setAuthUI(false);
   document.getElementById("currentUser").textContent="";
   document.getElementById("loginPass").value="";
@@ -287,10 +291,33 @@ document.addEventListener("click",e=>{
 });
 document.getElementById("courseSearch").addEventListener("input",renderCourses);
 
-// ทุกครั้งที่เปิด Website เริ่มที่ Home และยังไม่ถือว่า Login
-setAuthUI(false);
-showView("home");
-loadPublicHome();
+// เปิด Website ที่ Home เสมอ แต่คง Login ไว้ภายในแท็บเดิมจนกว่าจะปิดแท็บหรือ Logout
+async function restoreTabSession(){
+  showView("home");
+  const savedToken=sessionStorage.getItem("yothe_session_token")||"";
+  if(!savedToken){
+    setAuthUI(false);
+    await loadPublicHome();
+    return;
+  }
+  try{
+    const r=await post(LOGIN_API,{action:"validate",token:savedToken});
+    token=savedToken;
+    currentUser=r.user;
+    cache={};
+    setAuthUI(true);
+    document.getElementById("currentUser").textContent=currentUser.display_name||currentUser.username;
+    await loadSettings();
+    showView("home");
+  }catch{
+    token="";currentUser=null;cache={};settingsMap={};
+    sessionStorage.removeItem("yothe_session_token");
+    sessionStorage.removeItem("yothe_session_user");
+    setAuthUI(false);
+    await loadPublicHome();
+  }
+}
+restoreTabSession();
 </script>
 </body>
 </html>
