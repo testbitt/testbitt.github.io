@@ -99,7 +99,9 @@
       <a href="#courses">สูตรการผลิต</a>
       <a href="#courses">สูตรชง</a>
       <a href="#expiry">วันหมดอายุ</a>
+      <a href="#toppings">Topping</a>
       <a href="#courses">บทเรียนอื่น ๆ</a>
+      <a href="admin.html">Admin</a>
     </nav>
   </div>
 </header>
@@ -155,6 +157,16 @@
       <button class="chip" data-filter="บทเรียนอื่น ๆ">บทเรียนอื่น ๆ</button>
     </div>
     <div id="course-grid" class="grid"><div class="state loading">กำลังโหลดบทเรียน...</div></div>
+  </section>
+
+  <section id="toppings">
+    <div class="section-head">
+      <div>
+        <h2>Topping</h2>
+        <p>เรียนรู้ข้อมูล Topping วิธีใช้ และข้อควรระวัง</p>
+      </div>
+    </div>
+    <div id="topping-grid" class="grid"><div class="state loading">กำลังโหลดข้อมูล Topping...</div></div>
   </section>
 
   <section id="expiry">
@@ -244,6 +256,26 @@ async function loadCourses(){
   }
 }
 
+async function loadToppings(){
+  try{
+    const rows=await sb("yothe_toppings?select=id,name,category,description,image_url,usage_notes,sort_order&is_published=eq.true&order=sort_order.asc");
+    const el=document.getElementById("topping-grid");
+    if(!rows.length){el.innerHTML='<div class="state">ยังไม่มีข้อมูล Topping</div>';return}
+    el.innerHTML=rows.map(r=>`
+      <article class="card">
+        <div class="thumb">${r.image_url?'<img src="'+esc(r.image_url)+'" alt="'+esc(r.name)+'" style="width:100%;height:100%;object-fit:cover">':esc(r.category||"Topping")}</div>
+        <div class="card-body">
+          <span class="tag">${esc(r.category||"Topping")}</span>
+          <h3>${esc(r.name)}</h3>
+          <p>${esc(r.description||"")}</p>
+          ${r.usage_notes?'<div class="meta"><span>'+esc(r.usage_notes)+'</span></div>':''}
+        </div>
+      </article>`).join("");
+  }catch(e){
+    document.getElementById("topping-grid").innerHTML='<div class="state">ไม่สามารถโหลดข้อมูล Topping ได้</div>';
+  }
+}
+
 async function loadExpiry(){
   try{
     const rows = await sb("yothe_expiry_items?select=item_name,category,storage_condition,shelf_life_unopened,shelf_life_opened,unit,notes,warning_level&is_published=eq.true&order=sort_order.asc");
@@ -284,6 +316,7 @@ document.querySelectorAll(".chip").forEach(btn=>btn.addEventListener("click",()=
 
 loadBrandStory();
 loadCourses();
+loadToppings();
 loadExpiry();
 </script>
 </body>
