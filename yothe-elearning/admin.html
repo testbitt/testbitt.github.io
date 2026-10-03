@@ -20,7 +20,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .btn{border:0;border-radius:12px;padding:11px 15px;font-weight:800}.primary{background:var(--red);color:#fff}.secondary{background:#fff;color:var(--red);border:1px solid #fecdd3}.danger{background:#fff1f2;color:#b91c1c;border:1px solid #fecaca}.small{padding:7px 10px;font-size:12px}
 .hidden{display:none!important}.msg{margin-top:10px;font-size:13px}.error{color:#b91c1c}.ok{color:#15803d}.saving{color:#b45309}.autosave-note{font-size:12px;color:#15803d;font-weight:800;margin-left:8px}
 .head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}.head h1{margin:0;font-size:clamp(30px,3.2vw,48px);line-height:1.15;font-weight:900;letter-spacing:-.4px}.head p{margin:7px 0 0;color:var(--muted);font-size:16px;line-height:1.6;font-weight:500}
-.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px;align-items:center}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;font-weight:800;user-select:none}.tab.active{background:var(--red);color:#fff;border-color:var(--red)}.tab[draggable="true"]{cursor:grab}.tab.dragging{opacity:.45;transform:scale(.97)}.tab.drag-over{outline:3px dashed var(--red);outline-offset:2px}.drag-hint{font-size:12px;color:var(--muted);width:100%;margin-top:3px}.user-tools{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:10px;margin-bottom:16px}.user-import{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.user-table{width:100%;border-collapse:collapse}.user-table th,.user-table td{padding:10px;border-bottom:1px solid var(--line);font-size:13px}.user-table th{background:var(--red);color:#fff}.user-status{font-weight:800}.user-status.on{color:#15803d}.user-status.off{color:#b91c1c}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px;align-items:center}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;font-weight:800;user-select:none}.tab.active{background:var(--red);color:#fff;border-color:var(--red)}.tab[draggable="true"]{cursor:grab}.tab.dragging{opacity:.45;transform:scale(.97)}.tab.drag-over{outline:3px dashed var(--red);outline-offset:2px}.drag-hint{font-size:12px;color:var(--muted);width:100%;margin-top:3px}.user-tools{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;margin-bottom:16px}.user-form-actions{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.user-section-title{font-size:18px;font-weight:900;margin:0 0 12px}.user-toolbar{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:10px 0 14px}.user-import{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.user-table{width:100%;border-collapse:collapse}.user-table th,.user-table td{padding:10px;border-bottom:1px solid var(--line);font-size:13px}.user-table th{background:var(--red);color:#fff}.user-status{font-weight:800}.user-status.on{color:#15803d}.user-status.off{color:#b91c1c}
 .attachment-list{display:grid;gap:8px;margin-top:12px}
 .attachment-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}
 .attachment-name{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -370,7 +370,7 @@ document.getElementById("tabs").addEventListener("click",e=>{
   dataset=b.dataset.dataset;if(DATASETS[dataset])document.getElementById("uploadDataset").value=dataset;hideEditor();syncAttachmentSection();loadData();
 });
 document.getElementById("refreshBtn").onclick=loadData;
-document.getElementById("addBtn").onclick=()=>dataset==="users"?document.getElementById("userImportFile")?.click():dataset==="drinks"?openEditor({record_id:"DRK-"+Date.now(),recipe_id:"RECIPE-"+Date.now(),component_type:"Ingredient",sort_order:1,is_published:true}):openEditor(null);
+document.getElementById("addBtn").onclick=()=>dataset==="users"?document.getElementById("userUsername")?.focus():dataset==="drinks"?openEditor({record_id:"DRK-"+Date.now(),recipe_id:"RECIPE-"+Date.now(),component_type:"Ingredient",sort_order:1,is_published:true}):openEditor(null);
 document.getElementById("cancelEdit").onclick=hideEditor;
 
 async function loadData(){
@@ -390,7 +390,9 @@ async function loadData(){
   }catch(err){wrap.innerHTML='<div style="padding:20px" class="error">'+esc(err.message)+'</div>'}
 }
 
-let userRows=[];
+
+let userRows=[],userEditingId=null;
+const USER_POSITIONS=["Area Manager","Training","Suppervisor","Teamlead","Staff","Admin"];
 async function loadUsers(){
   const hint=document.getElementById("datasetHint"),wrap=document.getElementById("tableWrap");
   try{
@@ -399,36 +401,55 @@ async function loadUsers(){
     renderUsers();
   }catch(err){wrap.innerHTML='<div style="padding:20px" class="error">'+esc(err.message)+'</div>'}
 }
+function positionOptions(selected=""){
+  return '<option value="">-- เลือกตำแหน่ง --</option>'+USER_POSITIONS.map(p=>'<option value="'+esc(p)+'" '+(p===selected?'selected':'')+'>'+esc(p)+'</option>').join("");
+}
 function renderUsers(){
   const wrap=document.getElementById("tableWrap");wrap.className="";
+  const edit=userEditingId?userRows.find(x=>String(x.id)===String(userEditingId)):null;
   wrap.innerHTML=`
     <div class="panel" style="box-shadow:none;border:0;padding:0">
-
-      <div class="user-import">
-        <div class="field" style="max-width:420px"><label>Import User (CSV) — เพิ่มต่อจากข้อมูลเดิม ไม่เขียนทับ</label><input id="userImportFile" class="input" type="file" accept=".csv,text/csv"></div>
-        <button class="btn secondary" onclick="importUsers()">Import</button>
-        <button class="btn secondary" onclick="downloadUserTemplate()">ดาวน์โหลด Template User</button> <button class="btn secondary" onclick="exportUsers()">Export User</button>
+      <div class="user-section-title">${edit?"แก้ไข User":"เพิ่ม User"}</div>
+      <div class="user-tools">
+        <div class="field"><label>Username</label><input id="userUsername" class="input" autocomplete="off" value="${esc(edit?.username||"")}"></div>
+        <div class="field"><label>Password ${edit?"(เว้นว่างหากไม่เปลี่ยน)":""}</label><input id="userPassword" class="input" type="password" autocomplete="new-password"></div>
+        <div class="field"><label>Display Name</label><input id="userDisplayName" class="input" value="${esc(edit?.display_name||"")}"></div>
+        <div class="field"><label>Position</label><select id="userPosition" class="input">${positionOptions(edit?.position||"")}</select></div>
       </div>
-      <p class="help">คอลัมน์ Import: username,password,display_name,position • ระบบกำหนด active = TRUE ให้อัตโนมัติ • User ที่มีอยู่แล้วจะถูกข้าม ไม่แก้ข้อมูลเดิม • Password เก็บแบบ Hash และไม่ถูก Export กลับออกมา</p>
+      <div class="user-form-actions">
+        <button class="btn primary" onclick="saveUserForm()">${edit?"บันทึกการแก้ไข":"+ เพิ่ม User"}</button>
+        ${edit?'<button class="btn secondary" onclick="cancelUserEdit()">ยกเลิก</button>':''}
+      </div>
+
+      <div class="user-section-title" style="margin-top:24px">Template / Import User</div>
+      <div class="user-toolbar">
+        <div class="field" style="max-width:420px;margin:0"><label>Import Template User (CSV)</label><input id="userImportFile" class="input" type="file" accept=".csv,text/csv"></div>
+        <button class="btn secondary" onclick="importUsers()">Import User</button>
+        <button class="btn secondary" onclick="downloadUserTemplate()">Template User</button>
+        <button class="btn secondary" onclick="exportUsers()">Export User</button>
+      </div>
+      <p class="help">Template ใช้คอลัมน์: username, password, display_name, position • Position: Area Manager / Training / Suppervisor / Teamlead / Staff / Admin • User ที่มีอยู่แล้วจะถูกข้ามและไม่เขียนทับ</p>
       <div id="userMsg" class="msg"></div>
-      <div class="tablewrap"><table class="user-table"><thead><tr><th>User</th><th>ชื่อผู้ใช้</th><th>ตำแหน่ง</th><th>สถานะ</th><th>สร้างเมื่อ</th><th>จัดการ</th></tr></thead>
+
+      <div class="tablewrap"><table class="user-table"><thead><tr><th>Username</th><th>Display Name</th><th>Position</th><th>สถานะ</th><th>สร้างเมื่อ</th><th>จัดการ</th></tr></thead>
       <tbody>${userRows.map(u=>`<tr><td><strong>${esc(u.username)}</strong></td><td>${esc(u.display_name||"")}</td><td>${esc(u.position||"")}</td><td><span class="user-status ${u.active?"on":"off"}">${u.active?"ใช้งาน":"ปิดใช้งาน"}</span></td><td>${new Date(u.created_at).toLocaleString("th-TH")}</td><td class="actions"><button class="btn small secondary" onclick="editUser('${u.id}')">แก้ไข</button> <button class="btn small danger" onclick="deleteUser('${u.id}')">ลบ</button></td></tr>`).join("")}</tbody></table></div>
     </div>`;
 }
-window.createUser=async()=>{
-  const username=document.getElementById("newUsername").value.trim(),password=document.getElementById("newPassword").value,display_name=document.getElementById("newDisplayName").value.trim(),position=document.getElementById("newPosition").value,m=document.getElementById("userMsg");
-  try{m.textContent="กำลังสร้าง User...";m.className="msg saving";await api({action:"save_user",user:{username,password,display_name,position,active:true}});m.textContent="สร้าง User แล้ว";m.className="msg ok";await loadUsers()}catch(err){m.textContent=err.message;m.className="msg error"}
+window.saveUserForm=async()=>{
+  const username=document.getElementById("userUsername").value.trim();
+  const password=document.getElementById("userPassword").value;
+  const display_name=document.getElementById("userDisplayName").value.trim();
+  const position=document.getElementById("userPosition").value;
+  const m=document.getElementById("userMsg");
+  try{
+    m.textContent=userEditingId?"กำลังบันทึกการแก้ไข...":"กำลังสร้าง User...";m.className="msg saving";
+    await api({action:"save_user",id:userEditingId||undefined,user:{username,password,display_name,position,active:true}});
+    userEditingId=null;m.textContent="บันทึก User แล้ว";m.className="msg ok";await loadUsers();
+  }catch(err){m.textContent=err.message;m.className="msg error"}
 };
-window.editUser=async id=>{
-  const u=userRows.find(x=>x.id===id);if(!u)return;
-  const username=prompt("User",u.username);if(username===null)return;
-  const display_name=prompt("ชื่อผู้ใช้",u.display_name||"");if(display_name===null)return;
-  const position=prompt("ตำแหน่ง: Area Manager / Training / Suppervisor / Teamlead / Staff / Admin",u.position||"");if(position===null)return;
-  const password=prompt("Password ใหม่ (เว้นว่างหากไม่เปลี่ยน)","");if(password===null)return;
-  const active=confirm("กด OK = เปิดใช้งาน\nกด Cancel = ปิดใช้งาน");
-  try{await api({action:"save_user",id,user:{username,display_name,position,password,active}});await loadUsers()}catch(err){alert(err.message)}
-};
-window.deleteUser=async id=>{if(!confirm("ยืนยันการลบ User นี้?"))return;try{await api({action:"delete_user",id});await loadUsers()}catch(err){alert(err.message)}};
+window.editUser=id=>{userEditingId=id;renderUsers();document.getElementById("userUsername")?.scrollIntoView({behavior:"smooth",block:"center"})};
+window.cancelUserEdit=()=>{userEditingId=null;renderUsers()};
+window.deleteUser=async id=>{if(!confirm("ยืนยันการลบ User นี้?"))return;try{await api({action:"delete_user",id});if(String(userEditingId)===String(id))userEditingId=null;await loadUsers()}catch(err){alert(err.message)}};
 window.importUsers=async()=>{
   const file=document.getElementById("userImportFile").files?.[0],m=document.getElementById("userMsg");if(!file){m.textContent="กรุณาเลือกไฟล์ CSV";m.className="msg error";return}
   try{const data=parseCSV(await file.text());const res=await api({action:"import_users",rows:data});m.textContent="Import สำเร็จ "+res.inserted+" รายการ • ข้าม User เดิม/ข้อมูลไม่ครบ "+res.skipped+" รายการ";m.className="msg ok";await loadUsers()}catch(err){m.textContent=err.message;m.className="msg error"}
@@ -436,17 +457,17 @@ window.importUsers=async()=>{
 window.downloadUserTemplate=()=>{
   const rows=[
     ["username","password","display_name","position"],
-    ["staff001","1234","ผู้จัดการเขตตัวอย่าง","Area Manager"],
-    ["staff002","5678","ทีม Training ตัวอย่าง","Training"],
-    ["staff003","abcd","Supervisor ตัวอย่าง","Suppervisor"],
-    ["staff004","1234","Teamlead ตัวอย่าง","Teamlead"],
-    ["staff005","1234","Staff ตัวอย่าง","Staff"],
-    ["admin001","1234","Admin ตัวอย่าง","Admin"]
+    ["user001","1234","ชื่อพนักงาน 1","Area Manager"],
+    ["user002","1234","ชื่อพนักงาน 2","Training"],
+    ["user003","1234","ชื่อพนักงาน 3","Suppervisor"],
+    ["user004","1234","ชื่อพนักงาน 4","Teamlead"],
+    ["user005","1234","ชื่อพนักงาน 5","Staff"],
+    ["admin001","1234","ผู้ดูแลระบบ","Admin"]
   ];
   const csv=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(",")).join("\n");
   const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
-  a.href=url;a.download="Yothe_Employee_Import_Template.csv";a.click();
+  a.href=url;a.download="Yothe_User_Template.csv";a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
 window.exportUsers=()=>{
