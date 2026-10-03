@@ -140,7 +140,7 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 const LOGIN_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-login";
 const PUBLIC_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-public";
 const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
-let token="",currentUser=null,cache={},courses=[],settingsMap={},attachmentSets={},attachmentViewerSection="",attachmentViewerIndex=0;
+let token="",currentUser=null,cache={},courses=[],settingsMap={},attachmentSets={},attachmentViewerSection="",attachmentViewerIndex=0,customMenus=[];
 function setAuthUI(loggedIn){
   document.querySelectorAll(".auth-only").forEach(el=>el.classList.toggle("hidden-auth",!loggedIn));
   document.getElementById("userBox")?.classList.toggle("hidden",!loggedIn);
@@ -245,7 +245,33 @@ function stepAttachment(dir){
   attachmentViewerIndex=next;
   renderAttachmentViewer();
 }
-async function loadSettings(){const rows=await api("settings"),map=Object.fromEntries(rows.map(x=>[x.key,x.value]));settingsMap=map;applyTheme(map.display_preferences||{});renderMenuOrder(map.menu_order||["uniforms","production","drinks","expiry","toppings"]);renderBrandStoryValue(map.brand_story||{});if(token)await loadAttachments("home")}
+function renderCustomMenus(list=[]){
+  customMenus=Array.isArray(list)?list:[];
+  const nav=document.getElementById("navLinks");
+  nav.querySelectorAll("[data-custom-menu]").forEach(x=>x.remove());
+  document.querySelectorAll(".custom-menu-view").forEach(x=>x.remove());
+
+  const coursesBtn=nav.querySelector('[data-view="courses"]');
+  const main=document.querySelector("main");
+  const coursesView=document.getElementById("view-courses");
+
+  customMenus.filter(m=>m&&m.active!==false&&m.id&&m.label&&m.section).forEach(m=>{
+    const btn=document.createElement("button");
+    btn.className="auth-only hidden-auth";
+    btn.dataset.view=m.section;
+    btn.dataset.customMenu="1";
+    btn.textContent=m.label;
+    nav.insertBefore(btn,coursesBtn);
+
+    const section=document.createElement("section");
+    section.id="view-"+m.section;
+    section.className="view custom-menu-view";
+    section.innerHTML='<div class="section-head"><div><h2>'+esc(m.label)+'</h2>'+(m.description?'<p>'+esc(m.description)+'</p>':'')+'</div></div><div id="attachments-'+esc(m.section)+'" class="attachments"></div>';
+    main.insertBefore(section,coursesView);
+  });
+  setAuthUI(!!token);
+}
+async function loadSettings(){const rows=await api("settings"),map=Object.fromEntries(rows.map(x=>[x.key,x.value]));settingsMap=map;applyTheme(map.display_preferences||{});renderMenuOrder(map.menu_order||["uniforms","production","drinks","expiry","toppings"]);renderCustomMenus(map.custom_menus||[]);renderBrandStoryValue(map.brand_story||{});if(token)await loadAttachments("home")}
 function renderMenuOrder(order){
   const nav=document.getElementById("navLinks"),
     home=nav.querySelector('[data-view="home"]'),
@@ -293,6 +319,7 @@ async function loadView(view){
     if(view==="expiry"){renderExpiry(await api("expiry"));await loadAttachments("expiry");return}
     if(view==="uniforms"){renderUniforms(await api("uniforms"));await loadAttachments("uniforms");return}
     if(view==="courses"){await loadAllLessons();await loadAttachments("courses");return}
+    if(view.startsWith("custom-")){await loadAttachments(view);return}
   }catch(e){
     const el=document.querySelector("#view-"+view+" [id$='List']");
     if(el)el.innerHTML='<div class="state">'+esc(e.message)+'</div>'
