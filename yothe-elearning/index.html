@@ -78,7 +78,7 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
   <section id="view-expiry" class="view"><div class="section-head"><div><h2>วันหมดอายุ</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div><a class="edit-link" href="admin.html?edit=expiry">✎ แก้ไข</a></div><div id="expiryList"></div></section>
   <section id="view-toppings" class="view"><div class="section-head"><div><h2>Topping</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div><a class="edit-link" href="admin.html?edit=toppings">✎ แก้ไข</a></div><div id="toppingList" class="grid"></div></section>
   <section id="view-uniforms" class="view"><div class="section-head"><div><h2>เครื่องแต่งกาย</h2><p>มาตรฐานและข้อมูลเครื่องแต่งกาย</p></div><a class="edit-link" href="admin.html?edit=uniforms">✎ แก้ไข</a></div><div id="uniformList" class="grid"></div></section>
-  <section id="view-courses" class="view"><div class="section-head"><div><h2>บทเรียนอื่น ๆ</h2><p>แสดงเมื่อเลือกหัวข้อนี้เท่านั้น</p></div><a class="edit-link" href="admin.html?edit=settings">✎ แก้ไข</a></div><input id="courseSearch" class="search" placeholder="ค้นหาบทเรียน..."><div id="courseList" class="cards"></div></section>
+  <section id="view-courses" class="view"><div class="section-head"><div><h2>บทเรียนทั้งหมด</h2><p>รวมบทเรียนทั้งหมดที่มีอยู่ใน Yothé E-Learning</p></div><a class="edit-link" href="admin.html">✎ แก้ไข</a></div><input id="courseSearch" class="search" placeholder="ค้นหาบทเรียนทั้งหมด..."><div id="courseList" class="cards"></div></section>
 </main>
 </div>
 
@@ -94,7 +94,7 @@ function applyTheme(pref={}){const ci=Math.max(1,Math.min(50,Number(pref.color_i
 async function loadSettings(){const rows=await api("settings"),map=Object.fromEntries(rows.map(x=>[x.key,x.value]));applyTheme(map.display_preferences||{});renderMenuOrder(map.menu_order||["production","drinks","expiry","toppings"]);const s=map.brand_story||{},ps=Array.isArray(s.paragraphs)?s.paragraphs:(s.body?[s.body]:[]);document.getElementById("storyTitle").textContent=s.title||"BRAND STORY";document.getElementById("storyBody").innerHTML=ps.length?ps.map(x=>"<p>"+esc(x)+"</p>").join(""):"<p>ยังไม่มีข้อมูล Brand Story</p>"}
 function renderMenuOrder(order){const nav=document.getElementById("navLinks"),home=nav.querySelector('[data-view="home"]'),coursesBtn=nav.querySelector('[data-view="courses"]'),admin=nav.querySelector('a[href="admin.html"]');order.filter(x=>["production","drinks","expiry","toppings","uniforms"].includes(x)).forEach(k=>{const el=nav.querySelector('[data-view="'+k+'"]');if(el)nav.insertBefore(el,coursesBtn)});nav.insertBefore(home,nav.firstChild);nav.appendChild(coursesBtn);nav.appendChild(admin)}
 function showView(view){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));document.getElementById("view-"+view)?.classList.add("active");document.querySelectorAll('#navLinks [data-view]').forEach(x=>x.classList.toggle("active",x.dataset.view===view));window.scrollTo({top:0,behavior:"smooth"});loadView(view)}
-async function loadView(view){try{if(view==="home")return;if(view==="production")return renderProduction(await api("production"));if(view==="drinks"){const [r,m]=await Promise.all([api("drinks"),api("drink_meta")]);return renderDrinks(r,m)}if(view==="toppings")return renderToppings(await api("toppings"));if(view==="expiry")return renderExpiry(await api("expiry"));if(view==="uniforms")return renderUniforms(await api("uniforms"));if(view==="courses"){courses=await api("courses");return renderCourses()}}catch(e){const el=document.querySelector("#view-"+view+" [id$='List']");if(el)el.innerHTML='<div class="state">'+esc(e.message)+'</div>'}}
+async function loadView(view){try{if(view==="home")return;if(view==="production")return renderProduction(await api("production"));if(view==="drinks"){const [r,m]=await Promise.all([api("drinks"),api("drink_meta")]);return renderDrinks(r,m)}if(view==="toppings")return renderToppings(await api("toppings"));if(view==="expiry")return renderExpiry(await api("expiry"));if(view==="uniforms")return renderUniforms(await api("uniforms"));if(view==="courses")return loadAllLessons()}catch(e){const el=document.querySelector("#view-"+view+" [id$='List']");if(el)el.innerHTML='<div class="state">'+esc(e.message)+'</div>'}}
 function renderProduction(rows){const g={};rows.forEach(r=>(g[r.recipe_name||"ไม่ระบุชื่อ"]??=[]).push(r));document.getElementById("productionList").innerHTML=Object.entries(g).map(([name,items])=>'<article class="sheet"><div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th></tr></thead><tbody>'+items.map(x=>'<tr><td>'+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td></tr>').join("")+'</tbody></table></article>').join("")||'<div class="state">ยังไม่มีข้อมูล</div>'}
 function renderDrinks(rows,metas){const mm=Object.fromEntries(metas.map(x=>[x.recipe_id,x])),g={};rows.forEach(r=>(g[r.recipe_id]??=[]).push(r));document.getElementById("drinkList").innerHTML=Object.entries(g).map(([id,items])=>{items.sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));const first=items[0]||{},m=mm[id]||{},tops=items.filter(x=>String(x.component_type||"").toLowerCase()==="topping").map(x=>x.sort_order||9999),ft=tops.length?Math.min(...tops):null;return '<article class="sheet"><div class="sheet-title">'+esc(first.menu_name||id)+'</div><div class="sheet-body"><div class="photo">'+(m.image_url?'<img src="'+esc(m.image_url)+'" alt="'+esc(first.menu_name||id)+'">':'<div class="empty">ยังไม่มีรูป</div>')+'</div><div><table><thead><tr><th>วัตถุดิบ</th><th>'+esc(m.size_label||"17 oz.(IB)")+'</th><th>หน่วย</th></tr></thead><tbody>'+items.map(x=>'<tr><td>'+(ft!==null&&x.sort_order===ft?'<span class="topping">Topping</span><br>':'')+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td></tr>').join("")+'</tbody></table>'+(m.note?'<div class="note">'+esc(m.note)+'</div>':'')+'</div></div></article>'}).join("")||'<div class="state">ยังไม่มีข้อมูล</div>'}
 function renderToppings(rows){const g={};rows.forEach(r=>{const k=(r.category||"Topping")+" • "+(r.subcategory||"ทั่วไป");(g[k]??=[]).push(r)});document.getElementById("toppingList").innerHTML=Object.entries(g).map(([name,items])=>'<article class="sheet"><div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th>รายการ</th><th>จำนวน</th><th>หน่วย</th><th>ราคา</th></tr></thead><tbody>'+items.map(r=>'<tr><td>'+esc(r.item_name||r.name||"")+'</td><td class="num">'+esc(r.quantity??"-")+'</td><td class="num">'+esc(r.unit||"-")+'</td><td class="num">'+(r.price_baht!=null?esc(r.price_baht)+" บาท":"-")+'</td></tr>').join("")+'</tbody></table></article>').join("")||'<div class="state">ยังไม่มีข้อมูล</div>'}
@@ -103,10 +103,48 @@ function renderUniforms(rows){
   const g={};rows.forEach(r=>{(g[r.category||"เครื่องแต่งกาย"]??=[]).push(r)});
   document.getElementById("uniformList").innerHTML=Object.entries(g).map(([name,items])=>'<article class="sheet"><div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th>รายการ</th><th>ขนาด</th><th>รายละเอียด</th></tr></thead><tbody>'+items.map(r=>'<tr><td>'+esc(r.item_name||"")+'</td><td>'+esc(r.size_info||"-")+'</td><td>'+esc(r.description||r.usage_notes||"")+'</td></tr>').join("")+'</tbody></table></article>').join("")||'<div class="state">ยังไม่มีข้อมูลเครื่องแต่งกาย</div>';
 }
-function renderCourses(){const q=document.getElementById("courseSearch").value.trim().toLowerCase(),list=courses.filter(c=>((c.title||"")+" "+(c.description||"")+" "+(c.category||"")).toLowerCase().includes(q));document.getElementById("courseList").innerHTML=list.map(c=>'<article class="card"><h3>'+esc(c.title||"")+'</h3><p>'+esc(c.description||"")+'</p><div class="meta"><span>'+esc(c.category||"")+'</span><span>'+(c.estimated_minutes?esc(c.estimated_minutes)+" นาที":"")+'</span></div></article>').join("")||'<div class="state">ยังไม่มีบทเรียนในหัวข้อนี้</div>'}
+async function loadAllLessons(){
+  const el=document.getElementById("courseList");
+  el.innerHTML='<div class="state">กำลังรวบรวมบทเรียนทั้งหมด...</div>';
+  try{
+    const [production,drinks,expiry,toppings,uniforms,extra]=await Promise.all([
+      api("production"),api("drinks"),api("expiry"),api("toppings"),api("uniforms"),api("courses")
+    ]);
+    const lessons=[];
+    const seen=new Set();
+    function add(view,title,description,category,meta=""){
+      const t=String(title||"").trim();if(!t)return;
+      const key=view+"|"+t.toLowerCase();if(seen.has(key))return;seen.add(key);
+      lessons.push({view,title:t,description:description||"",category:category||"",meta:meta||""});
+    }
+    production.forEach(r=>add("production",r.recipe_name,r.category||"สูตรการผลิต","สูตรการผลิต"));
+    drinks.forEach(r=>add("drinks",r.menu_name,r.menu_group||"สูตรชงเครื่องดื่ม","สูตรชงเครื่องดื่ม"));
+    expiry.forEach(r=>add("expiry",r.item_name,r.storage_condition||r.notes||"","วันหมดอายุ",r.shelf_life_opened||r.shelf_life_unopened||""));
+    toppings.forEach(r=>add("toppings",r.item_name||r.name,r.subcategory||r.description||"","Topping",r.quantity&&r.unit?String(r.quantity)+" "+String(r.unit):""));
+    uniforms.forEach(r=>add("uniforms",r.item_name,r.description||r.usage_notes||"","เครื่องแต่งกาย",r.size_info||""));
+    extra.forEach(r=>add("courses",r.title,r.description||"",r.category||"บทเรียนอื่น ๆ",r.estimated_minutes?String(r.estimated_minutes)+" นาที":""));
+    courses=lessons;
+    renderCourses();
+  }catch(e){el.innerHTML='<div class="state">'+esc(e.message)+'</div>'}
+}
+function renderCourses(){
+  const q=document.getElementById("courseSearch").value.trim().toLowerCase();
+  const list=courses.filter(c=>((c.title||"")+" "+(c.description||"")+" "+(c.category||"")+" "+(c.meta||"")).toLowerCase().includes(q));
+  document.getElementById("courseList").innerHTML=list.map(c=>
+    '<article class="card" data-open-view="'+esc(c.view)+'" style="cursor:pointer">'+
+      '<h3>'+esc(c.title||"")+'</h3>'+
+      '<p>'+esc(c.description||"")+'</p>'+
+      '<div class="meta"><span>'+esc(c.category||"")+'</span><span>'+esc(c.meta||"")+'</span></div>'+
+    '</article>'
+  ).join("")||'<div class="state">ไม่พบบทเรียน</div>';
+}
 document.getElementById("loginForm").addEventListener("submit",async e=>{e.preventDefault();const m=document.getElementById("loginMsg");m.textContent="กำลัง Login...";m.className="msg";try{const r=await post(LOGIN_API,{action:"login",username:document.getElementById("loginUser").value,password:document.getElementById("loginPass").value});token=r.token;currentUser=r.user;document.getElementById("loginScreen").classList.add("hidden");document.getElementById("appRoot").classList.remove("hidden");document.getElementById("currentUser").textContent=r.user.display_name||r.user.username;await loadSettings();showView("home")}catch(err){m.textContent=err.message;m.className="msg error"}});
 document.getElementById("logoutBtn").onclick=async()=>{try{await post(LOGIN_API,{action:"logout",token})}catch{}token="";cache={};currentUser=null;document.getElementById("appRoot").classList.add("hidden");document.getElementById("loginScreen").classList.remove("hidden");document.getElementById("loginPass").value="";document.getElementById("loginMsg").textContent=""};
-document.addEventListener("click",e=>{const b=e.target.closest("[data-view]");if(!b||document.getElementById("appRoot").classList.contains("hidden"))return;e.preventDefault();showView(b.dataset.view)});
+document.addEventListener("click",e=>{
+  const lesson=e.target.closest("[data-open-view]");
+  if(lesson&&!document.getElementById("appRoot").classList.contains("hidden")){e.preventDefault();showView(lesson.dataset.openView);return}
+  const b=e.target.closest("[data-view]");if(!b||document.getElementById("appRoot").classList.contains("hidden"))return;e.preventDefault();showView(b.dataset.view)
+});
 document.getElementById("courseSearch").addEventListener("input",renderCourses);
 </script>
 </body>
