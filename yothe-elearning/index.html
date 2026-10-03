@@ -17,10 +17,12 @@ button,input{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inh
 .btn{border:0;border-radius:14px;padding:12px 16px;font-weight:800}.primary{background:var(--red);color:#fff;width:100%}.secondary{background:#fff;border:1px solid #fecdd3;color:var(--red)}
 .msg{font-size:13px;margin-top:10px}.error{color:#b91c1c}.ok{color:#15803d}
 .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.97);border-bottom:1px solid var(--line);backdrop-filter:blur(10px)}
-.nav{max-width:1240px;margin:auto;min-height:74px;padding:8px 20px;display:flex;align-items:center;gap:22px}
+.nav{max-width:1480px;margin:auto;min-height:76px;padding:10px 20px;display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;align-items:center;gap:24px}
 .brand{display:flex;align-items:center;gap:9px;color:var(--red);font-size:20px;font-weight:900;white-space:nowrap}.brand img.brand-cat{width:34px;height:40px;object-fit:contain}.brand img.brand-wordmark{width:132px;height:auto;object-fit:contain;background:#d92c24;border-radius:9px;padding:4px 7px}.brand span{white-space:nowrap}
-.navlinks{display:flex;gap:6px;flex:1;justify-content:center;flex-wrap:wrap}.navlinks button,.navlinks a{border:0;background:transparent;padding:10px 12px;border-radius:12px;font-weight:800;font-size:14px;color:var(--red)}.navlinks button:hover,.navlinks button.active{background:var(--red);color:#fff}
-.userbox{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.navlinks{min-width:0;display:flex;align-items:center;justify-content:center;align-content:center;gap:6px 8px;flex-wrap:wrap;padding:2px 0}
+.navlinks button,.navlinks a{flex:0 0 auto;border:0;background:transparent;padding:9px 11px;border-radius:12px;font-weight:800;font-size:14px;line-height:1.2;color:var(--red);white-space:nowrap;transition:background .15s,color .15s}
+.navlinks button:hover,.navlinks button.active{background:var(--red);color:#fff}
+.userbox{display:flex;align-items:center;justify-content:flex-end;gap:8px;font-size:12px;color:var(--muted);white-space:nowrap}
 main{max-width:1240px;margin:auto;padding:30px 20px 70px}.view{display:none}.view.active{display:block}
 .story{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,.3fr);gap:38px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:44px 48px;box-shadow:var(--shadow);align-items:start}
 .story h1{font-size:clamp(34px,4.2vw,56px);line-height:1.08;margin:0 0 30px;color:var(--red);font-weight:900;letter-spacing:-.02em}.story-copy{max-width:920px}.story-copy p{line-height:1.78;color:#6b3512;font-size:clamp(16px,1.2vw,19px);font-weight:500;margin:0 0 22px;letter-spacing:.005em}.story-copy p:first-child{font-size:clamp(17px,1.3vw,20px);font-weight:650}.story-copy p:last-child{margin-bottom:0}.story-logo{display:flex;align-items:flex-start;justify-content:center;position:sticky;top:104px}.story-logo img{width:min(310px,100%);max-height:420px;object-fit:contain}
@@ -53,8 +55,23 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 .attachment-viewer-foot{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--line);background:#fff}
 .viewer-nav{border:1px solid #fecdd3;background:#fff;color:var(--red);border-radius:12px;padding:10px 16px;font-weight:900}.viewer-nav:disabled{opacity:.35;cursor:not-allowed}.viewer-close{border:0;background:var(--red);color:#fff;border-radius:12px;padding:10px 18px;font-weight:900}
 @media(max-width:700px){.attachment-viewer{padding:8px}.attachment-viewer-card{width:100%;height:94vh}.attachment-viewer-foot{grid-template-columns:1fr 1fr}.viewer-close{grid-column:1/-1;grid-row:1}.viewer-nav{width:100%}}
-@media(max-width:900px){.nav{align-items:flex-start;flex-wrap:wrap}.navlinks{order:3;width:100%;justify-content:flex-start}.story{grid-template-columns:1fr;padding:34px 30px;gap:24px}.story-logo{position:static}.story-logo img{width:min(240px,65vw)}.story-copy{max-width:none}.grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}.attachment-grid{grid-template-columns:1fr 1fr}.userbox{margin-left:auto}}
-@media(max-width:560px){.cards{grid-template-columns:1fr}.attachment-grid{grid-template-columns:1fr}.brand{font-size:20px}.navlinks button,.navlinks a{font-size:13px;padding:8px}.story{padding:26px 20px}.story h1{margin-bottom:22px}.story-copy p{font-size:16px;line-height:1.72;margin-bottom:18px}.story-logo img{width:min(210px,70vw)}.sheet-body{grid-template-columns:95px 1fr}}
+@media(max-width:1100px){
+.nav{grid-template-columns:max-content 1fr max-content;gap:14px;padding:10px 14px}
+.brand span{display:none}.brand img.brand-wordmark{width:112px}
+.navlinks{justify-content:center;gap:5px 6px}.navlinks button,.navlinks a{font-size:13px;padding:8px 9px}
+}
+@media(max-width:900px){
+.nav{grid-template-columns:1fr auto;grid-template-areas:"brand user" "menu menu";gap:8px 12px;padding:10px 14px}
+.brand{grid-area:brand}.userbox{grid-area:user}.navlinks{grid-area:menu;width:100%;justify-content:center;border-top:1px solid #f3f4f6;padding-top:8px}
+.story{grid-template-columns:1fr;padding:34px 30px;gap:24px}.story-logo{position:static}.story-logo img{width:min(240px,65vw)}.story-copy{max-width:none}.grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}.attachment-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:560px){
+.nav{padding:8px 10px}.brand img.brand-cat{width:29px;height:34px}.brand img.brand-wordmark{width:100px}
+.userbox{font-size:11px}.userbox .btn{padding:6px 8px!important;font-size:11px}
+.navlinks{justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;padding:8px 2px 3px;-webkit-overflow-scrolling:touch}
+.navlinks button,.navlinks a{font-size:12px;padding:8px 10px}
+.cards{grid-template-columns:1fr}.attachment-grid{grid-template-columns:1fr}.brand{font-size:20px}.story{padding:26px 20px}.story h1{margin-bottom:22px}.story-copy p{font-size:16px;line-height:1.72;margin-bottom:18px}.story-logo img{width:min(210px,70vw)}.sheet-body{grid-template-columns:95px 1fr}
+}
 </style>
 </head>
 <body>
