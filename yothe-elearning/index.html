@@ -7,7 +7,7 @@
   <meta name="description" content="Yothe E-Learning - ศูนย์เรียนรู้สูตรการผลิต สูตรชง วันหมดอายุ และบทเรียนอื่น ๆ" />
   <style>
     :root{
-      --red:#d71920; --red-dark:#a60f14; --red-soft:#fff0f1;
+      --red:#d71920; --red-dark:#a60f14; --red-soft:#fff0f1; --theme-radius:18px; --theme-shadow:0 10px 30px rgba(0,0,0,.08); --theme-gap:16px;
       --ink:#171717; --muted:#6b7280; --line:#e5e7eb; --bg:#f7f7f8; --white:#fff;
       --shadow:0 10px 30px rgba(0,0,0,.08); --radius:20px;
     }
@@ -54,8 +54,8 @@
     .search{flex:1;min-width:240px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 14px}
     .chip{border:1px solid var(--line);background:#fff;padding:10px 13px;border-radius:999px;font-weight:700;cursor:pointer}
     .chip.active,.chip:hover{background:var(--red);border-color:var(--red);color:#fff}
-    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-    .card{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.04)}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--theme-gap)}
+    .card{background:#fff;border:1px solid var(--line);border-radius:var(--theme-radius);overflow:hidden;box-shadow:var(--theme-shadow)}
     .thumb{height:135px;background:linear-gradient(135deg,#ffe2e4,#fff3f4);display:grid;place-items:center;color:var(--red);font-weight:900;font-size:20px}
     .card-body{padding:16px}
     .tag{display:inline-block;font-size:12px;font-weight:800;padding:6px 9px;border-radius:999px;background:var(--red-soft);color:var(--red)}
@@ -219,6 +219,28 @@
 </footer>
 
 <script>
+const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
+function applyPublicTheme(pref={}){
+  const ci=Math.max(1,Math.min(50,Number(pref.color_index)||1));
+  const ti=Math.max(1,Math.min(50,Number(pref.theme_index)||1));
+  const color=COLORS[ci-1];
+  document.documentElement.style.setProperty("--red",color);
+  document.documentElement.style.setProperty("--red-dark",color);
+  document.documentElement.style.setProperty("--red-soft",color+"18");
+  const radius=[2,6,10,14,18,22,26,30,34,38][(ti-1)%10];
+  const shadowLevel=Math.floor((ti-1)/10);
+  const shadows=["none","0 2px 8px rgba(0,0,0,.05)","0 5px 16px rgba(0,0,0,.07)","0 9px 26px rgba(0,0,0,.09)","0 14px 34px rgba(0,0,0,.11)"];
+  const gaps=[8,10,12,14,16,18,20,22,24,26];
+  document.documentElement.style.setProperty("--theme-radius",radius+"px");
+  document.documentElement.style.setProperty("--theme-shadow",shadows[shadowLevel]);
+  document.documentElement.style.setProperty("--theme-gap",gaps[(ti*3)%10]+"px");
+}
+async function loadPublicDisplayPrefs(){
+  try{
+    const rows=await sb("yothe_settings?select=value&key=eq.display_preferences");
+    applyPublicTheme(rows[0]?.value||{});
+  }catch{}
+}
 const SUPABASE_URL = "https://hcswjuemjluozmyejhnu.supabase.co";
 const SUPABASE_KEY = "sb_publishable_C4yHaRSzzgln3d9lplwIpg_QaWlG4ne";
 
@@ -415,6 +437,7 @@ document.querySelectorAll(".chip").forEach(btn=>btn.addEventListener("click",()=
   renderCourses();
 }));
 
+loadPublicDisplayPrefs();
 loadBrandStory();
 loadCourses();
 loadProduction();
