@@ -7,7 +7,7 @@
 <style>
 :root{--red:#d71920;--ink:#171717;--muted:#6b7280;--line:#e5e7eb;--bg:#f4f5f7}
 *{box-sizing:border-box}body{margin:0;font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,Arial,system-ui,sans-serif;background:var(--bg);color:var(--ink)}
-button,select,input{font:inherit}.top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}.topin{max-width:1240px;margin:auto;min-height:70px;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-size:19px;font-weight:900;color:var(--red);display:flex;align-items:center;gap:10px}.brand img.brand-wordmark{width:128px;height:auto;object-fit:contain;background:#d92c24;border-radius:9px;padding:4px 7px}.back{text-decoration:none;color:var(--red);font-weight:800}
+button,select,input{font:inherit}.top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}.topin{max-width:1240px;margin:auto;min-height:70px;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-size:19px;font-weight:900;color:var(--red);display:flex;align-items:center;gap:9px}.brand img.brand-cat{width:32px;height:38px;object-fit:contain}.brand img.brand-wordmark{width:128px;height:auto;object-fit:contain;background:#d92c24;border-radius:9px;padding:4px 7px}.back{text-decoration:none;color:var(--red);font-weight:800}
 .wrap{max-width:1240px;margin:auto;padding:24px 20px 60px}.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:18px}.controls{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;align-items:end}.export-controls{grid-template-columns:repeat(4,minmax(150px,1fr))}.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:13px;font-weight:800}.input{border:1px solid #d1d5db;border-radius:12px;padding:10px 12px;background:#fff}.btn{border:0;border-radius:12px;padding:11px 14px;font-weight:800;cursor:pointer}.primary{background:var(--red);color:#fff}.secondary{background:#fff;color:var(--red);border:1px solid #fecdd3}.msg{font-size:13px;color:var(--muted);margin-top:8px}
 .preview-shell{overflow:auto;background:#dfe3e7;border-radius:16px;padding:18px;container-type:inline-size}
 .pages{display:flex;flex-direction:column;gap:18px;align-items:center}
@@ -76,7 +76,7 @@ th{min-height:29px;height:auto}
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
-<header class="top"><div class="topin"><div class="brand"><img class="brand-wordmark" src="assets/yothe-wordmark.svg" alt="Yothé"><span>Export</span></div><a class="back" href="admin.html">← กลับ Admin</a></div></header>
+<header class="top"><div class="topin"><div class="brand"><img class="brand-cat" src="assets/yothe-cat-red.png" alt="Yothé Cat"><img class="brand-wordmark" src="assets/yothe-wordmark.svg" alt="Yothé"><span>Export</span></div><a class="back" href="admin.html">← กลับ Admin</a></div></header>
 <main class="wrap">
 <section class="panel">
   <div class="controls export-controls">
