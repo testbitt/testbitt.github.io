@@ -34,7 +34,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .help{font-size:12px;color:var(--muted);line-height:1.6}.json{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
 .recipe-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--theme-gap);padding:18px;background:#f3f7f5;align-items:start}
 .recipe-sheet{border:3px solid #0b5a3f;background:#fff;min-width:0;overflow:hidden;box-shadow:var(--theme-shadow);border-radius:var(--theme-radius)}
-.recipe-sheet[draggable="true"]{cursor:grab}.recipe-sheet.dragging{opacity:.5}.recipe-sheet.drag-over{outline:4px dashed var(--red);outline-offset:3px}
+.recipe-sheet[draggable="true"] .recipe-title{cursor:grab;user-select:none}.recipe-sheet[draggable="true"] .recipe-title:active{cursor:grabbing}.recipe-sheet.dragging{opacity:.45;transform:scale(.985)}.recipe-sheet.drag-over{outline:4px dashed var(--red);outline-offset:4px}.drag-badge{pointer-events:none}
 .edit-layout{display:grid;grid-template-columns:180px minmax(0,1fr);min-width:0}
 .edit-sidebar{border-right:1px solid #d1d5db;background:#f8faf9;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .edit-sidebar-title{font-size:12px;font-weight:900;color:#374151;margin-bottom:2px}
@@ -684,29 +684,74 @@ function sortEntriesBySavedOrder(entries){
 }
 async function saveGroupOrder(order){
   layoutGroupOrder=order.map(String);
-  const m=document.getElementById("layoutMsg");
+  const m=document.getElementById("reviewLayoutMsg")||document.getElementById("datasetHint");
   try{
-    m.textContent="กำลัง Auto Save ตำแหน่ง Layout...";m.className="msg saving";
+    if(m){m.textContent="กำลัง Auto Save ตำแหน่งตาราง...";m.className="msg saving"}
     await api({action:"save",dataset:"settings",row:{key:groupOrderKey(),value:layoutGroupOrder}});
-    m.textContent="Auto Save ตำแหน่ง Layout แล้ว";m.className="msg ok";
-  }catch(err){m.textContent=err.message;m.className="msg error"}
+    if(m){m.textContent="บันทึกตำแหน่งตารางแล้ว";m.className="msg ok"}
+  }catch(err){
+    if(m){m.textContent=err.message;m.className="msg error"}
+    throw err;
+  }
 }
 function initLayoutCardDrag(){
   const cards=[...document.querySelectorAll(".recipe-sheet[data-group-key]")];
   let dragged=null;
+
   cards.forEach(card=>{
-    card.draggable=true;
-    card.ondragstart=e=>{dragged=card;card.classList.add("dragging");e.dataTransfer.effectAllowed="move"};
-    card.ondragend=()=>{card.classList.remove("dragging");document.querySelectorAll(".recipe-sheet.drag-over").forEach(x=>x.classList.remove("drag-over"));dragged=null};
-    card.ondragover=e=>{e.preventDefault();if(dragged&&dragged!==card)card.classList.add("drag-over")};
-    card.ondragleave=()=>card.classList.remove("drag-over");
+    const handle=card.querySelector(".recipe-title");
+    card.draggable=false;
+    if(!handle)return;
+
+    handle.draggable=true;
+
+    handle.ondragstart=e=>{
+      dragged=card;
+      card.classList.add("dragging");
+      e.dataTransfer.effectAllowed="move";
+      e.dataTransfer.setData("text/plain",String(card.dataset.groupKey||""));
+    };
+
+    handle.ondragend=()=>{
+      card.classList.remove("dragging");
+      document.querySelectorAll(".recipe-sheet.drag-over").forEach(x=>x.classList.remove("drag-over"));
+      dragged=null;
+    };
+
+    card.ondragover=e=>{
+      if(!dragged||dragged===card)return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect="move";
+      card.classList.add("drag-over");
+    };
+
+    card.ondragleave=e=>{
+      if(!card.contains(e.relatedTarget))card.classList.remove("drag-over");
+    };
+
     card.ondrop=async e=>{
-      e.preventDefault();card.classList.remove("drag-over");if(!dragged||dragged===card)return;
-      const keys=cards.map(x=>String(x.dataset.groupKey));
-      const from=keys.indexOf(String(dragged.dataset.groupKey)),to=keys.indexOf(String(card.dataset.groupKey));
+      e.preventDefault();
+      card.classList.remove("drag-over");
+      if(!dragged||dragged===card)return;
+
+      const all=[...document.querySelectorAll(".recipe-sheet[data-group-key]")];
+      const from=all.indexOf(dragged),to=all.indexOf(card);
       if(from<0||to<0)return;
-      const [moved]=keys.splice(from,1);keys.splice(to,0,moved);
-      await saveGroupOrder(keys);renderTable();
+
+      // Move immediately on screen so user sees the result.
+      const targetGrid=card.parentElement;
+      if(from<to) targetGrid.insertBefore(dragged,card.nextSibling);
+      else targetGrid.insertBefore(dragged,card);
+
+      const newOrder=[...document.querySelectorAll(".recipe-sheet[data-group-key]")]
+        .map(x=>String(x.dataset.groupKey));
+
+      try{
+        await saveGroupOrder(newOrder);
+        scheduleReviewFit();
+      }catch(err){
+        await loadData();
+      }
     };
   });
 }
