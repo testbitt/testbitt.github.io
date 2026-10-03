@@ -49,8 +49,8 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .color-preview{width:100%;height:38px;border-radius:10px;border:1px solid var(--line)}
 .a4-preview{display:flex;flex-direction:column;gap:18px;align-items:center;padding:18px;background:#eceff1}
 .a4-page{background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8mm;break-after:page;page-break-after:always;overflow:visible}
-.a4-page.portrait{width:210mm;min-height:297mm}
-.a4-page.landscape{width:297mm;min-height:210mm}
+.a4-page.portrait{width:210mm;height:297mm;min-height:297mm;max-height:297mm}
+.a4-page.landscape{width:297mm;height:210mm;min-height:210mm;max-height:210mm}
 .a4-page:last-child{break-after:auto;page-break-after:auto}
 .a4-page .page-title{font-weight:800;font-size:14px;line-height:1.35;margin:0 0 8px;color:#fff;background:var(--red);padding:7px 10px;border-radius:8px;letter-spacing:.05px}
 .a4-page table{min-width:0}
@@ -112,7 +112,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 
     <section class="layout-panel">
       <div class="head" style="margin-bottom:12px">
-        <div><h2 style="margin:0">Layout การแสดงผล</h2><p>A4 แนวตั้ง/แนวนอน • สูงสุด 20 รายการต่อหน้า • ไม่ตัดข้อมูลข้ามหน้า</p></div>
+        <div><h2 style="margin:0">Layout การแสดงผล</h2><p>A4 แนวตั้ง/แนวนอน • สูงสุด 20 รายการต่อหน้า • ไม่ตัดข้อมูลข้ามหน้า</p><div id="a4SizeInfo" class="help" style="margin-top:4px;font-weight:800;color:var(--red)">ขนาด Export จริง: A4 210 × 297 mm</div></div>
         <button id="printBtn" class="btn secondary" type="button">พิมพ์ / Save PDF</button>
       </div>
       <div class="layout-controls">
@@ -657,6 +657,8 @@ async function loadDisplayPrefs(){
 }
 function applyDisplayPrefs(){
   document.getElementById("orientation").value=displayPrefs.orientation;
+  const info=document.getElementById("a4SizeInfo");
+  if(info)info.textContent=displayPrefs.orientation==="landscape"?"ขนาด Export จริง: A4 297 × 210 mm":"ขนาด Export จริง: A4 210 × 297 mm";
   document.getElementById("itemsPerPage").value=String(displayPrefs.items_per_page);
   document.getElementById("themeSelect").value=String(displayPrefs.theme_index);
   document.getElementById("colorSelect").value=String(displayPrefs.color_index);
@@ -682,7 +684,10 @@ async function onDisplayChange(){
     theme_index:Number(document.getElementById("themeSelect").value)||1,
     color_index:Number(document.getElementById("colorSelect").value)||1
   };
-  applyDisplayPrefs();renderTable();
+  applyDisplayPrefs();
+  const info=document.getElementById("a4SizeInfo");
+  if(info)info.textContent=displayPrefs.orientation==="landscape"?"ขนาด Export จริง: A4 297 × 210 mm":"ขนาด Export จริง: A4 210 × 297 mm";
+  renderTable();
   const m=document.getElementById("layoutMsg");m.textContent="กำลัง Auto Save Layout...";
   try{await api({action:"save",dataset:"settings",row:{key:"display_preferences",value:displayPrefs}});m.textContent="Auto Save Layout แล้ว";m.className="msg ok"}catch(err){m.textContent=err.message;m.className="msg error"}
 }
