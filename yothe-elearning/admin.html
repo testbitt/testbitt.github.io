@@ -307,7 +307,7 @@ const DATASETS={
 };
 let adminPin=sessionStorage.getItem("yothe_admin_pin")||"";
 const requestedEdit=new URLSearchParams(location.search).get("edit");
-let dataset=["production","drinks","expiry","toppings","uniforms","courses","settings","users"].includes(requestedEdit)?requestedEdit:"production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["production","drinks","expiry","toppings","uniforms"];
+let dataset=["production","drinks","expiry","toppings","uniforms","courses","settings","users"].includes(requestedEdit)?requestedEdit:"production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["uniforms","production","drinks","expiry","toppings"];
 
 async function api(payload){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,pin:adminPin})});
@@ -321,7 +321,7 @@ function currentAttachmentSection(){
   if(dataset==="settings") return "home";
   if(dataset==="users") return document.getElementById("attachmentSection")?.value||"home";
   if(dataset==="courses") return "courses";
-  return ["production","drinks","expiry","toppings","uniforms"].includes(dataset)?dataset:(document.getElementById("attachmentSection")?.value||"home");
+  return ["uniforms","production","drinks","expiry","toppings"].includes(dataset)?dataset:(document.getElementById("attachmentSection")?.value||"home");
 }
 function syncAttachmentSection(){
   const sel=document.getElementById("attachmentSection");if(!sel)return;
@@ -441,14 +441,14 @@ async function loadMenuOrder(){
   try{
     const res=await api({action:"list",dataset:"settings"});
     const row=(res.data||[]).find(x=>x.key==="menu_order");
-    if(Array.isArray(row?.value)) menuOrder=row.value.filter(x=>["production","drinks","expiry","toppings","uniforms"].includes(x));
+    if(Array.isArray(row?.value)) menuOrder=row.value.filter(x=>["uniforms","production","drinks","expiry","toppings"].includes(x));
   }catch{}
-  if(menuOrder.length!==5)menuOrder=["production","drinks","expiry","toppings","uniforms"];
+  if(menuOrder.length!==5)menuOrder=["uniforms","production","drinks","expiry","toppings"];
   renderAdminMenuOrder();initMenuDrag();
 }
 function renderAdminMenuOrder(){
   const tabs=document.getElementById("tabs"), settings=tabs.querySelector('[data-dataset="settings"]'),hint=tabs.querySelector(".drag-hint");
-  menuOrder.forEach(k=>{const el=tabs.querySelector('[data-dataset="'+k+'"]');if(el)tabs.insertBefore(el,settings)});
+  const ordered=["uniforms",...menuOrder.filter(k=>k!=="uniforms")];ordered.forEach(k=>{const el=tabs.querySelector('[data-dataset="'+k+'"]');if(el)tabs.insertBefore(el,settings)});
   if(hint)tabs.appendChild(hint);
 }
 async function saveMenuOrder(){
