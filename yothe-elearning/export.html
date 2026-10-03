@@ -125,7 +125,8 @@ function drinkSheet(id,items){
 }
 function productionSheet(name,items){
   const a=document.createElement("article");a.className="sheet";
-  a.innerHTML='<div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th><th>Servings</th></tr></thead><tbody>'+items.map(x=>'<tr><td>'+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td><td class="num">'+esc(x.servings||"-")+'</td></tr>').join("")+'</tbody></table>';
+  const img=items.find(x=>x.image_url)?.image_url||"";
+  a.innerHTML='<div class="sheet-title">'+esc(name)+'</div>'+(img?'<div class="photo" style="border-right:0;border-bottom:1px solid #d1d5db;min-height:130px"><img src="'+esc(img)+'" crossorigin="anonymous" alt="'+esc(name)+'"></div>':'<div class="photo" style="border-right:0;border-bottom:1px solid #d1d5db;min-height:90px"><div class="empty">ยังไม่มีรูปตัวอย่าง</div></div>')+'<table><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th><th>Servings</th></tr></thead><tbody>'+items.map(x=>'<tr><td>'+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td><td class="num">'+esc(x.servings||"-")+'</td></tr>').join("")+'</tbody></table>';
   return a;
 }
 function toppingSheet(name,items){
