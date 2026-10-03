@@ -83,6 +83,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 @media(max-width:1100px){.layout-controls{grid-template-columns:repeat(2,1fr)}.a4-preview{align-items:center;overflow:hidden;padding:12px}}
 
 @media(max-width:760px){.grid2,.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}.wrap{padding:18px 12px 40px}.panel{padding:16px}.recipe-body{grid-template-columns:110px 1fr}.recipe-photo{min-height:180px;padding:8px}.recipe-title{font-size:18px}.recipe-table th,.recipe-table td{font-size:13px;padding:8px 7px}.recipe-note{font-size:12.5px}}
+/* Layout theme is scoped to #tableWrap only */
 </style>
 </head>
 <body>
@@ -1046,20 +1047,26 @@ function applyDisplayPrefs(){
   document.getElementById("itemsPerPage").value=String(displayPrefs.items_per_page);
   document.getElementById("themeSelect").value=String(displayPrefs.theme_index);
   document.getElementById("colorSelect").value=String(displayPrefs.color_index);
+
   const color=COLORS[(displayPrefs.color_index||1)-1]||COLORS[0];
-  document.documentElement.style.setProperty("--red",color);
   document.getElementById("colorPreview").style.background=color;
-  document.body.classList.remove(...THEMES.map(t=>t.className));
+
+  const scope=document.getElementById("tableWrap");
+  if(!scope)return;
+  scope.classList.remove(...THEMES.map(t=>t.className));
   const idx=Math.max(1,Math.min(50,displayPrefs.theme_index||1));
-  const th=THEMES[idx-1];if(th)document.body.classList.add(th.className);
+  const th=THEMES[idx-1];if(th)scope.classList.add(th.className);
+
   const radius=[2,6,10,14,18,22,26,30,34,38][(idx-1)%10];
   const shadowLevel=Math.floor((idx-1)/10);
   const shadows=["none","0 2px 8px rgba(0,0,0,.05)","0 5px 16px rgba(0,0,0,.07)","0 9px 26px rgba(0,0,0,.09)","0 14px 34px rgba(0,0,0,.11)"];
   const gaps=[8,10,12,14,16,18,20,22,24,26];
-  document.documentElement.style.setProperty("--theme-radius",radius+"px");
-  document.documentElement.style.setProperty("--theme-shadow",shadows[shadowLevel]);
-  document.documentElement.style.setProperty("--theme-border",(1+(idx%7===0?1:0))+"px");
-  document.documentElement.style.setProperty("--theme-gap",gaps[(idx*3)%10]+"px");
+
+  scope.style.setProperty("--red",color);
+  scope.style.setProperty("--theme-radius",radius+"px");
+  scope.style.setProperty("--theme-shadow",shadows[shadowLevel]);
+  scope.style.setProperty("--theme-border",(1+(idx%7===0?1:0))+"px");
+  scope.style.setProperty("--theme-gap",gaps[(idx*3)%10]+"px");
 }
 async function onDisplayChange(){
   displayPrefs={
