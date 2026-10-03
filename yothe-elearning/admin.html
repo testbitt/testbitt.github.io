@@ -20,7 +20,13 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .btn{border:0;border-radius:12px;padding:11px 15px;font-weight:800}.primary{background:var(--red);color:#fff}.secondary{background:#fff;color:var(--red);border:1px solid #fecdd3}.danger{background:#fff1f2;color:#b91c1c;border:1px solid #fecaca}.small{padding:7px 10px;font-size:12px}
 .hidden{display:none!important}.msg{margin-top:10px;font-size:13px}.error{color:#b91c1c}.ok{color:#15803d}.saving{color:#b45309}.autosave-note{font-size:12px;color:#15803d;font-weight:800;margin-left:8px}
 .head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}.head h1{margin:0;font-size:clamp(30px,3.2vw,48px);line-height:1.15;font-weight:900;letter-spacing:-.4px}.head p{margin:7px 0 0;color:var(--muted);font-size:16px;line-height:1.6;font-weight:500}
-.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px;align-items:center}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;font-weight:800;user-select:none}.tab.active{background:var(--red);color:#fff;border-color:var(--red)}.tab[draggable="true"]{cursor:grab}.tab.dragging{opacity:.45;transform:scale(.97)}.tab.drag-over{outline:3px dashed var(--red);outline-offset:2px}.drag-hint{font-size:12px;color:var(--muted);width:100%;margin-top:3px}.user-tools{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:10px;margin-bottom:16px}.user-import{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.user-table{width:100%;border-collapse:collapse}.user-table th,.user-table td{padding:10px;border-bottom:1px solid var(--line);font-size:13px}.user-table th{background:var(--red);color:#fff}.user-status{font-weight:800}.user-status.on{color:#15803d}.user-status.off{color:#b91c1c}@media(max-width:900px){.user-tools{grid-template-columns:1fr 1fr}}@media(max-width:560px){.user-tools{grid-template-columns:1fr}}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px;align-items:center}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;font-weight:800;user-select:none}.tab.active{background:var(--red);color:#fff;border-color:var(--red)}.tab[draggable="true"]{cursor:grab}.tab.dragging{opacity:.45;transform:scale(.97)}.tab.drag-over{outline:3px dashed var(--red);outline-offset:2px}.drag-hint{font-size:12px;color:var(--muted);width:100%;margin-top:3px}.user-tools{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:10px;margin-bottom:16px}.user-import{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.user-table{width:100%;border-collapse:collapse}.user-table th,.user-table td{padding:10px;border-bottom:1px solid var(--line);font-size:13px}.user-table th{background:var(--red);color:#fff}.user-status{font-weight:800}.user-status.on{color:#15803d}.user-status.off{color:#b91c1c}
+.attachment-list{display:grid;gap:8px;margin-top:12px}
+.attachment-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}
+.attachment-name{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.attachment-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.file-actions{display:flex;gap:6px;flex-wrap:wrap}
+.file-actions a{text-decoration:none}@media(max-width:900px){.user-tools{grid-template-columns:1fr 1fr}}@media(max-width:560px){.user-tools{grid-template-columns:1fr}}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}.uploadbox{border:2px dashed #fecdd3;background:#fffafa;border-radius:16px;padding:18px}
 .tablewrap{overflow:auto;border:1px solid var(--line);border-radius:14px;margin-top:16px}table{border-collapse:collapse;width:100%;min-width:860px}th,td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:13px}th{background:#fafafa;position:sticky;top:0}.actions{white-space:nowrap}
 .badge{display:inline-block;background:var(--soft);color:var(--red);padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800}
@@ -142,6 +148,31 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
       </section>
 
       <section class="panel">
+        <h2 style="margin-top:0">Upload ไฟล์แนบ</h2>
+        <div class="uploadbox">
+          <div class="field"><label>เมนูที่ใช้ไฟล์</label>
+            <select id="attachmentSection" class="input">
+              <option value="home">Home / BRAND STORY</option>
+              <option value="production">สูตรการผลิต</option>
+              <option value="drinks">สูตรชงเครื่องดื่ม</option>
+              <option value="expiry">วันหมดอายุ</option>
+              <option value="toppings">Topping</option>
+              <option value="uniforms">เครื่องแต่งกาย</option>
+              <option value="courses">บทเรียนอื่น ๆ</option>
+            </select>
+          </div>
+          <div class="field"><label>ชื่อ/หัวข้อไฟล์</label><input id="attachmentTitle" class="input" placeholder="เว้นว่างได้ ระบบจะใช้ชื่อไฟล์"></div>
+          <div class="field"><label>รูป / PDF / PowerPoint</label>
+            <input id="attachmentFiles" class="input" type="file" multiple accept="image/jpeg,image/png,image/webp,.pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation">
+          </div>
+          <button id="attachmentUploadBtn" class="btn primary" type="button">Upload ไฟล์ขึ้น Server</button>
+          <div id="attachmentMsg" class="msg"></div>
+          <p class="help">รองรับ JPG / PNG / WEBP / PDF / PPT / PPTX สูงสุด 20 MB ต่อไฟล์ • Upload ได้หลายไฟล์ • เก็บใน Server แบบ Private</p>
+          <div id="attachmentList" class="attachment-list"></div>
+        </div>
+      </section>
+
+      <section class="panel">
         <h2 style="margin-top:0">ข้อมูลปัจจุบัน</h2>
         <p class="muted" id="datasetHint">กำลังโหลด...</p>
         <div class="row">
@@ -170,6 +201,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 
 <script>
 const API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-admin";
+const FILE_UPLOAD_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-file-upload";
 const THEMES=Array.from({length:50},(_,i)=>({id:i+1,name:"Theme "+String(i+1).padStart(2,"0"),className:["theme-soft","theme-square","theme-airy","theme-compact","theme-bold"][i%5]}));
 const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
 let displayPrefs={orientation:"portrait",items_per_page:20,theme_index:1,color_index:1};
@@ -217,7 +249,56 @@ async function api(payload){
   return data;
 }
 function esc(v=""){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
-function showAdmin(){document.getElementById("loginPanel").classList.add("hidden");document.getElementById("adminPanel").classList.remove("hidden");document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.dataset===dataset));initUploadDataset();initLayoutControls();Promise.all([loadDisplayPrefs(),loadMenuOrder()]).then(loadData)}
+
+function currentAttachmentSection(){
+  if(dataset==="settings") return "home";
+  if(dataset==="users") return document.getElementById("attachmentSection")?.value||"home";
+  return ["production","drinks","expiry","toppings","uniforms"].includes(dataset)?dataset:(document.getElementById("attachmentSection")?.value||"home");
+}
+function syncAttachmentSection(){
+  const sel=document.getElementById("attachmentSection");if(!sel)return;
+  const s=currentAttachmentSection();
+  if([...sel.options].some(o=>o.value===s))sel.value=s;
+  loadAttachments();
+}
+async function loadAttachments(){
+  const list=document.getElementById("attachmentList");if(!list)return;
+  const section=document.getElementById("attachmentSection")?.value||currentAttachmentSection();
+  list.innerHTML='<div class="muted">กำลังโหลดไฟล์...</div>';
+  try{
+    const res=await api({action:"list_attachments",section});
+    const data=res.data||[];
+    if(!data.length){list.innerHTML='<div class="muted">ยังไม่มีไฟล์แนบในเมนูนี้</div>';return}
+    list.innerHTML=data.map(f=>'<div class="attachment-item"><div><div class="attachment-name">'+esc(f.title||f.file_name)+'</div><div class="attachment-meta">'+esc(f.file_name)+' • '+formatBytes(f.file_size||0)+'</div></div><div class="file-actions">'+(f.url?'<a class="btn small secondary" target="_blank" rel="noopener" href="'+esc(f.url)+'">เปิด</a>':'')+'<button class="btn small danger" type="button" onclick="deleteAttachment('+f.id+')">ลบ</button></div></div>').join("");
+  }catch(err){list.innerHTML='<div class="error">'+esc(err.message)+'</div>'}
+}
+function formatBytes(n){if(!n)return "0 B";const u=["B","KB","MB","GB"],i=Math.min(u.length-1,Math.floor(Math.log(n)/Math.log(1024)));return (n/Math.pow(1024,i)).toFixed(i?1:0)+" "+u[i]}
+window.deleteAttachment=async id=>{
+  if(!confirm("ยืนยันลบไฟล์นี้ออกจาก Server?"))return;
+  try{await api({action:"delete_attachment",id});await loadAttachments()}catch(err){alert(err.message)}
+};
+async function uploadAttachments(){
+  const input=document.getElementById("attachmentFiles"),files=[...(input.files||[])],msg=document.getElementById("attachmentMsg");
+  if(!files.length){msg.textContent="กรุณาเลือกไฟล์";msg.className="msg error";return}
+  const section=document.getElementById("attachmentSection").value,title=document.getElementById("attachmentTitle").value.trim();
+  let ok=0;
+  try{
+    for(let i=0;i<files.length;i++){
+      const file=files[i];
+      if(file.size>20*1024*1024)throw new Error(file.name+" มีขนาดเกิน 20 MB");
+      msg.textContent="กำลัง Upload "+(i+1)+" / "+files.length+" • "+file.name;msg.className="msg saving";
+      const fd=new FormData();fd.append("section",section);fd.append("title",files.length===1?title:"");fd.append("file",file);
+      const r=await fetch(FILE_UPLOAD_API,{method:"POST",headers:{"x-admin-pin":adminPin},body:fd});
+      const d=await r.json().catch(()=>({error:"Invalid server response"}));
+      if(!r.ok)throw new Error(d.error||"Upload ไม่สำเร็จ");
+      ok++;
+    }
+    input.value="";document.getElementById("attachmentTitle").value="";
+    msg.textContent="Upload และ Auto Save สำเร็จ "+ok+" ไฟล์";msg.className="msg ok";
+    await loadAttachments();
+  }catch(err){msg.textContent="Upload ไม่สำเร็จ: "+err.message;msg.className="msg error"}
+}
+function showAdmin(){document.getElementById("loginPanel").classList.add("hidden");document.getElementById("adminPanel").classList.remove("hidden");document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.dataset===dataset));initUploadDataset();initLayoutControls();Promise.all([loadDisplayPrefs(),loadMenuOrder()]).then(()=>{syncAttachmentSection();loadData()})}
 function logout(){sessionStorage.removeItem("yothe_admin_pin");adminPin="";location.reload()}
 async function validateStored(){if(!adminPin)return;try{await api({action:"validate"});showAdmin()}catch{logout()}}
 
@@ -228,6 +309,8 @@ document.getElementById("loginForm").addEventListener("submit",async e=>{
   catch(err){adminPin="";m.textContent=err.message;m.className="msg error"}
 });
 document.getElementById("logoutBtn").onclick=logout;
+document.getElementById("attachmentUploadBtn").onclick=uploadAttachments;
+document.getElementById("attachmentSection").onchange=loadAttachments;
 
 function initUploadDataset(){
   const s=document.getElementById("uploadDataset");
@@ -277,7 +360,7 @@ function initMenuDrag(){
 document.getElementById("tabs").addEventListener("click",e=>{
   const b=e.target.closest(".tab"); if(!b)return;
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
-  dataset=b.dataset.dataset;if(DATASETS[dataset])document.getElementById("uploadDataset").value=dataset;hideEditor();loadData();
+  dataset=b.dataset.dataset;if(DATASETS[dataset])document.getElementById("uploadDataset").value=dataset;hideEditor();syncAttachmentSection();loadData();
 });
 document.getElementById("refreshBtn").onclick=loadData;
 document.getElementById("addBtn").onclick=()=>dataset==="users"?document.getElementById("newUsername")?.focus():dataset==="drinks"?openEditor({record_id:"DRK-"+Date.now(),recipe_id:"RECIPE-"+Date.now(),component_type:"Ingredient",sort_order:1,is_published:true}):openEditor(null);
