@@ -129,21 +129,6 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
       <div class="drag-hint">กดเมาส์ซ้ายค้างที่เมนู แล้วลากเพื่อสลับตำแหน่ง • Auto Save ไปยัง Server</div>
     </div>
 
-    <section id="layoutPanel" class="layout-panel">
-      <div class="head" style="margin-bottom:12px">
-        <div><h2 style="margin:0">Layout การแสดงผล</h2><p>A4 แนวตั้ง/แนวนอน • สูงสุด 20 รายการต่อหน้า • ไม่ตัดข้อมูลข้ามหน้า</p><div id="a4SizeInfo" class="help" style="margin-top:4px;font-weight:800;color:var(--red)">ขนาด Export จริง: A4 210 × 297 mm</div></div>
-        <button id="printBtn" class="btn secondary" type="button">พิมพ์ / Save PDF</button>
-      </div>
-      <div class="layout-controls">
-        <div class="field"><label>ขนาดกระดาษ</label><select id="orientation"><option value="portrait">A4 แนวตั้ง</option><option value="landscape">A4 แนวนอน</option></select></div>
-        <div class="field"><label>จำนวนรายการต่อหน้า</label><select id="itemsPerPage"></select></div>
-        <div class="field"><label>Theme (50 แบบ)</label><select id="themeSelect"></select></div>
-        <div class="field"><label>สีหลัก (50 สี)</label><select id="colorSelect"></select></div>
-        <div class="field"><label>ตัวอย่างสี</label><div id="colorPreview" class="color-preview"></div></div>
-      </div>
-      <div id="layoutMsg" class="msg"></div>
-    </section>
-
     <div class="grid2">
       <section id="uploadDataPanel" class="panel">
         <h2 style="margin-top:0">Upload ข้อมูล</h2>
@@ -402,7 +387,7 @@ function initMenuDrag(){
 }
 function syncAdminPageChrome(){
   const hideForUsers=dataset==="users";
-  document.getElementById("layoutPanel")?.classList.toggle("hidden",hideForUsers);
+  
   document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers);
   document.getElementById("attachmentPanel")?.classList.toggle("hidden",hideForUsers);
 }
@@ -1048,67 +1033,22 @@ document.getElementById("uploadBtn").onclick=async()=>{
   }catch(err){msg.textContent=err.message;msg.className="msg error"}
 };
 
-function initLayoutControls(){
-  const ipp=document.getElementById("itemsPerPage");ipp.innerHTML=Array.from({length:20},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+' รายการ</option>').join("");
-  document.getElementById("themeSelect").innerHTML=THEMES.map(t=>'<option value="'+t.id+'">'+t.name+'</option>').join("");
-  document.getElementById("colorSelect").innerHTML=COLORS.map((x,i)=>'<option value="'+(i+1)+'">สี '+String(i+1).padStart(2,"0")+' • '+COLOR_NAMES[i]+' • '+x+'</option>').join("");
-  ["orientation","itemsPerPage","themeSelect","colorSelect"].forEach(id=>document.getElementById(id).addEventListener("change",onDisplayChange));
-  document.getElementById("printBtn").onclick=()=>window.print();
-}
+function initLayoutControls(){ /* Export customization moved to export.html */ }
 async function loadDisplayPrefs(){
   displayPrefs={...DEFAULT_DISPLAY_PREFS};
-  try{
-    const res=await api({action:"list",dataset:"settings"});
-    const data=res.data||[];
-    const own=data.find(x=>x.key===displayPrefsKey());
-    const legacy=data.find(x=>x.key==="display_preferences");
-    const row=own||legacy;
-    if(row?.value) displayPrefs={...displayPrefs,...row.value};
-  }catch{}
   applyDisplayPrefs();
 }
 function applyDisplayPrefs(){
-  document.getElementById("orientation").value=displayPrefs.orientation;
-  const info=document.getElementById("a4SizeInfo");
-  if(info)info.textContent=displayPrefs.orientation==="landscape"?"ขนาด Export จริง: A4 297 × 210 mm":"ขนาด Export จริง: A4 210 × 297 mm";
-  document.getElementById("itemsPerPage").value=String(displayPrefs.items_per_page);
-  document.getElementById("themeSelect").value=String(displayPrefs.theme_index);
-  document.getElementById("colorSelect").value=String(displayPrefs.color_index);
-
-  const color=COLORS[(displayPrefs.color_index||1)-1]||COLORS[0];
-  document.getElementById("colorPreview").style.background=color;
-
   const scope=document.getElementById("tableWrap");
   if(!scope)return;
   scope.classList.remove(...THEMES.map(t=>t.className));
-  const idx=Math.max(1,Math.min(50,displayPrefs.theme_index||1));
-  const th=THEMES[idx-1];if(th)scope.classList.add(th.className);
-
-  const radius=[2,6,10,14,18,22,26,30,34,38][(idx-1)%10];
-  const shadowLevel=Math.floor((idx-1)/10);
-  const shadows=["none","0 2px 8px rgba(0,0,0,.05)","0 5px 16px rgba(0,0,0,.07)","0 9px 26px rgba(0,0,0,.09)","0 14px 34px rgba(0,0,0,.11)"];
-  const gaps=[8,10,12,14,16,18,20,22,24,26];
-
-  scope.style.setProperty("--red",color);
-  scope.style.setProperty("--theme-radius",radius+"px");
-  scope.style.setProperty("--theme-shadow",shadows[shadowLevel]);
-  scope.style.setProperty("--theme-border",(1+(idx%7===0?1:0))+"px");
-  scope.style.setProperty("--theme-gap",gaps[(idx*3)%10]+"px");
+  scope.style.setProperty("--red","#d71920");
+  scope.style.setProperty("--theme-radius","10px");
+  scope.style.setProperty("--theme-shadow","none");
+  scope.style.setProperty("--theme-border","1px");
+  scope.style.setProperty("--theme-gap","14px");
 }
-async function onDisplayChange(){
-  displayPrefs={
-    orientation:document.getElementById("orientation").value,
-    items_per_page:Math.min(20,Math.max(1,Number(document.getElementById("itemsPerPage").value)||20)),
-    theme_index:Number(document.getElementById("themeSelect").value)||1,
-    color_index:Number(document.getElementById("colorSelect").value)||1
-  };
-  applyDisplayPrefs();
-  const info=document.getElementById("a4SizeInfo");
-  if(info)info.textContent=displayPrefs.orientation==="landscape"?"ขนาด Export จริง: A4 297 × 210 mm":"ขนาด Export จริง: A4 210 × 297 mm";
-  renderTable();
-  const m=document.getElementById("layoutMsg");m.textContent="กำลัง Auto Save Layout ของหน้านี้...";
-  try{await api({action:"save",dataset:"settings",row:{key:displayPrefsKey(),value:displayPrefs}});m.textContent="Auto Save Layout ของหน้านี้แล้ว";m.className="msg ok"}catch(err){m.textContent=err.message;m.className="msg error"}
-}
+async function onDisplayChange(){ /* Export customization moved to export.html */ }
 window.addEventListener("resize",scheduleReviewFit);
 validateStored();
 </script>
