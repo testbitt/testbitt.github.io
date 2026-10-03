@@ -35,6 +35,19 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .recipe-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--theme-gap);padding:18px;background:#f3f7f5;align-items:start}
 .recipe-sheet{border:3px solid #0b5a3f;background:#fff;min-width:0;overflow:hidden;box-shadow:var(--theme-shadow);border-radius:var(--theme-radius)}
 .recipe-sheet[draggable="true"]{cursor:grab}.recipe-sheet.dragging{opacity:.5}.recipe-sheet.drag-over{outline:4px dashed var(--red);outline-offset:3px}
+.edit-layout{display:grid;grid-template-columns:180px minmax(0,1fr);min-width:0}
+.edit-sidebar{border-right:1px solid #d1d5db;background:#f8faf9;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.edit-sidebar-title{font-size:12px;font-weight:900;color:#374151;margin-bottom:2px}
+.edit-sidebar .btn{width:100%;justify-content:center;white-space:normal;line-height:1.25}
+.edit-row-list{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.edit-row-item{border:1px solid #d1d5db;border-radius:9px;background:#fff;padding:7px}
+.edit-row-name{font-size:11px;font-weight:800;line-height:1.25;margin-bottom:5px;overflow-wrap:anywhere}
+.edit-row-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+.edit-row-actions .btn{padding:4px 5px;font-size:10px;min-height:28px}
+.edit-content{min-width:0;overflow:visible}
+.edit-content .recipe-tools{display:none}
+@media(max-width:900px){.edit-layout{grid-template-columns:145px minmax(0,1fr)}}
+@media(max-width:680px){.edit-layout{grid-template-columns:1fr}.edit-sidebar{border-right:0;border-bottom:1px solid #d1d5db}.edit-row-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
 .drag-badge{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.9}.move-btn{padding:3px 6px!important;min-width:30px}
 .recipe-title{background:var(--red);color:#fff;font-weight:900;text-align:center;padding:12px 14px;font-size:20px;line-height:1.35;letter-spacing:.1px;position:relative;min-height:52px;display:flex;align-items:center;justify-content:center}
 .recipe-tools{display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid #d1d5db;background:#f8faf9}.recipe-tools .btn{min-height:36px;font-size:12px}
@@ -673,55 +686,84 @@ window.moveDetailRow=async(id,dir)=>{
 function rowMoveButtons(id){
   return '<button class="btn small secondary move-btn" title="เลื่อนขึ้น" onclick="moveDetailRow('+id+',-1)">↑</button> <button class="btn small secondary move-btn" title="เลื่อนลง" onclick="moveDetailRow('+id+',1)">↓</button> ';
 }
+function rowEditSidebar(items,labelFn){
+  return '<div class="edit-row-list">'+items.map(r=>{
+    const label=labelFn?labelFn(r):(r.ingredient||r.item_name||r.title||"รายการ");
+    return '<div class="edit-row-item"><div class="edit-row-name">'+esc(label||"รายการ")+'</div><div class="edit-row-actions">'+
+      '<button class="btn secondary" title="ขึ้น" onclick="moveDetailRow('+r.id+',-1)">↑ ขึ้น</button>'+
+      '<button class="btn secondary" title="ลง" onclick="moveDetailRow('+r.id+',1)">↓ ลง</button>'+
+      '<button class="btn secondary" onclick="editRow('+r.id+')">แก้ไข</button>'+
+      '<button class="btn danger" onclick="deleteRow('+r.id+')">ลบ</button>'+
+    '</div></div>';
+  }).join("")+'</div>';
+}
+
 function renderProductionSheets(){
   const groups={};rows.forEach(r=>{(groups[r.recipe_name||"ไม่ระบุชื่อ"]??=[]).push(r)});
   renderGroupedSheets(Object.entries(groups),"สูตรการผลิต",(name,items)=>{items=[...items].sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||(Number(a.id)||0)-(Number(b.id)||0));return `
     <article class="recipe-sheet" data-group-key="${esc(name)}"><div class="recipe-title"><span class="drag-badge">☰</span>${esc(name)}</div>
-    <div class="recipe-tools">
+    <div class="edit-layout"><aside class="edit-sidebar">
+      <div class="edit-sidebar-title">จัดการสูตร</div>
       <button class="btn small secondary" onclick="pickGroupImage('production',${items[0]?.id||'null'},'image_url')">ใส่/เปลี่ยนรูป</button>
       <button class="btn small secondary" onclick="editRow(${items[0]?.id||'null'})">แก้หัวตาราง/หมายเหตุ</button>
       <button class="btn small primary" onclick="addProductionRow('${esc(name)}')">+ เพิ่มวัตถุดิบ</button>
-    </div>
-    <div class="layout-photo">${items.find(x=>x.image_url)?.image_url?'<img src="'+esc(items.find(x=>x.image_url).image_url)+'" alt="'+esc(name)+'">':'<div class="empty-photo">ยังไม่มีรูปตัวอย่าง</div>'}</div>
-    <div class="recipe-note" style="background:#f3f4f6;color:#111827">Servings: ${esc(items.find(x=>String(x.servings||"").trim())?.servings||"-")}</div><table class="recipe-table"><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th><th class="actions"></th></tr></thead>
-    <tbody>${items.map(r=>`<tr><td>${esc(r.ingredient||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td class="actions">${rowMoveButtons(r.id)}<button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`});
+      <div class="edit-sidebar-title" style="margin-top:5px">แก้ไขรายการ</div>
+      ${rowEditSidebar(items,r=>r.ingredient||"วัตถุดิบ")}
+    </aside><div class="edit-content">
+      <div class="layout-photo">${items.find(x=>x.image_url)?.image_url?'<img src="'+esc(items.find(x=>x.image_url).image_url)+'" alt="'+esc(name)+'">':'<div class="empty-photo">ยังไม่มีรูปตัวอย่าง</div>'}</div>
+      <div class="recipe-note" style="background:#f3f4f6;color:#111827">Servings: ${esc(items.find(x=>String(x.servings||"").trim())?.servings||"-")}</div>
+      <table class="recipe-table"><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th></tr></thead>
+      <tbody>${items.map(r=>`<tr><td>${esc(r.ingredient||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td></tr>`).join("")}</tbody></table>
+    </div></div></article>`});
 }
 window.addProductionRow=name=>{const first=rows.find(x=>x.recipe_name===name)||{};openEditor({record_id:"PROD-"+Date.now(),source_page:first.source_page||null,category:first.category||"",recipe_name:name,ingredient:"",quantity:null,unit:"g",is_published:true})};
 function renderToppingSheets(){
   const groups={};rows.forEach(r=>{const k=(r.category||"Topping")+" • "+(r.subcategory||"ทั่วไป");(groups[k]??=[]).push(r)});
   renderGroupedSheets(Object.entries(groups),"Topping",(name,items)=>{items=[...items].sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||(Number(a.id)||0)-(Number(b.id)||0));return `
     <article class="recipe-sheet" data-group-key="${esc(name)}"><div class="recipe-title"><span class="drag-badge">☰</span>${esc(name)}</div>
-    <div class="recipe-tools">
+    <div class="edit-layout"><aside class="edit-sidebar">
+      <div class="edit-sidebar-title">จัดการ Topping</div>
       <button class="btn small secondary" onclick="pickGroupImage('toppings',${items[0]?.id||'null'},'image_url')">ใส่/เปลี่ยนรูป</button>
       <button class="btn small secondary" onclick="editRow(${items[0]?.id||'null'})">แก้หัวตาราง/หมายเหตุ</button>
       <button class="btn small primary" onclick="openEditor(null)">+ เพิ่ม Topping</button>
-    </div>
-    <table class="recipe-table"><thead><tr><th>รูป</th><th>รายการ</th><th>จำนวน</th><th>หน่วย</th><th>ราคา</th><th class="actions"></th></tr></thead>
-    <tbody>${items.map(r=>`<tr><td>${r.image_url?'<img class="table-thumb" src="'+esc(r.image_url)+'" alt="'+esc(r.item_name||r.name||"")+'">':'-'}</td><td>${esc(r.item_name||r.name||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td>${r.price_baht!=null?esc(r.price_baht)+" บาท":"-"}</td><td class="actions">${rowMoveButtons(r.id)}<button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`});
+      <div class="edit-sidebar-title" style="margin-top:5px">แก้ไขรายการ</div>
+      ${rowEditSidebar(items,r=>r.item_name||r.name||"Topping")}
+    </aside><div class="edit-content">
+      <table class="recipe-table"><thead><tr><th>รูป</th><th>รายการ</th><th>จำนวน</th><th>หน่วย</th><th>ราคา</th></tr></thead>
+      <tbody>${items.map(r=>`<tr><td>${r.image_url?'<img class="table-thumb" src="'+esc(r.image_url)+'" alt="'+esc(r.item_name||r.name||"")+'">':'-'}</td><td>${esc(r.item_name||r.name||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td>${r.price_baht!=null?esc(r.price_baht)+" บาท":"-"}</td></tr>`).join("")}</tbody></table>
+    </div></div></article>`});
 }
 function renderExpirySheets(){
   const groups={};rows.forEach(r=>{(groups[r.category||"วันหมดอายุ"]??=[]).push(r)});
   renderGroupedSheets(Object.entries(groups),"วันหมดอายุ",(name,items)=>{items=[...items].sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||(Number(a.id)||0)-(Number(b.id)||0));return `
     <article class="recipe-sheet" data-group-key="${esc(name)}"><div class="recipe-title"><span class="drag-badge">☰</span>${esc(name)}</div>
-    <div class="recipe-tools">
+    <div class="edit-layout"><aside class="edit-sidebar">
+      <div class="edit-sidebar-title">จัดการรายการ</div>
       <button class="btn small secondary" onclick="pickGroupImage('expiry',${items[0]?.id||'null'},'image_url')">ใส่/เปลี่ยนรูป</button>
       <button class="btn small secondary" onclick="editRow(${items[0]?.id||'null'})">แก้หัวตาราง/หมายเหตุ</button>
       <button class="btn small primary" onclick="openEditor(null)">+ เพิ่มรายการ</button>
-    </div>
-    <table class="recipe-table"><thead><tr><th>รูป</th><th>รายการ</th><th>การจัดเก็บ</th><th>ยังไม่เปิด</th><th>หลังเปิด</th><th class="actions"></th></tr></thead>
-    <tbody>${items.map(r=>`<tr><td>${r.image_url?'<img class="table-thumb" src="'+esc(r.image_url)+'" alt="'+esc(r.item_name||"")+'">':'-'}</td><td>${esc(r.item_name||"")}</td><td>${esc(r.storage_condition||"")}</td><td>${esc(r.shelf_life_unopened||"-")}</td><td>${esc(r.shelf_life_opened||"-")}</td><td class="actions">${rowMoveButtons(r.id)}<button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`});
+      <div class="edit-sidebar-title" style="margin-top:5px">แก้ไขรายการ</div>
+      ${rowEditSidebar(items,r=>r.item_name||"รายการ")}
+    </aside><div class="edit-content">
+      <table class="recipe-table"><thead><tr><th>รูป</th><th>รายการ</th><th>การจัดเก็บ</th><th>ยังไม่เปิด</th><th>หลังเปิด</th></tr></thead>
+      <tbody>${items.map(r=>`<tr><td>${r.image_url?'<img class="table-thumb" src="'+esc(r.image_url)+'" alt="'+esc(r.item_name||"")+'">':'-'}</td><td>${esc(r.item_name||"")}</td><td>${esc(r.storage_condition||"")}</td><td>${esc(r.shelf_life_unopened||"-")}</td><td>${esc(r.shelf_life_opened||"-")}</td></tr>`).join("")}</tbody></table>
+    </div></div></article>`});
 }
 function renderUniformSheets(){
   const groups={};rows.forEach(r=>{(groups[r.category||"เครื่องแต่งกาย"]??=[]).push(r)});
   renderGroupedSheets(Object.entries(groups),"เครื่องแต่งกาย",(name,items)=>{items=[...items].sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||(Number(a.id)||0)-(Number(b.id)||0));return `
     <article class="recipe-sheet" data-group-key="${esc(name)}"><div class="recipe-title"><span class="drag-badge">☰</span>${esc(name)}</div>
-    <div class="recipe-tools">
+    <div class="edit-layout"><aside class="edit-sidebar">
+      <div class="edit-sidebar-title">จัดการเครื่องแต่งกาย</div>
       <button class="btn small secondary" onclick="pickGroupImage('uniforms',${items[0]?.id||'null'},'image_url')">ใส่/เปลี่ยนรูป</button>
       <button class="btn small secondary" onclick="editRow(${items[0]?.id||'null'})">แก้หัวตาราง/หมายเหตุ</button>
       <button class="btn small primary" onclick="openEditor(null)">+ เพิ่มรายการ</button>
-    </div>
-    <table class="recipe-table"><thead><tr><th>รูป</th><th>รายการ</th><th>ขนาด</th><th>รายละเอียด</th><th class="actions"></th></tr></thead>
-    <tbody>${items.map(r=>`<tr><td>${r.image_url?'<img class="table-thumb" src="'+esc(r.image_url)+'" alt="'+esc(r.item_name||"")+'">':'-'}</td><td>${esc(r.item_name||"")}</td><td>${esc(r.size_info||"-")}</td><td>${esc(r.description||r.usage_notes||"")}</td><td class="actions">${rowMoveButtons(r.id)}<button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`});
+      <div class="edit-sidebar-title" style="margin-top:5px">แก้ไขรายการ</div>
+      ${rowEditSidebar(items,r=>r.item_name||"รายการ")}
+    </aside><div class="edit-content">
+      <table class="recipe-table"><thead><tr><th>รูป</th><th>รายการ</th><th>ขนาด</th><th>รายละเอียด</th></tr></thead>
+      <tbody>${items.map(r=>`<tr><td>${r.image_url?'<img class="table-thumb" src="'+esc(r.image_url)+'" alt="'+esc(r.item_name||"")+'">':'-'}</td><td>${esc(r.item_name||"")}</td><td>${esc(r.size_info||"-")}</td><td>${esc(r.description||r.usage_notes||"")}</td></tr>`).join("")}</tbody></table>
+    </div></div></article>`});
 }
 
 function renderCourseSheets(){
@@ -730,19 +772,21 @@ function renderCourseSheets(){
   wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>'<section class="'+pageClass(page.length)+'"><div class="page-title">บทเรียนอื่น ๆ • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content recipe-admin-grid">'+page.map(r=>`
     <article class="recipe-sheet" data-group-key="${esc(String(r.id))}">
       <div class="recipe-title"><span class="drag-badge">☰</span>${esc(r.title||"บทเรียน")}</div>
-      <div class="recipe-tools">
+      <div class="edit-layout"><aside class="edit-sidebar">
+        <div class="edit-sidebar-title">จัดการบทเรียน</div>
         <button class="btn small secondary" onclick="pickGroupImage('courses',${r.id},'thumbnail_url')">ใส่/เปลี่ยนรูป</button>
-        <button class="btn small secondary" onclick="editRow(${r.id})">แก้หัวตาราง/หมายเหตุ</button>
+        <button class="btn small secondary" onclick="editRow(${r.id})">แก้ไขข้อมูล</button>
+        <button class="btn small danger" onclick="deleteRow(${r.id})">ลบบทเรียน</button>
         <button class="btn small primary" onclick="openEditor(null)">+ เพิ่มบทเรียน</button>
-      </div>
-      ${r.thumbnail_url?'<div class="recipe-photo" style="border-right:0;border-bottom:1px solid #d1d5db"><img src="'+esc(r.thumbnail_url)+'" alt="'+esc(r.title||"")+'"></div>':''}
-      <table class="recipe-table"><tbody>
-        <tr><th>หมวดหมู่</th><td>${esc(r.category||"-")}</td></tr>
-        <tr><th>รายละเอียด</th><td>${esc(r.description||"-")}</td></tr>
-        <tr><th>ระยะเวลา</th><td>${r.estimated_minutes?esc(r.estimated_minutes)+" นาที":"-"}</td></tr>
-        <tr><th>ระดับ</th><td>${esc(r.difficulty||"-")}</td></tr>
-        <tr><th>จัดการ</th><td><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>
-      </tbody></table>
+      </aside><div class="edit-content">
+        ${r.thumbnail_url?'<div class="recipe-photo" style="border-right:0;border-bottom:1px solid #d1d5db"><img src="'+esc(r.thumbnail_url)+'" alt="'+esc(r.title||"")+'"></div>':''}
+        <table class="recipe-table"><tbody>
+          <tr><th>หมวดหมู่</th><td>${esc(r.category||"-")}</td></tr>
+          <tr><th>รายละเอียด</th><td>${esc(r.description||"-")}</td></tr>
+          <tr><th>ระยะเวลา</th><td>${r.estimated_minutes?esc(r.estimated_minutes)+" นาที":"-"}</td></tr>
+          <tr><th>ระดับ</th><td>${esc(r.difficulty||"-")}</td></tr>
+        </tbody></table>
+      </div></div>
     </article>`).join("")+'</div></section>').join("")+'</div>';
   initLayoutCardDrag();scheduleReviewFit();
 }
@@ -765,17 +809,21 @@ function renderDrinkSheets(){
     const firstTop=toppingRows.length?Math.min(...toppingRows.map(x=>x.sort_order||9999)):null;
     return `<article class="recipe-sheet" data-group-key="${esc(recipeId)}">
       <div class="recipe-title"><span class="drag-badge">☰</span>${esc(first.menu_name||recipeId)}</div>
-      <div class="recipe-tools">
+      <div class="edit-layout"><aside class="edit-sidebar">
+        <div class="edit-sidebar-title">จัดการสูตรชง</div>
         <button class="btn small secondary" onclick="pickDrinkImage('${esc(recipeId)}')">ใส่/เปลี่ยนรูป</button>
         <button class="btn small secondary" onclick="editDrinkMeta('${esc(recipeId)}')">แก้หัวตาราง/หมายเหตุ</button>
         <button class="btn small primary" onclick="addDrinkRow('${esc(recipeId)}')">+ เพิ่มวัตถุดิบ</button>
-      </div>
-      <div class="recipe-body">
-        <div class="recipe-photo">${img?'<img src="'+esc(img)+'" alt="'+esc(first.menu_name||recipeId)+'">':'<div class="empty-photo">ยังไม่มีรูป<br>กด “ใส่/เปลี่ยนรูป”</div>'}</div>
-        <div><table class="recipe-table"><thead><tr><th>วัตถุดิบ</th><th>${esc(size)}</th><th>หน่วย</th><th></th></tr></thead>
-        <tbody>${items.map(r=>`<tr class="${String(r.component_type||"").toLowerCase()==="topping"?"topping-row":""}"><td>${firstTop!==null&&r.sort_order===firstTop?'<strong>Topping</strong><br>':""}${esc(r.ingredient||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td class="recipe-row-actions">${rowMoveButtons(r.id)}<button class="btn secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table>
-        ${note?'<div class="recipe-note">'+esc(note)+'</div>':""}</div>
-      </div>
+        <div class="edit-sidebar-title" style="margin-top:5px">แก้ไขรายการ</div>
+        ${rowEditSidebar(items,r=>r.ingredient||"วัตถุดิบ")}
+      </aside><div class="edit-content">
+        <div class="recipe-body">
+          <div class="recipe-photo">${img?'<img src="'+esc(img)+'" alt="'+esc(first.menu_name||recipeId)+'">':'<div class="empty-photo">ยังไม่มีรูป</div>'}</div>
+          <div><table class="recipe-table"><thead><tr><th>วัตถุดิบ</th><th>${esc(size)}</th><th>หน่วย</th></tr></thead>
+          <tbody>${items.map(r=>`<tr class="${String(r.component_type||"").toLowerCase()==="topping"?"topping-row":""}"><td>${firstTop!==null&&r.sort_order===firstTop?'<strong>Topping</strong><br>':""}${esc(r.ingredient||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td></tr>`).join("")}</tbody></table>
+          ${note?'<div class="recipe-note">'+esc(note)+'</div>':""}</div>
+        </div>
+      </div></div>
     </article>`;
   }).join("")+'</div></section>').join("")+'</div>';
   initLayoutCardDrag();scheduleReviewFit();
