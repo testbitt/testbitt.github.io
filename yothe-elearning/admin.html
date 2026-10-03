@@ -716,13 +716,7 @@ function collectEditorObject(){
   return obj;
 }
 function canAutoSave(obj){
-  if(dataset==="drinks") return !!(obj.recipe_id&&obj.menu_name&&obj.ingredient);
-  if(dataset==="production") return !!(obj.recipe_name&&obj.ingredient);
-  if(dataset==="toppings") return !!(obj.item_name||obj.name);
-  if(dataset==="expiry") return !!obj.item_name;
-  if(dataset==="uniforms") return !!obj.item_name;
-  if(dataset==="courses") return !!(obj.slug&&obj.title);
-  if(dataset==="settings") return !!obj.key;
+  // ทุกเมนูสามารถบันทึกเป็น Draft ได้แม้กรอกข้อมูลไม่ครบ
   return true;
 }
 async function performAutoSave(){
@@ -730,11 +724,11 @@ async function performAutoSave(){
   const msg=document.getElementById("editMsg");
   try{
     const obj=collectEditorObject();
-    if(!canAutoSave(obj)){msg.textContent="กรอกข้อมูลหลักให้ครบก่อน ระบบจึงจะ Auto Save";msg.className="msg saving";return}
+    if(!canAutoSave(obj)){msg.textContent="ยังไม่สามารถบันทึกได้";msg.className="msg saving";return}
     autoSaveBusy=true;msg.textContent="กำลัง Auto Save...";msg.className="msg saving";
     const res=await api({action:"save",dataset,id:editingId,row:obj});
     if(!editingId&&res?.data?.id) editingId=res.data.id;
-    msg.textContent="Auto Save แล้ว";msg.className="msg ok";
+    msg.textContent="Auto Save แล้ว • สามารถกลับมาแก้ไขข้อมูลที่เหลือภายหลังได้";msg.className="msg ok";
     await loadData();
   }catch(err){
     msg.textContent="Auto Save ไม่สำเร็จ: "+err.message;msg.className="msg error";
