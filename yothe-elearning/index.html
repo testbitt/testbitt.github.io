@@ -1,449 +1,107 @@
 <!doctype html>
 <html lang="th">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Yothe E-Learning</title>
-  <meta name="description" content="Yothe E-Learning - ศูนย์เรียนรู้สูตรการผลิต สูตรชง วันหมดอายุ และบทเรียนอื่น ๆ" />
-  <style>
-    :root{
-      --red:#d71920; --red-dark:#a60f14; --red-soft:#fff0f1; --theme-radius:18px; --theme-shadow:0 10px 30px rgba(0,0,0,.08); --theme-gap:16px;
-      --ink:#171717; --muted:#6b7280; --line:#e5e7eb; --bg:#f7f7f8; --white:#fff;
-      --shadow:0 10px 30px rgba(0,0,0,.08); --radius:20px;
-    }
-    *{box-sizing:border-box}
-    html{scroll-behavior:smooth}
-    body{margin:0;font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,Arial,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:15px;line-height:1.55;font-weight:400;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
-    a{text-decoration:none;color:inherit}
-    button,input{font:inherit}
-    .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-    .nav{max-width:1180px;margin:auto;height:72px;display:flex;align-items:center;gap:22px;padding:0 20px}
-    .brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:24px;color:var(--red)}
-    .brand-logo{width:44px;height:52px;object-fit:contain;display:block}
-    .navlinks{display:flex;gap:8px;flex:1;justify-content:center;flex-wrap:wrap}
-    .navlinks a{padding:10px 12px;border-radius:12px;font-size:14px;font-weight:700}
-    .navlinks a:hover{background:var(--red-soft);color:var(--red)}
-    .hero{background:linear-gradient(145deg,#fff 0%,#fff5f5 100%);border-bottom:1px solid var(--line)}
-    .hero-inner{max-width:1180px;margin:auto;padding:64px 20px 48px;display:grid;grid-template-columns:1.25fr .75fr;gap:36px;align-items:center}
-    .eyebrow{display:inline-flex;gap:8px;align-items:center;background:var(--red-soft);color:var(--red);font-weight:800;padding:8px 12px;border-radius:999px;font-size:13px}
-    h1{font-size:clamp(38px,6vw,72px);line-height:1.02;margin:18px 0 16px;letter-spacing:-1.8px}
-    .hero p{font-size:18px;line-height:1.75;color:#4b5563;max-width:720px}
-    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
-    .btn{border:none;border-radius:14px;padding:13px 18px;font-weight:800;cursor:pointer}
-    .btn-primary{background:var(--red);color:#fff}
-    .btn-secondary{background:#fff;color:var(--red);border:1px solid #ffd5d7}
-    .hero-card{background:#fff;color:var(--ink);border:1px solid #ffd5d7;border-radius:28px;padding:28px;min-height:310px;box-shadow:var(--shadow);display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:center}
-    .hero-card .hero-logo{width:min(230px,75%);height:210px;object-fit:contain}
-    .hero-card h3{font-size:28px;margin:0 0 8px}
-    .hero-card p{color:var(--muted);font-size:15px}
-    main{max-width:1180px;margin:auto;padding:34px 20px 70px}
-    section{scroll-margin-top:95px;margin:32px 0 54px}
-    .section-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:20px}
-    .section-head h2{margin:0;font-size:clamp(26px,2.4vw,34px);line-height:1.25;font-weight:850;letter-spacing:-.25px}
-    .section-head p{margin:6px 0 0;color:var(--muted);font-size:15px;line-height:1.6}
-    .brand-story{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,.4fr);gap:34px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:36px;box-shadow:var(--shadow);overflow:hidden}
-    .story-panel,.story-art{background:transparent;border:0;box-shadow:none}
-    .story-panel{padding:0}
-    .story-panel h2{font-size:clamp(38px,5vw,64px);line-height:1;margin:0 0 28px;color:#d60000;font-weight:950;letter-spacing:-1px}
-    .story-copy p{line-height:1.9;color:#62340f;font-size:clamp(15px,1.4vw,18px);font-weight:600;margin:0 0 20px}.story-copy p:nth-child(1),.story-copy p:nth-child(4),.story-copy p:nth-child(6),.story-copy p:nth-child(8){padding-left:7%}
-    .story-points{display:none}
-    .story-point{padding:14px;border-radius:14px;background:var(--red-soft);font-weight:800;color:var(--red)}
-    .story-art{min-height:460px;padding:10px;display:flex;align-items:center;justify-content:center}
-    .story-logo{width:min(360px,100%);max-height:470px;object-fit:contain}
-    .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 20px}
-    .search{flex:1;min-width:240px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 14px}
-    .chip{border:1px solid var(--line);background:#fff;padding:10px 13px;border-radius:999px;font-weight:700;cursor:pointer}
-    .chip.active,.chip:hover{background:var(--red);border-color:var(--red);color:#fff}
-    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--theme-gap)}
-    .card{background:#fff;border:1px solid var(--line);border-radius:var(--theme-radius);overflow:hidden;box-shadow:var(--theme-shadow)}
-    .thumb{height:135px;background:linear-gradient(135deg,#ffe2e4,#fff3f4);display:grid;place-items:center;color:var(--red);font-weight:900;font-size:20px}
-    .card-body{padding:16px}
-    .tag{display:inline-block;font-size:12px;font-weight:800;padding:6px 9px;border-radius:999px;background:var(--red-soft);color:var(--red)}
-    .card h3{margin:10px 0 8px;font-size:18px;line-height:1.4;font-weight:800}
-    .card p{margin:0;color:var(--muted);line-height:1.65;font-size:14px}
-    .meta{display:flex;justify-content:space-between;gap:8px;margin-top:14px;color:#6b7280;font-size:12px}
-    .table-wrap{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:auto}
-    table{width:100%;border-collapse:collapse;min-width:820px}
-    th,td{text-align:left;padding:14px 16px;border-bottom:1px solid var(--line);vertical-align:top}
-    th{background:var(--red);color:#fff;font-size:13px}
-    .state{background:#fff;border:1px dashed #d1d5db;border-radius:18px;padding:30px;text-align:center;color:var(--muted)}
-    .loading{animation:pulse 1.1s infinite alternate}
-    @keyframes pulse{from{opacity:.45}to{opacity:1}}
-    .footer{border-top:1px solid var(--line);background:#fff}
-    .footer-inner{max-width:1180px;margin:auto;padding:24px 20px;color:var(--muted);font-size:14px}
-    .status{font-size:12px;color:var(--muted);margin-top:8px}
-.drink-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-.drink-sheet{border:3px solid #0b5a3f;background:#fff}
-.drink-title{background:var(--red);color:#fff;font-weight:800;text-align:center;padding:10px 12px;font-size:17px;line-height:1.35;letter-spacing:.1px}
-.drink-body{display:grid;grid-template-columns:120px 1fr;min-height:230px}
-.drink-photo{border-right:1px solid #d1d5db;display:flex;align-items:center;justify-content:center;padding:8px}
-.drink-photo img{width:100%;max-height:210px;object-fit:contain}
-.drink-photo .empty{color:#9ca3af;font-size:12px;text-align:center}
-.drink-table{width:100%;border-collapse:collapse;min-width:0}
-.drink-table th,.drink-table td{padding:6px 8px;border:1px solid #d1d5db;font-size:12.5px;line-height:1.45}
-.drink-table th{position:static;background:var(--red);color:#fff;font-weight:800;font-size:12px;letter-spacing:.05px}.drink-table th:first-child{color:#fff}.drink-table th:nth-child(2){color:#fff;text-align:center}
-.drink-table td:nth-child(2),.drink-table td:nth-child(3){text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
-.drink-table tr.topping td:first-child{color:#8b1aa8;font-weight:900}
-.drink-note{background:#ffef57;color:#d91d0b;font-size:11.5px;font-weight:800;padding:7px 10px;line-height:1.45}
-@media(max-width:900px){.drink-grid{grid-template-columns:1fr}}
-    @media(max-width:900px){
-      .hero-inner,.brand-story{grid-template-columns:1fr}
-      .story-art{min-height:280px}
-      .story-logo{max-height:300px}
-      .story-copy p:nth-child(n){padding-left:0}
-      .hero-inner{grid-template-columns:1fr}
-      .grid{grid-template-columns:repeat(2,1fr)}
-      .navlinks{display:none}
-    }
-    @media(max-width:560px){
-      .hero-inner{padding-top:40px}
-      .grid{grid-template-columns:1fr}
-      .story-points{grid-template-columns:1fr}
-      .nav{height:64px}
-      .brand{font-size:20px}
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yothé E-Learning</title>
+<meta name="description" content="Yothé E-Learning">
+<style>
+:root{--red:#d71920;--red-soft:#fff0f1;--ink:#171717;--muted:#6b7280;--line:#e5e7eb;--bg:#f7f7f8;--radius:18px;--shadow:0 8px 24px rgba(0,0,0,.07);--gap:16px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,Arial,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+button,input{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}.hidden{display:none!important}
+.login-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(145deg,#fff,#fff5f5)}
+.login-card{width:min(440px,100%);background:#fff;border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);padding:30px}
+.login-logo{width:92px;height:92px;object-fit:contain;display:block;margin:0 auto 8px}.login-card h1{text-align:center;margin:0;font-size:32px;color:var(--red)}.login-card p{text-align:center;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:7px;margin:14px 0}.field label{font-size:13px;font-weight:800}.input{width:100%;border:1px solid #d1d5db;border-radius:14px;padding:13px 14px;background:#fff}
+.btn{border:0;border-radius:14px;padding:12px 16px;font-weight:800}.primary{background:var(--red);color:#fff;width:100%}.secondary{background:#fff;border:1px solid #fecdd3;color:var(--red)}
+.msg{font-size:13px;margin-top:10px}.error{color:#b91c1c}.ok{color:#15803d}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.97);border-bottom:1px solid var(--line);backdrop-filter:blur(10px)}
+.nav{max-width:1240px;margin:auto;min-height:74px;padding:8px 20px;display:flex;align-items:center;gap:22px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--red);font-size:24px;font-weight:900;white-space:nowrap}.brand img{width:52px;height:56px;object-fit:contain}
+.navlinks{display:flex;gap:6px;flex:1;justify-content:center;flex-wrap:wrap}.navlinks button,.navlinks a{border:0;background:transparent;padding:10px 12px;border-radius:12px;font-weight:800;font-size:14px}.navlinks button:hover,.navlinks button.active{background:var(--red);color:#fff}
+.userbox{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+main{max-width:1240px;margin:auto;padding:30px 20px 70px}.view{display:none}.view.active{display:block}
+.story{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(250px,.4fr);gap:30px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:34px;box-shadow:var(--shadow)}
+.story h1{font-size:clamp(38px,5vw,64px);line-height:1;margin:0 0 26px;color:var(--red);font-weight:950}.story-copy p{line-height:1.9;color:#62340f;font-size:clamp(15px,1.4vw,18px);font-weight:600;margin:0 0 18px}.story-logo{display:flex;align-items:center;justify-content:center}.story-logo img{width:min(360px,100%);max-height:460px;object-fit:contain}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:18px}.section-head h2{margin:0;font-size:clamp(28px,3vw,38px);line-height:1.2;font-weight:900}.section-head p{margin:6px 0 0;color:var(--muted)}
+.all-lessons{font-size:14px;color:var(--red);font-weight:800}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap)}.sheet{background:#fff;border:3px solid var(--red);break-inside:avoid}.sheet-title{background:var(--red);color:#fff;font-weight:800;text-align:center;padding:10px 12px;font-size:17px;line-height:1.35}
+.sheet-body{display:grid;grid-template-columns:120px 1fr;min-height:225px}.photo{display:flex;align-items:center;justify-content:center;padding:8px;border-right:1px solid #d1d5db}.photo img{width:100%;max-height:205px;object-fit:contain}.photo .empty{font-size:12px;color:#9ca3af;text-align:center}
+table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1d5db;padding:6px 8px;font-size:12.5px;line-height:1.45;text-align:left}th{background:var(--red);color:#fff;font-weight:800;font-size:12px}td.num{text-align:center;font-weight:700;font-variant-numeric:tabular-nums}.topping{color:#8b1aa8;font-weight:900}.note{background:#ffef57;color:#d91d0b;font-size:11.5px;font-weight:800;padding:7px 10px;line-height:1.45}
+.state{background:#fff;border:1px dashed #d1d5db;border-radius:16px;padding:28px;text-align:center;color:var(--muted)}
+.search{width:100%;max-width:420px;border:1px solid #d1d5db;border-radius:14px;padding:11px 13px;margin-bottom:16px}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--gap)}.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}.card h3{margin:0 0 8px;font-size:18px}.card p{color:var(--muted);margin:0}.meta{display:flex;justify-content:space-between;gap:8px;margin-top:12px;font-size:12px;color:var(--muted)}
+@media(max-width:900px){.nav{align-items:flex-start;flex-wrap:wrap}.navlinks{order:3;width:100%;justify-content:flex-start}.story{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}.userbox{margin-left:auto}}
+@media(max-width:560px){.cards{grid-template-columns:1fr}.brand{font-size:20px}.navlinks button,.navlinks a{font-size:13px;padding:8px}.story{padding:22px}.sheet-body{grid-template-columns:95px 1fr}}
+</style>
 </head>
 <body>
-<header class="topbar">
-  <div class="nav">
-    <a class="brand" href="#home"><img class="brand-logo" src="assets/yothe-cat.svg" alt="Yothé"><span>Yothé E-Learning</span></a>
-    <nav class="navlinks">
-      <a href="#home">Home</a>
-      <a href="#production">สูตรการผลิต</a>
-      <a href="#drinks">สูตรชง</a>
-      <a href="#expiry">วันหมดอายุ</a>
-      <a href="#toppings">Topping</a>
-      <a href="#courses">บทเรียนอื่น ๆ</a>
-      <a href="admin.html">Admin</a>
-    </nav>
-  </div>
-</header>
-
-<section id="home" class="hero">
-  <div class="hero-inner">
-    <div>
-      <span class="eyebrow">YOTHE LEARNING HUB</span>
-      <h1>เรียนรู้ให้เข้าใจ<br>ทำงานได้อย่างมั่นใจ</h1>
-      <p>ศูนย์เรียนรู้สำหรับสูตรการผลิต สูตรชง วันหมดอายุ SOP และบทเรียนที่จำเป็นต่อการทำงานในมาตรฐานเดียวกัน</p>
-      <div class="actions">
-        <a class="btn btn-primary" href="#courses">เริ่มเรียนรู้</a>
-        <a class="btn btn-secondary" href="#courses">ดูบทเรียนทั้งหมด</a>
-      </div>
-    </div>
-    <div class="hero-card">
-      <img class="hero-logo" src="assets/yothe-cat.svg" alt="Yothé">
-      <div>
-        <h3>Learn • Practice • Grow</h3>
-        <p>พื้นที่เรียนรู้ที่อัปเดตได้ตลอด และเปิดใช้งานแบบ Public บนทุกอุปกรณ์</p>
-      </div>
-    </div>
-  </div>
+<section id="loginScreen" class="login-screen">
+  <form id="loginForm" class="login-card">
+    <img src="assets/yothe-cat.svg" class="login-logo" alt="Yothé">
+    <h1>Yothé E-Learning</h1>
+    <p>กรุณา Login เพื่อเข้าใช้งาน</p>
+    <div class="field"><label>User</label><input id="loginUser" class="input" autocomplete="username" required></div>
+    <div class="field"><label>Password</label><input id="loginPass" class="input" type="password" autocomplete="current-password" required></div>
+    <button class="btn primary" type="submit">Login</button>
+    <div id="loginMsg" class="msg"></div>
+  </form>
 </section>
 
+<div id="appRoot" class="hidden">
+<header class="topbar"><div class="nav">
+  <button class="brand" data-view="home" style="border:0;background:none;padding:0"><img src="assets/yothe-cat.svg" alt="Yothé"><span>Yothé E-Learning</span></button>
+  <nav id="navLinks" class="navlinks">
+    <button data-view="home" class="active">Home</button>
+    <button data-view="production">สูตรการผลิต</button>
+    <button data-view="drinks">สูตรชง</button>
+    <button data-view="expiry">วันหมดอายุ</button>
+    <button data-view="toppings">Topping</button>
+    <button data-view="courses">บทเรียนอื่น ๆ</button>
+    <a href="admin.html">Admin</a>
+  </nav>
+  <div class="userbox"><span id="currentUser"></span><button id="logoutBtn" class="btn secondary" style="padding:7px 10px">Logout</button></div>
+</div></header>
+
 <main>
-  <section id="brand-story">
-    <div class="brand-story">
-      <article class="story-panel">
-        <h2 id="story-title">BRAND STORY</h2>
-        <div id="story-body" class="story-copy loading">กำลังโหลดข้อมูล Brand Story...</div>
-        <div id="db-status" class="status"></div>
-      </article>
-      <aside class="story-art">
-        <img class="story-logo" src="assets/yothe-cat.svg" alt="Yothé cat logo">
-      </aside>
+  <section id="view-home" class="view active">
+    <div class="story">
+      <article><h1 id="storyTitle">BRAND STORY</h1><div id="storyBody" class="story-copy">กำลังโหลด...</div></article>
+      <aside class="story-logo"><img src="assets/yothe-cat.svg" alt="Yothé"></aside>
     </div>
   </section>
 
-  <section id="courses">
-    <div class="section-head">
-      <div>
-        <h2>บทเรียนทั้งหมด</h2>
-        <p>เลือกเรียนตามหัวข้อที่ต้องการ</p>
-      </div>
-    </div>
-    <div class="toolbar">
-      <input id="search" class="search" type="search" placeholder="ค้นหาบทเรียน..." />
-      <button class="chip active" data-filter="all">ทั้งหมด</button>
-      <button class="chip" data-filter="สูตรการผลิต">สูตรการผลิต</button>
-      <button class="chip" data-filter="สูตรชง">สูตรชง</button>
-      <button class="chip" data-filter="วันหมดอายุ">วันหมดอายุ</button>
-      <button class="chip" data-filter="บทเรียนอื่น ๆ">บทเรียนอื่น ๆ</button>
-    </div>
-    <div id="course-grid" class="grid"><div class="state loading">กำลังโหลดบทเรียน...</div></div>
-  </section>
-
-  <section id="production">
-    <div class="section-head">
-      <div>
-        <h2>สูตรการผลิต</h2>
-        <p>ข้อมูลสูตรการผลิตจากฐานข้อมูลล่าสุด</p>
-      </div>
-    </div>
-    <div id="production-list" class="grid"><div class="state loading">กำลังโหลดสูตรการผลิต...</div></div>
-  </section>
-
-  <section id="drinks">
-    <div class="section-head">
-      <div>
-        <h2>สูตรชงเครื่องดื่ม</h2>
-        <p>สูตรชงและส่วนประกอบตามเมนู</p>
-      </div>
-    </div>
-    <div id="drink-list" class="grid"><div class="state loading">กำลังโหลดสูตรชง...</div></div>
-  </section>
-
-  <section id="toppings">
-    <div class="section-head">
-      <div>
-        <h2>Topping</h2>
-        <p>เรียนรู้ข้อมูล Topping วิธีใช้ และข้อควรระวัง</p>
-      </div>
-    </div>
-    <div id="topping-grid" class="grid"><div class="state loading">กำลังโหลดข้อมูล Topping...</div></div>
-  </section>
-
-  <section id="expiry">
-    <div class="section-head">
-      <div>
-        <h2>วันหมดอายุ</h2>
-        <p>ข้อมูลการจัดเก็บและอายุการใช้งานของวัตถุดิบ</p>
-      </div>
-    </div>
-    <div id="expiry-wrap" class="state loading">กำลังโหลดข้อมูลวันหมดอายุ...</div>
-  </section>
+  <section id="view-production" class="view"><div class="section-head"><div><h2>สูตรการผลิต</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="productionList" class="grid"></div></section>
+  <section id="view-drinks" class="view"><div class="section-head"><div><h2>สูตรชงเครื่องดื่ม</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="drinkList" class="grid"></div></section>
+  <section id="view-expiry" class="view"><div class="section-head"><div><h2>วันหมดอายุ</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="expiryList"></div></section>
+  <section id="view-toppings" class="view"><div class="section-head"><div><h2>Topping</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="toppingList" class="grid"></div></section>
+  <section id="view-courses" class="view"><div class="section-head"><div><h2>บทเรียนอื่น ๆ</h2><p>แสดงเมื่อเลือกหัวข้อนี้เท่านั้น</p></div></div><input id="courseSearch" class="search" placeholder="ค้นหาบทเรียน..."><div id="courseList" class="cards"></div></section>
 </main>
-
-<footer class="footer">
-  <div class="footer-inner">© 2026 Yothe E-Learning • Public Learning Website</div>
-</footer>
+</div>
 
 <script>
+const LOGIN_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-login";
+const PUBLIC_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-public";
 const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
-function applyPublicTheme(pref={}){
-  const ci=Math.max(1,Math.min(50,Number(pref.color_index)||1));
-  const ti=Math.max(1,Math.min(50,Number(pref.theme_index)||1));
-  const color=COLORS[ci-1];
-  document.documentElement.style.setProperty("--red",color);
-  document.documentElement.style.setProperty("--red-dark",color);
-  document.documentElement.style.setProperty("--red-soft",color+"18");
-  const radius=[2,6,10,14,18,22,26,30,34,38][(ti-1)%10];
-  const shadowLevel=Math.floor((ti-1)/10);
-  const shadows=["none","0 2px 8px rgba(0,0,0,.05)","0 5px 16px rgba(0,0,0,.07)","0 9px 26px rgba(0,0,0,.09)","0 14px 34px rgba(0,0,0,.11)"];
-  const gaps=[8,10,12,14,16,18,20,22,24,26];
-  document.documentElement.style.setProperty("--theme-radius",radius+"px");
-  document.documentElement.style.setProperty("--theme-shadow",shadows[shadowLevel]);
-  document.documentElement.style.setProperty("--theme-gap",gaps[(ti*3)%10]+"px");
-}
-async function loadPublicDisplayPrefs(){
-  try{
-    const rows=await sb("yothe_settings?select=value&key=eq.display_preferences");
-    applyPublicTheme(rows[0]?.value||{});
-  }catch{}
-}
-const SUPABASE_URL = "https://hcswjuemjluozmyejhnu.supabase.co";
-const SUPABASE_KEY = "sb_publishable_C4yHaRSzzgln3d9lplwIpg_QaWlG4ne";
-
-async function sb(path){
-  const res = await fetch(SUPABASE_URL + "/rest/v1/" + path, {
-    headers:{
-      "apikey":SUPABASE_KEY,
-      "Authorization":"Bearer " + SUPABASE_KEY,
-      "Accept":"application/json"
-    }
-  });
-  if(!res.ok) throw new Error(await res.text());
-  return res.json();
-}
-
+let token="",currentUser=null,cache={},courses=[];
 function esc(v=""){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
-
-let allCourses = [];
-let activeFilter = "all";
-
-function renderCourses(){
-  const q = document.getElementById("search").value.trim().toLowerCase();
-  const list = allCourses.filter(c => {
-    const matchesFilter = activeFilter === "all" || c.category === activeFilter;
-    const text = ((c.title||"")+" "+(c.description||"")+" "+(c.category||"")).toLowerCase();
-    return matchesFilter && text.includes(q);
-  });
-  const el = document.getElementById("course-grid");
-  if(!list.length){ el.innerHTML = '<div class="state">ยังไม่มีบทเรียนในหมวดนี้</div>'; return; }
-  el.innerHTML = list.map(c => `
-    <article class="card">
-      <div class="thumb">${esc(c.category)}</div>
-      <div class="card-body">
-        <span class="tag">${esc(c.category)}</span>
-        <h3>${esc(c.title)}</h3>
-        <p>${esc(c.description||"")}</p>
-        <div class="meta">
-          <span>${c.estimated_minutes ? esc(c.estimated_minutes)+" นาที" : "เรียนได้ทันที"}</span>
-          <span>${esc(c.difficulty||"")}</span>
-        </div>
-      </div>
-    </article>`).join("");
-}
-
-async function loadBrandStory(){
-  try{
-    const rows = await sb("yothe_settings?select=key,value&key=eq.brand_story");
-    const story = rows[0]?.value || {};
-    document.getElementById("story-title").textContent = story.title || "Brand Story";
-    const body = document.getElementById("story-body");
-    const paragraphs = Array.isArray(story.paragraphs) ? story.paragraphs : (story.body ? [story.body] : []);
-    body.innerHTML = paragraphs.length ? paragraphs.map(x=>'<p>'+esc(x)+'</p>').join("") : '<p>ยังไม่มีข้อมูล Brand Story</p>';
-    body.classList.remove("loading");
-    document.getElementById("db-status").textContent = "อัปเดตจากฐานข้อมูลกลาง";
-  }catch(e){
-    const body = document.getElementById("story-body");
-    body.classList.remove("loading");
-    body.innerHTML = "<p>ไม่สามารถโหลด Brand Story ได้ในขณะนี้</p>";
-    document.getElementById("db-status").textContent = "กรุณาลองใหม่อีกครั้ง";
-  }
-}
-
-async function loadCourses(){
-  try{
-    allCourses = await sb("yothe_courses?select=id,slug,category,title,description,estimated_minutes,difficulty,sort_order&is_published=eq.true&order=sort_order.asc");
-    renderCourses();
-  }catch(e){
-    document.getElementById("course-grid").innerHTML = '<div class="state">ไม่สามารถโหลดบทเรียนได้</div>';
-  }
-}
-
-async function loadProduction(){
-  try{
-    const rows=await sb("yothe_production_recipes?select=record_id,source_page,category,recipe_name,section,ingredient,quantity,unit,servings,net_quantity,net_unit,degree_c,soak_time_min,notes&is_published=eq.true&order=source_page.asc,record_id.asc");
-    const el=document.getElementById("production-list");
-    if(!rows.length){el.innerHTML='<div class="state">ยังไม่มีข้อมูลสูตรการผลิต</div>';return}
-    const groups={};
-    rows.forEach(r=>{(groups[r.recipe_name]??=[]).push(r)});
-    el.innerHTML=Object.entries(groups).map(([name,items])=>`
-      <article class="card">
-        <div class="thumb">${esc(name)}</div>
-        <div class="card-body">
-          <span class="tag">${esc(items[0]?.category||"สูตรการผลิต")}</span>
-          <h3>${esc(name)}</h3>
-          <div style="overflow:auto;margin-top:10px">
-            <table style="min-width:0;font-size:12px">
-              <thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th></tr></thead>
-              <tbody>${items.map(x=>`<tr><td>${esc(x.ingredient||"")}</td><td>${esc(x.quantity??"")}</td><td>${esc(x.unit||"")}</td></tr>`).join("")}</tbody>
-            </table>
-          </div>
-          <div class="meta"><span>${items[0]?.degree_c?esc(items[0].degree_c)+"°C":""}</span><span>${items[0]?.soak_time_min?esc(items[0].soak_time_min)+" นาที":""}</span></div>
-        </div>
-      </article>`).join("");
-  }catch(e){
-    document.getElementById("production-list").innerHTML='<div class="state">ไม่สามารถโหลดสูตรการผลิตได้</div>';
-  }
-}
-
-async function loadDrinks(){
-  try{
-    const [rows,metas]=await Promise.all([
-      sb("yothe_drink_recipes?select=record_id,recipe_id,source_page,brand,menu_group,menu_name,component_type,sort_order,ingredient,quantity,unit,notes&is_published=eq.true&order=source_page.asc,recipe_id.asc,sort_order.asc"),
-      sb("yothe_drink_menu_meta?select=recipe_id,image_url,size_label,note,note_style&order=recipe_id.asc")
-    ]);
-    const el=document.getElementById("drink-list");
-    if(!rows.length){el.innerHTML='<div class="state">ยังไม่มีข้อมูลสูตรชง</div>';return}
-    const metaMap=Object.fromEntries(metas.map(m=>[m.recipe_id,m]));
-    const groups={};
-    rows.forEach(r=>{(groups[r.recipe_id]??=[]).push(r)});
-    el.className="drink-grid";
-    el.innerHTML=Object.entries(groups).map(([recipeId,items])=>{
-      items.sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
-      const meta=metaMap[recipeId]||{}, first=items[0]||{};
-      const toppingSorts=items.filter(x=>String(x.component_type||"").toLowerCase()==="topping").map(x=>x.sort_order||9999);
-      const firstTopping=toppingSorts.length?Math.min(...toppingSorts):null;
-      return `<article class="drink-sheet">
-        <div class="drink-title">${esc(first.menu_name||recipeId)}</div>
-        <div class="drink-body">
-          <div class="drink-photo">${meta.image_url?'<img src="'+esc(meta.image_url)+'" alt="'+esc(first.menu_name||recipeId)+'">':'<div class="empty">ยังไม่มีรูปเครื่องดื่ม</div>'}</div>
-          <div>
-            <table class="drink-table">
-              <thead><tr><th>วัตถุดิบ</th><th>${esc(meta.size_label||"17 oz.(IB)")}</th><th>หน่วย</th></tr></thead>
-              <tbody>${items.map(x=>`<tr class="${String(x.component_type||"").toLowerCase()==="topping"?"topping":""}">
-                <td>${firstTopping!==null&&x.sort_order===firstTopping?'<strong>Topping</strong><br>':""}${esc(x.ingredient||"")}</td>
-                <td>${esc(x.quantity??"-")}</td><td>${esc(x.unit||"-")}</td>
-              </tr>`).join("")}</tbody>
-            </table>
-            ${meta.note?'<div class="drink-note">'+esc(meta.note)+'</div>':""}
-          </div>
-        </div>
-      </article>`;
-    }).join("");
-  }catch(e){
-    document.getElementById("drink-list").innerHTML='<div class="state">ไม่สามารถโหลดสูตรชงได้</div>';
-  }
-}
-
-async function loadToppings(){
-  try{
-    const rows=await sb("yothe_toppings?select=id,item_name,name,category,subcategory,quantity,unit,price_baht,placement,preparation,description,image_url,usage_notes,sort_order&is_published=eq.true&order=source_page.asc,record_id.asc");
-    const el=document.getElementById("topping-grid");
-    if(!rows.length){el.innerHTML='<div class="state">ยังไม่มีข้อมูล Topping</div>';return}
-    el.innerHTML=rows.map(r=>`
-      <article class="card">
-        <div class="thumb">${r.image_url?'<img src="'+esc(r.image_url)+'" alt="'+esc(r.name)+'" style="width:100%;height:100%;object-fit:cover">':esc(r.category||"Topping")}</div>
-        <div class="card-body">
-          <span class="tag">${esc(r.subcategory||r.category||"Topping")}</span>
-          <h3>${esc(r.item_name||r.name||"")}</h3>
-          <p>${esc(r.description||r.preparation||"")}</p>
-          <div class="meta"><span>${esc(r.quantity??"")} ${esc(r.unit||"")}</span><span>${r.price_baht?esc(r.price_baht)+" บาท":""}</span></div>
-          ${r.placement?'<div class="meta"><span>ตำแหน่ง: '+esc(r.placement)+'</span></div>':''}
-        </div>
-      </article>`).join("");
-  }catch(e){
-    document.getElementById("topping-grid").innerHTML='<div class="state">ไม่สามารถโหลดข้อมูล Topping ได้</div>';
-  }
-}
-
-async function loadExpiry(){
-  try{
-    const rows = await sb("yothe_expiry_items?select=item_name,category,storage_condition,shelf_life_unopened,shelf_life_opened,unit,notes,warning_level&is_published=eq.true&order=sort_order.asc");
-    const el = document.getElementById("expiry-wrap");
-    el.classList.remove("state","loading");
-    if(!rows.length){
-      el.className = "state";
-      el.textContent = "ยังไม่มีข้อมูลวันหมดอายุ กรุณาเพิ่มข้อมูลในฐานข้อมูล";
-      return;
-    }
-    el.className = "table-wrap";
-    el.innerHTML = `<table>
-      <thead><tr><th>รายการ</th><th>หมวด</th><th>การจัดเก็บ</th><th>ยังไม่เปิด</th><th>หลังเปิด</th><th>หน่วย</th><th>หมายเหตุ</th></tr></thead>
-      <tbody>${rows.map(r=>`<tr>
-        <td><strong>${esc(r.item_name)}</strong></td>
-        <td>${esc(r.category||"")}</td>
-        <td>${esc(r.storage_condition||"")}</td>
-        <td>${esc(r.shelf_life_unopened||"")}</td>
-        <td>${esc(r.shelf_life_opened||"")}</td>
-        <td>${esc(r.unit||"")}</td>
-        <td>${esc(r.notes||"")}</td>
-      </tr>`).join("")}</tbody>
-    </table>`;
-  }catch(e){
-    const el = document.getElementById("expiry-wrap");
-    el.className = "state";
-    el.textContent = "ไม่สามารถโหลดข้อมูลวันหมดอายุได้";
-  }
-}
-
-document.getElementById("search").addEventListener("input",renderCourses);
-document.querySelectorAll(".chip").forEach(btn=>btn.addEventListener("click",()=>{
-  document.querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));
-  btn.classList.add("active");
-  activeFilter = btn.dataset.filter;
-  renderCourses();
-}));
-
-loadPublicDisplayPrefs();
-loadBrandStory();
-loadCourses();
-loadProduction();
-loadDrinks();
-loadToppings();
-loadExpiry();
+async function post(url,payload){const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const d=await r.json().catch(()=>({error:"Invalid response"}));if(!r.ok)throw new Error(d.error||"เกิดข้อผิดพลาด");return d}
+async function api(action){if(cache[action])return cache[action];const r=await post(PUBLIC_API,{action,token});cache[action]=r.data||[];return cache[action]}
+function applyTheme(pref={}){const ci=Math.max(1,Math.min(50,Number(pref.color_index)||1)),ti=Math.max(1,Math.min(50,Number(pref.theme_index)||1)),color=COLORS[ci-1];document.documentElement.style.setProperty("--red",color);document.documentElement.style.setProperty("--red-soft",color+"18");document.documentElement.style.setProperty("--radius",[2,6,10,14,18,22,26,30,34,38][(ti-1)%10]+"px");document.documentElement.style.setProperty("--gap",[8,10,12,14,16,18,20,22,24,26][(ti*3)%10]+"px")}
+async function loadSettings(){const rows=await api("settings"),map=Object.fromEntries(rows.map(x=>[x.key,x.value]));applyTheme(map.display_preferences||{});renderMenuOrder(map.menu_order||["production","drinks","expiry","toppings"]);const s=map.brand_story||{},ps=Array.isArray(s.paragraphs)?s.paragraphs:(s.body?[s.body]:[]);document.getElementById("storyTitle").textContent=s.title||"BRAND STORY";document.getElementById("storyBody").innerHTML=ps.length?ps.map(x=>"<p>"+esc(x)+"</p>").join(""):"<p>ยังไม่มีข้อมูล Brand Story</p>"}
+function renderMenuOrder(order){const nav=document.getElementById("navLinks"),home=nav.querySelector('[data-view="home"]'),coursesBtn=nav.querySelector('[data-view="courses"]'),admin=nav.querySelector('a[href="admin.html"]');order.filter(x=>["production","drinks","expiry","toppings"].includes(x)).forEach(k=>{const el=nav.querySelector('[data-view="'+k+'"]');if(el)nav.insertBefore(el,coursesBtn)});nav.insertBefore(home,nav.firstChild);nav.appendChild(coursesBtn);nav.appendChild(admin)}
+function showView(view){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));document.getElementById("view-"+view)?.classList.add("active");document.querySelectorAll('#navLinks [data-view]').forEach(x=>x.classList.toggle("active",x.dataset.view===view));window.scrollTo({top:0,behavior:"smooth"});loadView(view)}
+async function loadView(view){try{if(view==="home")return;if(view==="production")return renderProduction(await api("production"));if(view==="drinks"){const [r,m]=await Promise.all([api("drinks"),api("drink_meta")]);return renderDrinks(r,m)}if(view==="toppings")return renderToppings(await api("toppings"));if(view==="expiry")return renderExpiry(await api("expiry"));if(view==="courses"){courses=await api("courses");return renderCourses()}}catch(e){const el=document.querySelector("#view-"+view+" [id$='List']");if(el)el.innerHTML='<div class="state">'+esc(e.message)+'</div>'}}
+function renderProduction(rows){const g={};rows.forEach(r=>(g[r.recipe_name||"ไม่ระบุชื่อ"]??=[]).push(r));document.getElementById("productionList").innerHTML=Object.entries(g).map(([name,items])=>'<article class="sheet"><div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th></tr></thead><tbody>'+items.map(x=>'<tr><td>'+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td></tr>').join("")+'</tbody></table></article>').join("")||'<div class="state">ยังไม่มีข้อมูล</div>'}
+function renderDrinks(rows,metas){const mm=Object.fromEntries(metas.map(x=>[x.recipe_id,x])),g={};rows.forEach(r=>(g[r.recipe_id]??=[]).push(r));document.getElementById("drinkList").innerHTML=Object.entries(g).map(([id,items])=>{items.sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));const first=items[0]||{},m=mm[id]||{},tops=items.filter(x=>String(x.component_type||"").toLowerCase()==="topping").map(x=>x.sort_order||9999),ft=tops.length?Math.min(...tops):null;return '<article class="sheet"><div class="sheet-title">'+esc(first.menu_name||id)+'</div><div class="sheet-body"><div class="photo">'+(m.image_url?'<img src="'+esc(m.image_url)+'" alt="'+esc(first.menu_name||id)+'">':'<div class="empty">ยังไม่มีรูป</div>')+'</div><div><table><thead><tr><th>วัตถุดิบ</th><th>'+esc(m.size_label||"17 oz.(IB)")+'</th><th>หน่วย</th></tr></thead><tbody>'+items.map(x=>'<tr><td>'+(ft!==null&&x.sort_order===ft?'<span class="topping">Topping</span><br>':'')+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td></tr>').join("")+'</tbody></table>'+(m.note?'<div class="note">'+esc(m.note)+'</div>':'')+'</div></div></article>'}).join("")||'<div class="state">ยังไม่มีข้อมูล</div>'}
+function renderToppings(rows){const g={};rows.forEach(r=>{const k=(r.category||"Topping")+" • "+(r.subcategory||"ทั่วไป");(g[k]??=[]).push(r)});document.getElementById("toppingList").innerHTML=Object.entries(g).map(([name,items])=>'<article class="sheet"><div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th>รายการ</th><th>จำนวน</th><th>หน่วย</th><th>ราคา</th></tr></thead><tbody>'+items.map(r=>'<tr><td>'+esc(r.item_name||r.name||"")+'</td><td class="num">'+esc(r.quantity??"-")+'</td><td class="num">'+esc(r.unit||"-")+'</td><td class="num">'+(r.price_baht!=null?esc(r.price_baht)+" บาท":"-")+'</td></tr>').join("")+'</tbody></table></article>').join("")||'<div class="state">ยังไม่มีข้อมูล</div>'}
+function renderExpiry(rows){document.getElementById("expiryList").innerHTML=rows.length?'<div class="sheet"><div class="sheet-title">ตารางวันหมดอายุ</div><table><thead><tr><th>รายการ</th><th>หมวด</th><th>การจัดเก็บ</th><th>ยังไม่เปิด</th><th>หลังเปิด</th><th>หน่วย</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+esc(r.item_name||"")+'</td><td>'+esc(r.category||"")+'</td><td>'+esc(r.storage_condition||"")+'</td><td>'+esc(r.shelf_life_unopened||"-")+'</td><td>'+esc(r.shelf_life_opened||"-")+'</td><td>'+esc(r.unit||"")+'</td></tr>').join("")+'</tbody></table></div>':'<div class="state">ยังไม่มีข้อมูล</div>'}
+function renderCourses(){const q=document.getElementById("courseSearch").value.trim().toLowerCase(),list=courses.filter(c=>((c.title||"")+" "+(c.description||"")+" "+(c.category||"")).toLowerCase().includes(q));document.getElementById("courseList").innerHTML=list.map(c=>'<article class="card"><h3>'+esc(c.title||"")+'</h3><p>'+esc(c.description||"")+'</p><div class="meta"><span>'+esc(c.category||"")+'</span><span>'+(c.estimated_minutes?esc(c.estimated_minutes)+" นาที":"")+'</span></div></article>').join("")||'<div class="state">ยังไม่มีบทเรียนในหัวข้อนี้</div>'}
+document.getElementById("loginForm").addEventListener("submit",async e=>{e.preventDefault();const m=document.getElementById("loginMsg");m.textContent="กำลัง Login...";m.className="msg";try{const r=await post(LOGIN_API,{action:"login",username:document.getElementById("loginUser").value,password:document.getElementById("loginPass").value});token=r.token;currentUser=r.user;document.getElementById("loginScreen").classList.add("hidden");document.getElementById("appRoot").classList.remove("hidden");document.getElementById("currentUser").textContent=r.user.display_name||r.user.username;await loadSettings();showView("home")}catch(err){m.textContent=err.message;m.className="msg error"}});
+document.getElementById("logoutBtn").onclick=async()=>{try{await post(LOGIN_API,{action:"logout",token})}catch{}token="";cache={};currentUser=null;document.getElementById("appRoot").classList.add("hidden");document.getElementById("loginScreen").classList.remove("hidden");document.getElementById("loginPass").value="";document.getElementById("loginMsg").textContent=""};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-view]");if(!b||document.getElementById("appRoot").classList.contains("hidden"))return;e.preventDefault();showView(b.dataset.view)});
+document.getElementById("courseSearch").addEventListener("input",renderCourses);
 </script>
 </body>
 </html>
