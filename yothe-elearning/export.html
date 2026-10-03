@@ -63,7 +63,8 @@ const ADMIN_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-adm
 let pin=sessionStorage.getItem("yothe_admin_pin")||"",drinkMeta={};
 const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
 const THEME_CLASSES=["theme-soft","theme-square","theme-airy","theme-compact","theme-bold"];
-let displayPrefs={orientation:"portrait",items_per_page:20,theme_index:1,color_index:1};
+const DEFAULT_DISPLAY_PREFS={orientation:"portrait",items_per_page:20,theme_index:1,color_index:1};
+let displayPrefs={...DEFAULT_DISPLAY_PREFS};
 function visualItemsPerPage(){
   const safe=displayPrefs.orientation==="landscape"?4:6;
   return Math.max(1,Math.min(Number(displayPrefs.items_per_page)||safe,safe));
@@ -84,9 +85,13 @@ function applyDisplayPrefs(){
   document.documentElement.style.setProperty("--theme-gap",gaps[(idx*3)%10]+"px");
   document.getElementById("orientation").value=displayPrefs.orientation;
 }
-async function loadDisplayPrefs(){
+async function loadDisplayPrefs(ds=document.getElementById("dataset").value){
+  displayPrefs={...DEFAULT_DISPLAY_PREFS};
   const res=await api({action:"list",dataset:"settings"});
-  const row=(res.data||[]).find(x=>x.key==="display_preferences");
+  const data=res.data||[];
+  const own=data.find(x=>x.key==="display_preferences_"+ds);
+  const legacy=data.find(x=>x.key==="display_preferences");
+  const row=own||legacy;
   if(row?.value) displayPrefs={...displayPrefs,...row.value};
   applyDisplayPrefs();
 }
@@ -95,8 +100,8 @@ async function api(payload){const r=await fetch(ADMIN_API,{method:"POST",headers
 function groupBy(rows,keyFn){const g={};for(const r of rows){const k=keyFn(r);(g[k]??=[]).push(r)}return g}
 async function load(){
   if(!pin){location.href="admin.html";return}
-  try{await loadDisplayPrefs()}catch(e){console.warn("โหลด Layout ไม่สำเร็จ",e)}
   const ds=document.getElementById("dataset").value,msg=document.getElementById("msg");
+  try{await loadDisplayPrefs(ds)}catch(e){console.warn("โหลด Layout ไม่สำเร็จ",e)}
   document.getElementById("pages").innerHTML='<div class="page-wrap"><section class="page '+document.getElementById("orientation").value+'"><div class="state">กำลังโหลดข้อมูล...</div></section></div>';fitPreviewPages();
   try{
     let rows;
