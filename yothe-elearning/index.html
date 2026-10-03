@@ -10,7 +10,7 @@
 *{box-sizing:border-box}html{scroll-behavior:smooth}
 body{margin:0;font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,Arial,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
 button,input{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}.hidden{display:none!important}
-.login-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(145deg,#fff,#fff5f5)}
+.login-screen{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:24px;background:rgba(20,20,20,.42);backdrop-filter:blur(5px)}
 .login-card{width:min(440px,100%);background:#fff;border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);padding:30px}
 .login-brand{display:flex;align-items:center;justify-content:center;gap:12px;margin:0 auto 12px}.login-cat{width:64px;height:64px;object-fit:contain}.login-logo{width:220px;max-width:68%;height:auto;object-fit:contain;display:block;background:#d92c24;border-radius:14px;padding:8px 12px}.login-card h1{text-align:center;margin:0;font-size:25px;color:var(--red)}.login-card p{text-align:center;color:var(--muted)}
 .field{display:flex;flex-direction:column;gap:7px;margin:14px 0}.field label{font-size:13px;font-weight:800}.input{width:100%;border:1px solid #d1d5db;border-radius:14px;padding:13px 14px;background:#fff}
@@ -24,6 +24,13 @@ button,input{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inh
 main{max-width:1240px;margin:auto;padding:30px 20px 70px}.view{display:none}.view.active{display:block}
 .story{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,.3fr);gap:38px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:44px 48px;box-shadow:var(--shadow);align-items:start}
 .story h1{font-size:clamp(34px,4.2vw,56px);line-height:1.08;margin:0 0 30px;color:var(--red);font-weight:900;letter-spacing:-.02em}.story-copy{max-width:920px}.story-copy p{line-height:1.78;color:#6b3512;font-size:clamp(16px,1.2vw,19px);font-weight:500;margin:0 0 22px;letter-spacing:.005em}.story-copy p:first-child{font-size:clamp(17px,1.3vw,20px);font-weight:650}.story-copy p:last-child{margin-bottom:0}.story-logo{display:flex;align-items:flex-start;justify-content:center;position:sticky;top:104px}.story-logo img{width:min(310px,100%);max-height:420px;object-fit:contain}
+.home-entry{margin:24px auto 0;max-width:720px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:var(--shadow)}
+.home-entry h2{margin:0 0 8px;color:var(--red);font-size:24px}.home-entry p{margin:0 0 16px;color:var(--muted)}
+.home-entry .enter-btn{display:inline-flex;align-items:center;justify-content:center;min-width:260px;padding:14px 24px;border:0;border-radius:14px;background:var(--red);color:#fff;font-weight:900;font-size:16px}
+.auth-only.hidden-auth{display:none!important}
+.welcome-pop{position:fixed;inset:0;z-index:220;display:grid;place-items:center;padding:24px;background:rgba(20,20,20,.38);backdrop-filter:blur(4px)}
+.welcome-card{width:min(420px,100%);background:#fff;border-radius:24px;padding:28px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.24);border:1px solid #fecdd3}
+.welcome-card img{width:70px;height:84px;object-fit:contain;margin-bottom:8px}.welcome-card h2{margin:0;color:var(--red);font-size:28px}.welcome-card p{margin:8px 0 18px;font-size:18px;font-weight:800}.welcome-card .btn{width:auto;min-width:140px}
 .section-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:18px}.section-head h2{margin:0;font-size:clamp(28px,3vw,38px);line-height:1.2;font-weight:900}.section-head p{margin:6px 0 0;color:var(--muted)}
 .all-lessons{font-size:14px;color:var(--red);font-weight:800}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap)}.sheet{background:#fff;border:3px solid var(--red);break-inside:avoid}.sheet-title{background:var(--red);color:#fff;font-weight:800;text-align:center;padding:10px 12px;font-size:17px;line-height:1.35}
@@ -43,7 +50,7 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 </style>
 </head>
 <body>
-<section id="loginScreen" class="login-screen">
+<section id="loginScreen" class="login-screen hidden">
   <form id="loginForm" class="login-card">
     <div class="login-brand"><img src="assets/yothe-cat.svg" class="login-cat" alt="Yothé Cat"><img src="assets/yothe-wordmark.svg" class="login-logo" alt="Yothé"></div>
     <h1>E-Learning</h1>
@@ -55,20 +62,20 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
   </form>
 </section>
 
-<div id="appRoot" class="hidden">
+<div id="appRoot">
 <header class="topbar"><div class="nav">
   <button class="brand" data-view="home" style="border:0;background:none;padding:0"><img class="brand-cat" src="assets/yothe-cat.svg" alt="Yothé Cat"><img class="brand-wordmark" src="assets/yothe-wordmark.svg" alt="Yothé"><span>E-Learning</span></button>
   <nav id="navLinks" class="navlinks">
     <button data-view="home" class="active">Home</button>
-    <button data-view="production">สูตรการผลิต</button>
-    <button data-view="drinks">สูตรชง</button>
-    <button data-view="expiry">วันหมดอายุ</button>
-    <button data-view="toppings">Topping</button>
-    <button data-view="uniforms">เครื่องแต่งกาย</button>
-    <button data-view="courses">บทเรียนอื่น ๆ</button>
-    <a href="admin.html">Admin</a>
+    <button class="auth-only hidden-auth" data-view="production">สูตรการผลิต</button>
+    <button class="auth-only hidden-auth" data-view="drinks">สูตรชง</button>
+    <button class="auth-only hidden-auth" data-view="expiry">วันหมดอายุ</button>
+    <button class="auth-only hidden-auth" data-view="toppings">Topping</button>
+    <button class="auth-only hidden-auth" data-view="uniforms">เครื่องแต่งกาย</button>
+    <button class="auth-only hidden-auth" data-view="courses">บทเรียนอื่น ๆ</button>
+    <a class="auth-only hidden-auth" href="admin.html">Admin</a>
   </nav>
-  <div class="userbox"><span id="currentUser"></span><button id="logoutBtn" class="btn secondary" style="padding:7px 10px">Logout</button></div>
+  <div id="userBox" class="userbox hidden"><span id="currentUser"></span><button id="logoutBtn" class="btn secondary" style="padding:7px 10px">Logout</button></div>
 </div></header>
 
 <main>
@@ -76,6 +83,11 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
     <div class="story">
       <article><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><h1 id="storyTitle">BRAND STORY</h1></div><div id="storyBody" class="story-copy">กำลังโหลด...</div><div id="attachments-home" class="attachments"></div></article>
       <aside class="story-logo"><img src="assets/yothe-cat.svg" alt="Yothé Cat"></aside>
+    </div>
+    <div id="homeEntry" class="home-entry">
+      <h2>เข้าสู่ Yothé E-Learning</h2>
+      <p>เข้าสู่ระบบเพื่อเปิดเมนูบทเรียนและข้อมูลทั้งหมด</p>
+      <button id="enterWebsiteBtn" class="enter-btn">Click เพื่อเข้าสู่ Website</button>
     </div>
   </section>
 
@@ -88,11 +100,51 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 </main>
 </div>
 
+<section id="welcomePop" class="welcome-pop hidden">
+  <div class="welcome-card">
+    <img src="assets/yothe-cat.svg" alt="Yothé Cat">
+    <h2>ยินดีต้อนรับ</h2>
+    <p id="welcomeName"></p>
+    <button id="welcomeOkBtn" class="btn primary">เข้าสู่บทเรียน</button>
+  </div>
+</section>
+
 <script>
 const LOGIN_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-login";
 const PUBLIC_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-public";
 const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
 let token="",currentUser=null,cache={},courses=[],settingsMap={};
+function setAuthUI(loggedIn){
+  document.querySelectorAll(".auth-only").forEach(el=>el.classList.toggle("hidden-auth",!loggedIn));
+  document.getElementById("userBox")?.classList.toggle("hidden",!loggedIn);
+  document.getElementById("homeEntry")?.classList.toggle("hidden",loggedIn);
+}
+function openLogin(){
+  document.getElementById("loginScreen").classList.remove("hidden");
+  setTimeout(()=>document.getElementById("loginUser")?.focus(),30);
+}
+function closeLogin(){
+  document.getElementById("loginScreen").classList.add("hidden");
+}
+function showWelcome(user){
+  const name=user?.display_name||user?.username||"";
+  document.getElementById("welcomeName").textContent=name;
+  document.getElementById("welcomePop").classList.remove("hidden");
+}
+function renderBrandStoryValue(s={}){
+  const ps=Array.isArray(s.paragraphs)?s.paragraphs:(s.body?[s.body]:[]);
+  document.getElementById("storyTitle").textContent=s.title||"BRAND STORY";
+  document.getElementById("storyBody").innerHTML=ps.length?ps.map(x=>"<p>"+esc(x)+"</p>").join(""):"<p>ยังไม่มีข้อมูล Brand Story</p>";
+}
+async function loadPublicHome(){
+  try{
+    const r=await post(PUBLIC_API,{action:"home"});
+    const rows=r.data||[],map=Object.fromEntries(rows.map(x=>[x.key,x.value]));
+    renderBrandStoryValue(map.brand_story||{});
+  }catch(e){
+    document.getElementById("storyBody").innerHTML='<p>ไม่สามารถโหลดข้อมูล Home ได้</p>';
+  }
+}
 function savedGroupOrder(ds){const v=settingsMap["layout_group_order_"+ds];return Array.isArray(v)?v.map(String):[]}
 function sortGroupedEntries(ds,entries){const order=savedGroupOrder(ds),pos=new Map(order.map((k,i)=>[String(k),i]));return [...entries].sort((a,b)=>{const ai=pos.has(String(a[0]))?pos.get(String(a[0])):999999,bi=pos.has(String(b[0]))?pos.get(String(b[0])):999999;return ai-bi})}
 function sortDetailRows(arr){return [...arr].sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||(Number(a.id)||0)-(Number(b.id)||0))}
@@ -128,7 +180,7 @@ async function loadAttachments(section){
     }).join("")+'</div>';
   }catch(e){el.innerHTML='<div class="state">โหลดไฟล์แนบไม่สำเร็จ: '+esc(e.message)+'</div>'}
 }
-async function loadSettings(){const rows=await api("settings"),map=Object.fromEntries(rows.map(x=>[x.key,x.value]));settingsMap=map;applyTheme(map.display_preferences||{});renderMenuOrder(map.menu_order||["production","drinks","expiry","toppings","uniforms"]);const s=map.brand_story||{},ps=Array.isArray(s.paragraphs)?s.paragraphs:(s.body?[s.body]:[]);document.getElementById("storyTitle").textContent=s.title||"BRAND STORY";document.getElementById("storyBody").innerHTML=ps.length?ps.map(x=>"<p>"+esc(x)+"</p>").join(""):"<p>ยังไม่มีข้อมูล Brand Story</p>";await loadAttachments("home")}
+async function loadSettings(){const rows=await api("settings"),map=Object.fromEntries(rows.map(x=>[x.key,x.value]));settingsMap=map;applyTheme(map.display_preferences||{});renderMenuOrder(map.menu_order||["production","drinks","expiry","toppings","uniforms"]);renderBrandStoryValue(map.brand_story||{});await loadAttachments("home")}
 function renderMenuOrder(order){const nav=document.getElementById("navLinks"),home=nav.querySelector('[data-view="home"]'),coursesBtn=nav.querySelector('[data-view="courses"]'),admin=nav.querySelector('a[href="admin.html"]');order.filter(x=>["production","drinks","expiry","toppings","uniforms"].includes(x)).forEach(k=>{const el=nav.querySelector('[data-view="'+k+'"]');if(el)nav.insertBefore(el,coursesBtn)});nav.insertBefore(home,nav.firstChild);nav.appendChild(coursesBtn);nav.appendChild(admin)}
 function showView(view){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));document.getElementById("view-"+view)?.classList.add("active");document.querySelectorAll('#navLinks [data-view]').forEach(x=>x.classList.toggle("active",x.dataset.view===view));window.scrollTo({top:0,behavior:"smooth"});loadView(view)}
 async function loadView(view){
@@ -194,14 +246,54 @@ function renderCourses(){
     '</article>'
   ).join("")||'<div class="state">ไม่พบบทเรียน</div>';
 }
-document.getElementById("loginForm").addEventListener("submit",async e=>{e.preventDefault();const m=document.getElementById("loginMsg");m.textContent="กำลัง Login...";m.className="msg";try{const r=await post(LOGIN_API,{action:"login",username:document.getElementById("loginUser").value,password:document.getElementById("loginPass").value});token=r.token;currentUser=r.user;document.getElementById("loginScreen").classList.add("hidden");document.getElementById("appRoot").classList.remove("hidden");document.getElementById("currentUser").textContent=r.user.display_name||r.user.username;await loadSettings();showView("home")}catch(err){m.textContent=err.message;m.className="msg error"}});
-document.getElementById("logoutBtn").onclick=async()=>{try{await post(LOGIN_API,{action:"logout",token})}catch{}token="";cache={};currentUser=null;document.getElementById("appRoot").classList.add("hidden");document.getElementById("loginScreen").classList.remove("hidden");document.getElementById("loginPass").value="";document.getElementById("loginMsg").textContent=""};
+document.getElementById("enterWebsiteBtn").onclick=openLogin;
+document.getElementById("loginScreen").addEventListener("click",e=>{if(e.target===document.getElementById("loginScreen"))closeLogin()});
+document.getElementById("loginForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const m=document.getElementById("loginMsg");
+  m.textContent="กำลัง Login...";m.className="msg";
+  try{
+    const r=await post(LOGIN_API,{action:"login",username:document.getElementById("loginUser").value,password:document.getElementById("loginPass").value});
+    token=r.token;currentUser=r.user;cache={};
+    closeLogin();
+    setAuthUI(true);
+    document.getElementById("currentUser").textContent=r.user.display_name||r.user.username;
+    await loadSettings();
+    showView("home");
+    showWelcome(r.user);
+    m.textContent="";
+  }catch(err){m.textContent=err.message;m.className="msg error"}
+});
+document.getElementById("welcomeOkBtn").onclick=()=>document.getElementById("welcomePop").classList.add("hidden");
+document.getElementById("logoutBtn").onclick=async()=>{
+  try{await post(LOGIN_API,{action:"logout",token})}catch{}
+  token="";cache={};currentUser=null;settingsMap={};
+  setAuthUI(false);
+  document.getElementById("currentUser").textContent="";
+  document.getElementById("loginPass").value="";
+  document.getElementById("loginMsg").textContent="";
+  showView("home");
+  await loadPublicHome();
+};
 document.addEventListener("click",e=>{
   const lesson=e.target.closest("[data-open-view]");
-  if(lesson&&!document.getElementById("appRoot").classList.contains("hidden")){e.preventDefault();showView(lesson.dataset.openView);return}
-  const b=e.target.closest("[data-view]");if(!b||document.getElementById("appRoot").classList.contains("hidden"))return;e.preventDefault();showView(b.dataset.view)
+  if(lesson){
+    e.preventDefault();
+    if(!token){openLogin();return}
+    showView(lesson.dataset.openView);return
+  }
+  const b=e.target.closest("[data-view]");
+  if(!b)return;
+  e.preventDefault();
+  if(b.dataset.view!=="home"&&!token){openLogin();return}
+  showView(b.dataset.view)
 });
 document.getElementById("courseSearch").addEventListener("input",renderCourses);
+
+// ทุกครั้งที่เปิด Website เริ่มที่ Home และยังไม่ถือว่า Login
+setAuthUI(false);
+showView("home");
+loadPublicHome();
 </script>
 </body>
 </html>
