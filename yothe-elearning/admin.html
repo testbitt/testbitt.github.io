@@ -35,7 +35,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .recipe-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--theme-gap);padding:16px;background:#f3f7f5}
 .recipe-sheet{border:3px solid #0b5a3f;background:#fff;min-width:0}
 .recipe-title{background:var(--red);color:#fff;font-weight:800;text-align:center;padding:10px 12px;font-size:17px;line-height:1.35;letter-spacing:.1px;position:relative}
-.recipe-tools{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;padding:8px;border-bottom:1px solid #d1d5db;background:#f8faf9}
+.recipe-tools{display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap;padding:9px;border-bottom:1px solid #d1d5db;background:#f8faf9}.recipe-tools .btn{min-height:34px}
 .recipe-body{display:grid;grid-template-columns:125px 1fr;min-height:235px}
 .recipe-photo{border-right:1px solid #d1d5db;display:flex;align-items:center;justify-content:center;padding:8px;background:#fff}
 .recipe-photo img{width:100%;max-height:210px;object-fit:contain}
@@ -470,6 +470,7 @@ function renderTable(){
   if(dataset==="toppings"){renderToppingSheets();return}
   if(dataset==="expiry"){renderExpirySheets();return}
   if(dataset==="uniforms"){renderUniformSheets();return}
+  if(dataset==="courses"){renderCourseSheets();return}
   const fields=DATASETS[dataset].fields,visible=fields.slice(0,6),pages=chunk(rows,displayPrefs.items_per_page);
   wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>'<section class="'+pageClass(page.length)+'"><div class="page-title">'+esc(DATASETS[dataset].label)+' • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content"><table><thead><tr><th>ID</th>'+visible.map(f=>'<th>'+esc(f[1])+'</th>').join("")+'<th class="actions">จัดการ</th></tr></thead><tbody>'+page.map(r=>'<tr><td>'+r.id+'</td>'+visible.map(f=>'<td>'+formatCell(r[f[0]])+'</td>').join("")+'<td class="actions"><button class="btn small secondary" onclick="editRow('+r.id+')">แก้ไข</button> <button class="btn small danger" onclick="deleteRow('+r.id+')">ลบ</button></td></tr>').join("")+'</tbody></table></div></section>').join("")+'</div>';
 }
@@ -477,7 +478,11 @@ function renderProductionSheets(){
   const groups={};rows.forEach(r=>{(groups[r.recipe_name||"ไม่ระบุชื่อ"]??=[]).push(r)});
   renderGroupedSheets(Object.entries(groups),"สูตรการผลิต",(name,items)=>`
     <article class="recipe-sheet"><div class="recipe-title">${esc(name)}</div>
-    <div class="recipe-tools"><button class="btn small primary" onclick="addProductionRow('${esc(name)}')">+ เพิ่มวัตถุดิบ</button></div>
+    <div class="recipe-tools">
+      <button class="btn small secondary" onclick="pickGroupImage('production',${items[0]?.id||'null'},'image_url')">ใส่/เปลี่ยนรูป</button>
+      <button class="btn small secondary" onclick="editRow(${items[0]?.id||'null'})">แก้หัวตาราง/หมายเหตุ</button>
+      <button class="btn small primary" onclick="addProductionRow('${esc(name)}')">+ เพิ่มวัตถุดิบ</button>
+    </div>
     <table class="recipe-table"><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th><th class="actions"></th></tr></thead>
     <tbody>${items.map(r=>`<tr><td>${esc(r.ingredient||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
 }
@@ -486,7 +491,11 @@ function renderToppingSheets(){
   const groups={};rows.forEach(r=>{const k=(r.category||"Topping")+" • "+(r.subcategory||"ทั่วไป");(groups[k]??=[]).push(r)});
   renderGroupedSheets(Object.entries(groups),"Topping",(name,items)=>`
     <article class="recipe-sheet"><div class="recipe-title">${esc(name)}</div>
-    <div class="recipe-tools"><button class="btn small primary" onclick="openEditor(null)">+ เพิ่ม Topping</button></div>
+    <div class="recipe-tools">
+      <button class="btn small secondary" onclick="pickGroupImage('toppings',${items[0]?.id||'null'},'image_url')">ใส่/เปลี่ยนรูป</button>
+      <button class="btn small secondary" onclick="editRow(${items[0]?.id||'null'})">แก้หัวตาราง/หมายเหตุ</button>
+      <button class="btn small primary" onclick="openEditor(null)">+ เพิ่ม Topping</button>
+    </div>
     <table class="recipe-table"><thead><tr><th>รายการ</th><th>จำนวน</th><th>หน่วย</th><th>ราคา</th><th class="actions"></th></tr></thead>
     <tbody>${items.map(r=>`<tr><td>${esc(r.item_name||r.name||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td>${r.price_baht!=null?esc(r.price_baht)+" บาท":"-"}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
 }
@@ -494,7 +503,11 @@ function renderExpirySheets(){
   const groups={};rows.forEach(r=>{(groups[r.category||"วันหมดอายุ"]??=[]).push(r)});
   renderGroupedSheets(Object.entries(groups),"วันหมดอายุ",(name,items)=>`
     <article class="recipe-sheet"><div class="recipe-title">${esc(name)}</div>
-    <div class="recipe-tools"><button class="btn small primary" onclick="openEditor(null)">+ เพิ่มรายการ</button></div>
+    <div class="recipe-tools">
+      <button class="btn small secondary" onclick="pickGroupImage('expiry',${items[0]?.id||'null'},'image_url')">ใส่/เปลี่ยนรูป</button>
+      <button class="btn small secondary" onclick="editRow(${items[0]?.id||'null'})">แก้หัวตาราง/หมายเหตุ</button>
+      <button class="btn small primary" onclick="openEditor(null)">+ เพิ่มรายการ</button>
+    </div>
     <table class="recipe-table"><thead><tr><th>รายการ</th><th>การจัดเก็บ</th><th>ยังไม่เปิด</th><th>หลังเปิด</th><th class="actions"></th></tr></thead>
     <tbody>${items.map(r=>`<tr><td>${esc(r.item_name||"")}</td><td>${esc(r.storage_condition||"")}</td><td>${esc(r.shelf_life_unopened||"-")}</td><td>${esc(r.shelf_life_opened||"-")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
 }
@@ -502,9 +515,35 @@ function renderUniformSheets(){
   const groups={};rows.forEach(r=>{(groups[r.category||"เครื่องแต่งกาย"]??=[]).push(r)});
   renderGroupedSheets(Object.entries(groups),"เครื่องแต่งกาย",(name,items)=>`
     <article class="recipe-sheet"><div class="recipe-title">${esc(name)}</div>
-    <div class="recipe-tools"><button class="btn small primary" onclick="openEditor(null)">+ เพิ่มรายการ</button></div>
+    <div class="recipe-tools">
+      <button class="btn small secondary" onclick="pickGroupImage('uniforms',${items[0]?.id||'null'},'image_url')">ใส่/เปลี่ยนรูป</button>
+      <button class="btn small secondary" onclick="editRow(${items[0]?.id||'null'})">แก้หัวตาราง/หมายเหตุ</button>
+      <button class="btn small primary" onclick="openEditor(null)">+ เพิ่มรายการ</button>
+    </div>
     <table class="recipe-table"><thead><tr><th>รายการ</th><th>ขนาด</th><th>รายละเอียด</th><th class="actions"></th></tr></thead>
     <tbody>${items.map(r=>`<tr><td>${esc(r.item_name||"")}</td><td>${esc(r.size_info||"-")}</td><td>${esc(r.description||r.usage_notes||"")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
+}
+
+function renderCourseSheets(){
+  const wrap=document.getElementById("tableWrap"),pages=chunk(rows,visualItemsPerPage());
+  wrap.className="";
+  wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>'<section class="'+pageClass(page.length)+'"><div class="page-title">บทเรียนอื่น ๆ • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content recipe-admin-grid">'+page.map(r=>`
+    <article class="recipe-sheet">
+      <div class="recipe-title">${esc(r.title||"บทเรียน")}</div>
+      <div class="recipe-tools">
+        <button class="btn small secondary" onclick="pickGroupImage('courses',${r.id},'thumbnail_url')">ใส่/เปลี่ยนรูป</button>
+        <button class="btn small secondary" onclick="editRow(${r.id})">แก้หัวตาราง/หมายเหตุ</button>
+        <button class="btn small primary" onclick="openEditor(null)">+ เพิ่มบทเรียน</button>
+      </div>
+      ${r.thumbnail_url?'<div class="recipe-photo" style="border-right:0;border-bottom:1px solid #d1d5db"><img src="'+esc(r.thumbnail_url)+'" alt="'+esc(r.title||"")+'"></div>':''}
+      <table class="recipe-table"><tbody>
+        <tr><th>หมวดหมู่</th><td>${esc(r.category||"-")}</td></tr>
+        <tr><th>รายละเอียด</th><td>${esc(r.description||"-")}</td></tr>
+        <tr><th>ระยะเวลา</th><td>${r.estimated_minutes?esc(r.estimated_minutes)+" นาที":"-"}</td></tr>
+        <tr><th>ระดับ</th><td>${esc(r.difficulty||"-")}</td></tr>
+        <tr><th>จัดการ</th><td><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>
+      </tbody></table>
+    </article>`).join("")+'</div></section>').join("")+'</div>';
 }
 function renderGroupedSheets(entries,title,builder){
   const pages=chunk(entries,visualItemsPerPage()),wrap=document.getElementById("tableWrap");
@@ -547,6 +586,24 @@ window.editDrinkMeta=async recipeId=>{
   const size=prompt("หัวคอลัมน์ขนาดเครื่องดื่ม",meta.size_label||"17 oz.(IB)"); if(size===null)return;
   const note=prompt("หมายเหตุแถบสีเหลือง",meta.note||""); if(note===null)return;
   try{await api({action:"save",dataset:"drink_meta",row:{recipe_id:recipeId,size_label:size,note,note_style:"warning",image_url:meta.image_url||null}});await loadData()}catch(err){alert(err.message)}
+};
+
+window.pickGroupImage=(targetDataset,id,fieldKey)=>{
+  if(!id){alert("กรุณาสร้างข้อมูลก่อนเพิ่มรูป");return}
+  const input=document.createElement("input");input.type="file";input.accept="image/png,image/jpeg,image/webp";
+  input.onchange=async()=>{
+    const file=input.files?.[0];if(!file)return;
+    if(file.size>4*1024*1024){alert("รูปภาพต้องมีขนาดไม่เกิน 4 MB");return}
+    try{
+      const dataUrl=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)});
+      const up=await api({action:"upload_record_image",dataset:targetDataset,data_url:dataUrl});
+      const row=rows.find(x=>String(x.id)===String(id));if(!row)throw new Error("ไม่พบข้อมูล");
+      const saveRow={...row,[fieldKey]:up.url};delete saveRow.id;delete saveRow.created_at;delete saveRow.updated_at;
+      await api({action:"save",dataset:targetDataset,id,row:saveRow});
+      await loadData();
+    }catch(err){alert("เพิ่มรูปไม่สำเร็จ: "+err.message)}
+  };
+  input.click();
 };
 function loadImageBitmapFromFile(file){
   return new Promise((resolve,reject)=>{
