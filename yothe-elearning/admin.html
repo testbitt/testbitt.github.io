@@ -505,8 +505,8 @@ function renderProductionSheets(){
       <button class="btn small primary" onclick="addProductionRow('${esc(name)}')">+ เพิ่มวัตถุดิบ</button>
     </div>
     <div class="layout-photo">${items.find(x=>x.image_url)?.image_url?'<img src="'+esc(items.find(x=>x.image_url).image_url)+'" alt="'+esc(name)+'">':'<div class="empty-photo">ยังไม่มีรูปตัวอย่าง</div>'}</div>
-    <table class="recipe-table"><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th><th>Servings</th><th class="actions"></th></tr></thead>
-    <tbody>${items.map(r=>`<tr><td>${esc(r.ingredient||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td>${esc(r.servings||"-")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
+    <div class="recipe-note" style="background:#f3f4f6;color:#111827">Servings: ${esc(items.find(x=>String(x.servings||"").trim())?.servings||"-")}</div><table class="recipe-table"><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th><th class="actions"></th></tr></thead>
+    <tbody>${items.map(r=>`<tr><td>${esc(r.ingredient||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
 }
 window.addProductionRow=name=>{const first=rows.find(x=>x.recipe_name===name)||{};openEditor({record_id:"PROD-"+Date.now(),source_page:first.source_page||null,category:first.category||"",recipe_name:name,ingredient:"",quantity:null,unit:"g",is_published:true})};
 function renderToppingSheets(){
@@ -617,7 +617,7 @@ window.pickGroupImage=(targetDataset,id,fieldKey)=>{
     const file=input.files?.[0];if(!file)return;
     if(file.size>4*1024*1024){alert("รูปภาพต้องมีขนาดไม่เกิน 4 MB");return}
     try{
-      const dataUrl=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)});
+      const dataUrl=await removeBackgroundPreserveObjects(file);
       const up=await api({action:"upload_record_image",dataset:targetDataset,data_url:dataUrl});
       const row=rows.find(x=>String(x.id)===String(id));if(!row)throw new Error("ไม่พบข้อมูล");
       const saveRow={...row,[fieldKey]:up.url};delete saveRow.id;delete saveRow.created_at;delete saveRow.updated_at;
@@ -639,18 +639,19 @@ function colorDist(a,b){
   const dr=a[0]-b[0],dg=a[1]-b[1],db=a[2]-b[2];
   return Math.sqrt(dr*dr+dg*dg+db*db);
 }
-function dominantEdgeColor(data,w,h){
+function analyzeEdgeBackground(data,w,h){
   const pts=[];
-  const step=Math.max(1,Math.floor(Math.min(w,h)/30));
+  const step=Math.max(1,Math.floor(Math.min(w,h)/36));
   for(let x=0;x<w;x+=step){for(const y of [0,h-1]){const i=(y*w+x)*4;pts.push([data[i],data[i+1],data[i+2]])}}
   for(let y=0;y<h;y+=step){for(const x of [0,w-1]){const i=(y*w+x)*4;pts.push([data[i],data[i+1],data[i+2]])}}
   let best=pts[0]||[255,255,255],bestCount=-1;
   for(const p of pts){
     let count=0;
-    for(const q of pts) if(colorDist(p,q)<28) count++;
+    for(const q of pts) if(colorDist(p,q)<30) count++;
     if(count>bestCount){best=p;bestCount=count}
   }
-  return best;
+  const confidence=pts.length?bestCount/pts.length:0;
+  return {color:best,confidence};
 }
 async function removeBackgroundPreserveObjects(file){
   const img=await loadImageBitmapFromFile(file);
@@ -658,7 +659,11 @@ async function removeBackgroundPreserveObjects(file){
   const w=Math.max(1,Math.round(img.naturalWidth*scale)),h=Math.max(1,Math.round(img.naturalHeight*scale));
   const canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
   const ctx=canvas.getContext("2d",{willReadFrequently:true});ctx.drawImage(img,0,0,w,h);
-  const im=ctx.getImageData(0,0,w,h),d=im.data,bg=dominantEdgeColor(d,w,h);
+  const im=ctx.getImageData(0,0,w,h),d=im.data,analysis=analyzeEdgeBackground(d,w,h),bg=analysis.color;
+  // ลบพื้นหลังเฉพาะเมื่อบริเวณขอบภาพมีสีพื้นหลังร่วมกันชัดเจน
+  if(analysis.confidence<0.34){
+    return canvas.toDataURL("image/png");
+  }
   const visited=new Uint8Array(w*h),queue=new Int32Array(w*h);let head=0,tail=0;
   const tol=44;
   function tryPush(x,y){
@@ -717,7 +722,7 @@ window.uploadEditorImage=fieldKey=>{
     const msg=document.getElementById("editMsg");
     try{
       msg.textContent="กำลัง Upload รูป...";msg.className="msg saving";
-      const dataUrl=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)});
+      const dataUrl=await removeBackgroundPreserveObjects(file);
       const res=await api({action:"upload_record_image",dataset,data_url:dataUrl});
       const field=document.querySelector('#editForm [name="'+fieldKey+'"]');
       if(field){field.value=res.url;field.dispatchEvent(new Event("input",{bubbles:true}))}
