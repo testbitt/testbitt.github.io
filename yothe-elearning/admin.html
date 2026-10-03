@@ -203,8 +203,31 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 <script>
 const API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-admin";
 const FILE_UPLOAD_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-file-upload";
-const THEMES=Array.from({length:50},(_,i)=>({id:i+1,name:"Theme "+String(i+1).padStart(2,"0"),className:["theme-soft","theme-square","theme-airy","theme-compact","theme-bold"][i%5]}));
+const THEME_NAMES=[
+"Soft Rounded","Clean Square","Airy Card","Compact Table","Bold Header",
+"Soft Minimal","Modern Grid","Spacious Clean","Compact Pro","Bold Frame",
+"Rounded Studio","Sharp Modern","Open Space","Dense Clean","Strong Card",
+"Soft Editorial","Square Editorial","Airy Editorial","Compact Editorial","Bold Editorial",
+"Soft Classic","Modern Classic","Elegant Airy","Compact Classic","Bold Classic",
+"Soft Business","Square Business","Airy Business","Compact Business","Bold Business",
+"Soft Premium","Modern Premium","Elegant Grid","Compact Premium","Bold Premium",
+"Soft Learning","Clean Learning","Airy Learning","Compact Learning","Bold Learning",
+"Soft Cafe","Modern Cafe","Airy Cafe","Compact Cafe","Bold Cafe",
+"Soft Display","Clean Display","Airy Display","Compact Display","Bold Display"
+];
+const THEMES=Array.from({length:50},(_,i)=>({
+  id:i+1,
+  name:"Theme "+String(i+1).padStart(2,"0")+" • "+THEME_NAMES[i],
+  className:["theme-soft","theme-square","theme-airy","theme-compact","theme-bold"][i%5]
+}));
 const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
+const COLOR_NAMES=[
+"Kamu Red","Rose","Berry","Bright Red","Coral Red","Orange","Burnt Orange","Amber","Golden Brown","Yellow",
+"Lime","Olive Green","Fresh Green","Leaf Green","Emerald","Mint Green","Teal Mint","Deep Teal","Cyan","Ocean Cyan",
+"Sky Blue","Deep Sky","Blue","Royal Blue","Indigo","Deep Indigo","Periwinkle","Violet","Lavender","Purple",
+"Orchid","Magenta","Pink Violet","Deep Pink","Pink","Warm Pink","Dark Red","Rust","Brown Gold","Olive",
+"Forest Green","Deep Emerald","Dark Teal","Deep Cyan","Navy","Midnight Indigo","Plum","Dark Magenta","Wine","Charcoal"
+];
 const DEFAULT_DISPLAY_PREFS={orientation:"portrait",items_per_page:20,theme_index:1,color_index:1};
 let displayPrefs={...DEFAULT_DISPLAY_PREFS};
 function displayPrefsKey(ds=dataset){return "display_preferences_"+ds}
@@ -856,7 +879,7 @@ document.getElementById("uploadBtn").onclick=async()=>{
 function initLayoutControls(){
   const ipp=document.getElementById("itemsPerPage");ipp.innerHTML=Array.from({length:20},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+' รายการ</option>').join("");
   document.getElementById("themeSelect").innerHTML=THEMES.map(t=>'<option value="'+t.id+'">'+t.name+'</option>').join("");
-  document.getElementById("colorSelect").innerHTML=COLORS.map((x,i)=>'<option value="'+(i+1)+'">สี '+String(i+1).padStart(2,"0")+' • '+x+'</option>').join("");
+  document.getElementById("colorSelect").innerHTML=COLORS.map((x,i)=>'<option value="'+(i+1)+'">สี '+String(i+1).padStart(2,"0")+' • '+COLOR_NAMES[i]+' • '+x+'</option>').join("");
   ["orientation","itemsPerPage","themeSelect","colorSelect"].forEach(id=>document.getElementById(id).addEventListener("change",onDisplayChange));
   document.getElementById("printBtn").onclick=()=>window.print();
 }
