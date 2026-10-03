@@ -18,7 +18,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.field{display:flex;flex-direction:column;gap:7px;margin:12px 0;flex:1;min-width:180px}
 label{font-size:13px;font-weight:800}.input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:12px;padding:11px 12px;background:#fff}textarea{min-height:110px;resize:vertical}
 .btn{border:0;border-radius:12px;padding:11px 15px;font-weight:800}.primary{background:var(--red);color:#fff}.secondary{background:#fff;color:var(--red);border:1px solid #fecdd3}.danger{background:#fff1f2;color:#b91c1c;border:1px solid #fecaca}.small{padding:7px 10px;font-size:12px}
-.hidden{display:none!important}.msg{margin-top:10px;font-size:13px}.error{color:#b91c1c}.ok{color:#15803d}
+.hidden{display:none!important}.msg{margin-top:10px;font-size:13px}.error{color:#b91c1c}.ok{color:#15803d}.saving{color:#b45309}.autosave-note{font-size:12px;color:#15803d;font-weight:800;margin-left:8px}
 .head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}.head h1{margin:0}.head p{margin:5px 0 0;color:var(--muted)}
 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;font-weight:800}.tab.active{background:var(--red);color:#fff;border-color:var(--red)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}.uploadbox{border:2px dashed #fecdd3;background:#fffafa;border-radius:16px;padding:18px}
@@ -154,8 +154,9 @@ label{font-size:13px;font-weight:800}.input,select,textarea{width:100%;border:1p
         <h2 id="editorTitle">เพิ่มข้อมูล</h2>
         <form id="editForm"><div id="formFields" class="formgrid"></div>
           <div class="row" style="margin-top:14px">
-            <button class="btn primary" type="submit">บันทึก</button>
-            <button id="cancelEdit" class="btn secondary" type="button">ยกเลิก</button>
+            <button class="btn primary" type="submit">บันทึกทันที</button>
+            <button id="cancelEdit" class="btn secondary" type="button">ปิด</button>
+            <span class="autosave-note">Auto Save เปิดใช้งาน</span>
           </div>
           <div id="editMsg" class="msg"></div>
         </form>
@@ -198,7 +199,7 @@ const DATASETS={
   ]}
 };
 let adminPin=sessionStorage.getItem("yothe_admin_pin")||"";
-let dataset="production", rows=[], editingId=null, drinkMeta={};
+let dataset="production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false;
 
 async function api(payload){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,pin:adminPin})});
@@ -298,18 +299,128 @@ window.editDrinkMeta=async recipeId=>{
   const note=prompt("หมายเหตุแถบสีเหลือง",meta.note||""); if(note===null)return;
   try{await api({action:"save",dataset:"drink_meta",row:{recipe_id:recipeId,size_label:size,note,note_style:"warning",image_url:meta.image_url||null}});await loadData()}catch(err){alert(err.message)}
 };
+function loadImageBitmapFromFile(file){
+  return new Promise((resolve,reject)=>{
+    const url=URL.createObjectURL(file),img=new Image();
+    img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};
+    img.onerror=e=>{URL.revokeObjectURL(url);reject(e)};
+    img.src=url;
+  });
+}
+function colorDist(a,b){
+  const dr=a[0]-b[0],dg=a[1]-b[1],db=a[2]-b[2];
+  return Math.sqrt(dr*dr+dg*dg+db*db);
+}
+function dominantEdgeColor(data,w,h){
+  const pts=[];
+  const step=Math.max(1,Math.floor(Math.min(w,h)/30));
+  for(let x=0;x<w;x+=step){for(const y of [0,h-1]){const i=(y*w+x)*4;pts.push([data[i],data[i+1],data[i+2]])}}
+  for(let y=0;y<h;y+=step){for(const x of [0,w-1]){const i=(y*w+x)*4;pts.push([data[i],data[i+1],data[i+2]])}}
+  let best=pts[0]||[255,255,255],bestCount=-1;
+  for(const p of pts){
+    let count=0;
+    for(const q of pts) if(colorDist(p,q)<28) count++;
+    if(count>bestCount){best=p;bestCount=count}
+  }
+  return best;
+}
+async function removeBackgroundPreserveObjects(file){
+  const img=await loadImageBitmapFromFile(file);
+  const maxSide=1600,scale=Math.min(1,maxSide/Math.max(img.naturalWidth,img.naturalHeight));
+  const w=Math.max(1,Math.round(img.naturalWidth*scale)),h=Math.max(1,Math.round(img.naturalHeight*scale));
+  const canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext("2d",{willReadFrequently:true});ctx.drawImage(img,0,0,w,h);
+  const im=ctx.getImageData(0,0,w,h),d=im.data,bg=dominantEdgeColor(d,w,h);
+  const visited=new Uint8Array(w*h),queue=new Int32Array(w*h);let head=0,tail=0;
+  const tol=44;
+  function tryPush(x,y){
+    if(x<0||y<0||x>=w||y>=h)return;
+    const p=y*w+x;if(visited[p])return;
+    const i=p*4,px=[d[i],d[i+1],d[i+2]];
+    if(colorDist(px,bg)>tol)return;
+    visited[p]=1;queue[tail++]=p;
+  }
+  for(let x=0;x<w;x++){tryPush(x,0);tryPush(x,h-1)}
+  for(let y=0;y<h;y++){tryPush(0,y);tryPush(w-1,y)}
+  while(head<tail){
+    const p=queue[head++],x=p%w,y=(p/w)|0,i=p*4;
+    d[i+3]=0;
+    tryPush(x+1,y);tryPush(x-1,y);tryPush(x,y+1);tryPush(x,y-1);
+  }
+  // soften only pixels directly next to transparent background, preserving cups and adjacent ingredients
+  const copy=new Uint8ClampedArray(d);
+  for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
+    const p=y*w+x,i=p*4;if(copy[i+3]===0)continue;
+    let transparentNeighbors=0;
+    for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const ni=((y+dy)*w+(x+dx))*4;if(copy[ni+3]===0)transparentNeighbors++;
+    }
+    if(transparentNeighbors>=2 && colorDist([copy[i],copy[i+1],copy[i+2]],bg)<62)d[i+3]=110;
+  }
+  ctx.putImageData(im,0,0);
+  return canvas.toDataURL("image/png");
+}
 window.pickDrinkImage=recipeId=>{
   const input=document.createElement("input");input.type="file";input.accept="image/png,image/jpeg,image/webp";
-  input.onchange=async()=>{const file=input.files?.[0];if(!file)return;if(file.size>4*1024*1024){alert("รูปภาพต้องไม่เกิน 4 MB");return}
-    const reader=new FileReader();reader.onload=async()=>{try{
-      await api({action:"upload_image",recipe_id:recipeId,data_url:reader.result});await loadData();
-    }catch(err){alert(err.message)}};reader.readAsDataURL(file);
-  };input.click();
+  input.onchange=async()=>{
+    const file=input.files?.[0];if(!file)return;
+    if(file.size>8*1024*1024){alert("รูปภาพต้องไม่เกิน 8 MB");return}
+    try{
+      const target=[...document.querySelectorAll(".recipe-sheet")].find(el=>el.querySelector(".recipe-title")?.textContent);
+      const dataUrl=await removeBackgroundPreserveObjects(file);
+      await api({action:"upload_image",recipe_id:recipeId,data_url:dataUrl});
+      await loadData();
+      alert("ลบ Background และ Auto Save รูปขึ้น Server แล้ว");
+    }catch(err){alert("ประมวลผลรูปไม่สำเร็จ: "+err.message)}
+  };
+  input.click();
 };
 function formatCell(v){if(v===true)return'<span class="badge">เผยแพร่</span>';if(v===false)return'<span class="muted">ไม่เผยแพร่</span>';if(v&&typeof v==="object")return esc(JSON.stringify(v)).slice(0,120);return esc(v??"").slice(0,140)}
 window.editRow=id=>openEditor(rows.find(r=>r.id===id));
 window.deleteRow=async id=>{if(!confirm("ยืนยันการลบรายการนี้?"))return;try{await api({action:"delete",dataset,id});await loadData()}catch(err){alert(err.message)}};
 
+
+function collectEditorObject(){
+  const form=document.getElementById("editForm"), fd=new FormData(form), obj={};
+  for(const [key,,type] of DATASETS[dataset].fields){
+    let v=fd.get(key);
+    if(type==="number")v=v===""?null:Number(v);
+    else if(type==="boolean")v=v==="true";
+    else if(type==="json"){v=v?.trim()?JSON.parse(v):{}}
+    obj[key]=v;
+  }
+  return obj;
+}
+function canAutoSave(obj){
+  if(dataset==="drinks") return !!(obj.recipe_id&&obj.menu_name&&obj.ingredient);
+  if(dataset==="production") return !!(obj.recipe_name&&obj.ingredient);
+  if(dataset==="toppings") return !!(obj.item_name||obj.name);
+  if(dataset==="expiry") return !!obj.item_name;
+  if(dataset==="settings") return !!obj.key;
+  return true;
+}
+async function performAutoSave(){
+  if(autoSaveBusy){autoSaveQueued=true;return}
+  const msg=document.getElementById("editMsg");
+  try{
+    const obj=collectEditorObject();
+    if(!canAutoSave(obj)){msg.textContent="กรอกข้อมูลหลักให้ครบก่อน ระบบจึงจะ Auto Save";msg.className="msg saving";return}
+    autoSaveBusy=true;msg.textContent="กำลัง Auto Save...";msg.className="msg saving";
+    const res=await api({action:"save",dataset,id:editingId,row:obj});
+    if(!editingId&&res?.data?.id) editingId=res.data.id;
+    msg.textContent="Auto Save แล้ว";msg.className="msg ok";
+    await loadData();
+  }catch(err){
+    msg.textContent="Auto Save ไม่สำเร็จ: "+err.message;msg.className="msg error";
+  }finally{
+    autoSaveBusy=false;
+    if(autoSaveQueued){autoSaveQueued=false;setTimeout(performAutoSave,100)}
+  }
+}
+function scheduleAutoSave(){
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer=setTimeout(performAutoSave,700);
+}
 function openEditor(row){
   editingId=row?.id??null; const fields=DATASETS[dataset].fields;
   document.getElementById("editorTitle").textContent=editingId?"แก้ไขข้อมูล":"เพิ่มข้อมูล";
@@ -320,22 +431,16 @@ function openEditor(row){
     if(type==="textarea"||type==="json") return '<div class="field wide"><label>'+esc(label)+'</label><textarea '+(type==="json"?'class="json" ':'')+'name="'+key+'">'+esc(val??"")+'</textarea></div>';
     return '<div class="field"><label>'+esc(label)+'</label><input class="input" name="'+key+'" type="'+type+'" value="'+esc(val??"")+'"></div>';
   }).join("");
+  const form=document.getElementById("editForm");
+  form.querySelectorAll("input,select,textarea").forEach(el=>{
+    el.addEventListener("input",scheduleAutoSave);
+    el.addEventListener("change",scheduleAutoSave);
+  });
   document.getElementById("editor").classList.remove("hidden");document.getElementById("editor").scrollIntoView({behavior:"smooth",block:"start"});
 }
 function hideEditor(){editingId=null;document.getElementById("editor").classList.add("hidden");document.getElementById("editMsg").textContent=""}
 document.getElementById("editForm").addEventListener("submit",async e=>{
-  e.preventDefault();const msg=document.getElementById("editMsg"),fd=new FormData(e.target),obj={};
-  try{
-    for(const [key,,type] of DATASETS[dataset].fields){
-      let v=fd.get(key);
-      if(type==="number")v=v===""?null:Number(v);
-      else if(type==="boolean")v=v==="true";
-      else if(type==="json"){v=v?.trim()?JSON.parse(v):{}}
-      obj[key]=v;
-    }
-    msg.textContent="กำลังบันทึก...";msg.className="msg";
-    await api({action:"save",dataset,id:editingId,row:obj});msg.textContent="บันทึกแล้ว";msg.className="msg ok";await loadData();setTimeout(hideEditor,500);
-  }catch(err){msg.textContent=err.message;msg.className="msg error"}
+  e.preventDefault();clearTimeout(autoSaveTimer);await performAutoSave();
 });
 
 function parseCSV(text){
