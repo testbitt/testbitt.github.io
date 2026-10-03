@@ -317,7 +317,7 @@ function renderUsers(){
         <div class="field" style="max-width:420px"><label>Import User (CSV) — เพิ่มต่อจากข้อมูลเดิม ไม่เขียนทับ</label><input id="userImportFile" class="input" type="file" accept=".csv,text/csv"></div>
         <button class="btn secondary" onclick="importUsers()">Import</button>
         <a class="btn secondary" href="templates/Yothe_User_Import_Template.csv" download style="text-decoration:none">ดาวน์โหลด Template CSV</a>
-        <button class="btn secondary" onclick="downloadUserTemplate()">ดาวน์โหลด Template</button><button class="btn secondary" onclick="exportUsers()">Export CSV</button>
+        <button class="btn secondary" onclick="downloadUserTemplate()">ดาวน์โหลด Template</button><button class="btn secondary" onclick="downloadUserTemplate()">ดาวน์โหลด Template User</button> <button class="btn secondary" onclick="exportUsers()">Export User</button>
       </div>
       <p class="help">คอลัมน์ Import: username,password,display_name,position,active • User ที่มีอยู่แล้วจะถูกข้าม ไม่แก้ข้อมูลเดิม • Password เก็บแบบ Hash และไม่ถูก Export กลับออกมา</p>
       <div id="userMsg" class="msg"></div>
@@ -353,6 +353,22 @@ window.downloadUserTemplate=()=>{
     "admin001,1234,Admin ตัวอย่าง,Admin,TRUE\n";
   const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");
   a.href=url;a.download="Yothe_User_Import_Template.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+window.downloadUserTemplate=()=>{
+  const rows=[
+    ["username","password","display_name","position","active"],
+    ["staff001","1234","ผู้จัดการเขตตัวอย่าง","Area Manager","TRUE"],
+    ["staff002","5678","ทีม Training ตัวอย่าง","Training","TRUE"],
+    ["staff003","abcd","Supervisor ตัวอย่าง","Suppervisor","TRUE"],
+    ["staff004","1234","Teamlead ตัวอย่าง","Teamlead","TRUE"],
+    ["staff005","1234","Staff ตัวอย่าง","Staff","TRUE"],
+    ["admin001","1234","Admin ตัวอย่าง","Admin","TRUE"]
+  ];
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(",")).join("\n");
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download="Yothe_User_Import_Template.csv";a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
 window.exportUsers=()=>{
   const headers=["username","display_name","position","active","created_at"],lines=[headers.join(",")];
