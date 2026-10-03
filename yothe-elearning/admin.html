@@ -112,6 +112,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
       <button class="tab" draggable="true" data-dataset="expiry">วันหมดอายุ</button>
       <button class="tab" draggable="true" data-dataset="toppings">Topping</button>
       <button class="tab" draggable="true" data-dataset="uniforms">เครื่องแต่งกาย</button>
+      <button class="tab" data-dataset="courses">บทเรียนอื่น ๆ</button>
       <button class="tab" data-dataset="users">จัดการ User</button>
       <button class="tab" data-dataset="settings">Brand Story / Settings</button>
       <div class="drag-hint">กดเมาส์ซ้ายค้างที่เมนู แล้วลากเพื่อสลับตำแหน่ง • Auto Save ไปยัง Server</div>
@@ -211,7 +212,7 @@ const DATASETS={
     ["section","Section","text"],["ingredient","วัตถุดิบ","text"],["quantity","จำนวน","number"],["unit","หน่วย","text"],
     ["servings","จำนวนเสิร์ฟ","text"],["net_quantity","Net Quantity","number"],["net_unit","Net Unit","text"],["degree_c","อุณหภูมิ °C","text"],
     ["soak_time_min","เวลาแช่ (นาที)","number"],["section_yield_quantity","Section Yield","number"],["section_yield_unit","Yield Unit","text"],
-    ["notes","หมายเหตุ","textarea"],["is_published","เผยแพร่","boolean"]
+    ["notes","หมายเหตุ","textarea"],["image_url","รูปภาพ","imageurl"],["is_published","เผยแพร่","boolean"]
   ]},
   drinks:{label:"สูตรชงเครื่องดื่ม",fields:[
     ["record_id","Record ID","text"],["recipe_id","Recipe ID","text"],["source_file","Source File","text"],["source_page","หน้า","number"],
@@ -221,18 +222,23 @@ const DATASETS={
   ]},
   expiry:{label:"วันหมดอายุ",fields:[
     ["item_name","ชื่อรายการ","text"],["category","หมวดหมู่","text"],["storage_condition","การจัดเก็บ","text"],["shelf_life_unopened","อายุยังไม่เปิด","text"],
-    ["shelf_life_opened","อายุหลังเปิด","text"],["unit","หน่วย","text"],["notes","หมายเหตุ","textarea"],["warning_level","ระดับเตือน","text"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
+    ["shelf_life_opened","อายุหลังเปิด","text"],["unit","หน่วย","text"],["notes","หมายเหตุ","textarea"],["warning_level","ระดับเตือน","text"],["image_url","รูปภาพ","imageurl"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
   ]},
   toppings:{label:"Topping",fields:[
     ["record_id","Record ID","text"],["source_file","Source File","text"],["source_page","หน้า","number"],["brand","Brand","text"],
-    ["category","Category","text"],["subcategory","Subcategory","text"],["item_name","ชื่อ Topping","text"],["quantity","จำนวน","text"],
+    ["category","Category","text"],["subcategory","Subcategory","text"],["item_name","ชื่อ Topping","text"],["image_url","รูปภาพ","imageurl"],["quantity","จำนวน","text"],
     ["unit","หน่วย","text"],["price_baht","ราคา (บาท)","number"],["placement","ตำแหน่ง","text"],["preparation","วิธีเตรียม","textarea"],
     ["max_add_items","เพิ่มได้สูงสุด","number"],["notes","หมายเหตุ","textarea"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
   ]},
   uniforms:{label:"เครื่องแต่งกาย",fields:[
     ["record_id","Record ID","text"],["category","หมวดหมู่","text"],["item_name","รายการเครื่องแต่งกาย","text"],
-    ["description","รายละเอียด","textarea"],["image_url","URL รูปภาพ","text"],["size_info","ข้อมูลขนาด","text"],
+    ["description","รายละเอียด","textarea"],["image_url","รูปภาพ","imageurl"],["size_info","ข้อมูลขนาด","text"],
     ["usage_notes","วิธีใช้/ข้อกำหนด","textarea"],["notes","หมายเหตุ","textarea"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
+  ]},
+  courses:{label:"บทเรียนอื่น ๆ",fields:[
+    ["slug","Slug","text"],["category","หมวดหมู่","text"],["title","ชื่อบทเรียน","text"],["description","รายละเอียด","textarea"],
+    ["thumbnail_url","รูปภาพ","imageurl"],["estimated_minutes","ระยะเวลา (นาที)","number"],["difficulty","ระดับ","text"],
+    ["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
   ]},
   settings:{label:"Brand Story / Settings",fields:[
     ["key","Key","text"],["value","Value JSON","json"]
@@ -240,7 +246,7 @@ const DATASETS={
 };
 let adminPin=sessionStorage.getItem("yothe_admin_pin")||"";
 const requestedEdit=new URLSearchParams(location.search).get("edit");
-let dataset=["production","drinks","expiry","toppings","uniforms","settings","users"].includes(requestedEdit)?requestedEdit:"production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["production","drinks","expiry","toppings","uniforms"];
+let dataset=["production","drinks","expiry","toppings","uniforms","courses","settings","users"].includes(requestedEdit)?requestedEdit:"production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["production","drinks","expiry","toppings","uniforms"];
 
 async function api(payload){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,pin:adminPin})});
@@ -253,6 +259,7 @@ function esc(v=""){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt
 function currentAttachmentSection(){
   if(dataset==="settings") return "home";
   if(dataset==="users") return document.getElementById("attachmentSection")?.value||"home";
+  if(dataset==="courses") return "courses";
   return ["production","drinks","expiry","toppings","uniforms"].includes(dataset)?dataset:(document.getElementById("attachmentSection")?.value||"home");
 }
 function syncAttachmentSection(){
@@ -636,6 +643,24 @@ window.editRow=id=>openEditor(rows.find(r=>r.id===id));
 window.deleteRow=async id=>{if(!confirm("ยืนยันการลบรายการนี้?"))return;try{await api({action:"delete",dataset,id});await loadData()}catch(err){alert(err.message)}};
 
 
+
+window.uploadEditorImage=fieldKey=>{
+  const input=document.createElement("input");input.type="file";input.accept="image/png,image/jpeg,image/webp";
+  input.onchange=async()=>{
+    const file=input.files?.[0];if(!file)return;
+    if(file.size>4*1024*1024){alert("รูปภาพต้องมีขนาดไม่เกิน 4 MB");return}
+    const msg=document.getElementById("editMsg");
+    try{
+      msg.textContent="กำลัง Upload รูป...";msg.className="msg saving";
+      const dataUrl=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)});
+      const res=await api({action:"upload_record_image",dataset,data_url:dataUrl});
+      const field=document.querySelector('#editForm [name="'+fieldKey+'"]');
+      if(field){field.value=res.url;field.dispatchEvent(new Event("input",{bubbles:true}))}
+      msg.textContent="เพิ่มรูปแล้ว ระบบกำลัง Auto Save...";msg.className="msg ok";
+    }catch(err){msg.textContent=err.message;msg.className="msg error"}
+  };
+  input.click();
+};
 function collectEditorObject(){
   const form=document.getElementById("editForm"), fd=new FormData(form), obj={};
   for(const [key,,type] of DATASETS[dataset].fields){
@@ -653,6 +678,7 @@ function canAutoSave(obj){
   if(dataset==="toppings") return !!(obj.item_name||obj.name);
   if(dataset==="expiry") return !!obj.item_name;
   if(dataset==="uniforms") return !!obj.item_name;
+  if(dataset==="courses") return !!(obj.slug&&obj.title);
   if(dataset==="settings") return !!obj.key;
   return true;
 }
@@ -685,6 +711,7 @@ function openEditor(row){
     let val=row?.[key];
     if(type==="json") val=val==null?"{}":JSON.stringify(val,null,2);
     if(type==="boolean") return '<div class="field"><label>'+esc(label)+'</label><select name="'+key+'"><option value="true" '+(val!==false?"selected":"")+'>ใช่</option><option value="false" '+(val===false?"selected":"")+'>ไม่</option></select></div>';
+    if(type==="imageurl") return '<div class="field wide"><label>'+esc(label)+'</label><div class="row"><input class="input" style="flex:1" name="'+key+'" value="'+esc(val??"")+'" placeholder="URL รูปภาพ"><button class="btn secondary" type="button" onclick="uploadEditorImage(\''+key+'\')">เพิ่ม/เปลี่ยนรูป</button></div>'+(val?'<div style="margin-top:8px"><img src="'+esc(val)+'" style="max-width:220px;max-height:180px;object-fit:contain;border:1px solid #e5e7eb;border-radius:12px"></div>':'')+'</div>';
     if(type==="textarea"||type==="json") return '<div class="field wide"><label>'+esc(label)+'</label><textarea '+(type==="json"?'class="json" ':'')+'name="'+key+'">'+esc(val??"")+'</textarea></div>';
     return '<div class="field"><label>'+esc(label)+'</label><input class="input" name="'+key+'" type="'+type+'" value="'+esc(val??"")+'"></div>';
   }).join("");
