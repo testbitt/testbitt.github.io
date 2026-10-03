@@ -72,6 +72,20 @@
     .footer{border-top:1px solid var(--line);background:#fff}
     .footer-inner{max-width:1180px;margin:auto;padding:24px 20px;color:var(--muted);font-size:14px}
     .status{font-size:12px;color:var(--muted);margin-top:8px}
+.drink-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.drink-sheet{border:3px solid #0b5a3f;background:#fff}
+.drink-title{background:#0b5a3f;color:#fff;font-weight:900;text-align:center;padding:9px 10px;font-size:18px}
+.drink-body{display:grid;grid-template-columns:120px 1fr;min-height:230px}
+.drink-photo{border-right:1px solid #d1d5db;display:flex;align-items:center;justify-content:center;padding:8px}
+.drink-photo img{width:100%;max-height:210px;object-fit:contain}
+.drink-photo .empty{color:#9ca3af;font-size:12px;text-align:center}
+.drink-table{width:100%;border-collapse:collapse;min-width:0}
+.drink-table th,.drink-table td{padding:5px 7px;border:1px solid #d1d5db;font-size:12px}
+.drink-table th{position:static;background:#fff;font-weight:900}.drink-table th:first-child{color:#165da8}.drink-table th:nth-child(2){color:#e11d48;text-align:center}
+.drink-table td:nth-child(2),.drink-table td:nth-child(3){text-align:center;font-weight:700}
+.drink-table tr.topping td:first-child{color:#8b1aa8;font-weight:900}
+.drink-note{background:#ffef57;color:#e32614;font-size:12px;font-weight:900;padding:7px 9px;line-height:1.35}
+@media(max-width:900px){.drink-grid{grid-template-columns:1fr}}
     @media(max-width:900px){
       .hero-inner,.brand-story{grid-template-columns:1fr}
       .story-art{min-height:280px}
@@ -305,25 +319,38 @@ async function loadProduction(){
 
 async function loadDrinks(){
   try{
-    const rows=await sb("yothe_drink_recipes?select=record_id,recipe_id,source_page,brand,menu_group,menu_name,component_type,sort_order,ingredient,quantity,unit,notes&is_published=eq.true&order=source_page.asc,recipe_id.asc,sort_order.asc");
+    const [rows,metas]=await Promise.all([
+      sb("yothe_drink_recipes?select=record_id,recipe_id,source_page,brand,menu_group,menu_name,component_type,sort_order,ingredient,quantity,unit,notes&is_published=eq.true&order=source_page.asc,recipe_id.asc,sort_order.asc"),
+      sb("yothe_drink_menu_meta?select=recipe_id,image_url,size_label,note,note_style&order=recipe_id.asc")
+    ]);
     const el=document.getElementById("drink-list");
     if(!rows.length){el.innerHTML='<div class="state">ยังไม่มีข้อมูลสูตรชง</div>';return}
+    const metaMap=Object.fromEntries(metas.map(m=>[m.recipe_id,m]));
     const groups={};
-    rows.forEach(r=>{(groups[r.recipe_id+"||"+r.menu_name]??=[]).push(r)});
-    el.innerHTML=Object.values(groups).map(items=>`
-      <article class="card">
-        <div class="thumb">${esc(items[0]?.menu_name||"สูตรชง")}</div>
-        <div class="card-body">
-          <span class="tag">${esc(items[0]?.menu_group||"สูตรชง")}</span>
-          <h3>${esc(items[0]?.menu_name||"")}</h3>
-          <div style="overflow:auto;margin-top:10px">
-            <table style="min-width:0;font-size:12px">
-              <thead><tr><th>ส่วนประกอบ</th><th>จำนวน</th><th>หน่วย</th></tr></thead>
-              <tbody>${items.map(x=>`<tr><td>${esc(x.ingredient||"")}</td><td>${esc(x.quantity??"")}</td><td>${esc(x.unit||"")}</td></tr>`).join("")}</tbody>
+    rows.forEach(r=>{(groups[r.recipe_id]??=[]).push(r)});
+    el.className="drink-grid";
+    el.innerHTML=Object.entries(groups).map(([recipeId,items])=>{
+      items.sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+      const meta=metaMap[recipeId]||{}, first=items[0]||{};
+      const toppingSorts=items.filter(x=>String(x.component_type||"").toLowerCase()==="topping").map(x=>x.sort_order||9999);
+      const firstTopping=toppingSorts.length?Math.min(...toppingSorts):null;
+      return `<article class="drink-sheet">
+        <div class="drink-title">${esc(first.menu_name||recipeId)}</div>
+        <div class="drink-body">
+          <div class="drink-photo">${meta.image_url?'<img src="'+esc(meta.image_url)+'" alt="'+esc(first.menu_name||recipeId)+'">':'<div class="empty">ยังไม่มีรูปเครื่องดื่ม</div>'}</div>
+          <div>
+            <table class="drink-table">
+              <thead><tr><th>วัตถุดิบ</th><th>${esc(meta.size_label||"17 oz.(IB)")}</th><th>หน่วย</th></tr></thead>
+              <tbody>${items.map(x=>`<tr class="${String(x.component_type||"").toLowerCase()==="topping"?"topping":""}">
+                <td>${firstTopping!==null&&x.sort_order===firstTopping?'<strong>Topping</strong><br>':""}${esc(x.ingredient||"")}</td>
+                <td>${esc(x.quantity??"-")}</td><td>${esc(x.unit||"-")}</td>
+              </tr>`).join("")}</tbody>
             </table>
+            ${meta.note?'<div class="drink-note">'+esc(meta.note)+'</div>':""}
           </div>
         </div>
-      </article>`).join("");
+      </article>`;
+    }).join("");
   }catch(e){
     document.getElementById("drink-list").innerHTML='<div class="state">ไม่สามารถโหลดสูตรชงได้</div>';
   }
