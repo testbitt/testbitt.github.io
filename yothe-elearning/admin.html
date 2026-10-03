@@ -55,7 +55,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .layout-panel{margin:0 0 18px;padding:18px;background:#fff;border:1px solid var(--line);border-radius:18px}
 .layout-controls{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:12px;align-items:end}
 .color-preview{width:100%;height:38px;border-radius:10px;border:1px solid var(--line)}
-.a4-preview{display:flex;flex-direction:column;gap:18px;align-items:center;padding:18px;background:#eceff1}
+.a4-preview{display:flex;flex-direction:column;gap:18px;align-items:center;padding:18px;background:#eceff1;overflow:hidden;width:100%}
 .a4-page{background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8mm;break-after:page;page-break-after:always;overflow:hidden;display:flex;flex-direction:column;position:relative}
 .a4-page.portrait{width:210mm;height:297mm;min-height:297mm;max-height:297mm}
 .a4-page.landscape{width:297mm;height:210mm;min-height:210mm;max-height:210mm}
@@ -80,7 +80,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
   .a4-page.landscape{width:297mm;height:210mm;min-height:210mm;max-height:210mm}
   @page{margin:0}
 }
-@media(max-width:1100px){.layout-controls{grid-template-columns:repeat(2,1fr)}.a4-preview{align-items:flex-start;overflow:auto}}
+@media(max-width:1100px){.layout-controls{grid-template-columns:repeat(2,1fr)}.a4-preview{align-items:center;overflow:hidden;padding:12px}}
 
 @media(max-width:760px){.grid2,.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}.wrap{padding:18px 12px 40px}.panel{padding:16px}.recipe-body{grid-template-columns:110px 1fr}.recipe-photo{min-height:180px;padding:8px}.recipe-title{font-size:18px}.recipe-table th,.recipe-table td{font-size:13px;padding:8px 7px}.recipe-note{font-size:12.5px}}
 </style>
@@ -549,11 +549,25 @@ function fitReviewPage(page){
   content.style.width=(100/scale)+"%";
   page.dataset.fitScale=scale.toFixed(3);
 }
+function fitReviewSheetToViewport(page){
+  const preview=page.closest(".a4-preview");if(!preview)return;
+  page.style.zoom="1";
+  page.style.marginBottom="0";
+  const available=Math.max(240,preview.clientWidth-36);
+  const naturalW=page.offsetWidth||1;
+  const scale=Math.min(1,available/naturalW);
+  page.style.zoom=String(scale);
+  // compensate vertical flex gap so scaled pages do not leave excessive blank space
+  page.style.marginBottom=((page.offsetHeight*(scale-1)))+"px";
+}
 async function fitAllReviewPages(){
   const pages=[...document.querySelectorAll(".a4-preview .a4-page")];
+  pages.forEach(p=>{p.style.zoom="1";p.style.marginBottom="0"});
   await Promise.all(pages.map(waitReviewImages));
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
   pages.forEach(fitReviewPage);
+  await new Promise(r=>requestAnimationFrame(r));
+  pages.forEach(fitReviewSheetToViewport);
 }
 function scheduleReviewFit(){setTimeout(()=>fitAllReviewPages(),0)}
 function renderTable(){
