@@ -8,7 +8,7 @@
 :root{--red:#d71920;--ink:#171717;--muted:#6b7280;--line:#e5e7eb;--bg:#f4f5f7}
 *{box-sizing:border-box}body{margin:0;font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,Arial,system-ui,sans-serif;background:var(--bg);color:var(--ink)}
 button,select,input{font:inherit}.top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}.topin{max-width:1240px;margin:auto;min-height:70px;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-size:22px;font-weight:900;color:var(--red);display:flex;align-items:center;gap:10px}.brand img{width:46px;height:52px;object-fit:contain}.back{text-decoration:none;color:var(--red);font-weight:800}
-.wrap{max-width:1240px;margin:auto;padding:24px 20px 60px}.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:18px}.controls{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;align-items:end}.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:13px;font-weight:800}.input{border:1px solid #d1d5db;border-radius:12px;padding:10px 12px;background:#fff}.btn{border:0;border-radius:12px;padding:11px 14px;font-weight:800;cursor:pointer}.primary{background:var(--red);color:#fff}.secondary{background:#fff;color:var(--red);border:1px solid #fecdd3}.msg{font-size:13px;color:var(--muted);margin-top:8px}
+.wrap{max-width:1240px;margin:auto;padding:24px 20px 60px}.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:18px}.controls{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;align-items:end}.export-controls{grid-template-columns:repeat(4,minmax(150px,1fr))}.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:13px;font-weight:800}.input{border:1px solid #d1d5db;border-radius:12px;padding:10px 12px;background:#fff}.btn{border:0;border-radius:12px;padding:11px 14px;font-weight:800;cursor:pointer}.primary{background:var(--red);color:#fff}.secondary{background:#fff;color:var(--red);border:1px solid #fecdd3}.msg{font-size:13px;color:var(--muted);margin-top:8px}
 .preview-shell{overflow:auto;background:#dfe3e7;border-radius:16px;padding:18px;container-type:inline-size}
 .pages{display:flex;flex-direction:column;gap:18px;align-items:center}
 .page-wrap{position:relative;display:flex;justify-content:center;align-items:flex-start}
@@ -64,13 +64,17 @@ th{height:29px}
 <header class="top"><div class="topin"><div class="brand"><img src="assets/yothe-cat.svg" alt="Yothé"><span>Yothé Export</span></div><a class="back" href="admin.html">← กลับ Admin</a></div></header>
 <main class="wrap">
 <section class="panel">
-  <div class="controls">
+  <div class="controls export-controls">
     <div class="field"><label>หัวข้อ</label><select id="dataset" class="input"><option value="production">สูตรการผลิต</option><option value="drinks">สูตรชงเครื่องดื่ม</option><option value="expiry">วันหมดอายุ</option><option value="toppings">Topping</option><option value="uniforms">เครื่องแต่งกาย</option><option value="courses">บทเรียนอื่น ๆ</option></select></div>
-    <div class="field"><label>กระดาษ (ตาม Layout การแสดงผล)</label><select id="orientation" class="input" disabled><option value="portrait">A4 แนวตั้ง</option><option value="landscape">A4 แนวนอน</option></select></div>
+    <div class="field"><label>ขนาดกระดาษ</label><select id="orientation" class="input"><option value="portrait">A4 แนวตั้ง</option><option value="landscape">A4 แนวนอน</option></select></div>
+    <div class="field"><label>จำนวนรายการต่อหน้า</label><select id="itemsPerPage" class="input"></select></div>
+    <div class="field"><label>Theme (50 แบบ)</label><select id="themeSelect" class="input"></select></div>
+    <div class="field"><label>สีหลัก (50 สี)</label><select id="colorSelect" class="input"></select></div>
+    <div class="field"><label>ตัวอย่างสี</label><div id="colorPreview" style="height:42px;border-radius:10px;border:1px solid #d1d5db"></div></div>
     <button id="pngBtn" class="btn primary">Export PNG ความคมชัดสูง</button>
     <button id="pdfBtn" class="btn secondary">Export PDF</button>
   </div>
-  <div id="msg" class="msg">เลือกหัวข้อที่ต้องการ Export</div>
+  <div id="msg" class="msg">ปรับ Layout สำหรับ Export ได้จากหน้านี้ • Auto Save แยกตามหัวข้อ</div>
 </section>
 <div class="preview-shell"><div id="pages" class="pages"><section class="page portrait"><div class="state">กำลังโหลดข้อมูล...</div></section></div></div>
 </main>
@@ -79,6 +83,25 @@ const ADMIN_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-adm
 let pin=sessionStorage.getItem("yothe_admin_pin")||"",drinkMeta={};
 const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
 const THEME_CLASSES=["theme-soft","theme-square","theme-airy","theme-compact","theme-bold"];
+const THEME_NAMES=[
+"Soft Rounded","Clean Square","Airy Card","Compact Table","Bold Header",
+"Soft Minimal","Modern Grid","Spacious Clean","Compact Pro","Bold Frame",
+"Rounded Studio","Sharp Modern","Open Space","Dense Clean","Strong Card",
+"Soft Editorial","Square Editorial","Airy Editorial","Compact Editorial","Bold Editorial",
+"Soft Classic","Modern Classic","Elegant Airy","Compact Classic","Bold Classic",
+"Soft Business","Square Business","Airy Business","Compact Business","Bold Business",
+"Soft Premium","Modern Premium","Elegant Grid","Compact Premium","Bold Premium",
+"Soft Learning","Clean Learning","Airy Learning","Compact Learning","Bold Learning",
+"Soft Cafe","Modern Cafe","Airy Cafe","Compact Cafe","Bold Cafe",
+"Soft Display","Clean Display","Airy Display","Compact Display","Bold Display"
+];
+const COLOR_NAMES=[
+"Kamu Red","Rose","Berry","Bright Red","Coral Red","Orange","Burnt Orange","Amber","Golden Brown","Yellow",
+"Lime","Olive Green","Fresh Green","Leaf Green","Emerald","Mint Green","Teal Mint","Deep Teal","Cyan","Ocean Cyan",
+"Sky Blue","Deep Sky","Blue","Royal Blue","Indigo","Deep Indigo","Periwinkle","Violet","Lavender","Purple",
+"Orchid","Magenta","Pink Violet","Deep Pink","Pink","Warm Pink","Dark Red","Rust","Brown Gold","Olive",
+"Forest Green","Deep Emerald","Dark Teal","Deep Cyan","Navy","Midnight Indigo","Plum","Dark Magenta","Wine","Charcoal"
+];
 const DEFAULT_DISPLAY_PREFS={orientation:"portrait",items_per_page:20,theme_index:1,color_index:1};
 let displayPrefs={...DEFAULT_DISPLAY_PREFS};
 let layoutGroupOrder=[];
@@ -101,6 +124,32 @@ function applyDisplayPrefs(){
   document.documentElement.style.setProperty("--theme-shadow",shadows[shadowLevel]);
   document.documentElement.style.setProperty("--theme-gap",gaps[(idx*3)%10]+"px");
   document.getElementById("orientation").value=displayPrefs.orientation;
+  document.getElementById("itemsPerPage").value=String(displayPrefs.items_per_page);
+  document.getElementById("themeSelect").value=String(displayPrefs.theme_index);
+  document.getElementById("colorSelect").value=String(displayPrefs.color_index);
+  document.getElementById("colorPreview").style.background=color;
+}
+function initExportControls(){
+  document.getElementById("itemsPerPage").innerHTML=Array.from({length:20},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+' รายการ</option>').join("");
+  document.getElementById("themeSelect").innerHTML=THEME_NAMES.map((n,i)=>'<option value="'+(i+1)+'">Theme '+String(i+1).padStart(2,"0")+' • '+n+'</option>').join("");
+  document.getElementById("colorSelect").innerHTML=COLORS.map((x,i)=>'<option value="'+(i+1)+'">สี '+String(i+1).padStart(2,"0")+' • '+COLOR_NAMES[i]+' • '+x+'</option>').join("");
+}
+async function saveExportPrefs(){
+  const ds=document.getElementById("dataset").value;
+  displayPrefs={
+    orientation:document.getElementById("orientation").value,
+    items_per_page:Math.max(1,Math.min(20,Number(document.getElementById("itemsPerPage").value)||1)),
+    theme_index:Number(document.getElementById("themeSelect").value)||1,
+    color_index:Number(document.getElementById("colorSelect").value)||1
+  };
+  applyDisplayPrefs();
+  const msg=document.getElementById("msg");
+  msg.textContent="กำลัง Auto Save Layout สำหรับ Export...";
+  try{
+    await api({action:"save",dataset:"settings",row:{key:"display_preferences_"+ds,value:displayPrefs}});
+    await load();
+    msg.textContent="บันทึก Layout สำหรับ Export แล้ว • ใช้เฉพาะหัวข้อนี้";
+  }catch(e){msg.textContent=e.message}
 }
 async function loadDisplayPrefs(ds=document.getElementById("dataset").value){
   displayPrefs={...DEFAULT_DISPLAY_PREFS};layoutGroupOrder=[];
@@ -316,7 +365,11 @@ document.getElementById("pdfBtn").onclick=async()=>{
     msg.textContent="Export PDF สำเร็จ "+pages.length+" หน้า A4";
   }catch(e){msg.textContent="Export PDF ไม่สำเร็จ: "+e.message}
 };
-document.getElementById("dataset").onchange=load;window.addEventListener("resize",fitPreviewPages);load();
+initExportControls();
+document.getElementById("dataset").onchange=load;
+["orientation","itemsPerPage","themeSelect","colorSelect"].forEach(id=>document.getElementById(id).addEventListener("change",saveExportPrefs));
+window.addEventListener("resize",fitPreviewPages);
+load();
 </script>
 </body>
 </html>
