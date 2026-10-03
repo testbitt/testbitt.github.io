@@ -41,7 +41,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .recipe-photo img{width:100%;max-height:210px;object-fit:contain}
 .recipe-photo .empty-photo{text-align:center;color:#9ca3af;font-size:12px}
 .recipe-table{width:100%;border-collapse:collapse;min-width:0}
-.recipe-table th,.recipe-table td{padding:6px 8px;border:1px solid #d1d5db;font-size:12.5px;line-height:1.45}
+.recipe-table th,.recipe-table td{padding:6px 8px;border:1px solid #d1d5db;font-size:12.5px;line-height:1.45;white-space:normal;overflow:visible;overflow-wrap:anywhere;word-break:normal;vertical-align:middle}
 .recipe-table th{position:static;background:var(--red);color:#fff;font-weight:800;font-size:12px;letter-spacing:.05px}
 .recipe-table th:nth-child(1){color:#fff}
 .recipe-table th:nth-child(2){color:#fff;text-align:center}
@@ -55,8 +55,8 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .color-preview{width:100%;height:38px;border-radius:10px;border:1px solid var(--line)}
 .a4-preview{display:flex;flex-direction:column;gap:18px;align-items:center;padding:18px;background:#eceff1}
 .a4-page{background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8mm;break-after:page;page-break-after:always;overflow:visible}
-.a4-page.portrait{width:210mm;height:297mm;min-height:297mm;max-height:297mm}
-.a4-page.landscape{width:297mm;height:210mm;min-height:210mm;max-height:210mm}
+.a4-page.portrait{width:210mm;min-height:297mm}
+.a4-page.landscape{width:297mm;min-height:210mm}
 .a4-page:last-child{break-after:auto;page-break-after:auto}
 .a4-page .page-title{font-weight:800;font-size:14px;line-height:1.35;margin:0 0 8px;color:#fff;background:var(--red);padding:7px 10px;border-radius:8px;letter-spacing:.05px}
 .a4-page table{min-width:0}
@@ -475,6 +475,10 @@ window.exportUsers=()=>{
 };
 function chunk(arr,size){const out=[];for(let i=0;i<arr.length;i+=size)out.push(arr.slice(i,i+size));return out}
 function pageClass(count){return 'a4-page '+displayPrefs.orientation+(count===displayPrefs.items_per_page?' full-page':'')}
+function visualItemsPerPage(){
+  const safe=displayPrefs.orientation==="landscape"?4:6;
+  return Math.max(1,Math.min(Number(displayPrefs.items_per_page)||safe,safe));
+}
 function renderTable(){
   const wrap=document.getElementById("tableWrap");
   wrap.className="";
@@ -521,13 +525,13 @@ function renderUniformSheets(){
     <tbody>${items.map(r=>`<tr><td>${esc(r.item_name||"")}</td><td>${esc(r.size_info||"-")}</td><td>${esc(r.description||r.usage_notes||"")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
 }
 function renderGroupedSheets(entries,title,builder){
-  const pages=chunk(entries,displayPrefs.items_per_page),wrap=document.getElementById("tableWrap");
+  const pages=chunk(entries,visualItemsPerPage()),wrap=document.getElementById("tableWrap");
   wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>'<section class="'+pageClass(page.length)+'"><div class="page-title">'+esc(title)+' • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content recipe-admin-grid">'+page.map(([name,items])=>builder(name,items)).join("")+'</div></section>').join("")+'</div>';
 }
 function renderDrinkSheets(){
   const wrap=document.getElementById("tableWrap"), groups={};
   rows.forEach(r=>{const key=r.recipe_id||"NO-ID";(groups[key]??=[]).push(r)});
-  const entries=Object.entries(groups), pages=chunk(entries,displayPrefs.items_per_page);
+  const entries=Object.entries(groups), pages=chunk(entries,visualItemsPerPage());
   wrap.className="";
   wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>'<section class="'+pageClass(page.length)+'"><div class="page-title">สูตรชงเครื่องดื่ม • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content recipe-admin-grid">'+page.map(([recipeId,items])=>{
     items.sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
