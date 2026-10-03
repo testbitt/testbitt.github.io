@@ -28,7 +28,7 @@ label{font-size:13px;font-weight:800}.input,select,textarea{width:100%;border:1p
 .help{font-size:12px;color:var(--muted);line-height:1.6}.json{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
 .recipe-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--theme-gap);padding:16px;background:#f3f7f5}
 .recipe-sheet{border:3px solid #0b5a3f;background:#fff;min-width:0}
-.recipe-title{background:#0b5a3f;color:#fff;font-weight:900;text-align:center;padding:9px 10px;font-size:18px;position:relative}
+.recipe-title{background:var(--red);color:#fff;font-weight:900;text-align:center;padding:9px 10px;font-size:18px;position:relative}
 .recipe-tools{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;padding:8px;border-bottom:1px solid #d1d5db;background:#f8faf9}
 .recipe-body{display:grid;grid-template-columns:125px 1fr;min-height:235px}
 .recipe-photo{border-right:1px solid #d1d5db;display:flex;align-items:center;justify-content:center;padding:8px;background:#fff}
@@ -36,9 +36,9 @@ label{font-size:13px;font-weight:800}.input,select,textarea{width:100%;border:1p
 .recipe-photo .empty-photo{text-align:center;color:#9ca3af;font-size:12px}
 .recipe-table{width:100%;border-collapse:collapse;min-width:0}
 .recipe-table th,.recipe-table td{padding:5px 7px;border:1px solid #d1d5db;font-size:12px}
-.recipe-table th{position:static;background:#fff;font-weight:900}
-.recipe-table th:nth-child(1){color:#165da8}
-.recipe-table th:nth-child(2){color:#e11d48;text-align:center}
+.recipe-table th{position:static;background:var(--red);color:#fff;font-weight:900}
+.recipe-table th:nth-child(1){color:#fff}
+.recipe-table th:nth-child(2){color:#fff;text-align:center}
 .recipe-table td:nth-child(2),.recipe-table td:nth-child(3){text-align:center;font-weight:700}
 .recipe-table tr.topping-row td:first-child{color:#8b1aa8;font-weight:900}
 .recipe-note{background:#ffef57;color:#e32614;font-size:12px;font-weight:900;padding:7px 9px;line-height:1.35}
@@ -52,7 +52,7 @@ label{font-size:13px;font-weight:800}.input,select,textarea{width:100%;border:1p
 .a4-page.portrait{width:210mm;min-height:297mm}
 .a4-page.landscape{width:297mm;min-height:210mm}
 .a4-page:last-child{break-after:auto;page-break-after:auto}
-.a4-page .page-title{font-weight:900;font-size:15px;margin:0 0 8px;color:var(--red)}
+.a4-page .page-title{font-weight:900;font-size:15px;margin:0 0 8px;color:#fff;background:var(--red);padding:7px 10px;border-radius:8px}
 .a4-page table{min-width:0}
 .a4-page .recipe-admin-grid{padding:0;background:#fff}
 .a4-page.full-page{display:flex;flex-direction:column}
