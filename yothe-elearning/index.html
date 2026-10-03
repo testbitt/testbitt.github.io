@@ -205,25 +205,69 @@ function playMenuMeow(){
 
     const now=ctx.currentTime;
     const master=ctx.createGain();
+    const filter=ctx.createBiquadFilter();
+    filter.type="bandpass";
+    filter.frequency.setValueAtTime(1200,now);
+    filter.Q.setValueAtTime(1.6,now);
+
     master.gain.setValueAtTime(0.0001,now);
-    master.gain.exponentialRampToValueAtTime(0.12,now+0.025);
-    master.gain.exponentialRampToValueAtTime(0.055,now+0.19);
-    master.gain.exponentialRampToValueAtTime(0.0001,now+0.48);
+    master.gain.exponentialRampToValueAtTime(0.16,now+0.035);
+    master.gain.exponentialRampToValueAtTime(0.11,now+0.16);
+    master.gain.exponentialRampToValueAtTime(0.055,now+0.34);
+    master.gain.exponentialRampToValueAtTime(0.0001,now+0.62);
+
+    filter.connect(master);
     master.connect(ctx.destination);
 
-    const osc1=ctx.createOscillator();
-    const osc2=ctx.createOscillator();
-    const g1=ctx.createGain(),g2=ctx.createGain();
-    osc1.type="sine";osc2.type="triangle";
-    osc1.frequency.setValueAtTime(690,now);
-    osc1.frequency.exponentialRampToValueAtTime(940,now+0.11);
-    osc1.frequency.exponentialRampToValueAtTime(610,now+0.45);
-    osc2.frequency.setValueAtTime(345,now);
-    osc2.frequency.exponentialRampToValueAtTime(470,now+0.11);
-    osc2.frequency.exponentialRampToValueAtTime(305,now+0.45);
-    g1.gain.value=.72;g2.gain.value=.18;
-    osc1.connect(g1);osc2.connect(g2);g1.connect(master);g2.connect(master);
-    osc1.start(now);osc2.start(now);osc1.stop(now+.5);osc2.stop(now+.5);
+    const oscA=ctx.createOscillator();
+    const oscB=ctx.createOscillator();
+    const oscC=ctx.createOscillator();
+    const gA=ctx.createGain(),gB=ctx.createGain(),gC=ctx.createGain();
+
+    oscA.type="sawtooth";
+    oscB.type="sine";
+    oscC.type="triangle";
+
+    // “เหมียว~” : เปิดต่ำ -> พุ่งสูง -> ลากลงปลายเสียง
+    oscA.frequency.setValueAtTime(430,now);
+    oscA.frequency.exponentialRampToValueAtTime(760,now+0.12);
+    oscA.frequency.exponentialRampToValueAtTime(540,now+0.30);
+    oscA.frequency.exponentialRampToValueAtTime(360,now+0.60);
+
+    oscB.frequency.setValueAtTime(860,now);
+    oscB.frequency.exponentialRampToValueAtTime(1520,now+0.12);
+    oscB.frequency.exponentialRampToValueAtTime(1080,now+0.30);
+    oscB.frequency.exponentialRampToValueAtTime(720,now+0.60);
+
+    oscC.frequency.setValueAtTime(1290,now);
+    oscC.frequency.exponentialRampToValueAtTime(2280,now+0.12);
+    oscC.frequency.exponentialRampToValueAtTime(1620,now+0.30);
+    oscC.frequency.exponentialRampToValueAtTime(1080,now+0.60);
+
+    gA.gain.value=.28;
+    gB.gain.value=.42;
+    gC.gain.value=.12;
+
+    oscA.connect(gA);oscB.connect(gB);oscC.connect(gC);
+    gA.connect(filter);gB.connect(filter);gC.connect(filter);
+
+    // เติมลมหายใจ/texture เบา ๆ ให้ฟังคล้ายเสียงร้องมากกว่า beep
+    const noiseBuffer=ctx.createBuffer(1,Math.floor(ctx.sampleRate*.62),ctx.sampleRate);
+    const data=noiseBuffer.getChannelData(0);
+    for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length);
+    const noise=ctx.createBufferSource();
+    const noiseGain=ctx.createGain();
+    const noiseFilter=ctx.createBiquadFilter();
+    noise.buffer=noiseBuffer;
+    noiseFilter.type="bandpass";
+    noiseFilter.frequency.value=1800;
+    noiseFilter.Q.value=.8;
+    noiseGain.gain.setValueAtTime(.018,now);
+    noiseGain.gain.exponentialRampToValueAtTime(.001,now+.58);
+    noise.connect(noiseFilter);noiseFilter.connect(noiseGain);noiseGain.connect(master);
+
+    oscA.start(now);oscB.start(now);oscC.start(now);noise.start(now);
+    oscA.stop(now+.64);oscB.stop(now+.64);oscC.stop(now+.64);noise.stop(now+.64);
   }catch{}
 }
 
