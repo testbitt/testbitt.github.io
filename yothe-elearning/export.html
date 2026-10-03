@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yothé Export</title>
+<style>
+:root{--red:#d71920;--ink:#171717;--muted:#6b7280;--line:#e5e7eb;--bg:#f4f5f7}
+*{box-sizing:border-box}body{margin:0;font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,Arial,system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+button,select,input{font:inherit}.top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}.topin{max-width:1240px;margin:auto;min-height:70px;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-size:22px;font-weight:900;color:var(--red);display:flex;align-items:center;gap:10px}.brand img{width:46px;height:52px;object-fit:contain}.back{text-decoration:none;color:var(--red);font-weight:800}
+.wrap{max-width:1240px;margin:auto;padding:24px 20px 60px}.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:18px}.controls{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;align-items:end}.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:13px;font-weight:800}.input{border:1px solid #d1d5db;border-radius:12px;padding:10px 12px;background:#fff}.btn{border:0;border-radius:12px;padding:11px 14px;font-weight:800;cursor:pointer}.primary{background:var(--red);color:#fff}.secondary{background:#fff;color:var(--red);border:1px solid #fecdd3}.msg{font-size:13px;color:var(--muted);margin-top:8px}
+.preview-shell{overflow:auto;background:#dfe3e7;border-radius:16px;padding:18px}.page{background:#fff;margin:auto;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:10mm;transform-origin:top left}.page.portrait{width:210mm;min-height:297mm}.page.landscape{width:297mm;min-height:210mm}.page-title{background:var(--red);color:#fff;font-weight:900;padding:9px 12px;margin-bottom:10px;font-size:18px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.sheet{border:2px solid var(--red);break-inside:avoid}.sheet-title{background:var(--red);color:#fff;font-weight:800;text-align:center;padding:8px 10px;font-size:15px}.sheet-body{display:grid;grid-template-columns:105px 1fr;min-height:190px}.photo{border-right:1px solid #d1d5db;display:flex;align-items:center;justify-content:center;padding:7px}.photo img{width:100%;max-height:175px;object-fit:contain}.empty{font-size:11px;color:#9ca3af;text-align:center}
+table{width:100%;border-collapse:collapse}th,td{border:1px solid #d1d5db;padding:5px 7px;font-size:10.5px;line-height:1.35}th{background:var(--red);color:#fff;font-weight:800}td.num{text-align:center;font-weight:700}.note{background:#ffef57;color:#d91d0b;font-size:9.5px;font-weight:800;padding:6px 8px}.state{padding:40px;text-align:center;color:var(--muted)}
+@media(max-width:850px){.controls{grid-template-columns:1fr 1fr}}@media(max-width:560px){.controls{grid-template-columns:1fr}}
+@media print{.top,.panel{display:none!important}.wrap{max-width:none;padding:0}.preview-shell{padding:0;background:#fff;overflow:visible}.page{box-shadow:none;margin:0}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+<header class="top"><div class="topin"><div class="brand"><img src="assets/yothe-cat.svg" alt="Yothé"><span>Yothé Export</span></div><a class="back" href="admin.html">← กลับ Admin</a></div></header>
+<main class="wrap">
+<section class="panel">
+  <div class="controls">
+    <div class="field"><label>หัวข้อ</label><select id="dataset" class="input"><option value="production">สูตรการผลิต</option><option value="drinks">สูตรชงเครื่องดื่ม</option><option value="expiry">วันหมดอายุ</option><option value="toppings">Topping</option></select></div>
+    <div class="field"><label>กระดาษ</label><select id="orientation" class="input"><option value="portrait">A4 แนวตั้ง</option><option value="landscape">A4 แนวนอน</option></select></div>
+    <button id="pngBtn" class="btn primary">Export PNG ความคมชัดสูง</button>
+    <button id="pdfBtn" class="btn secondary">Export PDF</button>
+  </div>
+  <div id="msg" class="msg">เลือกหัวข้อที่ต้องการ Export</div>
+</section>
+<div class="preview-shell"><section id="exportPage" class="page portrait"><div class="state">กำลังโหลดข้อมูล...</div></section></div>
+</main>
+<script>
+const ADMIN_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-admin";
+let pin=sessionStorage.getItem("yothe_admin_pin")||"",drinkMeta={};
+function esc(v=""){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
+async function api(payload){const r=await fetch(ADMIN_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,pin})});const d=await r.json().catch(()=>({error:"Invalid response"}));if(!r.ok)throw new Error(d.error||"เกิดข้อผิดพลาด");return d}
+function groupBy(rows,keyFn){const g={};for(const r of rows){const k=keyFn(r);(g[k]??=[]).push(r)}return g}
+async function load(){
+  if(!pin){location.href="admin.html";return}
+  const ds=document.getElementById("dataset").value,page=document.getElementById("exportPage"),ori=document.getElementById("orientation").value,msg=document.getElementById("msg");
+  page.className="page "+ori;page.innerHTML='<div class="state">กำลังโหลด...</div>';
+  try{
+    let rows;
+    if(ds==="drinks"){const [a,b]=await Promise.all([api({action:"list",dataset:"drinks"}),api({action:"list",dataset:"drink_meta"})]);rows=a.data||[];drinkMeta=Object.fromEntries((b.data||[]).map(x=>[x.recipe_id,x]))}
+    else rows=(await api({action:"list",dataset:ds})).data||[];
+    render(ds,rows);msg.textContent="พร้อม Export • "+rows.length+" รายการ";
+  }catch(e){page.innerHTML='<div class="state">'+esc(e.message)+'</div>';msg.textContent=e.message}
+}
+function render(ds,rows){
+  const page=document.getElementById("exportPage");
+  if(ds==="drinks"){
+    const g=groupBy(rows,r=>r.recipe_id||"NO-ID");
+    page.innerHTML='<div class="page-title">สูตรชงเครื่องดื่ม</div><div class="grid">'+Object.entries(g).map(([id,items])=>{items.sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));const f=items[0]||{},m=drinkMeta[id]||{},tops=items.filter(x=>String(x.component_type||"").toLowerCase()==="topping").map(x=>x.sort_order||9999),firstTop=tops.length?Math.min(...tops):null;return '<article class="sheet"><div class="sheet-title">'+esc(f.menu_name||id)+'</div><div class="sheet-body"><div class="photo">'+(m.image_url?'<img src="'+esc(m.image_url)+'" crossorigin="anonymous">':'<div class="empty">ยังไม่มีรูป</div>')+'</div><div><table><thead><tr><th>วัตถุดิบ</th><th>'+esc(m.size_label||"17 oz.(IB)")+'</th><th>หน่วย</th></tr></thead><tbody>'+items.map(x=>'<tr><td>'+(firstTop!==null&&x.sort_order===firstTop?'<b style="color:#8b1aa8">Topping</b><br>':'')+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td></tr>').join("")+'</tbody></table>'+(m.note?'<div class="note">'+esc(m.note)+'</div>':'')+'</div></div></article>'}).join("")+'</div>';
+  }else if(ds==="production"){
+    const g=groupBy(rows,r=>r.recipe_name||"ไม่ระบุชื่อ");
+    page.innerHTML='<div class="page-title">สูตรการผลิต</div><div class="grid">'+Object.entries(g).map(([name,items])=>'<article class="sheet"><div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th></tr></thead><tbody>'+items.map(x=>'<tr><td>'+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td></tr>').join("")+'</tbody></table></article>').join("")+'</div>';
+  }else if(ds==="toppings"){
+    const g=groupBy(rows,r=>(r.category||"Topping")+" • "+(r.subcategory||"ทั่วไป"));
+    page.innerHTML='<div class="page-title">Topping</div><div class="grid">'+Object.entries(g).map(([name,items])=>'<article class="sheet"><div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th>รายการ</th><th>จำนวน</th><th>หน่วย</th><th>ราคา</th></tr></thead><tbody>'+items.map(r=>'<tr><td>'+esc(r.item_name||r.name||"")+'</td><td class="num">'+esc(r.quantity??"-")+'</td><td class="num">'+esc(r.unit||"-")+'</td><td class="num">'+(r.price_baht!=null?esc(r.price_baht)+" บาท":"-")+'</td></tr>').join("")+'</tbody></table></article>').join("")+'</div>';
+  }else{
+    page.innerHTML='<div class="page-title">วันหมดอายุ</div><table><thead><tr><th>รายการ</th><th>หมวด</th><th>การจัดเก็บ</th><th>ยังไม่เปิด</th><th>หลังเปิด</th><th>หน่วย</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+esc(r.item_name||"")+'</td><td>'+esc(r.category||"")+'</td><td>'+esc(r.storage_condition||"")+'</td><td>'+esc(r.shelf_life_unopened||"-")+'</td><td>'+esc(r.shelf_life_opened||"-")+'</td><td>'+esc(r.unit||"")+'</td></tr>').join("")+'</tbody></table>';
+  }
+}
+async function canvasForExport(){
+  const el=document.getElementById("exportPage"),msg=document.getElementById("msg");
+  msg.textContent="กำลังสร้างไฟล์ความละเอียดสูง...";
+  if(document.fonts?.ready)await document.fonts.ready;
+  await new Promise(r=>setTimeout(r,150));
+  return html2canvas(el,{scale:3,useCORS:true,allowTaint:false,backgroundColor:"#ffffff",logging:false,windowWidth:el.scrollWidth,windowHeight:el.scrollHeight});
+}
+document.getElementById("pngBtn").onclick=async()=>{try{const c=await canvasForExport(),a=document.createElement("a");a.href=c.toDataURL("image/png",1);a.download="Yothe_"+document.getElementById("dataset").value+"_A4.png";a.click();document.getElementById("msg").textContent="Export PNG สำเร็จ"}catch(e){document.getElementById("msg").textContent="Export PNG ไม่สำเร็จ: "+e.message}};
+document.getElementById("pdfBtn").onclick=async()=>{try{const canvas=await canvasForExport(),img=canvas.toDataURL("image/png",1),ori=document.getElementById("orientation").value==="landscape"?"landscape":"portrait",{jsPDF}=window.jspdf,pdf=new jsPDF({orientation:ori,unit:"mm",format:"a4"}),pw=ori==="landscape"?297:210,ph=ori==="landscape"?210:297,ratio=Math.min(pw/canvas.width,ph/canvas.height),w=canvas.width*ratio,h=canvas.height*ratio;pdf.addImage(img,"PNG",0,0,w,h,undefined,"FAST");pdf.save("Yothe_"+document.getElementById("dataset").value+"_A4.pdf");document.getElementById("msg").textContent="Export PDF สำเร็จ"}catch(e){document.getElementById("msg").textContent="Export PDF ไม่สำเร็จ: "+e.message}};
+document.getElementById("dataset").onchange=load;document.getElementById("orientation").onchange=load;load();
+</script>
+</body>
+</html>
