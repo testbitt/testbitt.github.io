@@ -504,8 +504,8 @@ function renderProductionSheets(){
       <button class="btn small secondary" onclick="editRow(${items[0]?.id||'null'})">แก้หัวตาราง/หมายเหตุ</button>
       <button class="btn small primary" onclick="addProductionRow('${esc(name)}')">+ เพิ่มวัตถุดิบ</button>
     </div>
-    <table class="recipe-table"><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th><th class="actions"></th></tr></thead>
-    <tbody>${items.map(r=>`<tr><td>${esc(r.ingredient||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
+    <table class="recipe-table"><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th><th>Servings</th><th class="actions"></th></tr></thead>
+    <tbody>${items.map(r=>`<tr><td>${esc(r.ingredient||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td>${esc(r.servings||"-")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
 }
 window.addProductionRow=name=>{const first=rows.find(x=>x.recipe_name===name)||{};openEditor({record_id:"PROD-"+Date.now(),source_page:first.source_page||null,category:first.category||"",recipe_name:name,ingredient:"",quantity:null,unit:"g",is_published:true})};
 function renderToppingSheets(){
