@@ -105,6 +105,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
       <button class="tab" draggable="true" data-dataset="drinks">สูตรชงเครื่องดื่ม</button>
       <button class="tab" draggable="true" data-dataset="expiry">วันหมดอายุ</button>
       <button class="tab" draggable="true" data-dataset="toppings">Topping</button>
+      <button class="tab" draggable="true" data-dataset="uniforms">เครื่องแต่งกาย</button>
       <button class="tab" data-dataset="users">จัดการ User</button>
       <button class="tab" data-dataset="settings">Brand Story / Settings</button>
       <div class="drag-hint">กดเมาส์ซ้ายค้างที่เมนู แล้วลากเพื่อสลับตำแหน่ง • Auto Save ไปยัง Server</div>
@@ -196,13 +197,18 @@ const DATASETS={
     ["unit","หน่วย","text"],["price_baht","ราคา (บาท)","number"],["placement","ตำแหน่ง","text"],["preparation","วิธีเตรียม","textarea"],
     ["max_add_items","เพิ่มได้สูงสุด","number"],["notes","หมายเหตุ","textarea"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
   ]},
+  uniforms:{label:"เครื่องแต่งกาย",fields:[
+    ["record_id","Record ID","text"],["category","หมวดหมู่","text"],["item_name","รายการเครื่องแต่งกาย","text"],
+    ["description","รายละเอียด","textarea"],["image_url","URL รูปภาพ","text"],["size_info","ข้อมูลขนาด","text"],
+    ["usage_notes","วิธีใช้/ข้อกำหนด","textarea"],["notes","หมายเหตุ","textarea"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
+  ]},
   settings:{label:"Brand Story / Settings",fields:[
     ["key","Key","text"],["value","Value JSON","json"]
   ]}
 };
 let adminPin=sessionStorage.getItem("yothe_admin_pin")||"";
 const requestedEdit=new URLSearchParams(location.search).get("edit");
-let dataset=["production","drinks","expiry","toppings","settings","users"].includes(requestedEdit)?requestedEdit:"production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["production","drinks","expiry","toppings"];
+let dataset=["production","drinks","expiry","toppings","uniforms","settings","users"].includes(requestedEdit)?requestedEdit:"production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["production","drinks","expiry","toppings","uniforms"];
 
 async function api(payload){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,pin:adminPin})});
@@ -233,9 +239,9 @@ async function loadMenuOrder(){
   try{
     const res=await api({action:"list",dataset:"settings"});
     const row=(res.data||[]).find(x=>x.key==="menu_order");
-    if(Array.isArray(row?.value)) menuOrder=row.value.filter(x=>["production","drinks","expiry","toppings"].includes(x));
+    if(Array.isArray(row?.value)) menuOrder=row.value.filter(x=>["production","drinks","expiry","toppings","uniforms"].includes(x));
   }catch{}
-  if(menuOrder.length!==4)menuOrder=["production","drinks","expiry","toppings"];
+  if(menuOrder.length!==5)menuOrder=["production","drinks","expiry","toppings","uniforms"];
   renderAdminMenuOrder();initMenuDrag();
 }
 function renderAdminMenuOrder(){
@@ -387,6 +393,7 @@ function renderTable(){
   if(dataset==="production"){renderProductionSheets();return}
   if(dataset==="toppings"){renderToppingSheets();return}
   if(dataset==="expiry"){renderExpirySheets();return}
+  if(dataset==="uniforms"){renderUniformSheets();return}
   const fields=DATASETS[dataset].fields,visible=fields.slice(0,6),pages=chunk(rows,displayPrefs.items_per_page);
   wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>'<section class="'+pageClass(page.length)+'"><div class="page-title">'+esc(DATASETS[dataset].label)+' • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content"><table><thead><tr><th>ID</th>'+visible.map(f=>'<th>'+esc(f[1])+'</th>').join("")+'<th class="actions">จัดการ</th></tr></thead><tbody>'+page.map(r=>'<tr><td>'+r.id+'</td>'+visible.map(f=>'<td>'+formatCell(r[f[0]])+'</td>').join("")+'<td class="actions"><button class="btn small secondary" onclick="editRow('+r.id+')">แก้ไข</button> <button class="btn small danger" onclick="deleteRow('+r.id+')">ลบ</button></td></tr>').join("")+'</tbody></table></div></section>').join("")+'</div>';
 }
@@ -414,6 +421,14 @@ function renderExpirySheets(){
     <div class="recipe-tools"><button class="btn small primary" onclick="openEditor(null)">+ เพิ่มรายการ</button></div>
     <table class="recipe-table"><thead><tr><th>รายการ</th><th>การจัดเก็บ</th><th>ยังไม่เปิด</th><th>หลังเปิด</th><th class="actions"></th></tr></thead>
     <tbody>${items.map(r=>`<tr><td>${esc(r.item_name||"")}</td><td>${esc(r.storage_condition||"")}</td><td>${esc(r.shelf_life_unopened||"-")}</td><td>${esc(r.shelf_life_opened||"-")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
+}
+function renderUniformSheets(){
+  const groups={};rows.forEach(r=>{(groups[r.category||"เครื่องแต่งกาย"]??=[]).push(r)});
+  renderGroupedSheets(Object.entries(groups),"เครื่องแต่งกาย",(name,items)=>`
+    <article class="recipe-sheet"><div class="recipe-title">${esc(name)}</div>
+    <div class="recipe-tools"><button class="btn small primary" onclick="openEditor(null)">+ เพิ่มรายการ</button></div>
+    <table class="recipe-table"><thead><tr><th>รายการ</th><th>ขนาด</th><th>รายละเอียด</th><th class="actions"></th></tr></thead>
+    <tbody>${items.map(r=>`<tr><td>${esc(r.item_name||"")}</td><td>${esc(r.size_info||"-")}</td><td>${esc(r.description||r.usage_notes||"")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
 }
 function renderGroupedSheets(entries,title,builder){
   const pages=chunk(entries,displayPrefs.items_per_page),wrap=document.getElementById("tableWrap");
@@ -554,6 +569,7 @@ function canAutoSave(obj){
   if(dataset==="production") return !!(obj.recipe_name&&obj.ingredient);
   if(dataset==="toppings") return !!(obj.item_name||obj.name);
   if(dataset==="expiry") return !!obj.item_name;
+  if(dataset==="uniforms") return !!obj.item_name;
   if(dataset==="settings") return !!obj.key;
   return true;
 }
