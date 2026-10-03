@@ -26,6 +26,25 @@ label{font-size:13px;font-weight:800}.input,select,textarea{width:100%;border:1p
 .badge{display:inline-block;background:var(--soft);color:var(--red);padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800}
 .editor{margin-top:18px;border-top:1px solid var(--line);padding-top:18px}.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.formgrid .wide{grid-column:1/-1}
 .help{font-size:12px;color:var(--muted);line-height:1.6}.json{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.recipe-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:16px;background:#f3f7f5}
+.recipe-sheet{border:3px solid #0b5a3f;background:#fff;min-width:0}
+.recipe-title{background:#0b5a3f;color:#fff;font-weight:900;text-align:center;padding:9px 10px;font-size:18px;position:relative}
+.recipe-tools{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;padding:8px;border-bottom:1px solid #d1d5db;background:#f8faf9}
+.recipe-body{display:grid;grid-template-columns:125px 1fr;min-height:235px}
+.recipe-photo{border-right:1px solid #d1d5db;display:flex;align-items:center;justify-content:center;padding:8px;background:#fff}
+.recipe-photo img{width:100%;max-height:210px;object-fit:contain}
+.recipe-photo .empty-photo{text-align:center;color:#9ca3af;font-size:12px}
+.recipe-table{width:100%;border-collapse:collapse;min-width:0}
+.recipe-table th,.recipe-table td{padding:5px 7px;border:1px solid #d1d5db;font-size:12px}
+.recipe-table th{position:static;background:#fff;font-weight:900}
+.recipe-table th:nth-child(1){color:#165da8}
+.recipe-table th:nth-child(2){color:#e11d48;text-align:center}
+.recipe-table td:nth-child(2),.recipe-table td:nth-child(3){text-align:center;font-weight:700}
+.recipe-table tr.topping-row td:first-child{color:#8b1aa8;font-weight:900}
+.recipe-note{background:#ffef57;color:#e32614;font-size:12px;font-weight:900;padding:7px 9px;line-height:1.35}
+.recipe-row-actions{white-space:nowrap;text-align:right}.recipe-row-actions .btn{padding:4px 7px;font-size:10px}
+@media(max-width:920px){.recipe-admin-grid{grid-template-columns:1fr}}
+
 @media(max-width:760px){.grid2,.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}.wrap{padding:18px 12px 40px}.panel{padding:16px}}
 </style>
 </head>
@@ -132,7 +151,7 @@ const DATASETS={
   ]}
 };
 let adminPin=sessionStorage.getItem("yothe_admin_pin")||"";
-let dataset="production", rows=[], editingId=null;
+let dataset="production", rows=[], editingId=null, drinkMeta={};
 
 async function api(payload){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,pin:adminPin})});
@@ -164,26 +183,87 @@ document.getElementById("tabs").addEventListener("click",e=>{
   dataset=b.dataset.dataset;document.getElementById("uploadDataset").value=dataset;hideEditor();loadData();
 });
 document.getElementById("refreshBtn").onclick=loadData;
-document.getElementById("addBtn").onclick=()=>openEditor(null);
+document.getElementById("addBtn").onclick=()=>dataset==="drinks"?openEditor({record_id:"DRK-"+Date.now(),recipe_id:"RECIPE-"+Date.now(),component_type:"Ingredient",sort_order:1,is_published:true}):openEditor(null);
 document.getElementById("cancelEdit").onclick=hideEditor;
 
 async function loadData(){
   const hint=document.getElementById("datasetHint"), wrap=document.getElementById("tableWrap");
   hint.textContent="กำลังโหลด "+DATASETS[dataset].label+"...";wrap.innerHTML='<div style="padding:20px" class="muted">กำลังโหลด...</div>';
   try{
-    const res=await api({action:"list",dataset}); rows=res.data||[];
+    if(dataset==="drinks"){
+      const [res,metaRes]=await Promise.all([api({action:"list",dataset:"drinks"}),api({action:"list",dataset:"drink_meta"})]);
+      rows=res.data||[]; drinkMeta=Object.fromEntries((metaRes.data||[]).map(x=>[x.recipe_id,x]));
+    }else{
+      const res=await api({action:"list",dataset}); rows=res.data||[];
+    }
     hint.textContent=DATASETS[dataset].label+" • "+rows.length+" รายการ"; renderTable();
   }catch(err){wrap.innerHTML='<div style="padding:20px" class="error">'+esc(err.message)+'</div>'}
 }
 function renderTable(){
   const wrap=document.getElementById("tableWrap"), fields=DATASETS[dataset].fields;
   if(!rows.length){wrap.innerHTML='<div style="padding:24px" class="muted">ยังไม่มีข้อมูล</div>';return}
+  if(dataset==="drinks"){renderDrinkSheets();return}
   const visible=fields.slice(0,6);
   wrap.innerHTML='<table><thead><tr><th>ID</th>'+visible.map(f=>'<th>'+esc(f[1])+'</th>').join("")+'<th>จัดการ</th></tr></thead><tbody>'+
     rows.map(r=>'<tr><td>'+r.id+'</td>'+visible.map(f=>'<td>'+formatCell(r[f[0]])+'</td>').join("")+
       '<td class="actions"><button class="btn small secondary" onclick="editRow('+r.id+')">แก้ไข</button> <button class="btn small danger" onclick="deleteRow('+r.id+')">ลบ</button></td></tr>').join("")+
     '</tbody></table>';
 }
+
+function renderDrinkSheets(){
+  const wrap=document.getElementById("tableWrap");
+  const groups={};
+  rows.forEach(r=>{const key=r.recipe_id||"NO-ID";(groups[key]??=[]).push(r)});
+  wrap.className="";
+  wrap.innerHTML='<div class="recipe-admin-grid">'+Object.entries(groups).map(([recipeId,items])=>{
+    items.sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+    const first=items[0]||{}, meta=drinkMeta[recipeId]||{}, img=meta.image_url||"";
+    const size=meta.size_label||"17 oz.(IB)";
+    const note=meta.note||"";
+    return `<article class="recipe-sheet">
+      <div class="recipe-title">${esc(first.menu_name||recipeId)}</div>
+      <div class="recipe-tools">
+        <button class="btn small secondary" onclick="pickDrinkImage('${esc(recipeId)}')">ใส่/เปลี่ยนรูป</button>
+        <button class="btn small secondary" onclick="editDrinkMeta('${esc(recipeId)}')">แก้หัวตาราง/หมายเหตุ</button>
+        <button class="btn small primary" onclick="addDrinkRow('${esc(recipeId)}')">+ เพิ่มวัตถุดิบ</button>
+      </div>
+      <div class="recipe-body">
+        <div class="recipe-photo">${img?'<img src="'+esc(img)+'" alt="'+esc(first.menu_name||recipeId)+'">':'<div class="empty-photo">ยังไม่มีรูป<br>กด “ใส่/เปลี่ยนรูป”</div>'}</div>
+        <div>
+          <table class="recipe-table">
+            <thead><tr><th>วัตถุดิบ</th><th>${esc(size)}</th><th>หน่วย</th><th></th></tr></thead>
+            <tbody>${items.map(r=>`<tr class="${String(r.component_type||"").toLowerCase()==="topping"?"topping-row":""}">
+              <td>${String(r.component_type||"").toLowerCase()==="topping"&&r.sort_order===Math.min(...items.filter(x=>String(x.component_type||"").toLowerCase()==="topping").map(x=>x.sort_order||9999))?'<strong>Topping</strong><br>':""}${esc(r.ingredient||"")}</td>
+              <td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td>
+              <td class="recipe-row-actions"><button class="btn secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn danger" onclick="deleteRow(${r.id})">ลบ</button></td>
+            </tr>`).join("")}</tbody>
+          </table>
+          ${note?'<div class="recipe-note">'+esc(note)+'</div>':""}
+        </div>
+      </div>
+    </article>`;
+  }).join("")+'</div>';
+}
+
+window.addDrinkRow=recipeId=>{
+  const items=rows.filter(r=>r.recipe_id===recipeId), first=items[0]||{};
+  const maxSort=Math.max(0,...items.map(x=>Number(x.sort_order)||0));
+  openEditor({record_id:"DRK-"+Date.now(),recipe_id:recipeId,source_file:first.source_file||"",source_page:first.source_page||null,brand:first.brand||"",menu_group:first.menu_group||"",menu_name:first.menu_name||"",component_type:"Ingredient",sort_order:maxSort+1,ingredient:"",quantity:null,unit:"g",notes:"",is_published:true});
+};
+window.editDrinkMeta=async recipeId=>{
+  const meta=drinkMeta[recipeId]||{};
+  const size=prompt("หัวคอลัมน์ขนาดเครื่องดื่ม",meta.size_label||"17 oz.(IB)"); if(size===null)return;
+  const note=prompt("หมายเหตุแถบสีเหลือง",meta.note||""); if(note===null)return;
+  try{await api({action:"save",dataset:"drink_meta",row:{recipe_id:recipeId,size_label:size,note,note_style:"warning",image_url:meta.image_url||null}});await loadData()}catch(err){alert(err.message)}
+};
+window.pickDrinkImage=recipeId=>{
+  const input=document.createElement("input");input.type="file";input.accept="image/png,image/jpeg,image/webp";
+  input.onchange=async()=>{const file=input.files?.[0];if(!file)return;if(file.size>4*1024*1024){alert("รูปภาพต้องไม่เกิน 4 MB");return}
+    const reader=new FileReader();reader.onload=async()=>{try{
+      await api({action:"upload_image",recipe_id:recipeId,data_url:reader.result});await loadData();
+    }catch(err){alert(err.message)}};reader.readAsDataURL(file);
+  };input.click();
+};
 function formatCell(v){if(v===true)return'<span class="badge">เผยแพร่</span>';if(v===false)return'<span class="muted">ไม่เผยแพร่</span>';if(v&&typeof v==="object")return esc(JSON.stringify(v)).slice(0,120);return esc(v??"").slice(0,140)}
 window.editRow=id=>openEditor(rows.find(r=>r.id===id));
 window.deleteRow=async id=>{if(!confirm("ยืนยันการลบรายการนี้?"))return;try{await api({action:"delete",dataset,id});await loadData()}catch(err){alert(err.message)}};
