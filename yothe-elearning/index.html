@@ -28,9 +28,6 @@ button,input{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inh
 .navlinks button:hover,.navlinks button.active{background:var(--red);color:#fff;box-shadow:inset 0 -2px 0 rgba(87,18,16,.12)}
 .userbox{display:flex;align-items:center;justify-content:flex-end;gap:8px;font-size:12px;color:var(--muted);white-space:nowrap}
 main{max-width:1240px;margin:auto;padding:30px 20px 70px}.view{display:none}.view.active{display:block}
-.home-banner{width:100%;margin:0 0 24px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:var(--paper);box-shadow:var(--shadow);animation:yotheFadeUp .42s cubic-bezier(.2,.7,.2,1) both}
-.home-banner img{display:block;width:100%;height:auto;aspect-ratio:2/1;object-fit:cover;object-position:center}
-@media(max-width:700px){.home-banner{border-radius:12px;margin-bottom:18px}.home-banner img{aspect-ratio:16/10;object-fit:cover}}
 .story{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,.3fr);gap:38px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:44px 48px;box-shadow:var(--shadow);align-items:start;position:relative;overflow:hidden}.story:before{content:"";position:absolute;inset:0 auto 0 0;width:5px;background:linear-gradient(var(--red),#d85a4f,var(--gold))}
 .story h1{font-size:clamp(34px,4.2vw,56px);line-height:1.08;margin:0 0 30px;color:var(--red);font-weight:900;letter-spacing:-.02em}.story-copy{max-width:920px}.story-copy p{line-height:1.82;color:#4e4337;font-size:clamp(16px,1.2vw,19px);font-weight:500;margin:0 0 22px;letter-spacing:.005em}.story-copy p:first-child{font-size:clamp(17px,1.3vw,20px);font-weight:650}.story-copy p:last-child{margin-bottom:0}.story-logo{display:flex;align-items:flex-start;justify-content:center;position:sticky;top:104px}.story-logo img{width:min(310px,100%);max-height:420px;object-fit:contain}
 .home-entry{margin:24px auto 0;text-align:center;background:transparent;border:0;padding:0;box-shadow:none}
@@ -150,7 +147,6 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 
 <main>
   <section id="view-home" class="view active">
-    <div class="home-banner"><img src="assets/yothe-home-banner.svg" alt="Yothé E-Learning Banner"></div>
     <div class="story">
       <article><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><h1 id="storyTitle">BRAND STORY</h1></div><div id="storyBody" class="story-copy">กำลังโหลด...</div><div id="attachments-home" class="attachments"></div></article>
       <aside class="story-logo"><img src="assets/yothe-cat.svg" alt="Yothé Cat"></aside>
