@@ -74,11 +74,14 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .a4-page.landscape{width:297mm;height:210mm;min-height:210mm;max-height:210mm}
 .a4-page:last-child{break-after:auto;page-break-after:auto}
 .a4-page .page-title{font-weight:900;font-size:16px;line-height:1.35;margin:0 0 10px;color:#fff;background:var(--red);padding:9px 12px;border-radius:10px;letter-spacing:.05px;min-height:42px;display:flex;align-items:center}
-.a4-page table{min-width:0;max-width:100%;table-layout:fixed}.a4-page .page-content{flex:1;min-height:0;overflow:hidden;position:relative}.a4-page .page-content>*{max-width:100%;min-width:0}.a4-page .recipe-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%;min-width:0}.a4-page .recipe-sheet{min-width:0;max-width:100%;height:auto;overflow:hidden!important;display:flex;flex-direction:column;align-self:start}.a4-page .edit-layout{height:auto;align-items:stretch}.a4-page .edit-content{height:auto;overflow:visible}.a4-page .recipe-body{height:auto;min-height:0}.a4-page .recipe-body{min-width:0}.a4-page .recipe-body>div{min-width:0}.a4-page table{width:100%;max-width:100%}
+.a4-page table{min-width:0;max-width:100%;table-layout:fixed}.a4-page .page-content{flex:1;min-height:0;overflow:hidden;position:relative}.a4-page .page-content>*{max-width:100%;min-width:0}.a4-page .recipe-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%;min-width:0}.a4-page .recipe-sheet{min-width:0;max-width:100%;height:auto!important;min-height:max-content;overflow:visible!important;display:flex;flex-direction:column;align-self:start}.a4-page .edit-layout{height:auto!important;min-height:max-content;align-items:stretch;overflow:visible}.a4-page .edit-content{height:auto!important;min-height:max-content;overflow:visible}.a4-page .recipe-body{height:auto!important;min-height:max-content;overflow:visible}.a4-page .recipe-body{min-width:0}.a4-page .recipe-body>div{min-width:0}.a4-page table{width:100%;max-width:100%}
 .a4-page .recipe-admin-grid{padding:0;background:#fff}
 .a4-page.full-page{display:flex;flex-direction:column}
 .a4-page.full-page>.page-content{flex:1}
 .a4-page.dense-review .recipe-admin-grid{gap:8px!important}
+.a4-page.layout-many .recipe-admin-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.a4-page.landscape.layout-many .recipe-admin-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.a4-page.layout-mid .recipe-admin-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 .a4-page.dense-review .recipe-title{font-size:16px;min-height:38px;padding:7px 9px}
 .a4-page.dense-review .recipe-tools{padding:5px 7px;gap:4px}
 .a4-page.dense-review .recipe-tools .btn{font-size:9px;min-height:26px;padding:3px 6px}
@@ -554,7 +557,7 @@ window.exportUsers=()=>{
   a.href=url;a.download="Yothe_Users.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
 function chunk(arr,size){const out=[];for(let i=0;i<arr.length;i+=size)out.push(arr.slice(i,i+size));return out}
-function pageClass(count){return 'a4-page '+displayPrefs.orientation+(count===displayPrefs.items_per_page?' full-page':'')}
+function pageClass(count){return 'a4-page '+displayPrefs.orientation+(count===Number(displayPrefs.items_per_page)?' full-page':'')}
 function visualItemsPerPage(){
   return Math.max(1,Math.min(Number(displayPrefs.items_per_page)||1,20));
 }
@@ -565,39 +568,47 @@ function waitReviewImages(root){
 function fitReviewPage(page){
   const content=page.querySelector(".page-content");if(!content)return;
 
-  // Reset ทั้ง Grid ก่อนวัด ให้ทุกการ์ดขยายตามข้อมูลจริง
+  // Reset เพื่อให้ทุกตาราง/ข้อความ/หมายเหตุคืนขนาดธรรมชาติก่อนวัด
   content.style.transform="none";
   content.style.transformOrigin="top left";
   content.style.width="100%";
-  content.style.height="auto";
+  content.style.height="max-content";
   content.style.maxHeight="none";
+  content.style.overflow="visible";
 
   const cs=getComputedStyle(page);
   const padX=(parseFloat(cs.paddingLeft)||0)+(parseFloat(cs.paddingRight)||0);
   const padY=(parseFloat(cs.paddingTop)||0)+(parseFloat(cs.paddingBottom)||0);
   const title=page.querySelector(".page-title");
   const titleH=title?title.getBoundingClientRect().height+(parseFloat(getComputedStyle(title).marginBottom)||0):0;
+  const availW=Math.max(1,page.clientWidth-padX-4);
+  const availH=Math.max(1,page.clientHeight-padY-titleH-10);
 
-  const availW=Math.max(1,page.clientWidth-padX);
-  const availH=Math.max(1,page.clientHeight-padY-titleH-8);
+  // วัดขอบเขตจริงของทุก element เพื่อไม่ให้ scrollHeight พลาดหมายเหตุ/บรรทัดท้าย
+  const base=content.getBoundingClientRect();
+  let maxRight=Math.max(content.scrollWidth,base.width,1);
+  let maxBottom=Math.max(content.scrollHeight,base.height,1);
+  const all=content.querySelectorAll(".recipe-sheet,.edit-layout,.edit-content,.recipe-body,.recipe-table,.recipe-note,.layout-photo,.recipe-photo,tr,td,th");
+  all.forEach(el=>{
+    const r=el.getBoundingClientRect();
+    maxRight=Math.max(maxRight,r.right-base.left);
+    maxBottom=Math.max(maxBottom,r.bottom-base.top);
+  });
 
-  // วัดทั้ง Grid หลังข้อความ wrap และการ์ดทุกใบได้ความสูงจริงแล้ว
-  const rect=content.getBoundingClientRect();
-  const needW=Math.max(content.scrollWidth,rect.width,1);
-  const needH=Math.max(content.scrollHeight,rect.height,1);
-
-  let scale=Math.min(1,availW/needW,availH/needH);
+  let scale=Math.min(1,availW/Math.max(1,maxRight),availH/Math.max(1,maxBottom));
   if(!Number.isFinite(scale)||scale<=0)scale=1;
+  scale*=0.97; // safety margin สำหรับ browser rounding
 
-  // เผื่อ rounding ของ browser และยอมย่อได้เพื่อห้ามตัดข้อมูล
-  scale=Math.max(.10,scale*0.965);
-
+  // ไม่กำหนด minimum แบบเดิม เพราะ Layout 12–20 ตารางต้องยอมย่อจนพอดีจริง
+  scale=Math.max(0.02,scale);
   content.style.transform="scale("+scale+")";
   content.style.transformOrigin="top left";
-  // ไม่ขยาย width กลับ เพราะจะทำให้ Grid คำนวณความกว้างใหม่และล้น
   content.style.width="100%";
-  page.dataset.fitScale=scale.toFixed(3);
-  page.dataset.naturalHeight=String(needH);
+  content.style.height=maxBottom+"px";
+  content.style.overflow="visible";
+  page.dataset.fitScale=scale.toFixed(5);
+  page.dataset.naturalHeight=String(maxBottom);
+  page.dataset.naturalWidth=String(maxRight);
 }
 function fitReviewSheetToViewport(page){
   const preview=page.closest(".a4-preview");if(!preview)return;
@@ -613,28 +624,57 @@ function fitReviewSheetToViewport(page){
 async function fitAllReviewPages(){
   const pages=[...document.querySelectorAll(".a4-preview .a4-page")];
   const dense=Number(displayPrefs.items_per_page)>=7;
+
   pages.forEach(p=>{
-    p.style.zoom="1";p.style.marginBottom="0";
+    p.style.zoom="1";
+    p.style.marginBottom="0";
     p.classList.toggle("dense-review",dense);
+    p.classList.toggle("layout-mid",Number(displayPrefs.items_per_page)>=7&&Number(displayPrefs.items_per_page)<=12);
+    p.classList.toggle("layout-many",Number(displayPrefs.items_per_page)>=13);
+    const content=p.querySelector(".page-content");
+    if(content){content.style.transform="none";content.style.overflow="visible"}
   });
+
   await Promise.all(pages.map(waitReviewImages));
+  if(document.fonts?.ready){try{await document.fonts.ready}catch{}}
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
 
   for(const page of pages){
     fitReviewPage(page);
-    await new Promise(r=>requestAnimationFrame(r));
 
-    const content=page.querySelector(".page-content");
-    if(content){
+    // ตรวจและย่อซ้ำจนทุกขอบอยู่ในพื้นที่ A4 จริง
+    for(let pass=0;pass<8;pass++){
+      await new Promise(r=>requestAnimationFrame(r));
+      const content=page.querySelector(".page-content");
+      if(!content)break;
+
+      const pageStyle=getComputedStyle(page);
+      const padR=parseFloat(pageStyle.paddingRight)||0;
+      const padB=parseFloat(pageStyle.paddingBottom)||0;
+      const title=page.querySelector(".page-title");
       const pageRect=page.getBoundingClientRect();
       const contentRect=content.getBoundingClientRect();
+
+      const rightLimit=pageRect.right-padR-3;
+      const bottomLimit=pageRect.bottom-padB-3;
+      const overW=Math.max(0,contentRect.right-rightLimit);
+      const overH=Math.max(0,contentRect.bottom-bottomLimit);
+
+      if(overW<=0.5&&overH<=0.5)break;
+
       const current=Number(page.dataset.fitScale||1);
-      if(contentRect.right>pageRect.right-6||contentRect.bottom>pageRect.bottom-6){
-        const next=Math.max(.10,current*0.92);
-        content.style.transform="scale("+next+")";
-        page.dataset.fitScale=next.toFixed(3);
-      }
+      const widthRatio=contentRect.width>0?(contentRect.width-overW-3)/contentRect.width:1;
+      const heightRatio=contentRect.height>0?(contentRect.height-overH-3)/contentRect.height:1;
+      let factor=Math.min(widthRatio,heightRatio,0.97);
+      if(!Number.isFinite(factor)||factor<=0||factor>=1)factor=0.94;
+      const next=Math.max(0.02,current*factor);
+      content.style.transform="scale("+next+")";
+      page.dataset.fitScale=next.toFixed(5);
     }
+
+    // หลัง Fit แล้วค่อยปิด overflow ของหน้า A4 เท่านั้น
+    const content=page.querySelector(".page-content");
+    if(content)content.style.overflow="visible";
   }
 
   await new Promise(r=>requestAnimationFrame(r));
