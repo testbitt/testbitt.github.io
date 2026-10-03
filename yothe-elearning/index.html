@@ -194,6 +194,39 @@ const LOGIN_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-log
 const PUBLIC_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-public";
 const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
 let token="",currentUser=null,cache={},courses=[],settingsMap={},attachmentSets={},attachmentViewerSection="",attachmentViewerIndex=0,customMenus=[];
+let meowAudioContext=null;
+function playMenuMeow(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return;
+    if(!meowAudioContext)meowAudioContext=new AC();
+    const ctx=meowAudioContext;
+    if(ctx.state==="suspended")ctx.resume();
+
+    const now=ctx.currentTime;
+    const master=ctx.createGain();
+    master.gain.setValueAtTime(0.0001,now);
+    master.gain.exponentialRampToValueAtTime(0.12,now+0.025);
+    master.gain.exponentialRampToValueAtTime(0.055,now+0.19);
+    master.gain.exponentialRampToValueAtTime(0.0001,now+0.48);
+    master.connect(ctx.destination);
+
+    const osc1=ctx.createOscillator();
+    const osc2=ctx.createOscillator();
+    const g1=ctx.createGain(),g2=ctx.createGain();
+    osc1.type="sine";osc2.type="triangle";
+    osc1.frequency.setValueAtTime(690,now);
+    osc1.frequency.exponentialRampToValueAtTime(940,now+0.11);
+    osc1.frequency.exponentialRampToValueAtTime(610,now+0.45);
+    osc2.frequency.setValueAtTime(345,now);
+    osc2.frequency.exponentialRampToValueAtTime(470,now+0.11);
+    osc2.frequency.exponentialRampToValueAtTime(305,now+0.45);
+    g1.gain.value=.72;g2.gain.value=.18;
+    osc1.connect(g1);osc2.connect(g2);g1.connect(master);g2.connect(master);
+    osc1.start(now);osc2.start(now);osc1.stop(now+.5);osc2.stop(now+.5);
+  }catch{}
+}
+
 function setAuthUI(loggedIn){
   document.querySelectorAll(".auth-only").forEach(el=>el.classList.toggle("hidden-auth",!loggedIn));
   document.getElementById("userBox")?.classList.toggle("hidden",!loggedIn);
@@ -444,10 +477,17 @@ document.addEventListener("click",e=>{
     showView(lesson.dataset.openView);return
   }
   const b=e.target.closest("[data-view]");
-  if(!b)return;
-  e.preventDefault();
-  if(b.dataset.view!=="home"&&!token){openLogin();return}
-  showView(b.dataset.view)
+  if(b){
+    e.preventDefault();
+    playMenuMeow();
+    if(b.dataset.view!=="home"&&!token){openLogin();return}
+    showView(b.dataset.view);
+    return;
+  }
+  const navLink=e.target.closest("#navLinks a");
+  if(navLink){
+    playMenuMeow();
+  }
 });
 document.getElementById("courseSearch").addEventListener("input",renderCourses);
 document.getElementById("attachmentPrevBtn").onclick=()=>stepAttachment(-1);
