@@ -201,7 +201,8 @@ const DATASETS={
   ]}
 };
 let adminPin=sessionStorage.getItem("yothe_admin_pin")||"";
-let dataset="production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["production","drinks","expiry","toppings"];
+const requestedEdit=new URLSearchParams(location.search).get("edit");
+let dataset=["production","drinks","expiry","toppings","settings","users"].includes(requestedEdit)?requestedEdit:"production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["production","drinks","expiry","toppings"];
 
 async function api(payload){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,pin:adminPin})});
@@ -210,7 +211,7 @@ async function api(payload){
   return data;
 }
 function esc(v=""){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
-function showAdmin(){document.getElementById("loginPanel").classList.add("hidden");document.getElementById("adminPanel").classList.remove("hidden");initUploadDataset();initLayoutControls();Promise.all([loadDisplayPrefs(),loadMenuOrder()]).then(loadData)}
+function showAdmin(){document.getElementById("loginPanel").classList.add("hidden");document.getElementById("adminPanel").classList.remove("hidden");document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.dataset===dataset));initUploadDataset();initLayoutControls();Promise.all([loadDisplayPrefs(),loadMenuOrder()]).then(loadData)}
 function logout(){sessionStorage.removeItem("yothe_admin_pin");adminPin="";location.reload()}
 async function validateStored(){if(!adminPin)return;try{await api({action:"validate"});showAdmin()}catch{logout()}}
 
