@@ -56,12 +56,12 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .layout-controls{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:12px;align-items:end}
 .color-preview{width:100%;height:38px;border-radius:10px;border:1px solid var(--line)}
 .a4-preview{display:flex;flex-direction:column;gap:18px;align-items:center;padding:18px;background:#eceff1}
-.a4-page{background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8mm;break-after:page;page-break-after:always;overflow:visible}
-.a4-page.portrait{width:210mm;min-height:297mm}
-.a4-page.landscape{width:297mm;min-height:210mm}
+.a4-page{background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8mm;break-after:page;page-break-after:always;overflow:hidden;display:flex;flex-direction:column;position:relative}
+.a4-page.portrait{width:210mm;height:297mm;min-height:297mm;max-height:297mm}
+.a4-page.landscape{width:297mm;height:210mm;min-height:210mm;max-height:210mm}
 .a4-page:last-child{break-after:auto;page-break-after:auto}
 .a4-page .page-title{font-weight:900;font-size:16px;line-height:1.35;margin:0 0 10px;color:#fff;background:var(--red);padding:9px 12px;border-radius:10px;letter-spacing:.05px;min-height:42px;display:flex;align-items:center}
-.a4-page table{min-width:0}
+.a4-page table{min-width:0;max-width:100%;table-layout:fixed}.a4-page .page-content{flex:1;min-height:0;overflow:hidden;transform-origin:top left}.a4-page .page-content>*{max-width:100%}
 .a4-page .recipe-admin-grid{padding:0;background:#fff}
 .a4-page.full-page{display:flex;flex-direction:column}
 .a4-page.full-page>.page-content{flex:1}
@@ -76,8 +76,8 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
   .wrap,.panel{max-width:none;margin:0;padding:0;border:0;box-shadow:none}
   .a4-preview{display:block;padding:0;background:#fff}
   .a4-page{box-shadow:none;margin:0;break-after:page;page-break-after:always;font-size:11pt}.a4-page .recipe-title{font-size:14pt}.a4-page .recipe-table th{font-size:9.5pt}.a4-page .recipe-table td{font-size:9.5pt;line-height:1.35}.a4-page .recipe-note{font-size:8.5pt}
-  .a4-page.portrait{width:210mm;min-height:297mm}
-  .a4-page.landscape{width:297mm;min-height:210mm}
+  .a4-page.portrait{width:210mm;height:297mm;min-height:297mm;max-height:297mm}
+  .a4-page.landscape{width:297mm;height:210mm;min-height:210mm;max-height:210mm}
   @page{margin:0}
 }
 @media(max-width:1100px){.layout-controls{grid-template-columns:repeat(2,1fr)}.a4-preview{align-items:flex-start;overflow:auto}}
@@ -527,6 +527,35 @@ function visualItemsPerPage(){
   const safe=displayPrefs.orientation==="landscape"?4:6;
   return Math.max(1,Math.min(Number(displayPrefs.items_per_page)||safe,safe));
 }
+function waitReviewImages(root){
+  const imgs=[...root.querySelectorAll("img")];
+  return Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=img.onerror=r})));
+}
+function fitReviewPage(page){
+  const content=page.querySelector(".page-content");if(!content)return;
+  content.style.zoom="1";content.style.width="100%";
+  const cs=getComputedStyle(page);
+  const padX=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight);
+  const padY=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom);
+  const title=page.querySelector(".page-title");
+  const titleH=title?title.getBoundingClientRect().height+(parseFloat(getComputedStyle(title).marginBottom)||0):0;
+  const availW=Math.max(1,page.clientWidth-padX);
+  const availH=Math.max(1,page.clientHeight-padY-titleH);
+  const needW=Math.max(content.scrollWidth,1),needH=Math.max(content.scrollHeight,1);
+  let scale=Math.min(1,availW/needW,availH/needH);
+  if(!Number.isFinite(scale)||scale<=0)scale=1;
+  scale=Math.max(.58,scale);
+  content.style.zoom=String(scale);
+  content.style.width=(100/scale)+"%";
+  page.dataset.fitScale=scale.toFixed(3);
+}
+async function fitAllReviewPages(){
+  const pages=[...document.querySelectorAll(".a4-preview .a4-page")];
+  await Promise.all(pages.map(waitReviewImages));
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  pages.forEach(fitReviewPage);
+}
+function scheduleReviewFit(){setTimeout(()=>fitAllReviewPages(),0)}
 function renderTable(){
   const wrap=document.getElementById("tableWrap");
   wrap.className="";
@@ -538,7 +567,7 @@ function renderTable(){
   if(dataset==="uniforms"){renderUniformSheets();return}
   if(dataset==="courses"){renderCourseSheets();return}
   const fields=DATASETS[dataset].fields,visible=fields.slice(0,6),pages=chunk(rows,displayPrefs.items_per_page);
-  wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>'<section class="'+pageClass(page.length)+'"><div class="page-title">'+esc(DATASETS[dataset].label)+' • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content"><table><thead><tr><th>ID</th>'+visible.map(f=>'<th>'+esc(f[1])+'</th>').join("")+'<th class="actions">จัดการ</th></tr></thead><tbody>'+page.map(r=>'<tr><td>'+r.id+'</td>'+visible.map(f=>'<td>'+formatCell(r[f[0]])+'</td>').join("")+'<td class="actions"><button class="btn small secondary" onclick="editRow('+r.id+')">แก้ไข</button> <button class="btn small danger" onclick="deleteRow('+r.id+')">ลบ</button></td></tr>').join("")+'</tbody></table></div></section>').join("")+'</div>';
+  wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>'<section class="'+pageClass(page.length)+'"><div class="page-title">'+esc(DATASETS[dataset].label)+' • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content"><table><thead><tr><th>ID</th>'+visible.map(f=>'<th>'+esc(f[1])+'</th>').join("")+'<th class="actions">จัดการ</th></tr></thead><tbody>'+page.map(r=>'<tr><td>'+r.id+'</td>'+visible.map(f=>'<td>'+formatCell(r[f[0]])+'</td>').join("")+'<td class="actions"><button class="btn small secondary" onclick="editRow('+r.id+')">แก้ไข</button> <button class="btn small danger" onclick="deleteRow('+r.id+')">ลบ</button></td></tr>').join("")+'</tbody></table></div></section>').join("")+'</div>';scheduleReviewFit();
 }
 let layoutGroupOrder=[];
 function groupOrderKey(ds=dataset){return "layout_group_order_"+ds}
@@ -688,13 +717,13 @@ function renderCourseSheets(){
         <tr><th>จัดการ</th><td><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>
       </tbody></table>
     </article>`).join("")+'</div></section>').join("")+'</div>';
-  initLayoutCardDrag();
+  initLayoutCardDrag();scheduleReviewFit();
 }
 function renderGroupedSheets(entries,title,builder){
   entries=sortEntriesBySavedOrder(entries);
   const pages=chunk(entries,visualItemsPerPage()),wrap=document.getElementById("tableWrap");
   wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>'<section class="'+pageClass(page.length)+'"><div class="page-title">'+esc(title)+' • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content recipe-admin-grid">'+page.map(([name,items])=>builder(name,items)).join("")+'</div></section>').join("")+'</div>';
-  initLayoutCardDrag();
+  initLayoutCardDrag();scheduleReviewFit();
 }
 function renderDrinkSheets(){
   const wrap=document.getElementById("tableWrap"), groups={};
@@ -722,7 +751,7 @@ function renderDrinkSheets(){
       </div>
     </article>`;
   }).join("")+'</div></section>').join("")+'</div>';
-  initLayoutCardDrag();
+  initLayoutCardDrag();scheduleReviewFit();
 }
 window.addDrinkRow=recipeId=>{
   const items=rows.filter(r=>r.recipe_id===recipeId), first=items[0]||{};
@@ -1032,6 +1061,7 @@ async function onDisplayChange(){
   const m=document.getElementById("layoutMsg");m.textContent="กำลัง Auto Save Layout ของหน้านี้...";
   try{await api({action:"save",dataset:"settings",row:{key:displayPrefsKey(),value:displayPrefs}});m.textContent="Auto Save Layout ของหน้านี้แล้ว";m.className="msg ok"}catch(err){m.textContent=err.message;m.className="msg error"}
 }
+window.addEventListener("resize",scheduleReviewFit);
 validateStored();
 </script>
 </body>
