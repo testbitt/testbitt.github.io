@@ -24,8 +24,7 @@ button,input{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inh
 main{max-width:1240px;margin:auto;padding:30px 20px 70px}.view{display:none}.view.active{display:block}
 .story{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,.3fr);gap:38px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:44px 48px;box-shadow:var(--shadow);align-items:start}
 .story h1{font-size:clamp(34px,4.2vw,56px);line-height:1.08;margin:0 0 30px;color:var(--red);font-weight:900;letter-spacing:-.02em}.story-copy{max-width:920px}.story-copy p{line-height:1.78;color:#6b3512;font-size:clamp(16px,1.2vw,19px);font-weight:500;margin:0 0 22px;letter-spacing:.005em}.story-copy p:first-child{font-size:clamp(17px,1.3vw,20px);font-weight:650}.story-copy p:last-child{margin-bottom:0}.story-logo{display:flex;align-items:flex-start;justify-content:center;position:sticky;top:104px}.story-logo img{width:min(310px,100%);max-height:420px;object-fit:contain}
-.home-entry{margin:24px auto 0;max-width:720px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:var(--shadow)}
-.home-entry h2{margin:0 0 8px;color:var(--red);font-size:24px}.home-entry p{margin:0 0 16px;color:var(--muted)}
+.home-entry{margin:24px auto 0;text-align:center;background:transparent;border:0;padding:0;box-shadow:none}
 .home-entry .enter-btn{display:inline-flex;align-items:center;justify-content:center;min-width:260px;padding:14px 24px;border:0;border-radius:14px;background:var(--red);color:#fff;font-weight:900;font-size:16px}
 .auth-only.hidden-auth{display:none!important}
 .welcome-pop{position:fixed;inset:0;z-index:220;display:grid;place-items:center;padding:24px;background:rgba(20,20,20,.38);backdrop-filter:blur(4px)}
@@ -85,8 +84,6 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
       <aside class="story-logo"><img src="assets/yothe-cat.svg" alt="Yothé Cat"></aside>
     </div>
     <div id="homeEntry" class="home-entry">
-      <h2>เข้าสู่ Yothé E-Learning</h2>
-      <p>เข้าสู่ระบบเพื่อเปิดเมนูบทเรียนและข้อมูลทั้งหมด</p>
       <button id="enterWebsiteBtn" class="enter-btn">Click เพื่อเข้าสู่ Website</button>
     </div>
   </section>
@@ -180,12 +177,12 @@ async function loadAttachments(section){
     }).join("")+'</div>';
   }catch(e){el.innerHTML='<div class="state">โหลดไฟล์แนบไม่สำเร็จ: '+esc(e.message)+'</div>'}
 }
-async function loadSettings(){const rows=await api("settings"),map=Object.fromEntries(rows.map(x=>[x.key,x.value]));settingsMap=map;applyTheme(map.display_preferences||{});renderMenuOrder(map.menu_order||["production","drinks","expiry","toppings","uniforms"]);renderBrandStoryValue(map.brand_story||{});await loadAttachments("home")}
+async function loadSettings(){const rows=await api("settings"),map=Object.fromEntries(rows.map(x=>[x.key,x.value]));settingsMap=map;applyTheme(map.display_preferences||{});renderMenuOrder(map.menu_order||["production","drinks","expiry","toppings","uniforms"]);renderBrandStoryValue(map.brand_story||{});if(token)await loadAttachments("home")}
 function renderMenuOrder(order){const nav=document.getElementById("navLinks"),home=nav.querySelector('[data-view="home"]'),coursesBtn=nav.querySelector('[data-view="courses"]'),admin=nav.querySelector('a[href="admin.html"]');order.filter(x=>["production","drinks","expiry","toppings","uniforms"].includes(x)).forEach(k=>{const el=nav.querySelector('[data-view="'+k+'"]');if(el)nav.insertBefore(el,coursesBtn)});nav.insertBefore(home,nav.firstChild);nav.appendChild(coursesBtn);nav.appendChild(admin)}
 function showView(view){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));document.getElementById("view-"+view)?.classList.add("active");document.querySelectorAll('#navLinks [data-view]').forEach(x=>x.classList.toggle("active",x.dataset.view===view));window.scrollTo({top:0,behavior:"smooth"});loadView(view)}
 async function loadView(view){
   try{
-    if(view==="home"){await loadAttachments("home");return}
+    if(view==="home"){if(token)await loadAttachments("home");else{const el=document.getElementById("attachments-home");if(el)el.innerHTML=""}return}
     if(view==="production"){const r=await api("production");renderProduction(r);await loadAttachments("production");return}
     if(view==="drinks"){const [r,m]=await Promise.all([api("drinks"),api("drink_meta")]);renderDrinks(r,m);await loadAttachments("drinks");return}
     if(view==="toppings"){renderToppings(await api("toppings"));await loadAttachments("toppings");return}
