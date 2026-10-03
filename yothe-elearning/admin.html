@@ -20,7 +20,16 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .btn{border:0;border-radius:12px;padding:11px 15px;font-weight:800}.primary{background:var(--red);color:#fff}.secondary{background:#fff;color:var(--red);border:1px solid #fecdd3}.danger{background:#fff1f2;color:#b91c1c;border:1px solid #fecaca}.small{padding:7px 10px;font-size:12px}
 .hidden{display:none!important}.msg{margin-top:10px;font-size:13px}.error{color:#b91c1c}.ok{color:#15803d}.saving{color:#b45309}.autosave-note{font-size:12px;color:#15803d;font-weight:800;margin-left:8px}
 .head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}.head h1{margin:0;font-size:clamp(30px,3.2vw,48px);line-height:1.15;font-weight:900;letter-spacing:-.4px}.head p{margin:7px 0 0;color:var(--muted);font-size:16px;line-height:1.6;font-weight:500}
-.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px;align-items:center}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;font-weight:800;user-select:none}.tab.active{background:var(--red);color:#fff;border-color:var(--red)}.tab[draggable="true"]{cursor:grab}.tab.dragging{opacity:.45;transform:scale(.97)}.tab.drag-over{outline:3px dashed var(--red);outline-offset:2px}.drag-hint{font-size:12px;color:var(--muted);width:100%;margin-top:3px}.user-tools{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;margin-bottom:16px}.user-form-actions{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.user-section-title{font-size:18px;font-weight:900;margin:0 0 12px}.user-toolbar{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:10px 0 14px}.user-import{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.user-table{width:100%;border-collapse:collapse}.user-table th,.user-table td{padding:10px;border-bottom:1px solid var(--line);font-size:13px}.user-table th{background:var(--red);color:#fff}.user-status{font-weight:800}.user-status.on{color:#15803d}.user-status.off{color:#b91c1c}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px;align-items:center}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;font-weight:800;user-select:none}.tab.active{background:var(--red);color:#fff;border-color:var(--red)}.tab[draggable="true"]{cursor:grab}.tab.dragging{opacity:.45;transform:scale(.97)}.tab.drag-over{outline:3px dashed var(--red);outline-offset:2px}.drag-hint{font-size:12px;color:var(--muted);width:100%;margin-top:3px}.user-tools{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;margin-bottom:16px}.user-form-actions{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.user-section-title{font-size:18px;font-weight:900;margin:0 0 12px}.user-toolbar{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:10px 0 14px}.user-import{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.user-table{width:100%;border-collapse:collapse;table-layout:fixed;min-width:0}
+.user-table th,.user-table td{padding:10px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top;overflow-wrap:anywhere;word-break:break-word;white-space:normal}
+.user-table th{background:var(--red);color:#fff}
+.user-table th:nth-child(1){width:16%}.user-table th:nth-child(2){width:20%}.user-table th:nth-child(3){width:17%}.user-table th:nth-child(4){width:12%}.user-table th:nth-child(5){width:20%}.user-table th:nth-child(6){width:15%}
+.user-table .actions{white-space:normal;display:flex;gap:6px;flex-wrap:wrap}
+.user-status{font-weight:800}.user-status.on{color:#15803d}.user-status.off{color:#b91c1c}
+.user-log-table{width:100%;border-collapse:collapse;table-layout:fixed;min-width:0}
+.user-log-table th,.user-log-table td{padding:10px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top;overflow-wrap:anywhere;word-break:break-word;white-space:normal}
+.user-log-table th{background:#7f1d1d;color:#fff}
+.user-log-table th:nth-child(1){width:18%}.user-log-table th:nth-child(2){width:24%}.user-log-table th:nth-child(3){width:20%}.user-log-table th:nth-child(4){width:38%}
 .menu-builder-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .menu-builder-table{width:100%;border-collapse:collapse;min-width:0}.menu-builder-table th,.menu-builder-table td{padding:10px;border-bottom:1px solid var(--line);font-size:13px}.menu-builder-table th{background:var(--red);color:#fff;position:static}
 .menu-builder-actions{display:flex;gap:5px;flex-wrap:wrap}.menu-builder-status{font-weight:900}.menu-builder-status.on{color:#15803d}.menu-builder-status.off{color:#b91c1c}
@@ -595,13 +604,18 @@ async function loadData(){
 }
 
 
-let userRows=[],userEditingId=null;
+let userRows=[],userLogRows=[],userEditingId=null;
 const USER_POSITIONS=["Area Manager","Training","Suppervisor","Teamlead","Staff","Admin"];
 async function loadUsers(){
   const hint=document.getElementById("datasetHint"),wrap=document.getElementById("tableWrap");
   try{
-    const res=await api({action:"list_users"});userRows=res.data||[];
-    hint.textContent="จัดการ User • "+userRows.length+" รายการ";
+    const [res,logRes]=await Promise.all([
+      api({action:"list_users"}),
+      api({action:"list_user_logs",limit:300})
+    ]);
+    userRows=res.data||[];
+    userLogRows=logRes.data||[];
+    hint.textContent="จัดการ User • "+userRows.length+" รายการ • Log "+userLogRows.length+" รายการล่าสุด";
     renderUsers();
   }catch(err){wrap.innerHTML='<div style="padding:20px" class="error">'+esc(err.message)+'</div>'}
 }
@@ -644,7 +658,12 @@ function renderUsers(){
       <div id="userMsg" class="msg"></div>
 
       <div class="tablewrap"><table class="user-table"><thead><tr><th>Username</th><th>Display Name</th><th>Position</th><th>สถานะ</th><th>สร้างเมื่อ</th><th>จัดการ</th></tr></thead>
-      <tbody>${userRows.map(u=>`<tr><td><strong>${esc(u.username)}</strong></td><td>${esc(u.display_name||"")}</td><td>${esc(u.position||"")}</td><td><span class="user-status ${u.active?"on":"off"}">${u.active?"ใช้งาน":"ปิดใช้งาน"}</span></td><td>${new Date(u.created_at).toLocaleString("th-TH")}</td><td class="actions"><button class="btn small secondary" onclick="editUser('${u.id}')">แก้ไข</button> <button class="btn small danger" onclick="deleteUser('${u.id}')">ลบ</button></td></tr>`).join("")}</tbody></table></div>
+      <tbody>${userRows.map(u=>`<tr><td><strong>${esc(u.username)}</strong></td><td>${esc(u.display_name||"")}</td><td>${esc(u.position||"")}</td><td><span class="user-status ${u.active?"on":"off"}">${u.active?"ใช้งาน":"ปิดใช้งาน"}</span></td><td>${new Date(u.created_at).toLocaleString("th-TH")}</td><td class="actions"><button class="btn small secondary" onclick="editUser('${u.id}')">แก้ไข</button><button class="btn small danger" onclick="deleteUser('${u.id}')">ลบ</button></td></tr>`).join("")}</tbody></table></div>
+
+      <div class="user-section-title" style="margin-top:28px">Log การเข้าใช้งาน User</div>
+      <p class="help">แสดงการ Login สำเร็จล่าสุด สูงสุด 300 รายการ เรียงจากล่าสุดก่อน</p>
+      <div class="tablewrap"><table class="user-log-table"><thead><tr><th>Username</th><th>Display Name</th><th>Position</th><th>เวลาเข้าใช้งาน</th></tr></thead>
+      <tbody>${userLogRows.length?userLogRows.map(r=>`<tr><td><strong>${esc(r.username||"")}</strong></td><td>${esc(r.display_name||"")}</td><td>${esc(r.position||"")}</td><td>${r.logged_in_at?new Date(r.logged_in_at).toLocaleString("th-TH"):"-"}</td></tr>`).join(""):'<tr><td colspan="4" class="muted">ยังไม่มี Log การเข้าใช้งาน</td></tr>'}</tbody></table></div>
     </div>`;
 }
 window.saveUserForm=async()=>{
