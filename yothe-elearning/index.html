@@ -194,80 +194,15 @@ const LOGIN_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-log
 const PUBLIC_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-public";
 const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
 let token="",currentUser=null,cache={},courses=[],settingsMap={},attachmentSets={},attachmentViewerSection="",attachmentViewerIndex=0,customMenus=[];
-let meowAudioContext=null;
+const realCatMeow=new Audio("https://upload.wikimedia.org/wikipedia/commons/c/c0/Maullido_de_gata_hembra_joven.ogg");
+realCatMeow.preload="auto";
+realCatMeow.volume=0.34;
 function playMenuMeow(){
   try{
-    const AC=window.AudioContext||window.webkitAudioContext;
-    if(!AC)return;
-    if(!meowAudioContext)meowAudioContext=new AC();
-    const ctx=meowAudioContext;
-    if(ctx.state==="suspended")ctx.resume();
-
-    const now=ctx.currentTime;
-    const master=ctx.createGain();
-    const filter=ctx.createBiquadFilter();
-    filter.type="bandpass";
-    filter.frequency.setValueAtTime(1200,now);
-    filter.Q.setValueAtTime(1.6,now);
-
-    master.gain.setValueAtTime(0.0001,now);
-    master.gain.exponentialRampToValueAtTime(0.16,now+0.035);
-    master.gain.exponentialRampToValueAtTime(0.11,now+0.16);
-    master.gain.exponentialRampToValueAtTime(0.055,now+0.34);
-    master.gain.exponentialRampToValueAtTime(0.0001,now+0.62);
-
-    filter.connect(master);
-    master.connect(ctx.destination);
-
-    const oscA=ctx.createOscillator();
-    const oscB=ctx.createOscillator();
-    const oscC=ctx.createOscillator();
-    const gA=ctx.createGain(),gB=ctx.createGain(),gC=ctx.createGain();
-
-    oscA.type="sawtooth";
-    oscB.type="sine";
-    oscC.type="triangle";
-
-    // “เหมียว~” : เปิดต่ำ -> พุ่งสูง -> ลากลงปลายเสียง
-    oscA.frequency.setValueAtTime(430,now);
-    oscA.frequency.exponentialRampToValueAtTime(760,now+0.12);
-    oscA.frequency.exponentialRampToValueAtTime(540,now+0.30);
-    oscA.frequency.exponentialRampToValueAtTime(360,now+0.60);
-
-    oscB.frequency.setValueAtTime(860,now);
-    oscB.frequency.exponentialRampToValueAtTime(1520,now+0.12);
-    oscB.frequency.exponentialRampToValueAtTime(1080,now+0.30);
-    oscB.frequency.exponentialRampToValueAtTime(720,now+0.60);
-
-    oscC.frequency.setValueAtTime(1290,now);
-    oscC.frequency.exponentialRampToValueAtTime(2280,now+0.12);
-    oscC.frequency.exponentialRampToValueAtTime(1620,now+0.30);
-    oscC.frequency.exponentialRampToValueAtTime(1080,now+0.60);
-
-    gA.gain.value=.28;
-    gB.gain.value=.42;
-    gC.gain.value=.12;
-
-    oscA.connect(gA);oscB.connect(gB);oscC.connect(gC);
-    gA.connect(filter);gB.connect(filter);gC.connect(filter);
-
-    // เติมลมหายใจ/texture เบา ๆ ให้ฟังคล้ายเสียงร้องมากกว่า beep
-    const noiseBuffer=ctx.createBuffer(1,Math.floor(ctx.sampleRate*.62),ctx.sampleRate);
-    const data=noiseBuffer.getChannelData(0);
-    for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length);
-    const noise=ctx.createBufferSource();
-    const noiseGain=ctx.createGain();
-    const noiseFilter=ctx.createBiquadFilter();
-    noise.buffer=noiseBuffer;
-    noiseFilter.type="bandpass";
-    noiseFilter.frequency.value=1800;
-    noiseFilter.Q.value=.8;
-    noiseGain.gain.setValueAtTime(.018,now);
-    noiseGain.gain.exponentialRampToValueAtTime(.001,now+.58);
-    noise.connect(noiseFilter);noiseFilter.connect(noiseGain);noiseGain.connect(master);
-
-    oscA.start(now);oscB.start(now);oscC.start(now);noise.start(now);
-    oscA.stop(now+.64);oscB.stop(now+.64);oscC.stop(now+.64);noise.stop(now+.64);
+    realCatMeow.pause();
+    realCatMeow.currentTime=0;
+    const p=realCatMeow.play();
+    if(p&&typeof p.catch==="function")p.catch(()=>{});
   }catch{}
 }
 
