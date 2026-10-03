@@ -75,11 +75,11 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
   <button class="brand" data-view="home" style="border:0;background:none;padding:0"><img class="brand-cat" src="assets/yothe-cat.svg" alt="Yothé Cat"><img class="brand-wordmark" src="assets/yothe-wordmark.svg" alt="Yothé"><span>E-Learning</span></button>
   <nav id="navLinks" class="navlinks">
     <button data-view="home" class="active">Home</button>
+    <button class="auth-only hidden-auth" data-view="uniforms">เครื่องแต่งกาย</button>
     <button class="auth-only hidden-auth" data-view="production">สูตรการผลิต</button>
     <button class="auth-only hidden-auth" data-view="drinks">สูตรชง</button>
     <button class="auth-only hidden-auth" data-view="expiry">วันหมดอายุ</button>
     <button class="auth-only hidden-auth" data-view="toppings">Topping</button>
-    <button class="auth-only hidden-auth" data-view="uniforms">เครื่องแต่งกาย</button>
     <button class="auth-only hidden-auth" data-view="courses">บทเรียนอื่น ๆ</button>
     <a class="auth-only hidden-auth" href="admin.html">Admin</a>
   </nav>
@@ -239,8 +239,8 @@ function stepAttachment(dir){
   attachmentViewerIndex=next;
   renderAttachmentViewer();
 }
-async function loadSettings(){const rows=await api("settings"),map=Object.fromEntries(rows.map(x=>[x.key,x.value]));settingsMap=map;applyTheme(map.display_preferences||{});renderMenuOrder(map.menu_order||["production","drinks","expiry","toppings","uniforms"]);renderBrandStoryValue(map.brand_story||{});if(token)await loadAttachments("home")}
-function renderMenuOrder(order){const nav=document.getElementById("navLinks"),home=nav.querySelector('[data-view="home"]'),coursesBtn=nav.querySelector('[data-view="courses"]'),admin=nav.querySelector('a[href="admin.html"]');order.filter(x=>["production","drinks","expiry","toppings","uniforms"].includes(x)).forEach(k=>{const el=nav.querySelector('[data-view="'+k+'"]');if(el)nav.insertBefore(el,coursesBtn)});nav.insertBefore(home,nav.firstChild);nav.appendChild(coursesBtn);nav.appendChild(admin)}
+async function loadSettings(){const rows=await api("settings"),map=Object.fromEntries(rows.map(x=>[x.key,x.value]));settingsMap=map;applyTheme(map.display_preferences||{});renderMenuOrder(map.menu_order||["uniforms","production","drinks","expiry","toppings"]);renderBrandStoryValue(map.brand_story||{});if(token)await loadAttachments("home")}
+function renderMenuOrder(order){const nav=document.getElementById("navLinks"),home=nav.querySelector('[data-view="home"]'),coursesBtn=nav.querySelector('[data-view="courses"]'),admin=nav.querySelector('a[href="admin.html"]');order.filter(x=>["uniforms","production","drinks","expiry","toppings"].includes(x)).forEach(k=>{const el=nav.querySelector('[data-view="'+k+'"]');if(el)nav.insertBefore(el,coursesBtn)});nav.insertBefore(home,nav.firstChild);nav.appendChild(coursesBtn);nav.appendChild(admin)}
 function showView(view){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));document.getElementById("view-"+view)?.classList.add("active");document.querySelectorAll('#navLinks [data-view]').forEach(x=>x.classList.toggle("active",x.dataset.view===view));window.scrollTo({top:0,behavior:"smooth"});loadView(view)}
 async function loadView(view){
   try{
