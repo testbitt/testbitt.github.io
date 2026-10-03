@@ -525,8 +525,7 @@ window.exportUsers=()=>{
 function chunk(arr,size){const out=[];for(let i=0;i<arr.length;i+=size)out.push(arr.slice(i,i+size));return out}
 function pageClass(count){return 'a4-page '+displayPrefs.orientation+(count===displayPrefs.items_per_page?' full-page':'')}
 function visualItemsPerPage(){
-  const safe=displayPrefs.orientation==="landscape"?4:6;
-  return Math.max(1,Math.min(Number(displayPrefs.items_per_page)||safe,safe));
+  return Math.max(1,Math.min(Number(displayPrefs.items_per_page)||1,20));
 }
 function waitReviewImages(root){
   const imgs=[...root.querySelectorAll("img")];
