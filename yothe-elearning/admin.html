@@ -44,6 +44,35 @@ label{font-size:13px;font-weight:800}.input,select,textarea{width:100%;border:1p
 .recipe-note{background:#ffef57;color:#e32614;font-size:12px;font-weight:900;padding:7px 9px;line-height:1.35}
 .recipe-row-actions{white-space:nowrap;text-align:right}.recipe-row-actions .btn{padding:4px 7px;font-size:10px}
 @media(max-width:920px){.recipe-admin-grid{grid-template-columns:1fr}}
+.layout-panel{margin:0 0 18px;padding:18px;background:#fff;border:1px solid var(--line);border-radius:18px}
+.layout-controls{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:12px;align-items:end}
+.color-preview{width:100%;height:38px;border-radius:10px;border:1px solid var(--line)}
+.a4-preview{display:flex;flex-direction:column;gap:18px;align-items:center;padding:18px;background:#eceff1}
+.a4-page{background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8mm;break-after:page;page-break-after:always;overflow:visible}
+.a4-page.portrait{width:210mm;min-height:297mm}
+.a4-page.landscape{width:297mm;min-height:210mm}
+.a4-page:last-child{break-after:auto;page-break-after:auto}
+.a4-page .page-title{font-weight:900;font-size:15px;margin:0 0 8px;color:var(--red)}
+.a4-page table{min-width:0}
+.a4-page .recipe-admin-grid{padding:0;background:#fff}
+.a4-page.full-page{display:flex;flex-direction:column}
+.a4-page.full-page>.page-content{flex:1}
+.theme-soft .panel,.theme-soft .recipe-sheet{border-radius:18px}
+.theme-square .panel,.theme-square .recipe-sheet,.theme-square .btn,.theme-square .input,.theme-square select{border-radius:2px}
+.theme-airy .panel{padding:28px}.theme-airy td,.theme-airy th{padding:14px}
+.theme-compact .panel{padding:14px}.theme-compact td,.theme-compact th{padding:7px 8px;font-size:12px}
+.theme-bold .panel{border-width:2px}.theme-bold h1,.theme-bold h2,.theme-bold .recipe-title{font-weight:950}
+@media print{
+  body{background:#fff}
+  .top,.head,.tabs,.grid2,.layout-panel,#editor,.recipe-tools,.actions,.back{display:none!important}
+  .wrap,.panel{max-width:none;margin:0;padding:0;border:0;box-shadow:none}
+  .a4-preview{display:block;padding:0;background:#fff}
+  .a4-page{box-shadow:none;margin:0;break-after:page;page-break-after:always}
+  .a4-page.portrait{width:210mm;min-height:297mm}
+  .a4-page.landscape{width:297mm;min-height:210mm}
+  @page{margin:0}
+}
+@media(max-width:1100px){.layout-controls{grid-template-columns:repeat(2,1fr)}.a4-preview{align-items:flex-start;overflow:auto}}
 
 @media(max-width:760px){.grid2,.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}.wrap{padding:18px 12px 40px}.panel{padding:16px}}
 </style>
@@ -78,6 +107,21 @@ label{font-size:13px;font-weight:800}.input,select,textarea{width:100%;border:1p
       <button class="tab" data-dataset="toppings">Topping</button>
       <button class="tab" data-dataset="settings">Brand Story / Settings</button>
     </div>
+
+    <section class="layout-panel">
+      <div class="head" style="margin-bottom:12px">
+        <div><h2 style="margin:0">Layout การแสดงผล</h2><p>A4 แนวตั้ง/แนวนอน • สูงสุด 20 รายการต่อหน้า • ไม่ตัดข้อมูลข้ามหน้า</p></div>
+        <button id="printBtn" class="btn secondary" type="button">พิมพ์ / Save PDF</button>
+      </div>
+      <div class="layout-controls">
+        <div class="field"><label>ขนาดกระดาษ</label><select id="orientation"><option value="portrait">A4 แนวตั้ง</option><option value="landscape">A4 แนวนอน</option></select></div>
+        <div class="field"><label>จำนวนรายการต่อหน้า</label><select id="itemsPerPage"></select></div>
+        <div class="field"><label>Theme (50 แบบ)</label><select id="themeSelect"></select></div>
+        <div class="field"><label>สีหลัก (50 สี)</label><select id="colorSelect"></select></div>
+        <div class="field"><label>ตัวอย่างสี</label><div id="colorPreview" class="color-preview"></div></div>
+      </div>
+      <div id="layoutMsg" class="msg"></div>
+    </section>
 
     <div class="grid2">
       <section class="panel">
@@ -122,6 +166,9 @@ label{font-size:13px;font-weight:800}.input,select,textarea{width:100%;border:1p
 
 <script>
 const API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-admin";
+const THEMES=Array.from({length:50},(_,i)=>({id:i+1,name:"Theme "+String(i+1).padStart(2,"0"),className:["theme-soft","theme-square","theme-airy","theme-compact","theme-bold"][i%5]}));
+const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
+let displayPrefs={orientation:"portrait",items_per_page:20,theme_index:1,color_index:1};
 const DATASETS={
   production:{label:"สูตรการผลิต",fields:[
     ["record_id","Record ID","text"],["source_page","หน้า","number"],["category","หมวดหมู่","text"],["recipe_name","ชื่อสูตร","text"],
@@ -160,7 +207,7 @@ async function api(payload){
   return data;
 }
 function esc(v=""){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
-function showAdmin(){document.getElementById("loginPanel").classList.add("hidden");document.getElementById("adminPanel").classList.remove("hidden");initUploadDataset();loadData()}
+function showAdmin(){document.getElementById("loginPanel").classList.add("hidden");document.getElementById("adminPanel").classList.remove("hidden");initUploadDataset();initLayoutControls();loadDisplayPrefs().then(loadData)}
 function logout(){sessionStorage.removeItem("yothe_admin_pin");adminPin="";location.reload()}
 async function validateStored(){if(!adminPin)return;try{await api({action:"validate"});showAdmin()}catch{logout()}}
 
@@ -199,27 +246,31 @@ async function loadData(){
     hint.textContent=DATASETS[dataset].label+" • "+rows.length+" รายการ"; renderTable();
   }catch(err){wrap.innerHTML='<div style="padding:20px" class="error">'+esc(err.message)+'</div>'}
 }
+function chunk(arr,size){const out=[];for(let i=0;i<arr.length;i+=size)out.push(arr.slice(i,i+size));return out}
+function pageClass(count){return 'a4-page '+displayPrefs.orientation+(count===displayPrefs.items_per_page?' full-page':'')}
 function renderTable(){
   const wrap=document.getElementById("tableWrap"), fields=DATASETS[dataset].fields;
+  wrap.className="";
   if(!rows.length){wrap.innerHTML='<div style="padding:24px" class="muted">ยังไม่มีข้อมูล</div>';return}
   if(dataset==="drinks"){renderDrinkSheets();return}
-  const visible=fields.slice(0,6);
-  wrap.innerHTML='<table><thead><tr><th>ID</th>'+visible.map(f=>'<th>'+esc(f[1])+'</th>').join("")+'<th>จัดการ</th></tr></thead><tbody>'+
-    rows.map(r=>'<tr><td>'+r.id+'</td>'+visible.map(f=>'<td>'+formatCell(r[f[0]])+'</td>').join("")+
+  const visible=fields.slice(0,6), pages=chunk(rows,displayPrefs.items_per_page);
+  wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>'<section class="'+pageClass(page.length)+'"><div class="page-title">'+esc(DATASETS[dataset].label)+' • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content"><table><thead><tr><th>ID</th>'+visible.map(f=>'<th>'+esc(f[1])+'</th>').join("")+'<th class="actions">จัดการ</th></tr></thead><tbody>'+
+    page.map(r=>'<tr><td>'+r.id+'</td>'+visible.map(f=>'<td>'+formatCell(r[f[0]])+'</td>').join("")+
       '<td class="actions"><button class="btn small secondary" onclick="editRow('+r.id+')">แก้ไข</button> <button class="btn small danger" onclick="deleteRow('+r.id+')">ลบ</button></td></tr>').join("")+
-    '</tbody></table>';
+    '</tbody></table></div></section>').join("")+'</div>';
 }
 
 function renderDrinkSheets(){
-  const wrap=document.getElementById("tableWrap");
-  const groups={};
+  const wrap=document.getElementById("tableWrap"), groups={};
   rows.forEach(r=>{const key=r.recipe_id||"NO-ID";(groups[key]??=[]).push(r)});
+  const entries=Object.entries(groups), pages=chunk(entries,displayPrefs.items_per_page);
   wrap.className="";
-  wrap.innerHTML='<div class="recipe-admin-grid">'+Object.entries(groups).map(([recipeId,items])=>{
+  wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>'<section class="'+pageClass(page.length)+'"><div class="page-title">สูตรชงเครื่องดื่ม • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content recipe-admin-grid">'+page.map(([recipeId,items])=>{
     items.sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
     const first=items[0]||{}, meta=drinkMeta[recipeId]||{}, img=meta.image_url||"";
-    const size=meta.size_label||"17 oz.(IB)";
-    const note=meta.note||"";
+    const size=meta.size_label||"17 oz.(IB)", note=meta.note||"";
+    const toppingRows=items.filter(x=>String(x.component_type||"").toLowerCase()==="topping");
+    const firstTop=toppingRows.length?Math.min(...toppingRows.map(x=>x.sort_order||9999)):null;
     return `<article class="recipe-sheet">
       <div class="recipe-title">${esc(first.menu_name||recipeId)}</div>
       <div class="recipe-tools">
@@ -229,22 +280,13 @@ function renderDrinkSheets(){
       </div>
       <div class="recipe-body">
         <div class="recipe-photo">${img?'<img src="'+esc(img)+'" alt="'+esc(first.menu_name||recipeId)+'">':'<div class="empty-photo">ยังไม่มีรูป<br>กด “ใส่/เปลี่ยนรูป”</div>'}</div>
-        <div>
-          <table class="recipe-table">
-            <thead><tr><th>วัตถุดิบ</th><th>${esc(size)}</th><th>หน่วย</th><th></th></tr></thead>
-            <tbody>${items.map(r=>`<tr class="${String(r.component_type||"").toLowerCase()==="topping"?"topping-row":""}">
-              <td>${String(r.component_type||"").toLowerCase()==="topping"&&r.sort_order===Math.min(...items.filter(x=>String(x.component_type||"").toLowerCase()==="topping").map(x=>x.sort_order||9999))?'<strong>Topping</strong><br>':""}${esc(r.ingredient||"")}</td>
-              <td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td>
-              <td class="recipe-row-actions"><button class="btn secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn danger" onclick="deleteRow(${r.id})">ลบ</button></td>
-            </tr>`).join("")}</tbody>
-          </table>
-          ${note?'<div class="recipe-note">'+esc(note)+'</div>':""}
-        </div>
+        <div><table class="recipe-table"><thead><tr><th>วัตถุดิบ</th><th>${esc(size)}</th><th>หน่วย</th><th></th></tr></thead>
+        <tbody>${items.map(r=>`<tr class="${String(r.component_type||"").toLowerCase()==="topping"?"topping-row":""}"><td>${firstTop!==null&&r.sort_order===firstTop?'<strong>Topping</strong><br>':""}${esc(r.ingredient||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td class="recipe-row-actions"><button class="btn secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table>
+        ${note?'<div class="recipe-note">'+esc(note)+'</div>':""}</div>
       </div>
     </article>`;
-  }).join("")+'</div>';
+  }).join("")+'</div></section>').join("")+'</div>';
 }
-
 window.addDrinkRow=recipeId=>{
   const items=rows.filter(r=>r.recipe_id===recipeId), first=items[0]||{};
   const maxSort=Math.max(0,...items.map(x=>Number(x.sort_order)||0));
@@ -335,6 +377,43 @@ document.getElementById("uploadBtn").onclick=async()=>{
   }catch(err){msg.textContent=err.message;msg.className="msg error"}
 };
 
+function initLayoutControls(){
+  const ipp=document.getElementById("itemsPerPage");ipp.innerHTML=Array.from({length:20},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+' รายการ</option>').join("");
+  document.getElementById("themeSelect").innerHTML=THEMES.map(t=>'<option value="'+t.id+'">'+t.name+'</option>').join("");
+  document.getElementById("colorSelect").innerHTML=COLORS.map((x,i)=>'<option value="'+(i+1)+'">สี '+String(i+1).padStart(2,"0")+' • '+x+'</option>').join("");
+  ["orientation","itemsPerPage","themeSelect","colorSelect"].forEach(id=>document.getElementById(id).addEventListener("change",onDisplayChange));
+  document.getElementById("printBtn").onclick=()=>window.print();
+}
+async function loadDisplayPrefs(){
+  try{
+    const res=await api({action:"list",dataset:"settings"});
+    const row=(res.data||[]).find(x=>x.key==="display_preferences");
+    if(row?.value) displayPrefs={...displayPrefs,...row.value};
+  }catch{}
+  applyDisplayPrefs();
+}
+function applyDisplayPrefs(){
+  document.getElementById("orientation").value=displayPrefs.orientation;
+  document.getElementById("itemsPerPage").value=String(displayPrefs.items_per_page);
+  document.getElementById("themeSelect").value=String(displayPrefs.theme_index);
+  document.getElementById("colorSelect").value=String(displayPrefs.color_index);
+  const color=COLORS[(displayPrefs.color_index||1)-1]||COLORS[0];
+  document.documentElement.style.setProperty("--red",color);
+  document.getElementById("colorPreview").style.background=color;
+  document.body.classList.remove(...THEMES.map(t=>t.className));
+  const th=THEMES[(displayPrefs.theme_index||1)-1];if(th)document.body.classList.add(th.className);
+}
+async function onDisplayChange(){
+  displayPrefs={
+    orientation:document.getElementById("orientation").value,
+    items_per_page:Math.min(20,Math.max(1,Number(document.getElementById("itemsPerPage").value)||20)),
+    theme_index:Number(document.getElementById("themeSelect").value)||1,
+    color_index:Number(document.getElementById("colorSelect").value)||1
+  };
+  applyDisplayPrefs();renderTable();
+  const m=document.getElementById("layoutMsg");m.textContent="กำลัง Auto Save Layout...";
+  try{await api({action:"save",dataset:"settings",row:{key:"display_preferences",value:displayPrefs}});m.textContent="Auto Save Layout แล้ว";m.className="msg ok"}catch(err){m.textContent=err.message;m.className="msg error"}
+}
 validateStored();
 </script>
 </body>
