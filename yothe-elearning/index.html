@@ -101,7 +101,7 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
   <section id="view-drinks" class="view"><div class="section-head"><div><h2>สูตรชงเครื่องดื่ม</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="drinkList" class="grid"></div><div id="attachments-drinks" class="attachments"></div></section>
   <section id="view-expiry" class="view"><div class="section-head"><div><h2>วันหมดอายุ</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="expiryList"></div><div id="attachments-expiry" class="attachments"></div></section>
   <section id="view-toppings" class="view"><div class="section-head"><div><h2>Topping</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="toppingList" class="grid"></div><div id="attachments-toppings" class="attachments"></div></section>
-  <section id="view-uniforms" class="view"><div class="section-head"><div><h2>เครื่องแต่งกาย</h2><p>มาตรฐานและข้อมูลเครื่องแต่งกาย</p></div></div><div id="uniformList" class="grid"></div><div id="attachments-uniforms" class="attachments"></div></section>
+  <section id="view-uniforms" class="view"><div class="section-head"><div><h2>เครื่องแต่งกาย</h2></div></div><div id="uniformList" class="grid"></div><div id="attachments-uniforms" class="attachments"></div></section>
   <section id="view-courses" class="view"><div class="section-head"><div><h2>บทเรียนทั้งหมด</h2><p>รวมบทเรียนทั้งหมดที่มีอยู่ใน Yothé E-Learning</p></div></div><input id="courseSearch" class="search" placeholder="ค้นหาบทเรียนทั้งหมด..."><div id="courseList" class="cards"></div><div id="attachments-courses" class="attachments"></div></section>
 </main>
 </div>
@@ -240,7 +240,19 @@ function stepAttachment(dir){
   renderAttachmentViewer();
 }
 async function loadSettings(){const rows=await api("settings"),map=Object.fromEntries(rows.map(x=>[x.key,x.value]));settingsMap=map;applyTheme(map.display_preferences||{});renderMenuOrder(map.menu_order||["uniforms","production","drinks","expiry","toppings"]);renderBrandStoryValue(map.brand_story||{});if(token)await loadAttachments("home")}
-function renderMenuOrder(order){const nav=document.getElementById("navLinks"),home=nav.querySelector('[data-view="home"]'),coursesBtn=nav.querySelector('[data-view="courses"]'),admin=nav.querySelector('a[href="admin.html"]');order.filter(x=>["uniforms","production","drinks","expiry","toppings"].includes(x)).forEach(k=>{const el=nav.querySelector('[data-view="'+k+'"]');if(el)nav.insertBefore(el,coursesBtn)});nav.insertBefore(home,nav.firstChild);nav.appendChild(coursesBtn);nav.appendChild(admin)}
+function renderMenuOrder(order){
+  const nav=document.getElementById("navLinks"),
+    home=nav.querySelector('[data-view="home"]'),
+    uniforms=nav.querySelector('[data-view="uniforms"]'),
+    coursesBtn=nav.querySelector('[data-view="courses"]'),
+    admin=nav.querySelector('a[href="admin.html"]');
+  const rest=order.filter(x=>["production","drinks","expiry","toppings"].includes(x));
+  nav.insertBefore(home,nav.firstChild);
+  if(uniforms) nav.insertBefore(uniforms,home.nextSibling);
+  rest.forEach(k=>{const el=nav.querySelector('[data-view="'+k+'"]');if(el)nav.insertBefore(el,coursesBtn)});
+  nav.appendChild(coursesBtn);
+  nav.appendChild(admin);
+}
 function showView(view){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));document.getElementById("view-"+view)?.classList.add("active");document.querySelectorAll('#navLinks [data-view]').forEach(x=>x.classList.toggle("active",x.dataset.view===view));window.scrollTo({top:0,behavior:"smooth"});loadView(view)}
 async function loadView(view){
   try{
@@ -269,7 +281,7 @@ function renderExpiry(rows){
   document.getElementById("expiryList").innerHTML=rows.length?'<div class="sheet"><div class="sheet-title">ตารางวันหมดอายุ</div><table><thead><tr><th>รูป</th><th>รายการ</th><th>หมวด</th><th>การจัดเก็บ</th><th>ยังไม่เปิด</th><th>หลังเปิด</th><th>หน่วย</th></tr></thead><tbody>'+rows.map(r=>'<tr><td style="width:74px">'+(r.image_url?'<img src="'+esc(r.image_url)+'" style="width:58px;height:58px;object-fit:contain">':"-")+'</td><td>'+esc(r.item_name||"")+'</td><td>'+esc(r.category||"")+'</td><td>'+esc(r.storage_condition||"")+'</td><td>'+esc(r.shelf_life_unopened||"-")+'</td><td>'+esc(r.shelf_life_opened||"-")+'</td><td>'+esc(r.unit||"")+'</td></tr>').join("")+'</tbody></table></div>':'<div class="state">ยังไม่มีข้อมูล</div>'}
 function renderUniforms(rows){
   const g={};rows.forEach(r=>{(g[r.category||"เครื่องแต่งกาย"]??=[]).push(r)});
-  document.getElementById("uniformList").innerHTML=sortGroupedEntries("uniforms",Object.entries(g)).map(([name,items])=>'<article class="sheet"><div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th>รูป</th><th>รายการ</th><th>ขนาด</th><th>รายละเอียด</th></tr></thead><tbody>'+sortDetailRows(items).map(r=>'<tr><td style="width:84px">'+(r.image_url?'<img src="'+esc(r.image_url)+'" style="width:68px;height:68px;object-fit:contain">':'-')+'</td><td>'+esc(r.item_name||"")+'</td><td>'+esc(r.size_info||"-")+'</td><td>'+esc(r.description||r.usage_notes||"")+'</td></tr>').join("")+'</tbody></table></article>').join("")||'<div class="state">ยังไม่มีข้อมูลเครื่องแต่งกาย</div>';
+  document.getElementById("uniformList").innerHTML=sortGroupedEntries("uniforms",Object.entries(g)).map(([name,items])=>'<article class="sheet"><div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th>รูป</th><th>รายการ</th><th>ขนาด</th><th>รายละเอียด</th></tr></thead><tbody>'+sortDetailRows(items).map(r=>'<tr><td style="width:84px">'+(r.image_url?'<img src="'+esc(r.image_url)+'" style="width:68px;height:68px;object-fit:contain">':'-')+'</td><td>'+esc(r.item_name||"")+'</td><td>'+esc(r.size_info||"-")+'</td><td>'+esc(r.description||r.usage_notes||"")+'</td></tr>').join("")+'</tbody></table></article>').join("");
 }
 async function loadAllLessons(){
   const el=document.getElementById("courseList");
