@@ -21,6 +21,10 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .hidden{display:none!important}.msg{margin-top:10px;font-size:13px}.error{color:#b91c1c}.ok{color:#15803d}.saving{color:#b45309}.autosave-note{font-size:12px;color:#15803d;font-weight:800;margin-left:8px}
 .head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}.head h1{margin:0;font-size:clamp(30px,3.2vw,48px);line-height:1.15;font-weight:900;letter-spacing:-.4px}.head p{margin:7px 0 0;color:var(--muted);font-size:16px;line-height:1.6;font-weight:500}
 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px;align-items:center}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;font-weight:800;user-select:none}.tab.active{background:var(--red);color:#fff;border-color:var(--red)}.tab[draggable="true"]{cursor:grab}.tab.dragging{opacity:.45;transform:scale(.97)}.tab.drag-over{outline:3px dashed var(--red);outline-offset:2px}.drag-hint{font-size:12px;color:var(--muted);width:100%;margin-top:3px}.user-tools{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;margin-bottom:16px}.user-form-actions{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.user-section-title{font-size:18px;font-weight:900;margin:0 0 12px}.user-toolbar{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:10px 0 14px}.user-import{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.user-table{width:100%;border-collapse:collapse}.user-table th,.user-table td{padding:10px;border-bottom:1px solid var(--line);font-size:13px}.user-table th{background:var(--red);color:#fff}.user-status{font-weight:800}.user-status.on{color:#15803d}.user-status.off{color:#b91c1c}
+.menu-builder-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.menu-builder-table{width:100%;border-collapse:collapse;min-width:0}.menu-builder-table th,.menu-builder-table td{padding:10px;border-bottom:1px solid var(--line);font-size:13px}.menu-builder-table th{background:var(--red);color:#fff;position:static}
+.menu-builder-actions{display:flex;gap:5px;flex-wrap:wrap}.menu-builder-status{font-weight:900}.menu-builder-status.on{color:#15803d}.menu-builder-status.off{color:#b91c1c}
+@media(max-width:700px){.menu-builder-grid{grid-template-columns:1fr}}
 .attachment-list{display:grid;gap:8px;margin-top:12px}
 .attachment-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}.attachment-item[draggable="true"]{cursor:grab}.attachment-item.dragging{opacity:.45}.attachment-item.drag-over{outline:3px dashed var(--red);outline-offset:2px}
 .attachment-name{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -141,6 +145,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
       <button class="tab" draggable="true" data-dataset="toppings">Topping</button>
       <button class="tab" draggable="true" data-dataset="uniforms">เครื่องแต่งกาย</button>
       <button class="tab" data-dataset="courses">บทเรียนอื่น ๆ</button>
+      <button class="tab" data-dataset="menus">จัดการเมนู</button>
       <button class="tab" data-dataset="users">จัดการ User</button>
       <button class="tab" data-dataset="settings">Brand Story / Settings</button>
       <div class="drag-hint">กดเมาส์ซ้ายค้างที่เมนู แล้วลากเพื่อสลับตำแหน่ง • Auto Save ไปยัง Server</div>
@@ -307,7 +312,7 @@ const DATASETS={
 };
 let adminPin=sessionStorage.getItem("yothe_admin_pin")||"";
 const requestedEdit=new URLSearchParams(location.search).get("edit");
-let dataset=["production","drinks","expiry","toppings","uniforms","courses","settings","users"].includes(requestedEdit)?requestedEdit:"production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["uniforms","production","drinks","expiry","toppings"];
+let dataset=["production","drinks","expiry","toppings","uniforms","courses","settings","users","menus"].includes(requestedEdit)?requestedEdit:"production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["uniforms","production","drinks","expiry","toppings"], customMenus=[], menuEditingId=null;
 
 async function api(payload){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,pin:adminPin})});
@@ -319,7 +324,7 @@ function esc(v=""){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt
 
 function currentAttachmentSection(){
   if(dataset==="settings") return "home";
-  if(dataset==="users") return document.getElementById("attachmentSection")?.value||"home";
+  if(dataset==="users"||dataset==="menus") return document.getElementById("attachmentSection")?.value||"home";
   if(dataset==="courses") return "courses";
   return ["uniforms","production","drinks","expiry","toppings"].includes(dataset)?dataset:(document.getElementById("attachmentSection")?.value||"home");
 }
@@ -417,7 +422,7 @@ async function uploadAttachments(){
     await loadAttachments();
   }catch(err){msg.textContent="Upload ไม่สำเร็จ: "+err.message;msg.className="msg error"}
 }
-function showAdmin(){document.getElementById("loginPanel").classList.add("hidden");document.getElementById("adminPanel").classList.remove("hidden");syncAdminPageChrome();document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.dataset===dataset));initUploadDataset();initLayoutControls();Promise.all([loadDisplayPrefs(),loadMenuOrder()]).then(()=>{syncAttachmentSection();loadData()})}
+function showAdmin(){document.getElementById("loginPanel").classList.add("hidden");document.getElementById("adminPanel").classList.remove("hidden");syncAdminPageChrome();document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.dataset===dataset));initUploadDataset();initLayoutControls();Promise.all([loadDisplayPrefs(),loadMenuOrder(),loadCustomMenus()]).then(()=>{syncAttachmentSection();loadData()})}
 function logout(){sessionStorage.removeItem("yothe_admin_pin");adminPin="";location.reload()}
 async function validateStored(){if(!adminPin)return;try{await api({action:"validate"});showAdmin()}catch{logout()}}
 
@@ -478,22 +483,100 @@ function initMenuDrag(){
 }
 function syncAdminPageChrome(){
   const hideForUsers=dataset==="users";
-  const hideReview=dataset==="users"||dataset==="settings";
+  const hideReview=dataset==="users"||dataset==="settings"||dataset==="menus";
   document.getElementById("reviewLayoutPanel")?.classList.toggle("hidden",hideReview);
-  
-  document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers);
+
+  document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers||dataset==="menus");
   document.getElementById("attachmentPanel")?.classList.toggle("hidden",hideForUsers);
 }
 document.getElementById("tabs").addEventListener("click",e=>{
   const b=e.target.closest(".tab"); if(!b)return;
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
-  dataset=b.dataset.dataset;if(DATASETS[dataset])document.getElementById("uploadDataset").value=dataset;hideEditor();syncAdminPageChrome();syncAttachmentSection();loadDisplayPrefs().then(loadData);
+  dataset=b.dataset.dataset;if(DATASETS[dataset])document.getElementById("uploadDataset").value=dataset;hideEditor();syncAdminPageChrome();syncAttachmentSection();
+  if(dataset==="menus"){loadCustomMenus().then(renderMenuBuilder);return}
+  loadDisplayPrefs().then(loadData);
 });
 document.getElementById("refreshBtn").onclick=loadData;
 document.getElementById("addBtn").onclick=()=>dataset==="users"?document.getElementById("userUsername")?.focus():dataset==="drinks"?openEditor({record_id:"DRK-"+Date.now(),recipe_id:"RECIPE-"+Date.now(),component_type:"Ingredient",sort_order:1,is_published:true}):openEditor(null);
 document.getElementById("cancelEdit").onclick=hideEditor;
 
+async function loadCustomMenus(){
+  try{
+    const res=await api({action:"list",dataset:"settings"});
+    const row=(res.data||[]).find(x=>x.key==="custom_menus");
+    customMenus=Array.isArray(row?.value)?row.value:[];
+  }catch{customMenus=[]}
+  syncCustomAttachmentOptions();
+  return customMenus;
+}
+function syncCustomAttachmentOptions(){
+  const sel=document.getElementById("attachmentSection");if(!sel)return;
+  [...sel.querySelectorAll("option[data-custom-menu]")].forEach(o=>o.remove());
+  customMenus.forEach(m=>{
+    const opt=document.createElement("option");
+    opt.value=m.section;opt.textContent=m.label||m.id;opt.dataset.customMenu="1";
+    sel.appendChild(opt);
+  });
+}
+async function saveCustomMenus(){
+  await api({action:"save",dataset:"settings",row:{key:"custom_menus",value:customMenus}});
+  syncCustomAttachmentOptions();
+}
+function renderMenuBuilder(){
+  const wrap=document.getElementById("tableWrap"),hint=document.getElementById("datasetHint");
+  wrap.className="";
+  hint.textContent="จัดการเมนู • "+customMenus.length+" เมนู";
+  const edit=menuEditingId?customMenus.find(x=>x.id===menuEditingId):null;
+  wrap.innerHTML=`
+    <div class="panel" style="box-shadow:none;border:0;padding:0">
+      <h2 style="margin-top:0">${edit?"แก้ไขเมนู":"สร้างเมนูใหม่"}</h2>
+      <div class="menu-builder-grid">
+        <div class="field"><label>ชื่อเมนู</label><input id="menuBuilderLabel" class="input" value="${esc(edit?.label||"")}" placeholder="เช่น โปรโมชั่น / คู่มือสาขา"></div>
+        <div class="field"><label>สถานะ</label><select id="menuBuilderActive" class="input"><option value="true" ${edit?.active!==false?"selected":""}>แสดงบน Website</option><option value="false" ${edit?.active===false?"selected":""}>ซ่อน</option></select></div>
+        <div class="field" style="grid-column:1/-1"><label>คำอธิบาย</label><textarea id="menuBuilderDescription" class="input" placeholder="รายละเอียดที่แสดงใต้ชื่อเมนู">${esc(edit?.description||"")}</textarea></div>
+      </div>
+      <div class="row" style="margin:10px 0 18px">
+        <button class="btn primary" type="button" onclick="saveMenuBuilderForm()">${edit?"บันทึกการแก้ไข":"+ สร้างเมนูใหม่"}</button>
+        ${edit?'<button class="btn secondary" type="button" onclick="cancelMenuBuilderEdit()">ยกเลิก</button>':""}
+      </div>
+      <h3>เมนูที่สร้างไว้</h3>
+      ${customMenus.length?'<table class="menu-builder-table"><thead><tr><th>ลำดับ</th><th>ชื่อเมนู</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>'+
+      customMenus.map((m,i)=>'<tr><td>'+(i+1)+'</td><td><strong>'+esc(m.label||"")+'</strong><div class="muted">'+esc(m.description||"")+'</div></td><td><span class="menu-builder-status '+(m.active===false?"off":"on")+'">'+(m.active===false?"ซ่อน":"แสดง")+'</span></td><td><div class="menu-builder-actions"><button class="btn small secondary" onclick="moveCustomMenu(\''+m.id+'\',-1)">↑</button><button class="btn small secondary" onclick="moveCustomMenu(\''+m.id+'\',1)">↓</button><button class="btn small secondary" onclick="editCustomMenu(\''+m.id+'\')">แก้ไข</button><button class="btn small danger" onclick="deleteCustomMenu(\''+m.id+'\')">ลบ</button></div></td></tr>').join("")+
+      '</tbody></table>':'<div class="muted">ยังไม่มีเมนูที่สร้างเพิ่ม</div>'}
+    </div>`;
+}
+window.saveMenuBuilderForm=async()=>{
+  const label=document.getElementById("menuBuilderLabel")?.value.trim()||"";
+  const description=document.getElementById("menuBuilderDescription")?.value.trim()||"";
+  const active=document.getElementById("menuBuilderActive")?.value!=="false";
+  if(!label){alert("กรุณาระบุชื่อเมนู");return}
+  try{
+    if(menuEditingId){
+      const m=customMenus.find(x=>x.id===menuEditingId);
+      if(m){m.label=label;m.description=description;m.active=active}
+    }else{
+      const id="menu-"+Date.now().toString(36);
+      customMenus.push({id,section:"custom-"+id,label,description,active});
+    }
+    await saveCustomMenus();
+    menuEditingId=null;renderMenuBuilder();
+  }catch(err){alert("บันทึกเมนูไม่สำเร็จ: "+err.message)}
+};
+window.editCustomMenu=id=>{menuEditingId=id;renderMenuBuilder();window.scrollTo({top:0,behavior:"smooth"})};
+window.cancelMenuBuilderEdit=()=>{menuEditingId=null;renderMenuBuilder()};
+window.deleteCustomMenu=async id=>{
+  const m=customMenus.find(x=>x.id===id);if(!m)return;
+  if(!confirm("ยืนยันลบเมนู "+m.label+" ?\nไฟล์แนบจะไม่ถูกลบอัตโนมัติ"))return;
+  customMenus=customMenus.filter(x=>x.id!==id);
+  try{await saveCustomMenus();menuEditingId=null;renderMenuBuilder()}catch(err){alert(err.message)}
+};
+window.moveCustomMenu=async(id,dir)=>{
+  const i=customMenus.findIndex(x=>x.id===id),j=i+dir;if(i<0||j<0||j>=customMenus.length)return;
+  [customMenus[i],customMenus[j]]=[customMenus[j],customMenus[i]];
+  try{await saveCustomMenus();renderMenuBuilder()}catch(err){alert(err.message)}
+};
 async function loadData(){
+  if(dataset==="menus"){await loadCustomMenus();renderMenuBuilder();return}
   await loadGroupOrder();
   const hint=document.getElementById("datasetHint"), wrap=document.getElementById("tableWrap");
   hint.textContent=dataset==="users"?"กำลังโหลดข้อมูล User...":"กำลังโหลด "+DATASETS[dataset].label+"...";wrap.innerHTML='<div style="padding:20px" class="muted">กำลังโหลด...</div>';
