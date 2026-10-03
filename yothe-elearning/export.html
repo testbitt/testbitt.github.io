@@ -81,6 +81,8 @@ const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea58
 const THEME_CLASSES=["theme-soft","theme-square","theme-airy","theme-compact","theme-bold"];
 const DEFAULT_DISPLAY_PREFS={orientation:"portrait",items_per_page:20,theme_index:1,color_index:1};
 let displayPrefs={...DEFAULT_DISPLAY_PREFS};
+let layoutGroupOrder=[];
+function sortEntriesByLayoutOrder(entries){const pos=new Map(layoutGroupOrder.map((k,i)=>[String(k),i]));return [...entries].sort((a,b)=>{const ai=pos.has(String(a[0]))?pos.get(String(a[0])):999999,bi=pos.has(String(b[0]))?pos.get(String(b[0])):999999;return ai-bi})}
 function visualItemsPerPage(){
   const safe=displayPrefs.orientation==="landscape"?4:6;
   return Math.max(1,Math.min(Number(displayPrefs.items_per_page)||safe,safe));
@@ -102,13 +104,15 @@ function applyDisplayPrefs(){
   document.getElementById("orientation").value=displayPrefs.orientation;
 }
 async function loadDisplayPrefs(ds=document.getElementById("dataset").value){
-  displayPrefs={...DEFAULT_DISPLAY_PREFS};
+  displayPrefs={...DEFAULT_DISPLAY_PREFS};layoutGroupOrder=[];
   const res=await api({action:"list",dataset:"settings"});
   const data=res.data||[];
   const own=data.find(x=>x.key==="display_preferences_"+ds);
   const legacy=data.find(x=>x.key==="display_preferences");
   const row=own||legacy;
   if(row?.value) displayPrefs={...displayPrefs,...row.value};
+  const orderRow=data.find(x=>x.key==="layout_group_order_"+ds);
+  if(Array.isArray(orderRow?.value)) layoutGroupOrder=orderRow.value.map(String);
   applyDisplayPrefs();
 }
 function esc(v=""){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
@@ -247,12 +251,12 @@ function courseSheet(row){
 }
 async function render(ds,rows){
   let entries,title,builder;
-  if(ds==="drinks"){const g=groupBy(rows,r=>r.recipe_id||"NO-ID");entries=Object.entries(g);title="สูตรชงเครื่องดื่ม";builder=([id,items])=>drinkSheet(id,items)}
-  else if(ds==="production"){const g=groupBy(rows,r=>r.recipe_name||"ไม่ระบุชื่อ");entries=Object.entries(g);title="สูตรการผลิต";builder=([name,items])=>productionSheet(name,[...items].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)))}
-  else if(ds==="expiry"){const g=groupBy(rows,r=>r.category||"วันหมดอายุ");entries=Object.entries(g);title="วันหมดอายุ";builder=([name,items])=>expirySheet(name,items)}
-  else if(ds==="toppings"){const g=groupBy(rows,r=>(r.category||"Topping")+" • "+(r.subcategory||"ทั่วไป"));entries=Object.entries(g);title="Topping";builder=([name,items])=>toppingSheet(name,[...items].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)))}
-  else if(ds==="uniforms"){const g=groupBy(rows,r=>r.category||"เครื่องแต่งกาย");entries=Object.entries(g);title="เครื่องแต่งกาย";builder=([name,items])=>uniformSheet(name,[...items].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)))}
-  else if(ds==="courses"){entries=rows.slice().sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)).map(r=>[r.title||"บทเรียน",r]);title="บทเรียนอื่น ๆ";builder=([,row])=>courseSheet(row)}
+  if(ds==="drinks"){const g=groupBy(rows,r=>r.recipe_id||"NO-ID");entries=sortEntriesByLayoutOrder(Object.entries(g));title="สูตรชงเครื่องดื่ม";builder=([id,items])=>drinkSheet(id,items)}
+  else if(ds==="production"){const g=groupBy(rows,r=>r.recipe_name||"ไม่ระบุชื่อ");entries=sortEntriesByLayoutOrder(Object.entries(g));title="สูตรการผลิต";builder=([name,items])=>productionSheet(name,[...items].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)))}
+  else if(ds==="expiry"){const g=groupBy(rows,r=>r.category||"วันหมดอายุ");entries=sortEntriesByLayoutOrder(Object.entries(g));title="วันหมดอายุ";builder=([name,items])=>expirySheet(name,items)}
+  else if(ds==="toppings"){const g=groupBy(rows,r=>(r.category||"Topping")+" • "+(r.subcategory||"ทั่วไป"));entries=sortEntriesByLayoutOrder(Object.entries(g));title="Topping";builder=([name,items])=>toppingSheet(name,[...items].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)))}
+  else if(ds==="uniforms"){const g=groupBy(rows,r=>r.category||"เครื่องแต่งกาย");entries=sortEntriesByLayoutOrder(Object.entries(g));title="เครื่องแต่งกาย";builder=([name,items])=>uniformSheet(name,[...items].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)))}
+  else if(ds==="courses"){entries=sortEntriesByLayoutOrder(rows.slice().sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)).map(r=>[String(r.id),r]));title="บทเรียนอื่น ๆ";builder=([,row])=>courseSheet(row)}
   else {entries=[];title="Export";builder=()=>document.createElement("div")}
   const sheets=entries.map(builder);
   await packSheets(title,sheets);
