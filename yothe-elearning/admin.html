@@ -310,39 +310,52 @@ function renderUsers(){
         <div class="field"><label>User</label><input id="newUsername" class="input" autocomplete="off"></div>
         <div class="field"><label>Password</label><input id="newPassword" class="input" type="password" autocomplete="new-password"></div>
         <div class="field"><label>ชื่อผู้ใช้</label><input id="newDisplayName" class="input"></div>
+        <div class="field"><label>ตำแหน่ง</label><select id="newPosition"><option value="">-- เลือกตำแหน่ง --</option><option>Area Manager</option><option>Training</option><option>Suppervisor</option><option>Teamlead</option><option>Staff</option><option>Admin</option></select></div>
         <div class="field" style="justify-content:end"><button class="btn primary" onclick="createUser()">+ สร้าง User</button></div>
       </div>
       <div class="user-import">
         <div class="field" style="max-width:420px"><label>Import User (CSV) — เพิ่มต่อจากข้อมูลเดิม ไม่เขียนทับ</label><input id="userImportFile" class="input" type="file" accept=".csv,text/csv"></div>
         <button class="btn secondary" onclick="importUsers()">Import</button>
         <a class="btn secondary" href="templates/Yothe_User_Import_Template.csv" download style="text-decoration:none">ดาวน์โหลด Template CSV</a>
-        <button class="btn secondary" onclick="exportUsers()">Export CSV</button>
+        <button class="btn secondary" onclick="downloadUserTemplate()">ดาวน์โหลด Template</button><button class="btn secondary" onclick="exportUsers()">Export CSV</button>
       </div>
-      <p class="help">คอลัมน์ Import: username,password,display_name,active • User ที่มีอยู่แล้วจะถูกข้าม ไม่แก้ข้อมูลเดิม • Password เก็บแบบ Hash และไม่ถูก Export กลับออกมา</p>
+      <p class="help">คอลัมน์ Import: username,password,display_name,position,active • User ที่มีอยู่แล้วจะถูกข้าม ไม่แก้ข้อมูลเดิม • Password เก็บแบบ Hash และไม่ถูก Export กลับออกมา</p>
       <div id="userMsg" class="msg"></div>
-      <div class="tablewrap"><table class="user-table"><thead><tr><th>User</th><th>ชื่อผู้ใช้</th><th>สถานะ</th><th>สร้างเมื่อ</th><th>จัดการ</th></tr></thead>
-      <tbody>${userRows.map(u=>`<tr><td><strong>${esc(u.username)}</strong></td><td>${esc(u.display_name||"")}</td><td><span class="user-status ${u.active?"on":"off"}">${u.active?"ใช้งาน":"ปิดใช้งาน"}</span></td><td>${new Date(u.created_at).toLocaleString("th-TH")}</td><td class="actions"><button class="btn small secondary" onclick="editUser('${u.id}')">แก้ไข</button> <button class="btn small danger" onclick="deleteUser('${u.id}')">ลบ</button></td></tr>`).join("")}</tbody></table></div>
+      <div class="tablewrap"><table class="user-table"><thead><tr><th>User</th><th>ชื่อผู้ใช้</th><th>ตำแหน่ง</th><th>สถานะ</th><th>สร้างเมื่อ</th><th>จัดการ</th></tr></thead>
+      <tbody>${userRows.map(u=>`<tr><td><strong>${esc(u.username)}</strong></td><td>${esc(u.display_name||"")}</td><td>${esc(u.position||"")}</td><td><span class="user-status ${u.active?"on":"off"}">${u.active?"ใช้งาน":"ปิดใช้งาน"}</span></td><td>${new Date(u.created_at).toLocaleString("th-TH")}</td><td class="actions"><button class="btn small secondary" onclick="editUser('${u.id}')">แก้ไข</button> <button class="btn small danger" onclick="deleteUser('${u.id}')">ลบ</button></td></tr>`).join("")}</tbody></table></div>
     </div>`;
 }
 window.createUser=async()=>{
-  const username=document.getElementById("newUsername").value.trim(),password=document.getElementById("newPassword").value,display_name=document.getElementById("newDisplayName").value.trim(),m=document.getElementById("userMsg");
-  try{m.textContent="กำลังสร้าง User...";m.className="msg saving";await api({action:"save_user",user:{username,password,display_name,active:true}});m.textContent="สร้าง User แล้ว";m.className="msg ok";await loadUsers()}catch(err){m.textContent=err.message;m.className="msg error"}
+  const username=document.getElementById("newUsername").value.trim(),password=document.getElementById("newPassword").value,display_name=document.getElementById("newDisplayName").value.trim(),position=document.getElementById("newPosition").value,m=document.getElementById("userMsg");
+  try{m.textContent="กำลังสร้าง User...";m.className="msg saving";await api({action:"save_user",user:{username,password,display_name,position,active:true}});m.textContent="สร้าง User แล้ว";m.className="msg ok";await loadUsers()}catch(err){m.textContent=err.message;m.className="msg error"}
 };
 window.editUser=async id=>{
   const u=userRows.find(x=>x.id===id);if(!u)return;
   const username=prompt("User",u.username);if(username===null)return;
   const display_name=prompt("ชื่อผู้ใช้",u.display_name||"");if(display_name===null)return;
+  const position=prompt("ตำแหน่ง: Area Manager / Training / Suppervisor / Teamlead / Staff / Admin",u.position||"");if(position===null)return;
   const password=prompt("Password ใหม่ (เว้นว่างหากไม่เปลี่ยน)","");if(password===null)return;
   const active=confirm("กด OK = เปิดใช้งาน\nกด Cancel = ปิดใช้งาน");
-  try{await api({action:"save_user",id,user:{username,display_name,password,active}});await loadUsers()}catch(err){alert(err.message)}
+  try{await api({action:"save_user",id,user:{username,display_name,position,password,active}});await loadUsers()}catch(err){alert(err.message)}
 };
 window.deleteUser=async id=>{if(!confirm("ยืนยันการลบ User นี้?"))return;try{await api({action:"delete_user",id});await loadUsers()}catch(err){alert(err.message)}};
 window.importUsers=async()=>{
   const file=document.getElementById("userImportFile").files?.[0],m=document.getElementById("userMsg");if(!file){m.textContent="กรุณาเลือกไฟล์ CSV";m.className="msg error";return}
   try{const data=parseCSV(await file.text());const res=await api({action:"import_users",rows:data});m.textContent="Import สำเร็จ "+res.inserted+" รายการ • ข้าม User เดิม/ข้อมูลไม่ครบ "+res.skipped+" รายการ";m.className="msg ok";await loadUsers()}catch(err){m.textContent=err.message;m.className="msg error"}
 };
+window.downloadUserTemplate=()=>{
+  const csv="username,password,display_name,position,active\n"+
+    "staff001,1234,ผู้จัดการเขตตัวอย่าง,Area Manager,TRUE\n"+
+    "staff002,5678,ทีม Training ตัวอย่าง,Training,TRUE\n"+
+    "staff003,abcd,Supervisor ตัวอย่าง,Suppervisor,TRUE\n"+
+    "staff004,1234,Teamlead ตัวอย่าง,Teamlead,TRUE\n"+
+    "staff005,1234,Staff ตัวอย่าง,Staff,TRUE\n"+
+    "admin001,1234,Admin ตัวอย่าง,Admin,TRUE\n";
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download="Yothe_User_Import_Template.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
 window.exportUsers=()=>{
-  const headers=["username","display_name","active","created_at"],lines=[headers.join(",")];
+  const headers=["username","display_name","position","active","created_at"],lines=[headers.join(",")];
   for(const u of userRows)lines.push(headers.map(k=>'"'+String(u[k]??"").replaceAll('"','""')+'"').join(","));
   const blob=new Blob(["\ufeff"+lines.join("\n")],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");
   a.href=url;a.download="Yothe_Users.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
