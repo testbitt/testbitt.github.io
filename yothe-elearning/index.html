@@ -96,8 +96,8 @@
     <a class="brand" href="#home"><img class="brand-logo" src="assets/yothe-cat.svg" alt="Yothé"><span>Yothé E-Learning</span></a>
     <nav class="navlinks">
       <a href="#home">Home</a>
-      <a href="#courses">สูตรการผลิต</a>
-      <a href="#courses">สูตรชง</a>
+      <a href="#production">สูตรการผลิต</a>
+      <a href="#drinks">สูตรชง</a>
       <a href="#expiry">วันหมดอายุ</a>
       <a href="#toppings">Topping</a>
       <a href="#courses">บทเรียนอื่น ๆ</a>
@@ -157,6 +157,26 @@
       <button class="chip" data-filter="บทเรียนอื่น ๆ">บทเรียนอื่น ๆ</button>
     </div>
     <div id="course-grid" class="grid"><div class="state loading">กำลังโหลดบทเรียน...</div></div>
+  </section>
+
+  <section id="production">
+    <div class="section-head">
+      <div>
+        <h2>สูตรการผลิต</h2>
+        <p>ข้อมูลสูตรการผลิตจากฐานข้อมูลล่าสุด</p>
+      </div>
+    </div>
+    <div id="production-list" class="grid"><div class="state loading">กำลังโหลดสูตรการผลิต...</div></div>
+  </section>
+
+  <section id="drinks">
+    <div class="section-head">
+      <div>
+        <h2>สูตรชงเครื่องดื่ม</h2>
+        <p>สูตรชงและส่วนประกอบตามเมนู</p>
+      </div>
+    </div>
+    <div id="drink-list" class="grid"><div class="state loading">กำลังโหลดสูตรชง...</div></div>
   </section>
 
   <section id="toppings">
@@ -256,19 +276,73 @@ async function loadCourses(){
   }
 }
 
+async function loadProduction(){
+  try{
+    const rows=await sb("yothe_production_recipes?select=record_id,source_page,category,recipe_name,section,ingredient,quantity,unit,servings,net_quantity,net_unit,degree_c,soak_time_min,notes&is_published=eq.true&order=source_page.asc,record_id.asc");
+    const el=document.getElementById("production-list");
+    if(!rows.length){el.innerHTML='<div class="state">ยังไม่มีข้อมูลสูตรการผลิต</div>';return}
+    const groups={};
+    rows.forEach(r=>{(groups[r.recipe_name]??=[]).push(r)});
+    el.innerHTML=Object.entries(groups).map(([name,items])=>`
+      <article class="card">
+        <div class="thumb">${esc(name)}</div>
+        <div class="card-body">
+          <span class="tag">${esc(items[0]?.category||"สูตรการผลิต")}</span>
+          <h3>${esc(name)}</h3>
+          <div style="overflow:auto;margin-top:10px">
+            <table style="min-width:0;font-size:12px">
+              <thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th></tr></thead>
+              <tbody>${items.map(x=>`<tr><td>${esc(x.ingredient||"")}</td><td>${esc(x.quantity??"")}</td><td>${esc(x.unit||"")}</td></tr>`).join("")}</tbody>
+            </table>
+          </div>
+          <div class="meta"><span>${items[0]?.degree_c?esc(items[0].degree_c)+"°C":""}</span><span>${items[0]?.soak_time_min?esc(items[0].soak_time_min)+" นาที":""}</span></div>
+        </div>
+      </article>`).join("");
+  }catch(e){
+    document.getElementById("production-list").innerHTML='<div class="state">ไม่สามารถโหลดสูตรการผลิตได้</div>';
+  }
+}
+
+async function loadDrinks(){
+  try{
+    const rows=await sb("yothe_drink_recipes?select=record_id,recipe_id,source_page,brand,menu_group,menu_name,component_type,sort_order,ingredient,quantity,unit,notes&is_published=eq.true&order=source_page.asc,recipe_id.asc,sort_order.asc");
+    const el=document.getElementById("drink-list");
+    if(!rows.length){el.innerHTML='<div class="state">ยังไม่มีข้อมูลสูตรชง</div>';return}
+    const groups={};
+    rows.forEach(r=>{(groups[r.recipe_id+"||"+r.menu_name]??=[]).push(r)});
+    el.innerHTML=Object.values(groups).map(items=>`
+      <article class="card">
+        <div class="thumb">${esc(items[0]?.menu_name||"สูตรชง")}</div>
+        <div class="card-body">
+          <span class="tag">${esc(items[0]?.menu_group||"สูตรชง")}</span>
+          <h3>${esc(items[0]?.menu_name||"")}</h3>
+          <div style="overflow:auto;margin-top:10px">
+            <table style="min-width:0;font-size:12px">
+              <thead><tr><th>ส่วนประกอบ</th><th>จำนวน</th><th>หน่วย</th></tr></thead>
+              <tbody>${items.map(x=>`<tr><td>${esc(x.ingredient||"")}</td><td>${esc(x.quantity??"")}</td><td>${esc(x.unit||"")}</td></tr>`).join("")}</tbody>
+            </table>
+          </div>
+        </div>
+      </article>`).join("");
+  }catch(e){
+    document.getElementById("drink-list").innerHTML='<div class="state">ไม่สามารถโหลดสูตรชงได้</div>';
+  }
+}
+
 async function loadToppings(){
   try{
-    const rows=await sb("yothe_toppings?select=id,name,category,description,image_url,usage_notes,sort_order&is_published=eq.true&order=sort_order.asc");
+    const rows=await sb("yothe_toppings?select=id,item_name,name,category,subcategory,quantity,unit,price_baht,placement,preparation,description,image_url,usage_notes,sort_order&is_published=eq.true&order=source_page.asc,record_id.asc");
     const el=document.getElementById("topping-grid");
     if(!rows.length){el.innerHTML='<div class="state">ยังไม่มีข้อมูล Topping</div>';return}
     el.innerHTML=rows.map(r=>`
       <article class="card">
         <div class="thumb">${r.image_url?'<img src="'+esc(r.image_url)+'" alt="'+esc(r.name)+'" style="width:100%;height:100%;object-fit:cover">':esc(r.category||"Topping")}</div>
         <div class="card-body">
-          <span class="tag">${esc(r.category||"Topping")}</span>
-          <h3>${esc(r.name)}</h3>
-          <p>${esc(r.description||"")}</p>
-          ${r.usage_notes?'<div class="meta"><span>'+esc(r.usage_notes)+'</span></div>':''}
+          <span class="tag">${esc(r.subcategory||r.category||"Topping")}</span>
+          <h3>${esc(r.item_name||r.name||"")}</h3>
+          <p>${esc(r.description||r.preparation||"")}</p>
+          <div class="meta"><span>${esc(r.quantity??"")} ${esc(r.unit||"")}</span><span>${r.price_baht?esc(r.price_baht)+" บาท":""}</span></div>
+          ${r.placement?'<div class="meta"><span>ตำแหน่ง: '+esc(r.placement)+'</span></div>':''}
         </div>
       </article>`).join("");
   }catch(e){
@@ -316,6 +390,8 @@ document.querySelectorAll(".chip").forEach(btn=>btn.addEventListener("click",()=
 
 loadBrandStory();
 loadCourses();
+loadProduction();
+loadDrinks();
 loadToppings();
 loadExpiry();
 </script>
