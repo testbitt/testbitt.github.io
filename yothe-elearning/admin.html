@@ -53,8 +53,8 @@ label{font-size:13px;font-weight:800}.input,select,textarea{width:100%;border:1p
     </div>
 
     <div class="tabs" id="tabs">
-      <button class="tab active" data-dataset="courses">สูตรการผลิต / หลักสูตร</button>
-      <button class="tab" data-dataset="lessons">สูตรชง / บทเรียน</button>
+      <button class="tab active" data-dataset="production">สูตรการผลิต</button>
+      <button class="tab" data-dataset="drinks">สูตรชงเครื่องดื่ม</button>
       <button class="tab" data-dataset="expiry">วันหมดอายุ</button>
       <button class="tab" data-dataset="toppings">Topping</button>
       <button class="tab" data-dataset="settings">Brand Story / Settings</button>
@@ -66,12 +66,12 @@ label{font-size:13px;font-weight:800}.input,select,textarea{width:100%;border:1p
         <div class="uploadbox">
           <div class="field"><label>ประเภทข้อมูล</label><select id="uploadDataset"></select></div>
           <div class="field"><label>รูปแบบการนำเข้า</label>
-            <select id="uploadMode"><option value="append">เพิ่มต่อจากข้อมูลเดิม</option><option value="replace">แทนที่ข้อมูลเดิมทั้งหมด</option></select>
+            <div class="input" style="background:#fff7f7;color:#b91c1c;font-weight:800">เขียนทับข้อมูลเดิมทั้งหมด + Auto Save ไปยัง Server</div>
           </div>
           <div class="field"><label>ไฟล์ CSV หรือ JSON</label><input id="uploadFile" class="input" type="file" accept=".csv,.json,text/csv,application/json"></div>
           <button id="uploadBtn" class="btn primary">Upload และบันทึก</button>
           <div id="uploadMsg" class="msg"></div>
-          <p class="help">CSV ใช้ชื่อหัวคอลัมน์ให้ตรงกับชื่อฟิลด์ของแต่ละประเภท ข้อมูลจะถูกบันทึกลงฐานข้อมูลกลางทันที</p>
+          <p class="help">ทุกครั้งที่ Upload ระบบจะเขียนทับข้อมูลเดิมของหมวดนั้นทั้งหมด และบันทึกลง Server ทันทีโดยอัตโนมัติ ไม่ต้องกด Save ซ้ำ</p>
         </div>
       </section>
 
@@ -104,28 +104,35 @@ label{font-size:13px;font-weight:800}.input,select,textarea{width:100%;border:1p
 <script>
 const API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-admin";
 const DATASETS={
-  courses:{label:"สูตรการผลิต / หลักสูตร",fields:[
-    ["slug","Slug","text"],["category","หมวดหมู่","text"],["title","ชื่อ","text"],["description","รายละเอียด","textarea"],
-    ["thumbnail_url","รูปภาพ URL","text"],["estimated_minutes","เวลา (นาที)","number"],["difficulty","ระดับ","text"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
+  production:{label:"สูตรการผลิต",fields:[
+    ["record_id","Record ID","text"],["source_page","หน้า","number"],["category","หมวดหมู่","text"],["recipe_name","ชื่อสูตร","text"],
+    ["section","Section","text"],["ingredient","วัตถุดิบ","text"],["quantity","จำนวน","number"],["unit","หน่วย","text"],
+    ["servings","จำนวนเสิร์ฟ","text"],["net_quantity","Net Quantity","number"],["net_unit","Net Unit","text"],["degree_c","อุณหภูมิ °C","number"],
+    ["soak_time_min","เวลาแช่ (นาที)","number"],["section_yield_quantity","Section Yield","number"],["section_yield_unit","Yield Unit","text"],
+    ["notes","หมายเหตุ","textarea"],["is_published","เผยแพร่","boolean"]
   ]},
-  lessons:{label:"สูตรชง / บทเรียน",fields:[
-    ["course_id","Course ID","number"],["lesson_type","ประเภทบทเรียน","text"],["title","ชื่อบทเรียน","text"],["content","เนื้อหา JSON","json"],
-    ["media_url","Media URL","text"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
+  drinks:{label:"สูตรชงเครื่องดื่ม",fields:[
+    ["record_id","Record ID","text"],["recipe_id","Recipe ID","text"],["source_file","Source File","text"],["source_page","หน้า","number"],
+    ["brand","Brand","text"],["menu_group","Menu Group","text"],["menu_name","ชื่อเมนู","text"],["component_type","Component","text"],
+    ["sort_order","ลำดับ","number"],["ingredient","วัตถุดิบ","text"],["quantity","จำนวน","number"],["unit","หน่วย","text"],
+    ["notes","หมายเหตุ","textarea"],["is_published","เผยแพร่","boolean"]
   ]},
   expiry:{label:"วันหมดอายุ",fields:[
     ["item_name","ชื่อรายการ","text"],["category","หมวดหมู่","text"],["storage_condition","การจัดเก็บ","text"],["shelf_life_unopened","อายุยังไม่เปิด","text"],
     ["shelf_life_opened","อายุหลังเปิด","text"],["unit","หน่วย","text"],["notes","หมายเหตุ","textarea"],["warning_level","ระดับเตือน","text"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
   ]},
   toppings:{label:"Topping",fields:[
-    ["name","ชื่อ Topping","text"],["category","หมวดหมู่","text"],["description","รายละเอียด","textarea"],["image_url","รูปภาพ URL","text"],
-    ["usage_notes","วิธีใช้ / หมายเหตุ","textarea"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
+    ["record_id","Record ID","text"],["source_file","Source File","text"],["source_page","หน้า","number"],["brand","Brand","text"],
+    ["category","Category","text"],["subcategory","Subcategory","text"],["item_name","ชื่อ Topping","text"],["quantity","จำนวน","text"],
+    ["unit","หน่วย","text"],["price_baht","ราคา (บาท)","number"],["placement","ตำแหน่ง","text"],["preparation","วิธีเตรียม","textarea"],
+    ["max_add_items","เพิ่มได้สูงสุด","number"],["notes","หมายเหตุ","textarea"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
   ]},
   settings:{label:"Brand Story / Settings",fields:[
     ["key","Key","text"],["value","Value JSON","json"]
   ]}
 };
 let adminPin=sessionStorage.getItem("yothe_admin_pin")||"";
-let dataset="courses", rows=[], editingId=null;
+let dataset="production", rows=[], editingId=null;
 
 async function api(payload){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,pin:adminPin})});
@@ -233,7 +240,7 @@ function coerceRows(ds,arr){
   }return o});
 }
 document.getElementById("uploadBtn").onclick=async()=>{
-  const msg=document.getElementById("uploadMsg"),file=document.getElementById("uploadFile").files[0],ds=document.getElementById("uploadDataset").value,mode=document.getElementById("uploadMode").value;
+  const msg=document.getElementById("uploadMsg"),file=document.getElementById("uploadFile").files[0],ds=document.getElementById("uploadDataset").value,mode="replace";
   if(!file){msg.textContent="กรุณาเลือกไฟล์";msg.className="msg error";return}
   try{
     msg.textContent="กำลังอ่านไฟล์...";msg.className="msg";const text=await file.text();let data;
@@ -241,10 +248,9 @@ document.getElementById("uploadBtn").onclick=async()=>{
     else data=parseCSV(text);
     data=coerceRows(ds,data);
     if(!data.length)throw new Error("ไม่พบข้อมูลในไฟล์");
-    if(mode==="replace"&&!confirm("โหมดแทนที่ จะลบข้อมูลเดิมของหมวดนี้ทั้งหมดก่อนนำเข้า ยืนยันหรือไม่?"))return;
-    msg.textContent="กำลัง Upload "+data.length+" รายการ...";
+    msg.textContent="กำลังเขียนทับข้อมูลเดิมและ Auto Save "+data.length+" รายการไปยัง Server...";
     const res=await api({action:"bulk_import",dataset:ds,mode,rows:data});
-    msg.textContent="Upload สำเร็จ "+res.count+" รายการ";msg.className="msg ok";
+    msg.textContent="Upload และ Auto Save สำเร็จ "+res.count+" รายการ";msg.className="msg ok";
     dataset=ds;document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.dataset===ds));await loadData();
   }catch(err){msg.textContent=err.message;msg.className="msg error"}
 };
