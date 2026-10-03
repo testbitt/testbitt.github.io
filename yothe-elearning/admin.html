@@ -120,7 +120,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
       <div class="drag-hint">กดเมาส์ซ้ายค้างที่เมนู แล้วลากเพื่อสลับตำแหน่ง • Auto Save ไปยัง Server</div>
     </div>
 
-    <section class="layout-panel">
+    <section id="layoutPanel" class="layout-panel">
       <div class="head" style="margin-bottom:12px">
         <div><h2 style="margin:0">Layout การแสดงผล</h2><p>A4 แนวตั้ง/แนวนอน • สูงสุด 20 รายการต่อหน้า • ไม่ตัดข้อมูลข้ามหน้า</p><div id="a4SizeInfo" class="help" style="margin-top:4px;font-weight:800;color:var(--red)">ขนาด Export จริง: A4 210 × 297 mm</div></div>
         <button id="printBtn" class="btn secondary" type="button">พิมพ์ / Save PDF</button>
@@ -136,7 +136,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
     </section>
 
     <div class="grid2">
-      <section class="panel">
+      <section id="uploadDataPanel" class="panel">
         <h2 style="margin-top:0">Upload ข้อมูล</h2>
         <div class="uploadbox">
           <div class="field"><label>ประเภทข้อมูล</label><select id="uploadDataset"></select></div>
@@ -150,7 +150,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
         </div>
       </section>
 
-      <section class="panel">
+      <section id="attachmentPanel" class="panel">
         <h2 style="margin-top:0">Upload ไฟล์แนบ</h2>
         <div class="uploadbox">
           <div class="field"><label>เมนูที่ใช้ไฟล์</label>
@@ -332,7 +332,7 @@ async function uploadAttachments(){
     await loadAttachments();
   }catch(err){msg.textContent="Upload ไม่สำเร็จ: "+err.message;msg.className="msg error"}
 }
-function showAdmin(){document.getElementById("loginPanel").classList.add("hidden");document.getElementById("adminPanel").classList.remove("hidden");document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.dataset===dataset));initUploadDataset();initLayoutControls();Promise.all([loadDisplayPrefs(),loadMenuOrder()]).then(()=>{syncAttachmentSection();loadData()})}
+function showAdmin(){document.getElementById("loginPanel").classList.add("hidden");document.getElementById("adminPanel").classList.remove("hidden");syncAdminPageChrome();document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.dataset===dataset));initUploadDataset();initLayoutControls();Promise.all([loadDisplayPrefs(),loadMenuOrder()]).then(()=>{syncAttachmentSection();loadData()})}
 function logout(){sessionStorage.removeItem("yothe_admin_pin");adminPin="";location.reload()}
 async function validateStored(){if(!adminPin)return;try{await api({action:"validate"});showAdmin()}catch{logout()}}
 
@@ -391,10 +391,16 @@ function initMenuDrag(){
     };
   });
 }
+function syncAdminPageChrome(){
+  const hideForUsers=dataset==="users";
+  document.getElementById("layoutPanel")?.classList.toggle("hidden",hideForUsers);
+  document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers);
+  document.getElementById("attachmentPanel")?.classList.toggle("hidden",hideForUsers);
+}
 document.getElementById("tabs").addEventListener("click",e=>{
   const b=e.target.closest(".tab"); if(!b)return;
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
-  dataset=b.dataset.dataset;if(DATASETS[dataset])document.getElementById("uploadDataset").value=dataset;hideEditor();syncAttachmentSection();loadDisplayPrefs().then(loadData);
+  dataset=b.dataset.dataset;if(DATASETS[dataset])document.getElementById("uploadDataset").value=dataset;hideEditor();syncAdminPageChrome();syncAttachmentSection();loadDisplayPrefs().then(loadData);
 });
 document.getElementById("refreshBtn").onclick=loadData;
 document.getElementById("addBtn").onclick=()=>dataset==="users"?document.getElementById("userUsername")?.focus():dataset==="drinks"?openEditor({record_id:"DRK-"+Date.now(),recipe_id:"RECIPE-"+Date.now(),component_type:"Ingredient",sort_order:1,is_published:true}):openEditor(null);
@@ -430,7 +436,14 @@ async function loadUsers(){
   }catch(err){wrap.innerHTML='<div style="padding:20px" class="error">'+esc(err.message)+'</div>'}
 }
 function positionOptions(selected=""){
-  return '<option value="">-- เลือกตำแหน่ง --</option>'+USER_POSITIONS.map(p=>'<option value="'+esc(p)+'" '+(p===selected?'selected':'')+'>'+esc(p)+'</option>').join("");
+  const isOther=!!selected&&!USER_POSITIONS.includes(selected);
+  return '<option value="">-- เลือกตำแหน่ง --</option>'+USER_POSITIONS.map(p=>'<option value="'+esc(p)+'" '+(p===selected?'selected':'')+'>'+esc(p)+'</option>').join("")+'<option value="__other__" '+(isOther?'selected':'')+'>อื่นๆ</option>';
+}
+function toggleOtherPosition(){
+  const sel=document.getElementById("userPosition"),wrap=document.getElementById("userPositionOtherWrap");
+  if(!sel||!wrap)return;
+  wrap.classList.toggle("hidden",sel.value!=="__other__");
+  if(sel.value==="__other__") document.getElementById("userPositionOther")?.focus();
 }
 function renderUsers(){
   const wrap=document.getElementById("tableWrap");wrap.className="";
@@ -442,7 +455,8 @@ function renderUsers(){
         <div class="field"><label>Username</label><input id="userUsername" class="input" autocomplete="off" value="${esc(edit?.username||"")}"></div>
         <div class="field"><label>Password ${edit?"(เว้นว่างหากไม่เปลี่ยน)":""}</label><input id="userPassword" class="input" type="password" autocomplete="new-password"></div>
         <div class="field"><label>Display Name</label><input id="userDisplayName" class="input" value="${esc(edit?.display_name||"")}"></div>
-        <div class="field"><label>Position</label><select id="userPosition" class="input">${positionOptions(edit?.position||"")}</select></div>
+        <div class="field"><label>Position</label><select id="userPosition" class="input" onchange="toggleOtherPosition()">${positionOptions(edit?.position||"")}</select></div>
+        <div id="userPositionOtherWrap" class="field ${edit?.position&&!USER_POSITIONS.includes(edit.position)?"":"hidden"}"><label>ระบุตำแหน่งอื่นๆ</label><input id="userPositionOther" class="input" maxlength="100" placeholder="กรอกชื่อตำแหน่ง" value="${esc(edit?.position&&!USER_POSITIONS.includes(edit.position)?edit.position:"")}"></div>
       </div>
       <div class="user-form-actions">
         <button class="btn primary" onclick="saveUserForm()">${edit?"บันทึกการแก้ไข":"+ เพิ่ม User"}</button>
@@ -456,7 +470,7 @@ function renderUsers(){
         <button class="btn secondary" onclick="downloadUserTemplate()">Template User</button>
         <button class="btn secondary" onclick="exportUsers()">Export User</button>
       </div>
-      <p class="help">Template ใช้คอลัมน์: username, password, display_name, position • Position: Area Manager / Training / Suppervisor / Teamlead / Staff / Admin • User ที่มีอยู่แล้วจะถูกข้ามและไม่เขียนทับ</p>
+      <p class="help">Template ใช้คอลัมน์: username, password, display_name, position • Position: Area Manager / Training / Suppervisor / Teamlead / Staff / Admin หรือกรอกตำแหน่งอื่นได้ • User ที่มีอยู่แล้วจะถูกข้ามและไม่เขียนทับ</p>
       <div id="userMsg" class="msg"></div>
 
       <div class="tablewrap"><table class="user-table"><thead><tr><th>Username</th><th>Display Name</th><th>Position</th><th>สถานะ</th><th>สร้างเมื่อ</th><th>จัดการ</th></tr></thead>
@@ -467,8 +481,10 @@ window.saveUserForm=async()=>{
   const username=document.getElementById("userUsername").value.trim();
   const password=document.getElementById("userPassword").value;
   const display_name=document.getElementById("userDisplayName").value.trim();
-  const position=document.getElementById("userPosition").value;
+  const positionChoice=document.getElementById("userPosition").value;
+  const position=positionChoice==="__other__"?document.getElementById("userPositionOther").value.trim():positionChoice;
   const m=document.getElementById("userMsg");
+  if(positionChoice==="__other__"&&!position){m.textContent="กรุณาระบุตำแหน่งอื่นๆ";m.className="msg error";return}
   try{
     m.textContent=userEditingId?"กำลังบันทึกการแก้ไข...":"กำลังสร้าง User...";m.className="msg saving";
     await api({action:"save_user",id:userEditingId||undefined,user:{username,password,display_name,position,active:true}});
@@ -490,7 +506,8 @@ window.downloadUserTemplate=()=>{
     ["user003","1234","ชื่อพนักงาน 3","Suppervisor"],
     ["user004","1234","ชื่อพนักงาน 4","Teamlead"],
     ["user005","1234","ชื่อพนักงาน 5","Staff"],
-    ["admin001","1234","ผู้ดูแลระบบ","Admin"]
+    ["admin001","1234","ผู้ดูแลระบบ","Admin"],
+    ["user006","1234","ชื่อพนักงาน 6","ตำแหน่งอื่นๆ"]
   ];
   const csv=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(",")).join("\n");
   const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
