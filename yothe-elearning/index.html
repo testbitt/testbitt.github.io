@@ -43,7 +43,16 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 .attachment-preview{aspect-ratio:4/3;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .attachment-preview img{width:100%;height:100%;object-fit:contain;background:#fff}
 .attachment-icon{font-size:42px}.attachment-body{padding:14px;display:flex;flex-direction:column;gap:8px;flex:1}.attachment-title{font-weight:850;word-break:break-word}.attachment-file{font-size:12px;color:var(--muted);word-break:break-word}
-.attachment-open{display:inline-flex;align-items:center;justify-content:center;padding:9px 12px;border-radius:10px;background:var(--red);color:#fff;font-weight:800;font-size:13px;text-decoration:none}
+.attachment-open{display:inline-flex;align-items:center;justify-content:center;padding:9px 12px;border-radius:10px;background:var(--red);color:#fff;font-weight:800;font-size:13px;text-decoration:none;border:0;cursor:pointer}
+.attachment-viewer{position:fixed;inset:0;z-index:260;background:rgba(0,0,0,.72);display:grid;place-items:center;padding:18px}
+.attachment-viewer-card{width:min(1180px,96vw);height:min(90vh,900px);background:#fff;border-radius:18px;overflow:hidden;display:grid;grid-template-rows:auto 1fr auto;box-shadow:0 30px 90px rgba(0,0,0,.35)}
+.attachment-viewer-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.attachment-viewer-title{font-weight:900;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.attachment-viewer-count{font-size:12px;color:var(--muted);white-space:nowrap}
+.attachment-viewer-body{min-height:0;background:#f3f4f6;display:grid;place-items:center;overflow:auto}.attachment-viewer-body img{max-width:100%;max-height:100%;object-fit:contain}.attachment-viewer-body iframe{width:100%;height:100%;border:0;background:#fff}
+.attachment-viewer-empty{padding:30px;text-align:center}.attachment-viewer-empty a{display:inline-flex;margin-top:10px}
+.attachment-viewer-foot{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--line);background:#fff}
+.viewer-nav{border:1px solid #fecdd3;background:#fff;color:var(--red);border-radius:12px;padding:10px 16px;font-weight:900}.viewer-nav:disabled{opacity:.35;cursor:not-allowed}.viewer-close{border:0;background:var(--red);color:#fff;border-radius:12px;padding:10px 18px;font-weight:900}
+@media(max-width:700px){.attachment-viewer{padding:8px}.attachment-viewer-card{width:100%;height:94vh}.attachment-viewer-foot{grid-template-columns:1fr 1fr}.viewer-close{grid-column:1/-1;grid-row:1}.viewer-nav{width:100%}}
 @media(max-width:900px){.nav{align-items:flex-start;flex-wrap:wrap}.navlinks{order:3;width:100%;justify-content:flex-start}.story{grid-template-columns:1fr;padding:34px 30px;gap:24px}.story-logo{position:static}.story-logo img{width:min(240px,65vw)}.story-copy{max-width:none}.grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}.attachment-grid{grid-template-columns:1fr 1fr}.userbox{margin-left:auto}}
 @media(max-width:560px){.cards{grid-template-columns:1fr}.attachment-grid{grid-template-columns:1fr}.brand{font-size:20px}.navlinks button,.navlinks a{font-size:13px;padding:8px}.story{padding:26px 20px}.story h1{margin-bottom:22px}.story-copy p{font-size:16px;line-height:1.72;margin-bottom:18px}.story-logo img{width:min(210px,70vw)}.sheet-body{grid-template-columns:95px 1fr}}
 </style>
@@ -97,6 +106,21 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 </main>
 </div>
 
+<section id="attachmentViewer" class="attachment-viewer hidden">
+  <div class="attachment-viewer-card">
+    <div class="attachment-viewer-head">
+      <div style="min-width:0"><div id="attachmentViewerTitle" class="attachment-viewer-title"></div><div id="attachmentViewerCount" class="attachment-viewer-count"></div></div>
+      <button id="attachmentViewerX" class="btn secondary" style="padding:7px 10px">✕</button>
+    </div>
+    <div id="attachmentViewerBody" class="attachment-viewer-body"></div>
+    <div class="attachment-viewer-foot">
+      <button id="attachmentPrevBtn" class="viewer-nav">← ไฟล์ก่อนหน้า</button>
+      <button id="attachmentCloseBtn" class="viewer-close">ปิด</button>
+      <button id="attachmentNextBtn" class="viewer-nav">ไฟล์ถัดไป →</button>
+    </div>
+  </div>
+</section>
+
 <section id="welcomePop" class="welcome-pop hidden">
   <div class="welcome-card">
     <img src="assets/yothe-cat.svg" alt="Yothé Cat">
@@ -110,7 +134,7 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 const LOGIN_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-login";
 const PUBLIC_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-public";
 const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
-let token="",currentUser=null,cache={},courses=[],settingsMap={};
+let token="",currentUser=null,cache={},courses=[],settingsMap={},attachmentSets={},attachmentViewerSection="",attachmentViewerIndex=0;
 function setAuthUI(loggedIn){
   document.querySelectorAll(".auth-only").forEach(el=>el.classList.toggle("hidden-auth",!loggedIn));
   document.getElementById("userBox")?.classList.toggle("hidden",!loggedIn);
@@ -167,15 +191,53 @@ async function loadAttachments(section){
   const el=document.getElementById("attachments-"+section);if(!el)return;
   try{
     const files=await api("attachments",{section});
+    attachmentSets[section]=files;
     if(!files.length){el.innerHTML="";return}
-    el.innerHTML='<h3>ไฟล์ประกอบบทเรียน</h3><div class="attachment-grid">'+files.map(f=>{
+    el.innerHTML='<h3>ไฟล์ประกอบบทเรียน</h3><div class="attachment-grid">'+files.map((f,idx)=>{
       const info=fileTypeInfo(f.mime_type,f.file_name);
       const preview=info.type==="image"&&f.url
         ?'<div class="attachment-preview"><img src="'+esc(f.url)+'" alt="'+esc(f.title||f.file_name)+'" loading="lazy"></div>'
         :'<div class="attachment-preview"><div class="attachment-icon">'+info.icon+'</div></div>';
-      return '<article class="attachment-card">'+preview+'<div class="attachment-body"><div class="attachment-title">'+esc(f.title||f.file_name)+'</div><div class="attachment-file">'+esc(info.label)+' • '+esc(f.file_name)+'</div>'+(f.url?'<a class="attachment-open" href="'+esc(f.url)+'" target="_blank" rel="noopener">เปิดไฟล์</a>':'')+'</div></article>'
+      return '<article class="attachment-card">'+preview+'<div class="attachment-body"><div class="attachment-title">'+esc(f.title||f.file_name)+'</div><div class="attachment-file">'+esc(info.label)+' • '+esc(f.file_name)+'</div>'+(f.url?'<button class="attachment-open" type="button" onclick="openAttachmentViewer(\''+esc(section)+'\','+idx+')">เปิดไฟล์</button>':'')+'</div></article>'
     }).join("")+'</div>';
   }catch(e){el.innerHTML='<div class="state">โหลดไฟล์แนบไม่สำเร็จ: '+esc(e.message)+'</div>'}
+}
+function renderAttachmentViewer(){
+  const files=attachmentSets[attachmentViewerSection]||[];
+  const f=files[attachmentViewerIndex];
+  if(!f)return closeAttachmentViewer();
+  const info=fileTypeInfo(f.mime_type,f.file_name);
+  document.getElementById("attachmentViewerTitle").textContent=f.title||f.file_name||"ไฟล์แนบ";
+  document.getElementById("attachmentViewerCount").textContent=(attachmentViewerIndex+1)+" / "+files.length;
+  const body=document.getElementById("attachmentViewerBody");
+  if(info.type==="image"){
+    body.innerHTML='<img src="'+esc(f.url)+'" alt="'+esc(f.title||f.file_name)+'">';
+  }else if(info.type==="pdf"){
+    body.innerHTML='<iframe src="'+esc(f.url)+'#toolbar=1&navpanes=1"></iframe>';
+  }else{
+    body.innerHTML='<div class="attachment-viewer-empty"><div style="font-size:54px">'+info.icon+'</div><h3>'+esc(f.title||f.file_name)+'</h3><p>ไฟล์ชนิดนี้ไม่สามารถแสดงตัวอย่างภายใน Browser ได้</p><a class="attachment-open" href="'+esc(f.url)+'" target="_blank" rel="noopener">เปิดไฟล์</a></div>';
+  }
+  document.getElementById("attachmentPrevBtn").disabled=attachmentViewerIndex<=0;
+  document.getElementById("attachmentNextBtn").disabled=attachmentViewerIndex>=files.length-1;
+}
+window.openAttachmentViewer=(section,index)=>{
+  attachmentViewerSection=section;
+  attachmentViewerIndex=Number(index)||0;
+  document.getElementById("attachmentViewer").classList.remove("hidden");
+  document.body.style.overflow="hidden";
+  renderAttachmentViewer();
+};
+function closeAttachmentViewer(){
+  document.getElementById("attachmentViewer").classList.add("hidden");
+  document.getElementById("attachmentViewerBody").innerHTML="";
+  document.body.style.overflow="";
+}
+function stepAttachment(dir){
+  const files=attachmentSets[attachmentViewerSection]||[];
+  const next=attachmentViewerIndex+dir;
+  if(next<0||next>=files.length)return;
+  attachmentViewerIndex=next;
+  renderAttachmentViewer();
 }
 async function loadSettings(){const rows=await api("settings"),map=Object.fromEntries(rows.map(x=>[x.key,x.value]));settingsMap=map;applyTheme(map.display_preferences||{});renderMenuOrder(map.menu_order||["production","drinks","expiry","toppings","uniforms"]);renderBrandStoryValue(map.brand_story||{});if(token)await loadAttachments("home")}
 function renderMenuOrder(order){const nav=document.getElementById("navLinks"),home=nav.querySelector('[data-view="home"]'),coursesBtn=nav.querySelector('[data-view="courses"]'),admin=nav.querySelector('a[href="admin.html"]');order.filter(x=>["production","drinks","expiry","toppings","uniforms"].includes(x)).forEach(k=>{const el=nav.querySelector('[data-view="'+k+'"]');if(el)nav.insertBefore(el,coursesBtn)});nav.insertBefore(home,nav.firstChild);nav.appendChild(coursesBtn);nav.appendChild(admin)}
@@ -290,6 +352,17 @@ document.addEventListener("click",e=>{
   showView(b.dataset.view)
 });
 document.getElementById("courseSearch").addEventListener("input",renderCourses);
+document.getElementById("attachmentPrevBtn").onclick=()=>stepAttachment(-1);
+document.getElementById("attachmentNextBtn").onclick=()=>stepAttachment(1);
+document.getElementById("attachmentCloseBtn").onclick=closeAttachmentViewer;
+document.getElementById("attachmentViewerX").onclick=closeAttachmentViewer;
+document.getElementById("attachmentViewer").addEventListener("click",e=>{if(e.target===document.getElementById("attachmentViewer"))closeAttachmentViewer()});
+document.addEventListener("keydown",e=>{
+  if(document.getElementById("attachmentViewer").classList.contains("hidden"))return;
+  if(e.key==="ArrowLeft")stepAttachment(-1);
+  if(e.key==="ArrowRight")stepAttachment(1);
+  if(e.key==="Escape")closeAttachmentViewer();
+});
 
 // เปิด Website ที่ Home เสมอ แต่คง Login ไว้ภายในแท็บเดิมจนกว่าจะปิดแท็บหรือ Logout
 async function restoreTabSession(){
