@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yothé Admin</title>
+<style>
+:root{--red:#d71920;--red2:#a80f15;--soft:#fff1f2;--ink:#171717;--muted:#6b7280;--line:#e5e7eb;--bg:#f6f7f9;--white:#fff}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI","Noto Sans Thai",sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select,textarea{font:inherit}button{cursor:pointer}
+.top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.topin{max-width:1240px;margin:auto;height:68px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;color:var(--red);font-size:21px}.brand img{width:38px;height:44px;object-fit:contain}
+.back{color:var(--red);font-weight:800;text-decoration:none}
+.wrap{max-width:1240px;margin:0 auto;padding:26px 20px 60px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 8px 25px rgba(0,0,0,.06);padding:22px}
+.login{max-width:460px;margin:70px auto}.login h1{margin:0 0 8px}.muted{color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.field{display:flex;flex-direction:column;gap:7px;margin:12px 0;flex:1;min-width:180px}
+label{font-size:13px;font-weight:800}.input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:12px;padding:11px 12px;background:#fff}textarea{min-height:110px;resize:vertical}
+.btn{border:0;border-radius:12px;padding:11px 15px;font-weight:800}.primary{background:var(--red);color:#fff}.secondary{background:#fff;color:var(--red);border:1px solid #fecdd3}.danger{background:#fff1f2;color:#b91c1c;border:1px solid #fecaca}.small{padding:7px 10px;font-size:12px}
+.hidden{display:none!important}.msg{margin-top:10px;font-size:13px}.error{color:#b91c1c}.ok{color:#15803d}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}.head h1{margin:0}.head p{margin:5px 0 0;color:var(--muted)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;font-weight:800}.tab.active{background:var(--red);color:#fff;border-color:var(--red)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}.uploadbox{border:2px dashed #fecdd3;background:#fffafa;border-radius:16px;padding:18px}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:14px;margin-top:16px}table{border-collapse:collapse;width:100%;min-width:860px}th,td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:13px}th{background:#fafafa;position:sticky;top:0}.actions{white-space:nowrap}
+.badge{display:inline-block;background:var(--soft);color:var(--red);padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800}
+.editor{margin-top:18px;border-top:1px solid var(--line);padding-top:18px}.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.formgrid .wide{grid-column:1/-1}
+.help{font-size:12px;color:var(--muted);line-height:1.6}.json{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+@media(max-width:760px){.grid2,.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}.wrap{padding:18px 12px 40px}.panel{padding:16px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="topin">
+  <div class="brand"><img src="assets/yothe-cat.svg" alt="Yothé"><span>Yothé Admin</span></div>
+  <a class="back" href="./">← กลับหน้า E-Learning</a>
+</div></header>
+
+<main class="wrap">
+  <section id="loginPanel" class="panel login">
+    <h1>เข้าสู่ระบบ Admin</h1>
+    <p class="muted">กรอกรหัสเพื่อจัดการข้อมูลและ Upload ข้อมูล</p>
+    <form id="loginForm">
+      <div class="field"><label>รหัส Admin</label><input id="pin" class="input" type="password" inputmode="numeric" autocomplete="current-password" required></div>
+      <button class="btn primary" type="submit">เข้าสู่ระบบ</button>
+      <div id="loginMsg" class="msg"></div>
+    </form>
+  </section>
+
+  <section id="adminPanel" class="hidden">
+    <div class="head">
+      <div><h1>จัดการข้อมูล Yothé E-Learning</h1><p>เพิ่ม แก้ไข ลบ และ Upload ข้อมูลจากไฟล์ CSV / JSON</p></div>
+      <button id="logoutBtn" class="btn secondary">ออกจาก Admin</button>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-dataset="courses">สูตรการผลิต / หลักสูตร</button>
+      <button class="tab" data-dataset="lessons">สูตรชง / บทเรียน</button>
+      <button class="tab" data-dataset="expiry">วันหมดอายุ</button>
+      <button class="tab" data-dataset="toppings">Topping</button>
+      <button class="tab" data-dataset="settings">Brand Story / Settings</button>
+    </div>
+
+    <div class="grid2">
+      <section class="panel">
+        <h2 style="margin-top:0">Upload ข้อมูล</h2>
+        <div class="uploadbox">
+          <div class="field"><label>ประเภทข้อมูล</label><select id="uploadDataset"></select></div>
+          <div class="field"><label>รูปแบบการนำเข้า</label>
+            <select id="uploadMode"><option value="append">เพิ่มต่อจากข้อมูลเดิม</option><option value="replace">แทนที่ข้อมูลเดิมทั้งหมด</option></select>
+          </div>
+          <div class="field"><label>ไฟล์ CSV หรือ JSON</label><input id="uploadFile" class="input" type="file" accept=".csv,.json,text/csv,application/json"></div>
+          <button id="uploadBtn" class="btn primary">Upload และบันทึก</button>
+          <div id="uploadMsg" class="msg"></div>
+          <p class="help">CSV ใช้ชื่อหัวคอลัมน์ให้ตรงกับชื่อฟิลด์ของแต่ละประเภท ข้อมูลจะถูกบันทึกลงฐานข้อมูลกลางทันที</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 style="margin-top:0">ข้อมูลปัจจุบัน</h2>
+        <p class="muted" id="datasetHint">กำลังโหลด...</p>
+        <div class="row">
+          <button id="addBtn" class="btn primary">+ เพิ่มข้อมูล</button>
+          <button id="refreshBtn" class="btn secondary">รีเฟรช</button>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel" style="margin-top:18px">
+      <div id="tableWrap" class="tablewrap"><div style="padding:20px" class="muted">กำลังโหลดข้อมูล...</div></div>
+      <div id="editor" class="editor hidden">
+        <h2 id="editorTitle">เพิ่มข้อมูล</h2>
+        <form id="editForm"><div id="formFields" class="formgrid"></div>
+          <div class="row" style="margin-top:14px">
+            <button class="btn primary" type="submit">บันทึก</button>
+            <button id="cancelEdit" class="btn secondary" type="button">ยกเลิก</button>
+          </div>
+          <div id="editMsg" class="msg"></div>
+        </form>
+      </div>
+    </section>
+  </section>
+</main>
+
+<script>
+const API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-admin";
+const DATASETS={
+  courses:{label:"สูตรการผลิต / หลักสูตร",fields:[
+    ["slug","Slug","text"],["category","หมวดหมู่","text"],["title","ชื่อ","text"],["description","รายละเอียด","textarea"],
+    ["thumbnail_url","รูปภาพ URL","text"],["estimated_minutes","เวลา (นาที)","number"],["difficulty","ระดับ","text"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
+  ]},
+  lessons:{label:"สูตรชง / บทเรียน",fields:[
+    ["course_id","Course ID","number"],["lesson_type","ประเภทบทเรียน","text"],["title","ชื่อบทเรียน","text"],["content","เนื้อหา JSON","json"],
+    ["media_url","Media URL","text"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
+  ]},
+  expiry:{label:"วันหมดอายุ",fields:[
+    ["item_name","ชื่อรายการ","text"],["category","หมวดหมู่","text"],["storage_condition","การจัดเก็บ","text"],["shelf_life_unopened","อายุยังไม่เปิด","text"],
+    ["shelf_life_opened","อายุหลังเปิด","text"],["unit","หน่วย","text"],["notes","หมายเหตุ","textarea"],["warning_level","ระดับเตือน","text"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
+  ]},
+  toppings:{label:"Topping",fields:[
+    ["name","ชื่อ Topping","text"],["category","หมวดหมู่","text"],["description","รายละเอียด","textarea"],["image_url","รูปภาพ URL","text"],
+    ["usage_notes","วิธีใช้ / หมายเหตุ","textarea"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
+  ]},
+  settings:{label:"Brand Story / Settings",fields:[
+    ["key","Key","text"],["value","Value JSON","json"]
+  ]}
+};
+let adminPin=sessionStorage.getItem("yothe_admin_pin")||"";
+let dataset="courses", rows=[], editingId=null;
+
+async function api(payload){
+  const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,pin:adminPin})});
+  const data=await r.json().catch(()=>({error:"Invalid server response"}));
+  if(!r.ok) throw new Error(data.error||"เกิดข้อผิดพลาด");
+  return data;
+}
+function esc(v=""){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
+function showAdmin(){document.getElementById("loginPanel").classList.add("hidden");document.getElementById("adminPanel").classList.remove("hidden");initUploadDataset();loadData()}
+function logout(){sessionStorage.removeItem("yothe_admin_pin");adminPin="";location.reload()}
+async function validateStored(){if(!adminPin)return;try{await api({action:"validate"});showAdmin()}catch{logout()}}
+
+document.getElementById("loginForm").addEventListener("submit",async e=>{
+  e.preventDefault(); const m=document.getElementById("loginMsg"); m.textContent="กำลังตรวจสอบ...";m.className="msg";
+  adminPin=document.getElementById("pin").value;
+  try{await api({action:"validate"});sessionStorage.setItem("yothe_admin_pin",adminPin);m.textContent="";showAdmin()}
+  catch(err){adminPin="";m.textContent=err.message;m.className="msg error"}
+});
+document.getElementById("logoutBtn").onclick=logout;
+
+function initUploadDataset(){
+  const s=document.getElementById("uploadDataset");
+  s.innerHTML=Object.entries(DATASETS).map(([k,v])=>'<option value="'+k+'">'+esc(v.label)+'</option>').join("");
+  s.value=dataset;
+}
+document.getElementById("tabs").addEventListener("click",e=>{
+  const b=e.target.closest(".tab"); if(!b)return;
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+  dataset=b.dataset.dataset;document.getElementById("uploadDataset").value=dataset;hideEditor();loadData();
+});
+document.getElementById("refreshBtn").onclick=loadData;
+document.getElementById("addBtn").onclick=()=>openEditor(null);
+document.getElementById("cancelEdit").onclick=hideEditor;
+
+async function loadData(){
+  const hint=document.getElementById("datasetHint"), wrap=document.getElementById("tableWrap");
+  hint.textContent="กำลังโหลด "+DATASETS[dataset].label+"...";wrap.innerHTML='<div style="padding:20px" class="muted">กำลังโหลด...</div>';
+  try{
+    const res=await api({action:"list",dataset}); rows=res.data||[];
+    hint.textContent=DATASETS[dataset].label+" • "+rows.length+" รายการ"; renderTable();
+  }catch(err){wrap.innerHTML='<div style="padding:20px" class="error">'+esc(err.message)+'</div>'}
+}
+function renderTable(){
+  const wrap=document.getElementById("tableWrap"), fields=DATASETS[dataset].fields;
+  if(!rows.length){wrap.innerHTML='<div style="padding:24px" class="muted">ยังไม่มีข้อมูล</div>';return}
+  const visible=fields.slice(0,6);
+  wrap.innerHTML='<table><thead><tr><th>ID</th>'+visible.map(f=>'<th>'+esc(f[1])+'</th>').join("")+'<th>จัดการ</th></tr></thead><tbody>'+
+    rows.map(r=>'<tr><td>'+r.id+'</td>'+visible.map(f=>'<td>'+formatCell(r[f[0]])+'</td>').join("")+
+      '<td class="actions"><button class="btn small secondary" onclick="editRow('+r.id+')">แก้ไข</button> <button class="btn small danger" onclick="deleteRow('+r.id+')">ลบ</button></td></tr>').join("")+
+    '</tbody></table>';
+}
+function formatCell(v){if(v===true)return'<span class="badge">เผยแพร่</span>';if(v===false)return'<span class="muted">ไม่เผยแพร่</span>';if(v&&typeof v==="object")return esc(JSON.stringify(v)).slice(0,120);return esc(v??"").slice(0,140)}
+window.editRow=id=>openEditor(rows.find(r=>r.id===id));
+window.deleteRow=async id=>{if(!confirm("ยืนยันการลบรายการนี้?"))return;try{await api({action:"delete",dataset,id});await loadData()}catch(err){alert(err.message)}};
+
+function openEditor(row){
+  editingId=row?.id??null; const fields=DATASETS[dataset].fields;
+  document.getElementById("editorTitle").textContent=editingId?"แก้ไขข้อมูล":"เพิ่มข้อมูล";
+  document.getElementById("formFields").innerHTML=fields.map(([key,label,type])=>{
+    let val=row?.[key];
+    if(type==="json") val=val==null?"{}":JSON.stringify(val,null,2);
+    if(type==="boolean") return '<div class="field"><label>'+esc(label)+'</label><select name="'+key+'"><option value="true" '+(val!==false?"selected":"")+'>ใช่</option><option value="false" '+(val===false?"selected":"")+'>ไม่</option></select></div>';
+    if(type==="textarea"||type==="json") return '<div class="field wide"><label>'+esc(label)+'</label><textarea '+(type==="json"?'class="json" ':'')+'name="'+key+'">'+esc(val??"")+'</textarea></div>';
+    return '<div class="field"><label>'+esc(label)+'</label><input class="input" name="'+key+'" type="'+type+'" value="'+esc(val??"")+'"></div>';
+  }).join("");
+  document.getElementById("editor").classList.remove("hidden");document.getElementById("editor").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function hideEditor(){editingId=null;document.getElementById("editor").classList.add("hidden");document.getElementById("editMsg").textContent=""}
+document.getElementById("editForm").addEventListener("submit",async e=>{
+  e.preventDefault();const msg=document.getElementById("editMsg"),fd=new FormData(e.target),obj={};
+  try{
+    for(const [key,,type] of DATASETS[dataset].fields){
+      let v=fd.get(key);
+      if(type==="number")v=v===""?null:Number(v);
+      else if(type==="boolean")v=v==="true";
+      else if(type==="json"){v=v?.trim()?JSON.parse(v):{}}
+      obj[key]=v;
+    }
+    msg.textContent="กำลังบันทึก...";msg.className="msg";
+    await api({action:"save",dataset,id:editingId,row:obj});msg.textContent="บันทึกแล้ว";msg.className="msg ok";await loadData();setTimeout(hideEditor,500);
+  }catch(err){msg.textContent=err.message;msg.className="msg error"}
+});
+
+function parseCSV(text){
+  const out=[];let row=[],cell="",q=false;
+  for(let i=0;i<text.length;i++){const ch=text[i],n=text[i+1];
+    if(ch==='"'&&q&&n==='"'){cell+='"';i++}
+    else if(ch==='"'){q=!q}
+    else if(ch===','&&!q){row.push(cell);cell=""}
+    else if((ch==='\n'||ch==='\r')&&!q){if(ch==='\r'&&n==='\n')i++;row.push(cell);cell="";if(row.some(x=>x!==""))out.push(row);row=[]}
+    else cell+=ch;
+  }
+  row.push(cell);if(row.some(x=>x!==""))out.push(row);
+  if(out.length<2)return[];
+  const headers=out[0].map(x=>x.trim());
+  return out.slice(1).map(r=>Object.fromEntries(headers.map((h,i)=>[h,(r[i]??"").trim()])));
+}
+function coerceRows(ds,arr){
+  const types=Object.fromEntries(DATASETS[ds].fields.map(([k,,t])=>[k,t]));
+  return arr.map(r=>{const o={};for(const [k,v0] of Object.entries(r)){if(!(k in types))continue;let v=v0;
+    if(types[k]==="number")v=v===""?null:Number(v);
+    else if(types[k]==="boolean")v=String(v).toLowerCase()==="true"||String(v)==="1"||String(v).toLowerCase()==="yes";
+    else if(types[k]==="json"&&typeof v==="string"){try{v=JSON.parse(v)}catch{v={text:v}}}
+    o[k]=v;
+  }return o});
+}
+document.getElementById("uploadBtn").onclick=async()=>{
+  const msg=document.getElementById("uploadMsg"),file=document.getElementById("uploadFile").files[0],ds=document.getElementById("uploadDataset").value,mode=document.getElementById("uploadMode").value;
+  if(!file){msg.textContent="กรุณาเลือกไฟล์";msg.className="msg error";return}
+  try{
+    msg.textContent="กำลังอ่านไฟล์...";msg.className="msg";const text=await file.text();let data;
+    if(file.name.toLowerCase().endsWith(".json")){data=JSON.parse(text);if(!Array.isArray(data))data=data.rows||[]}
+    else data=parseCSV(text);
+    data=coerceRows(ds,data);
+    if(!data.length)throw new Error("ไม่พบข้อมูลในไฟล์");
+    if(mode==="replace"&&!confirm("โหมดแทนที่ จะลบข้อมูลเดิมของหมวดนี้ทั้งหมดก่อนนำเข้า ยืนยันหรือไม่?"))return;
+    msg.textContent="กำลัง Upload "+data.length+" รายการ...";
+    const res=await api({action:"bulk_import",dataset:ds,mode,rows:data});
+    msg.textContent="Upload สำเร็จ "+res.count+" รายการ";msg.className="msg ok";
+    dataset=ds;document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.dataset===ds));await loadData();
+  }catch(err){msg.textContent=err.message;msg.className="msg error"}
+};
+
+validateStored();
+</script>
+</body>
+</html>
