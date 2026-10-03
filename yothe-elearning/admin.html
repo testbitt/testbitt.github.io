@@ -61,10 +61,18 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .a4-page.landscape{width:297mm;height:210mm;min-height:210mm;max-height:210mm}
 .a4-page:last-child{break-after:auto;page-break-after:auto}
 .a4-page .page-title{font-weight:900;font-size:16px;line-height:1.35;margin:0 0 10px;color:#fff;background:var(--red);padding:9px 12px;border-radius:10px;letter-spacing:.05px;min-height:42px;display:flex;align-items:center}
-.a4-page table{min-width:0;max-width:100%;table-layout:fixed}.a4-page .page-content{flex:1;min-height:0;overflow:hidden;transform-origin:top left}.a4-page .page-content>*{max-width:100%}
+.a4-page table{min-width:0;max-width:100%;table-layout:fixed}.a4-page .page-content{flex:1;min-height:0;overflow:hidden;transform-origin:top left}.a4-page .page-content>*{max-width:100%;min-width:0}.a4-page .recipe-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%;min-width:0}.a4-page .recipe-sheet{min-width:0;max-width:100%}.a4-page .recipe-body{min-width:0}.a4-page .recipe-body>div{min-width:0}.a4-page table{width:100%;max-width:100%}
 .a4-page .recipe-admin-grid{padding:0;background:#fff}
 .a4-page.full-page{display:flex;flex-direction:column}
 .a4-page.full-page>.page-content{flex:1}
+.a4-page.dense-review .recipe-admin-grid{gap:8px!important}
+.a4-page.dense-review .recipe-title{font-size:16px;min-height:38px;padding:7px 9px}
+.a4-page.dense-review .recipe-tools{padding:5px 7px;gap:4px}
+.a4-page.dense-review .recipe-tools .btn{font-size:9px;min-height:26px;padding:3px 6px}
+.a4-page.dense-review .recipe-table th,.a4-page.dense-review .recipe-table td{font-size:10.5px;padding:4px 5px;line-height:1.25}
+.a4-page.dense-review .recipe-photo{min-height:120px;padding:5px}
+.a4-page.dense-review .recipe-photo img{max-height:125px}
+.a4-page.dense-review .recipe-note{font-size:10px;min-height:28px;padding:5px 7px}
 .theme-soft .panel,.theme-soft .recipe-sheet{border-radius:18px}.theme-soft .recipe-admin-grid{gap:18px}
 .theme-square .panel,.theme-square .recipe-sheet,.theme-square .btn,.theme-square .input,.theme-square select{border-radius:2px}.theme-square .recipe-title,.theme-square .a4-page .page-title{border-radius:0}
 .theme-airy .panel{padding:28px}.theme-airy .recipe-admin-grid{gap:24px}.theme-airy .recipe-table td,.theme-airy .recipe-table th{padding:12px 14px;font-size:14.5px;line-height:1.55}.theme-airy .recipe-title{padding:14px 16px;font-size:21px}
@@ -533,20 +541,36 @@ function waitReviewImages(root){
 }
 function fitReviewPage(page){
   const content=page.querySelector(".page-content");if(!content)return;
-  content.style.zoom="1";content.style.width="100%";
+
+  // Reset ก่อนวัดขนาดจริง
+  content.style.zoom="";
+  content.style.transform="none";
+  content.style.width="100%";
+  content.style.height="auto";
+
   const cs=getComputedStyle(page);
   const padX=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight);
   const padY=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom);
   const title=page.querySelector(".page-title");
   const titleH=title?title.getBoundingClientRect().height+(parseFloat(getComputedStyle(title).marginBottom)||0):0;
+
   const availW=Math.max(1,page.clientWidth-padX);
   const availH=Math.max(1,page.clientHeight-padY-titleH);
-  const needW=Math.max(content.scrollWidth,1),needH=Math.max(content.scrollHeight,1);
+
+  // วัด Layout ที่ความกว้าง A4 จริงก่อน แล้วค่อยย่อทั้งชุด
+  const needW=Math.max(content.scrollWidth,content.getBoundingClientRect().width,1);
+  const needH=Math.max(content.scrollHeight,1);
+
   let scale=Math.min(1,availW/needW,availH/needH);
   if(!Number.isFinite(scale)||scale<=0)scale=1;
-  scale=Math.max(.58,scale);
-  content.style.zoom=String(scale);
+
+  // 12–20 รายการต่อหน้าอาจต้องย่อมากกว่ารุ่นเดิม
+  scale=Math.max(.28,scale);
+
+  content.style.transformOrigin="top left";
+  content.style.transform="scale("+scale+")";
   content.style.width=(100/scale)+"%";
+  content.style.height=(availH/scale)+"px";
   page.dataset.fitScale=scale.toFixed(3);
 }
 function fitReviewSheetToViewport(page){
@@ -562,7 +586,11 @@ function fitReviewSheetToViewport(page){
 }
 async function fitAllReviewPages(){
   const pages=[...document.querySelectorAll(".a4-preview .a4-page")];
-  pages.forEach(p=>{p.style.zoom="1";p.style.marginBottom="0"});
+  const dense=Number(displayPrefs.items_per_page)>=7;
+  pages.forEach(p=>{
+    p.style.zoom="1";p.style.marginBottom="0";
+    p.classList.toggle("dense-review",dense);
+  });
   await Promise.all(pages.map(waitReviewImages));
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
   pages.forEach(fitReviewPage);
