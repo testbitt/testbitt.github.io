@@ -176,6 +176,7 @@ async function render(ds,rows){
   await new Promise(r=>requestAnimationFrame(r));
   const bad=[...document.querySelectorAll("#pages .page")].filter(pageOverflow);
   if(bad.length) console.warn("A4 overflow detected",bad.length);
+}
 
 async function pageCanvas(el){
   if(document.fonts?.ready)await document.fonts.ready;
