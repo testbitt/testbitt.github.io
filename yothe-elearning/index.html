@@ -76,6 +76,44 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 .navlinks button,.navlinks a{font-size:12px;padding:8px 10px}
 .cards{grid-template-columns:1fr}.attachment-grid{grid-template-columns:1fr}.brand{font-size:20px}.story{padding:26px 20px}.story h1{margin-bottom:22px}.story-copy p{font-size:16px;line-height:1.72;margin-bottom:18px}.story-logo img{width:min(210px,70vw)}.sheet-body{grid-template-columns:95px 1fr}
 }
+
+/* Japanese Modern Motion */
+@keyframes yotheFadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes yotheFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes yothePop{0%{opacity:0;transform:scale(.96) translateY(8px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes yotheFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes yotheShine{0%{transform:translateX(-140%)}100%{transform:translateX(220%)}}
+
+.view.active{animation:yotheFadeIn .28s ease both}
+.story,.sheet,.card,.attachment-card,.home-entry{animation:yotheFadeUp .42s cubic-bezier(.2,.7,.2,1) both}
+.grid>.sheet:nth-child(2n),.cards>*:nth-child(2n),.attachment-grid>*:nth-child(2n){animation-delay:.05s}
+.grid>.sheet:nth-child(3n),.cards>*:nth-child(3n),.attachment-grid>*:nth-child(3n){animation-delay:.09s}
+
+.brand{transition:transform .2s ease,filter .2s ease}.brand:hover{transform:translateY(-1px)}.brand:hover .brand-cat{animation:yotheFloat 1.8s ease-in-out infinite}
+.brand-wordmark{transition:transform .2s ease}.brand:hover .brand-wordmark{transform:scale(1.015)}
+
+.navlinks button,.navlinks a{position:relative;overflow:hidden}
+.navlinks button:after,.navlinks a:after{content:"";position:absolute;left:14px;right:14px;bottom:4px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);transform:scaleX(0);transform-origin:center;transition:transform .2s ease}
+.navlinks button:hover:after,.navlinks a:hover:after,.navlinks button.active:after{transform:scaleX(1)}
+.navlinks button.active:before{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 0 38%,rgba(255,255,255,.28) 50%,transparent 62%);transform:translateX(-140%);animation:yotheShine 2.8s ease-in-out infinite}
+
+.sheet,.card,.attachment-card{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+.sheet:hover,.card:hover,.attachment-card:hover{transform:translateY(-4px);box-shadow:0 16px 34px rgba(74,58,39,.13);border-color:#c8a77a}
+.sheet img,.card img,.attachment-card img{transition:transform .28s ease}.sheet:hover img,.card:hover img,.attachment-card:hover img{transform:scale(1.025)}
+
+.btn,.enter-btn,.attachment-open,.viewer-nav,.viewer-close{transition:transform .16s ease,box-shadow .16s ease,filter .16s ease}
+.btn:hover,.enter-btn:hover,.attachment-open:hover,.viewer-nav:hover,.viewer-close:hover{transform:translateY(-1px);filter:brightness(1.02)}
+.btn:active,.enter-btn:active,.attachment-open:active,.viewer-nav:active,.viewer-close:active{transform:translateY(0) scale(.985)}
+
+.login-card,.welcome-card,.attachment-viewer-card{animation:yothePop .24s ease both}
+.login-screen,.welcome-pop,.attachment-viewer{animation:yotheFadeIn .18s ease both}
+
+.section-head h2:after{transition:width .3s ease}.section-head:hover h2:after{width:92px}
+.story-logo img{animation:yotheFloat 4s ease-in-out infinite}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
 </style>
 </head>
 <body>
@@ -300,7 +338,7 @@ function renderMenuOrder(order){
   nav.appendChild(coursesBtn);
   nav.appendChild(admin);
 }
-function showView(view){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));document.getElementById("view-"+view)?.classList.add("active");document.querySelectorAll('#navLinks [data-view]').forEach(x=>x.classList.toggle("active",x.dataset.view===view));window.scrollTo({top:0,behavior:"smooth"});loadView(view)}
+function showView(view){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));document.getElementById("view-"+view)?.classList.add("active");document.querySelectorAll('#navLinks [data-view]').forEach(x=>x.classList.toggle("active",x.dataset.view===view));window.scrollTo({top:0,behavior:"smooth"});loadView(view).finally(()=>requestAnimationFrame(initMotionObserver))}
 async function loadView(view){
   try{
     if(view==="home"){if(token)await loadAttachments("home");else{const el=document.getElementById("attachments-home");if(el)el.innerHTML=""}return}
@@ -450,7 +488,20 @@ async function restoreTabSession(){
     await loadPublicHome();
   }
 }
-restoreTabSession();
+restoreTabSession().finally(()=>requestAnimationFrame(initMotionObserver));
+
+function initMotionObserver(){
+  if(!("IntersectionObserver" in window))return;
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        entry.target.classList.add("motion-visible");
+        io.unobserve(entry.target);
+      }
+    });
+  },{threshold:.08,rootMargin:"0px 0px -20px 0px"});
+  document.querySelectorAll(".sheet,.card,.attachment-card,.story,.home-entry").forEach(el=>io.observe(el));
+}
 </script>
 </body>
 </html>
