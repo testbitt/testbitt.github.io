@@ -142,6 +142,29 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
       <div class="drag-hint">กดเมาส์ซ้ายค้างที่เมนู แล้วลากเพื่อสลับตำแหน่ง • Auto Save ไปยัง Server</div>
     </div>
 
+    <section id="reviewLayoutPanel" class="panel" style="margin-bottom:18px">
+      <div class="head" style="margin-bottom:10px">
+        <div>
+          <h2 style="margin:0">Review Layout</h2>
+          <p class="muted" style="margin:4px 0 0">ตั้งค่าเฉพาะเมนูนี้ • สูงสุด 20 ตารางต่อหน้า</p>
+        </div>
+        <div id="reviewLayoutMsg" class="msg"></div>
+      </div>
+      <div class="row">
+        <div class="field" style="max-width:260px;margin:0">
+          <label>ขนาดกระดาษ</label>
+          <select id="reviewOrientation" class="input">
+            <option value="portrait">A4 แนวตั้ง</option>
+            <option value="landscape">A4 แนวนอน</option>
+          </select>
+        </div>
+        <div class="field" style="max-width:260px;margin:0">
+          <label>จำนวนตารางต่อหน้า</label>
+          <select id="reviewItemsPerPage" class="input"></select>
+        </div>
+      </div>
+    </section>
+
     <div class="grid2">
       <section id="uploadDataPanel" class="panel">
         <h2 style="margin-top:0">Upload ข้อมูล</h2>
@@ -239,7 +262,7 @@ const COLOR_NAMES=[
 ];
 const DEFAULT_DISPLAY_PREFS={orientation:"portrait",items_per_page:20,theme_index:1,color_index:1};
 let displayPrefs={...DEFAULT_DISPLAY_PREFS};
-function displayPrefsKey(ds=dataset){return "display_preferences_"+ds}
+function displayPrefsKey(ds=dataset){return "admin_review_preferences_"+ds}
 const DATASETS={
   production:{label:"สูตรการผลิต",fields:[
     ["record_id","Record ID","text"],["source_page","หน้า","number"],["category","หมวดหมู่","text"],["recipe_name","ชื่อสูตร","text"],
@@ -400,6 +423,8 @@ function initMenuDrag(){
 }
 function syncAdminPageChrome(){
   const hideForUsers=dataset==="users";
+  const hideReview=dataset==="users"||dataset==="settings";
+  document.getElementById("reviewLayoutPanel")?.classList.toggle("hidden",hideReview);
   
   document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers);
   document.getElementById("attachmentPanel")?.classList.toggle("hidden",hideForUsers);
@@ -1081,12 +1106,29 @@ document.getElementById("uploadBtn").onclick=async()=>{
   }catch(err){msg.textContent=err.message;msg.className="msg error"}
 };
 
-function initLayoutControls(){ /* Export customization moved to export.html */ }
+function initLayoutControls(){
+  const ipp=document.getElementById("reviewItemsPerPage");
+  if(ipp)ipp.innerHTML=Array.from({length:20},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+' ตาราง</option>').join("");
+  ["reviewOrientation","reviewItemsPerPage"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.addEventListener("change",onDisplayChange);
+  });
+}
 async function loadDisplayPrefs(){
-  displayPrefs={...DEFAULT_DISPLAY_PREFS};
+  displayPrefs={...DEFAULT_DISPLAY_PREFS,items_per_page:20};
+  try{
+    const res=await api({action:"list",dataset:"settings"});
+    const row=(res.data||[]).find(x=>x.key===displayPrefsKey(dataset));
+    if(row?.value) displayPrefs={...displayPrefs,...row.value};
+  }catch{}
   applyDisplayPrefs();
 }
 function applyDisplayPrefs(){
+  const ori=document.getElementById("reviewOrientation");
+  const ipp=document.getElementById("reviewItemsPerPage");
+  if(ori)ori.value=displayPrefs.orientation;
+  if(ipp)ipp.value=String(displayPrefs.items_per_page);
+
   const scope=document.getElementById("tableWrap");
   if(!scope)return;
   scope.classList.remove(...THEMES.map(t=>t.className));
@@ -1096,7 +1138,28 @@ function applyDisplayPrefs(){
   scope.style.setProperty("--theme-border","1px");
   scope.style.setProperty("--theme-gap","14px");
 }
-async function onDisplayChange(){ /* Export customization moved to export.html */ }
+async function onDisplayChange(){
+  displayPrefs={
+    ...displayPrefs,
+    orientation:document.getElementById("reviewOrientation")?.value||"portrait",
+    items_per_page:Math.max(1,Math.min(20,Number(document.getElementById("reviewItemsPerPage")?.value)||20))
+  };
+  applyDisplayPrefs();
+  renderTable();
+  scheduleReviewFit();
+
+  const m=document.getElementById("reviewLayoutMsg");
+  if(m){m.textContent="กำลัง Auto Save...";m.className="msg saving"}
+  try{
+    await api({action:"save",dataset:"settings",row:{
+      key:displayPrefsKey(dataset),
+      value:{orientation:displayPrefs.orientation,items_per_page:displayPrefs.items_per_page}
+    }});
+    if(m){m.textContent="บันทึก Layout ของ "+(DATASETS[dataset]?.label||dataset)+" แล้ว";m.className="msg ok"}
+  }catch(err){
+    if(m){m.textContent=err.message;m.className="msg error"}
+  }
+}
 window.addEventListener("resize",scheduleReviewFit);
 validateStored();
 </script>
