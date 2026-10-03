@@ -617,7 +617,7 @@ window.addProductionRow=name=>{const first=rows.find(x=>x.recipe_name===name)||{
 function renderToppingSheets(){
   const groups={};rows.forEach(r=>{const k=(r.category||"Topping")+" • "+(r.subcategory||"ทั่วไป");(groups[k]??=[]).push(r)});
   renderGroupedSheets(Object.entries(groups),"Topping",(name,items)=>{items=[...items].sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||(Number(a.id)||0)-(Number(b.id)||0));return `
-    <article class="recipe-sheet"><div class="recipe-title">${esc(name)}</div>
+    <article class="recipe-sheet" data-group-key="${esc(name)}"><div class="recipe-title"><span class="drag-badge">☰</span>${esc(name)}</div>
     <div class="recipe-tools">
       <button class="btn small secondary" onclick="pickGroupImage('toppings',${items[0]?.id||'null'},'image_url')">ใส่/เปลี่ยนรูป</button>
       <button class="btn small secondary" onclick="editRow(${items[0]?.id||'null'})">แก้หัวตาราง/หมายเหตุ</button>
@@ -629,7 +629,7 @@ function renderToppingSheets(){
 function renderExpirySheets(){
   const groups={};rows.forEach(r=>{(groups[r.category||"วันหมดอายุ"]??=[]).push(r)});
   renderGroupedSheets(Object.entries(groups),"วันหมดอายุ",(name,items)=>{items=[...items].sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||(Number(a.id)||0)-(Number(b.id)||0));return `
-    <article class="recipe-sheet"><div class="recipe-title">${esc(name)}</div>
+    <article class="recipe-sheet" data-group-key="${esc(name)}"><div class="recipe-title"><span class="drag-badge">☰</span>${esc(name)}</div>
     <div class="recipe-tools">
       <button class="btn small secondary" onclick="pickGroupImage('expiry',${items[0]?.id||'null'},'image_url')">ใส่/เปลี่ยนรูป</button>
       <button class="btn small secondary" onclick="editRow(${items[0]?.id||'null'})">แก้หัวตาราง/หมายเหตุ</button>
@@ -641,7 +641,7 @@ function renderExpirySheets(){
 function renderUniformSheets(){
   const groups={};rows.forEach(r=>{(groups[r.category||"เครื่องแต่งกาย"]??=[]).push(r)});
   renderGroupedSheets(Object.entries(groups),"เครื่องแต่งกาย",(name,items)=>{items=[...items].sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||(Number(a.id)||0)-(Number(b.id)||0));return `
-    <article class="recipe-sheet"><div class="recipe-title">${esc(name)}</div>
+    <article class="recipe-sheet" data-group-key="${esc(name)}"><div class="recipe-title"><span class="drag-badge">☰</span>${esc(name)}</div>
     <div class="recipe-tools">
       <button class="btn small secondary" onclick="pickGroupImage('uniforms',${items[0]?.id||'null'},'image_url')">ใส่/เปลี่ยนรูป</button>
       <button class="btn small secondary" onclick="editRow(${items[0]?.id||'null'})">แก้หัวตาราง/หมายเหตุ</button>
