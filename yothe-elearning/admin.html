@@ -20,7 +20,7 @@ label{font-size:13px;font-weight:800}.input,select,textarea{width:100%;border:1p
 .btn{border:0;border-radius:12px;padding:11px 15px;font-weight:800}.primary{background:var(--red);color:#fff}.secondary{background:#fff;color:var(--red);border:1px solid #fecdd3}.danger{background:#fff1f2;color:#b91c1c;border:1px solid #fecaca}.small{padding:7px 10px;font-size:12px}
 .hidden{display:none!important}.msg{margin-top:10px;font-size:13px}.error{color:#b91c1c}.ok{color:#15803d}.saving{color:#b45309}.autosave-note{font-size:12px;color:#15803d;font-weight:800;margin-left:8px}
 .head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}.head h1{margin:0}.head p{margin:5px 0 0;color:var(--muted)}
-.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;font-weight:800}.tab.active{background:var(--red);color:#fff;border-color:var(--red)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px;align-items:center}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;font-weight:800;user-select:none}.tab.active{background:var(--red);color:#fff;border-color:var(--red)}.tab[draggable="true"]{cursor:grab}.tab.dragging{opacity:.45;transform:scale(.97)}.tab.drag-over{outline:3px dashed var(--red);outline-offset:2px}.drag-hint{font-size:12px;color:var(--muted);width:100%;margin-top:3px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}.uploadbox{border:2px dashed #fecdd3;background:#fffafa;border-radius:16px;padding:18px}
 .tablewrap{overflow:auto;border:1px solid var(--line);border-radius:14px;margin-top:16px}table{border-collapse:collapse;width:100%;min-width:860px}th,td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:13px}th{background:#fafafa;position:sticky;top:0}.actions{white-space:nowrap}
 .badge{display:inline-block;background:var(--soft);color:var(--red);padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800}
@@ -97,15 +97,16 @@ label{font-size:13px;font-weight:800}.input,select,textarea{width:100%;border:1p
   <section id="adminPanel" class="hidden">
     <div class="head">
       <div><h1>จัดการข้อมูล Yothé E-Learning</h1><p>เพิ่ม แก้ไข ลบ และ Upload ข้อมูลจากไฟล์ CSV / JSON</p></div>
-      <button id="logoutBtn" class="btn secondary">ออกจาก Admin</button>
+      <div class="row"><a class="btn secondary" href="export.html" style="text-decoration:none">Export PDF / รูป</a><button id="logoutBtn" class="btn secondary">ออกจาก Admin</button></div>
     </div>
 
     <div class="tabs" id="tabs">
-      <button class="tab active" data-dataset="production">สูตรการผลิต</button>
-      <button class="tab" data-dataset="drinks">สูตรชงเครื่องดื่ม</button>
-      <button class="tab" data-dataset="expiry">วันหมดอายุ</button>
-      <button class="tab" data-dataset="toppings">Topping</button>
+      <button class="tab active" draggable="true" data-dataset="production">สูตรการผลิต</button>
+      <button class="tab" draggable="true" data-dataset="drinks">สูตรชงเครื่องดื่ม</button>
+      <button class="tab" draggable="true" data-dataset="expiry">วันหมดอายุ</button>
+      <button class="tab" draggable="true" data-dataset="toppings">Topping</button>
       <button class="tab" data-dataset="settings">Brand Story / Settings</button>
+      <div class="drag-hint">กดเมาส์ซ้ายค้างที่เมนู แล้วลากเพื่อสลับตำแหน่ง • Auto Save ไปยัง Server</div>
     </div>
 
     <section class="layout-panel">
@@ -199,7 +200,7 @@ const DATASETS={
   ]}
 };
 let adminPin=sessionStorage.getItem("yothe_admin_pin")||"";
-let dataset="production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false;
+let dataset="production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["production","drinks","expiry","toppings"];
 
 async function api(payload){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,pin:adminPin})});
@@ -208,7 +209,7 @@ async function api(payload){
   return data;
 }
 function esc(v=""){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
-function showAdmin(){document.getElementById("loginPanel").classList.add("hidden");document.getElementById("adminPanel").classList.remove("hidden");initUploadDataset();initLayoutControls();loadDisplayPrefs().then(loadData)}
+function showAdmin(){document.getElementById("loginPanel").classList.add("hidden");document.getElementById("adminPanel").classList.remove("hidden");initUploadDataset();initLayoutControls();Promise.all([loadDisplayPrefs(),loadMenuOrder()]).then(loadData)}
 function logout(){sessionStorage.removeItem("yothe_admin_pin");adminPin="";location.reload()}
 async function validateStored(){if(!adminPin)return;try{await api({action:"validate"});showAdmin()}catch{logout()}}
 
@@ -224,6 +225,46 @@ function initUploadDataset(){
   const s=document.getElementById("uploadDataset");
   s.innerHTML=Object.entries(DATASETS).map(([k,v])=>'<option value="'+k+'">'+esc(v.label)+'</option>').join("");
   s.value=dataset;
+}
+
+async function loadMenuOrder(){
+  try{
+    const res=await api({action:"list",dataset:"settings"});
+    const row=(res.data||[]).find(x=>x.key==="menu_order");
+    if(Array.isArray(row?.value)) menuOrder=row.value.filter(x=>["production","drinks","expiry","toppings"].includes(x));
+  }catch{}
+  if(menuOrder.length!==4)menuOrder=["production","drinks","expiry","toppings"];
+  renderAdminMenuOrder();initMenuDrag();
+}
+function renderAdminMenuOrder(){
+  const tabs=document.getElementById("tabs"), settings=tabs.querySelector('[data-dataset="settings"]'),hint=tabs.querySelector(".drag-hint");
+  menuOrder.forEach(k=>{const el=tabs.querySelector('[data-dataset="'+k+'"]');if(el)tabs.insertBefore(el,settings)});
+  if(hint)tabs.appendChild(hint);
+}
+async function saveMenuOrder(){
+  const msg=document.getElementById("layoutMsg");
+  try{
+    msg.textContent="กำลัง Auto Save ลำดับเมนู...";msg.className="msg saving";
+    await api({action:"save",dataset:"settings",row:{key:"menu_order",value:menuOrder}});
+    msg.textContent="Auto Save ลำดับเมนูแล้ว";msg.className="msg ok";
+  }catch(err){msg.textContent=err.message;msg.className="msg error"}
+}
+function initMenuDrag(){
+  const tabs=document.getElementById("tabs");
+  let dragged=null;
+  tabs.querySelectorAll('.tab[draggable="true"]').forEach(el=>{
+    el.ondragstart=e=>{dragged=el;el.classList.add("dragging");e.dataTransfer.effectAllowed="move"};
+    el.ondragend=()=>{el.classList.remove("dragging");tabs.querySelectorAll(".drag-over").forEach(x=>x.classList.remove("drag-over"));dragged=null};
+    el.ondragover=e=>{e.preventDefault();if(dragged&&el!==dragged)el.classList.add("drag-over")};
+    el.ondragleave=()=>el.classList.remove("drag-over");
+    el.ondrop=e=>{
+      e.preventDefault();el.classList.remove("drag-over");if(!dragged||dragged===el)return;
+      const a=menuOrder.indexOf(dragged.dataset.dataset),b=menuOrder.indexOf(el.dataset.dataset);
+      if(a<0||b<0)return;
+      const [m]=menuOrder.splice(a,1);menuOrder.splice(b,0,m);
+      renderAdminMenuOrder();initMenuDrag();saveMenuOrder();
+    };
+  });
 }
 document.getElementById("tabs").addEventListener("click",e=>{
   const b=e.target.closest(".tab"); if(!b)return;
@@ -250,17 +291,45 @@ async function loadData(){
 function chunk(arr,size){const out=[];for(let i=0;i<arr.length;i+=size)out.push(arr.slice(i,i+size));return out}
 function pageClass(count){return 'a4-page '+displayPrefs.orientation+(count===displayPrefs.items_per_page?' full-page':'')}
 function renderTable(){
-  const wrap=document.getElementById("tableWrap"), fields=DATASETS[dataset].fields;
+  const wrap=document.getElementById("tableWrap");
   wrap.className="";
   if(!rows.length){wrap.innerHTML='<div style="padding:24px" class="muted">ยังไม่มีข้อมูล</div>';return}
   if(dataset==="drinks"){renderDrinkSheets();return}
-  const visible=fields.slice(0,6), pages=chunk(rows,displayPrefs.items_per_page);
-  wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>'<section class="'+pageClass(page.length)+'"><div class="page-title">'+esc(DATASETS[dataset].label)+' • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content"><table><thead><tr><th>ID</th>'+visible.map(f=>'<th>'+esc(f[1])+'</th>').join("")+'<th class="actions">จัดการ</th></tr></thead><tbody>'+
-    page.map(r=>'<tr><td>'+r.id+'</td>'+visible.map(f=>'<td>'+formatCell(r[f[0]])+'</td>').join("")+
-      '<td class="actions"><button class="btn small secondary" onclick="editRow('+r.id+')">แก้ไข</button> <button class="btn small danger" onclick="deleteRow('+r.id+')">ลบ</button></td></tr>').join("")+
-    '</tbody></table></div></section>').join("")+'</div>';
+  if(dataset==="production"){renderProductionSheets();return}
+  if(dataset==="toppings"){renderToppingSheets();return}
+  if(dataset==="expiry"){renderExpirySheets();return}
+  const fields=DATASETS[dataset].fields,visible=fields.slice(0,6),pages=chunk(rows,displayPrefs.items_per_page);
+  wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>'<section class="'+pageClass(page.length)+'"><div class="page-title">'+esc(DATASETS[dataset].label)+' • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content"><table><thead><tr><th>ID</th>'+visible.map(f=>'<th>'+esc(f[1])+'</th>').join("")+'<th class="actions">จัดการ</th></tr></thead><tbody>'+page.map(r=>'<tr><td>'+r.id+'</td>'+visible.map(f=>'<td>'+formatCell(r[f[0]])+'</td>').join("")+'<td class="actions"><button class="btn small secondary" onclick="editRow('+r.id+')">แก้ไข</button> <button class="btn small danger" onclick="deleteRow('+r.id+')">ลบ</button></td></tr>').join("")+'</tbody></table></div></section>').join("")+'</div>';
 }
-
+function renderProductionSheets(){
+  const groups={};rows.forEach(r=>{(groups[r.recipe_name||"ไม่ระบุชื่อ"]??=[]).push(r)});
+  renderGroupedSheets(Object.entries(groups),"สูตรการผลิต",(name,items)=>`
+    <article class="recipe-sheet"><div class="recipe-title">${esc(name)}</div>
+    <div class="recipe-tools"><button class="btn small primary" onclick="addProductionRow('${esc(name)}')">+ เพิ่มวัตถุดิบ</button></div>
+    <table class="recipe-table"><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th><th class="actions"></th></tr></thead>
+    <tbody>${items.map(r=>`<tr><td>${esc(r.ingredient||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
+}
+window.addProductionRow=name=>{const first=rows.find(x=>x.recipe_name===name)||{};openEditor({record_id:"PROD-"+Date.now(),source_page:first.source_page||null,category:first.category||"",recipe_name:name,ingredient:"",quantity:null,unit:"g",is_published:true})};
+function renderToppingSheets(){
+  const groups={};rows.forEach(r=>{const k=(r.category||"Topping")+" • "+(r.subcategory||"ทั่วไป");(groups[k]??=[]).push(r)});
+  renderGroupedSheets(Object.entries(groups),"Topping",(name,items)=>`
+    <article class="recipe-sheet"><div class="recipe-title">${esc(name)}</div>
+    <div class="recipe-tools"><button class="btn small primary" onclick="openEditor(null)">+ เพิ่ม Topping</button></div>
+    <table class="recipe-table"><thead><tr><th>รายการ</th><th>จำนวน</th><th>หน่วย</th><th>ราคา</th><th class="actions"></th></tr></thead>
+    <tbody>${items.map(r=>`<tr><td>${esc(r.item_name||r.name||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td>${r.price_baht!=null?esc(r.price_baht)+" บาท":"-"}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
+}
+function renderExpirySheets(){
+  const groups={};rows.forEach(r=>{(groups[r.category||"วันหมดอายุ"]??=[]).push(r)});
+  renderGroupedSheets(Object.entries(groups),"วันหมดอายุ",(name,items)=>`
+    <article class="recipe-sheet"><div class="recipe-title">${esc(name)}</div>
+    <div class="recipe-tools"><button class="btn small primary" onclick="openEditor(null)">+ เพิ่มรายการ</button></div>
+    <table class="recipe-table"><thead><tr><th>รายการ</th><th>การจัดเก็บ</th><th>ยังไม่เปิด</th><th>หลังเปิด</th><th class="actions"></th></tr></thead>
+    <tbody>${items.map(r=>`<tr><td>${esc(r.item_name||"")}</td><td>${esc(r.storage_condition||"")}</td><td>${esc(r.shelf_life_unopened||"-")}</td><td>${esc(r.shelf_life_opened||"-")}</td><td class="actions"><button class="btn small secondary" onclick="editRow(${r.id})">แก้</button> <button class="btn small danger" onclick="deleteRow(${r.id})">ลบ</button></td></tr>`).join("")}</tbody></table></article>`);
+}
+function renderGroupedSheets(entries,title,builder){
+  const pages=chunk(entries,displayPrefs.items_per_page),wrap=document.getElementById("tableWrap");
+  wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>'<section class="'+pageClass(page.length)+'"><div class="page-title">'+esc(title)+' • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content recipe-admin-grid">'+page.map(([name,items])=>builder(name,items)).join("")+'</div></section>').join("")+'</div>';
+}
 function renderDrinkSheets(){
   const wrap=document.getElementById("tableWrap"), groups={};
   rows.forEach(r=>{const key=r.recipe_id||"NO-ID";(groups[key]??=[]).push(r)});
