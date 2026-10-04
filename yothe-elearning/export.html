@@ -119,6 +119,42 @@ th{min-height:29px;height:auto}
 .sheet-toppings th:nth-child(1){width:14%}.sheet-toppings th:nth-child(2){width:34%}.sheet-toppings th:nth-child(3){width:16%}.sheet-toppings th:nth-child(4){width:14%}.sheet-toppings th:nth-child(5){width:22%}
 .sheet-expiry th:nth-child(1){width:13%}.sheet-expiry th:nth-child(2){width:25%}.sheet-expiry th:nth-child(3){width:24%}.sheet-expiry th:nth-child(4),.sheet-expiry th:nth-child(5){width:19%}
 .sheet-uniforms th:nth-child(1){width:14%}.sheet-uniforms th:nth-child(2){width:24%}.sheet-uniforms th:nth-child(3){width:18%}.sheet-uniforms th:nth-child(4){width:44%}.theme-square .sheet{border-radius:2px!important}.theme-soft .sheet{border-radius:18px}th{background-color:var(--red)!important;color:#fff!important;font-weight:800;text-align:center;vertical-align:middle;-webkit-print-color-adjust:exact;print-color-adjust:exact}td.num{text-align:center;font-weight:700}.note{background:#ffef57;color:#d91d0b;font-size:11.5px;font-weight:800;padding:8px 10px;line-height:1.3;white-space:normal!important;overflow:visible!important;height:auto;min-height:0}.state{padding:40px;text-align:center;color:var(--muted)}
+
+/* 30 distinct export themes */
+.page .sheet,.page .sheet-title,.page .note,.page th,.page td{box-sizing:border-box}
+.page .sheet-title,.page .note{max-width:100%;overflow:hidden!important}
+.page .note{border-radius:0 0 var(--theme-radius,0) var(--theme-radius,0)}
+.theme-01 .sheet{border:2px solid #d9b7ad;border-radius:18px;background:#fffdf9}.theme-01 .sheet-title{border-radius:15px 15px 0 0}.theme-01 .note{border-top:1px solid #ead8d2}
+.theme-02 .sheet{border:1px solid #cfcfcf;border-radius:2px;box-shadow:none}.theme-02 .sheet-title{background:#fff!important;color:var(--red)!important;border-bottom:3px solid var(--red);text-align:left}.theme-02 th{background:#f7f7f7!important;color:#222!important;border-color:#d8d8d8}
+.theme-03 .sheet{border:2px solid #f1b7c1;border-radius:22px;background:#fffafc}.theme-03 .sheet-title{border-radius:18px 18px 8px 8px}.theme-03 .note{background:#fff0f4!important;color:#8d2940!important;border:1px solid #f3c5cf}
+.theme-04 .sheet{border:4px solid var(--red);border-radius:4px}.theme-04 .sheet-title{border-bottom:4px solid #111}.theme-04 .note{border:2px solid var(--red);margin:4px}
+.theme-05 .sheet{border:1px solid #d8d2c4;border-radius:0;background:#fbfaf5;box-shadow:inset 0 0 0 6px #f2efe7}.theme-05 .sheet-title{margin:6px;background:#fff!important;color:var(--red)!important;border:1px solid #d8d2c4}.theme-05 .note{margin:0 6px 6px}
+.theme-06 .sheet{border:2px solid #111;border-radius:0}.theme-06 .sheet-title{border-radius:0}.theme-06 th,.theme-06 td{border-color:#222}
+.theme-07 .sheet{border:1px solid #999;outline:4px double #444;outline-offset:-7px;border-radius:0;padding:7px}.theme-07 .sheet-title{margin:-1px -1px 0}.theme-07 .note{margin:0}
+.theme-08 .sheet{border:1px solid #ddd;border-left:9px solid var(--red);border-radius:8px}.theme-08 .sheet-title{text-align:left;background:#fff!important;color:#222!important;border-bottom:1px solid #ddd}.theme-08 th{background:#f4f4f4!important;color:#222!important}
+.theme-09 .sheet{border:1px solid #ddd;border-radius:10px}.theme-09 .sheet-title{border-radius:9px 9px 0 0;letter-spacing:.4px}.theme-09 .note{border-top:4px solid var(--red)}
+.theme-10 .sheet{border:2px dashed var(--red);border-radius:14px}.theme-10 .sheet-title{margin:7px;border-radius:8px}.theme-10 .note{margin:0 7px 7px;border:1px dashed var(--red)}
+.theme-11 .sheet{border:0;border-top:6px solid var(--red);border-radius:0;box-shadow:none}.theme-11 .sheet-title{background:#fff!important;color:#111!important;text-align:left;font-family:Georgia,serif;font-size:23px}.theme-11 th{background:#eee!important;color:#111!important}
+.theme-12 .sheet{border:1px solid #bbb;border-radius:6px}.theme-12 .sheet-title{font-size:18px;text-transform:uppercase;letter-spacing:1px}.theme-12 table{border-spacing:2px;border-collapse:separate}.theme-12 td,.theme-12 th{border-radius:3px}
+.theme-13 .sheet{border:0;border-radius:18px;box-shadow:0 8px 22px rgba(0,0,0,.13);overflow:hidden!important}.theme-13 .sheet-title{border-radius:18px 18px 0 0}.theme-13 .note{border-radius:0 0 18px 18px}
+.theme-14 .sheet{border:1px solid #b7c0c8;border-radius:4px}.theme-14 .sheet-title{background:#334155!important;color:#fff!important;text-align:left}.theme-14 th{background:#e2e8f0!important;color:#0f172a!important}
+.theme-15 .sheet{border:3px solid #b08d57;border-radius:12px}.theme-15 .sheet-title{background:#2b2118!important;color:#f9e7bf!important}.theme-15 th{background:#efe3cf!important;color:#3d2e20!important}.theme-15 .note{background:#fff6df!important;color:#6b4d1f!important}
+.theme-16 .sheet{border:1px solid #aab2bd;border-radius:4px}.theme-16 .sheet-title{font-size:16px;padding:7px 8px}.theme-16 th,.theme-16 td{font-size:9.8px;padding:4px 5px}.theme-16 .note{font-size:9px;padding:4px 5px}
+.theme-17 .sheet{border:1px solid #777;border-radius:0}.theme-17 .sheet-title{font-size:14px;padding:5px 6px}.theme-17 th,.theme-17 td{font-size:8.4px;padding:3px 4px;line-height:1.15}.theme-17 .note{font-size:8px;padding:3px 4px}
+.theme-18 .sheet{border:2px solid #d5d5d5;border-radius:8px}.theme-18 .sheet-title{font-size:18px;padding:5px 12px}.theme-18 th{height:34px}.theme-18 .note{padding:5px 9px}
+.theme-19 .sheet{border:1px solid #d2d2d2;border-radius:6px}.theme-19 .sheet-title{background:#fff!important;color:#222!important;border-left:8px solid var(--red);text-align:left}.theme-19 .note{background:#fff!important;color:#222!important;border-left:8px solid #f5c542}
+.theme-20 .sheet{border:1px solid #999;border-radius:0;box-shadow:none}.theme-20 .sheet-title{background:#fff!important;color:var(--red)!important;border-bottom:1px solid #999}.theme-20 th{background:#fff!important;color:#222!important;border-bottom:2px solid #222}
+.theme-21 .sheet{border:2px solid #ead1c8;border-radius:24px;background:#fffaf6}.theme-21 .sheet-title{border-radius:20px 20px 10px 10px}.theme-21 th{background:#f6e8e3!important;color:#612b27!important}
+.theme-22 .sheet{border:0;border-radius:18px;box-shadow:0 2px 16px rgba(0,0,0,.12)}.theme-22 .sheet-title{border-radius:18px 18px 0 0}.theme-22 th{background:#f7f7f7!important;color:#222!important}
+.theme-23 .sheet{border:5px solid #111;border-radius:0}.theme-23 .sheet-title{font-size:24px;letter-spacing:.6px}.theme-23 th,.theme-23 td{border:2px solid #111}
+.theme-24 .sheet{border:2px solid #111827;border-radius:8px;background:#fff}.theme-24 .sheet-title{background:#111827!important;color:#fff!important}.theme-24 th{background:#374151!important}.theme-24 .note{background:#1f2937!important;color:#fff!important}
+.theme-25 .sheet{border:2px solid #ddd;border-radius:8px;padding-top:8px}.theme-25 .sheet-title{width:72%;margin:-8px auto 6px;border-radius:0 0 12px 12px}.theme-25 .note{margin:6px;border-radius:10px}
+.theme-26 .sheet{border:1px solid #c9c9c9;border-radius:0;background:repeating-linear-gradient(#fff,#fff 27px,#edf2f7 28px)}.theme-26 .sheet-title{background:#fff!important;color:#222!important;border-bottom:2px solid var(--red);text-align:left}.theme-26 th{background:#fff!important;color:#222!important}
+.theme-27 .sheet{border:2px solid #c9b7a7;border-radius:8px}.theme-27 .sheet-title{background:#f4eee8!important;color:#5c4636!important;border:2px solid #c9b7a7;margin:6px;transform:rotate(-.4deg)}.theme-27 .note{margin:6px;border:1px solid #c9b7a7}
+.theme-28 .sheet{border:0;border-radius:0;box-shadow:none}.theme-28 .sheet-title{background:#fff!important;color:#111!important;text-align:left;font-size:24px;border-bottom:5px solid var(--red)}.theme-28 table{margin-top:8px}.theme-28 th{background:#111!important;color:#fff!important}
+.theme-29 .sheet{border:1px solid #bbb;border-radius:0;box-shadow:none}.theme-29 .sheet-title{background:#fff!important;color:#111!important;border-bottom:2px solid var(--red);text-align:left;font-size:17px}.theme-29 th{background:#fff!important;color:#111!important;border-bottom:1px solid #555}.theme-29 .note{background:#fff!important;color:#111!important;border-top:2px solid #f5c542}
+.theme-30 .sheet{border:3px double #555;border-radius:4px}.theme-30 .sheet-title{font-family:Georgia,serif;background:#f5f2eb!important;color:#222!important;border-bottom:1px solid #888}.theme-30 th{background:#ece8df!important;color:#222!important}.theme-30 .note{background:#f8f4e9!important;color:#654b23!important;border-top:1px solid #c9b98d}
+
 @media(max-width:1180px){.wrap{max-width:100%;padding:20px 14px 50px}.controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.topin{padding:8px 14px}.brand{font-size:19px}.brand img{width:38px;height:44px}.preview-shell{padding:12px}.panel{padding:14px}}
 @media(max-width:680px){.controls{grid-template-columns:1fr}.wrap{padding:14px 8px 40px}.preview-shell{padding:8px;border-radius:10px}.btn{width:100%}.topin{align-items:flex-start;flex-wrap:wrap}.back{font-size:13px}}
@@ -136,7 +172,7 @@ th{min-height:29px;height:auto}
     <div class="field"><label>หัวข้อ</label><select id="dataset" class="input"><option value="production">สูตรการผลิต</option><option value="drinks">สูตรชงเครื่องดื่ม</option><option value="expiry">วันหมดอายุ</option><option value="toppings">Topping</option><option value="uniforms">เครื่องแต่งกาย</option><option value="courses">บทเรียนอื่น ๆ</option></select></div>
     <div class="field"><label>ขนาดกระดาษ</label><select id="orientation" class="input"><option value="portrait">A4 แนวตั้ง</option><option value="landscape">A4 แนวนอน</option></select></div>
     <div class="field"><label>จำนวนรายการต่อหน้า</label><select id="itemsPerPage" class="input"></select></div>
-    <div class="field"><label>Theme (50 แบบ)</label><select id="themeSelect" class="input"></select></div>
+    <div class="field"><label>Theme (30 แบบ)</label><select id="themeSelect" class="input"></select></div>
     <div class="field"><label>สีหลัก (50 สี)</label><select id="colorSelect" class="input"></select></div>
     <div class="field"><label>ตัวอย่างสี</label><div id="colorPreview" style="height:42px;border-radius:10px;border:1px solid #d1d5db"></div></div>
     <button id="pngBtn" class="btn primary">Export PNG ความคมชัดสูง</button>
@@ -150,19 +186,15 @@ th{min-height:29px;height:auto}
 const ADMIN_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-admin";
 let pin=sessionStorage.getItem("yothe_admin_pin")||"",drinkMeta={};
 const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
-const THEME_CLASSES=["theme-soft","theme-square","theme-airy","theme-compact","theme-bold"];
+const THEME_CLASSES=Array.from({length:30},(_,i)=>"theme-"+String(i+1).padStart(2,"0"));
 const THEME_NAMES=[
-"Soft Rounded","Clean Square","Airy Card","Compact Table","Bold Header",
-"Soft Minimal","Modern Grid","Spacious Clean","Compact Pro","Bold Frame",
-"Rounded Studio","Sharp Modern","Open Space","Dense Clean","Strong Card",
-"Soft Editorial","Square Editorial","Airy Editorial","Compact Editorial","Bold Editorial",
-"Soft Classic","Modern Classic","Elegant Airy","Compact Classic","Bold Classic",
-"Soft Business","Square Business","Airy Business","Compact Business","Bold Business",
-"Soft Premium","Modern Premium","Elegant Grid","Compact Premium","Bold Premium",
-"Soft Learning","Clean Learning","Airy Learning","Compact Learning","Bold Learning",
-"Soft Cafe","Modern Cafe","Airy Cafe","Compact Cafe","Bold Cafe",
-"Soft Display","Clean Display","Airy Display","Compact Display","Bold Display"
-];
+"Japanese Soft","Zen Minimal","Sakura Card","Torii Frame","Wash Paper",
+"Clean Square","Double Border","Side Accent","Top Band","Ticket Style",
+"Editorial","Modern Grid","Studio Card","Business Clean","Premium Frame",
+"Compact Pro","Dense Table","Wide Header","Label Strip","Outline Only",
+"Rounded Cafe","Soft Shadow","Bold Block","Dark Header","Ribbon Header",
+"Notebook","Stamp Style","Magazine","Minimal Line","Classic Document"
+]
 const COLOR_NAMES=[
 "Kamu Red","Rose","Berry","Bright Red","Coral Red","Orange","Burnt Orange","Amber","Golden Brown","Yellow",
 "Lime","Olive Green","Fresh Green","Leaf Green","Emerald","Mint Green","Teal Mint","Deep Teal","Cyan","Ocean Cyan",
@@ -181,19 +213,25 @@ function chunk(arr,size){const out=[];for(let i=0;i<arr.length;i+=size)out.push(
 function applyDisplayPrefs(){
   const color=COLORS[(displayPrefs.color_index||1)-1]||COLORS[0];
   document.documentElement.style.setProperty("--red",color);
-  const idx=Math.max(1,Math.min(50,Number(displayPrefs.theme_index)||1));
+  const idx=Math.max(1,Math.min(30,Number(displayPrefs.theme_index)||1));
   document.body.classList.remove(...THEME_CLASSES);
-  document.body.classList.add(THEME_CLASSES[(idx-1)%5]);
-  const radius=[2,6,10,14,18,22,26,30,34,38][(idx-1)%10];
-  const shadowLevel=Math.floor((idx-1)/10);
-  const shadows=["none","0 2px 8px rgba(0,0,0,.05)","0 5px 16px rgba(0,0,0,.07)","0 9px 26px rgba(0,0,0,.09)","0 14px 34px rgba(0,0,0,.11)"];
-  const gaps=[8,10,12,14,16,18,20,22,24,26];
-  document.documentElement.style.setProperty("--theme-radius",radius+"px");
-  document.documentElement.style.setProperty("--theme-shadow",shadows[shadowLevel]);
-  document.documentElement.style.setProperty("--theme-gap",gaps[(idx*3)%10]+"px");
+  document.body.classList.add(THEME_CLASSES[idx-1]);
+  const radiusMap=[18,2,22,4,0,0,0,8,10,14,0,6,18,4,12,4,0,8,6,0,24,18,0,8,8,0,8,0,0,4];
+  const shadowMap=[
+    "0 4px 14px rgba(0,0,0,.06)","none","0 5px 18px rgba(194,80,100,.10)","none","none",
+    "none","none","0 3px 12px rgba(0,0,0,.05)","0 3px 12px rgba(0,0,0,.05)","none",
+    "none","0 2px 10px rgba(0,0,0,.05)","0 8px 22px rgba(0,0,0,.13)","none","0 6px 20px rgba(97,65,25,.12)",
+    "none","none","0 2px 10px rgba(0,0,0,.05)","none","none",
+    "0 4px 16px rgba(130,60,60,.08)","0 2px 16px rgba(0,0,0,.12)","none","0 3px 12px rgba(0,0,0,.10)","0 3px 12px rgba(0,0,0,.06)",
+    "none","0 3px 10px rgba(93,70,54,.08)","none","none","none"
+  ];
+  const gapMap=[14,12,14,10,12,10,12,12,10,12,16,12,14,10,12,8,6,10,10,10,14,14,8,10,12,10,12,14,10,12];
+  document.documentElement.style.setProperty("--theme-radius",(radiusMap[idx-1]||0)+"px");
+  document.documentElement.style.setProperty("--theme-shadow",shadowMap[idx-1]||"none");
+  document.documentElement.style.setProperty("--theme-gap",(gapMap[idx-1]||10)+"px");
   document.getElementById("orientation").value=displayPrefs.orientation;
   document.getElementById("itemsPerPage").value=String(displayPrefs.items_per_page);
-  document.getElementById("themeSelect").value=String(displayPrefs.theme_index);
+  document.getElementById("themeSelect").value=String(idx);
   document.getElementById("colorSelect").value=String(displayPrefs.color_index);
   document.getElementById("colorPreview").style.background=color;
 }
@@ -207,7 +245,7 @@ async function saveExportPrefs(){
   displayPrefs={
     orientation:document.getElementById("orientation").value,
     items_per_page:Math.max(1,Math.min(20,Number(document.getElementById("itemsPerPage").value)||1)),
-    theme_index:Number(document.getElementById("themeSelect").value)||1,
+    theme_index:Math.max(1,Math.min(30,Number(document.getElementById("themeSelect").value)||1)),
     color_index:Number(document.getElementById("colorSelect").value)||1
   };
   applyDisplayPrefs();
@@ -227,6 +265,7 @@ async function loadDisplayPrefs(ds=document.getElementById("dataset").value){
   const legacy=data.find(x=>x.key==="display_preferences");
   const row=own||legacy;
   if(row?.value) displayPrefs={...displayPrefs,...row.value};
+  displayPrefs.theme_index=Math.max(1,Math.min(30,Number(displayPrefs.theme_index)||1));
   const orderRow=data.find(x=>x.key==="layout_group_order_"+ds);
   if(Array.isArray(orderRow?.value)) layoutGroupOrder=orderRow.value.map(String);
   applyDisplayPrefs();
