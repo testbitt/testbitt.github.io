@@ -222,6 +222,14 @@ th{min-height:29px;height:auto}
   contain:layout paint!important;
 }
 
+
+/* Layout engine owns sizing; legacy density classes must never distort selected themes */
+.page.density-medium .sheet-title,.page.density-high .sheet-title,
+.page.fit-tight .sheet-title,.page.fit-ultra .sheet-title{font-size:inherit;padding:inherit}
+.page.density-medium th,.page.density-medium td,.page.density-high th,.page.density-high td,
+.page.fit-tight th,.page.fit-tight td,.page.fit-ultra th,.page.fit-ultra td{font-size:inherit;padding:inherit;line-height:inherit}
+.page.density-medium .grid,.page.density-high .grid,.page.fit-tight .grid,.page.fit-ultra .grid{gap:var(--theme-gap,10px)}
+
 @media(max-width:1180px){.wrap{max-width:100%;padding:20px 14px 50px}.controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.topin{padding:8px 14px}.brand{font-size:19px}.brand img{width:38px;height:44px}.preview-shell{padding:12px}.panel{padding:14px}}
 @media(max-width:680px){.controls{grid-template-columns:1fr}.wrap{padding:14px 8px 40px}.preview-shell{padding:8px;border-radius:10px}.btn{width:100%}.topin{align-items:flex-start;flex-wrap:wrap}.back{font-size:13px}}
@@ -403,9 +411,6 @@ async function waitForSheetImages(sheet){
 }
 function setPageDensity(page){
   page.classList.remove("density-medium","density-high","fit-tight","fit-ultra");
-  const n=Math.max(1,Number(displayPrefs.items_per_page)||1);
-  if(n>=13) page.classList.add("density-high");
-  else if(n>=7) page.classList.add("density-medium");
 }
 function exportGridShape(count,orientation){
   count=Math.max(1,Math.min(Number(count)||1,20));
@@ -440,117 +445,138 @@ function measureNaturalBounds(sheet){
   return {w:maxRight,h:maxBottom};
 }
 function fitExportSheetInCell(cell){
-  const sheet=cell.querySelector(":scope > .sheet");if(!sheet)return;
-  resetExportSheet(sheet);
+  const sheet=cell.querySelector(":scope > .sheet");if(!sheet)return true;
 
   const cr=cell.getBoundingClientRect();
-  const cellW=Math.max(1,cr.width-2),cellH=Math.max(1,cr.height-2);
+  const cellW=Math.max(1,cr.width-2);
+  const cellH=Math.max(1,cr.height-2);
 
-  // First measure at the real cell width so text wraps naturally for this layout/theme.
-  sheet.style.width=cellW+"px";
-  sheet.style.maxWidth="none";
   sheet.style.position="absolute";
-  const natural=measureNaturalBounds(sheet);
+  sheet.style.top="0";
+  sheet.style.left="0";
+  sheet.style.maxWidth="none";
+  sheet.style.maxHeight="none";
+  sheet.style.height="auto";
+  sheet.style.overflow="visible";
+  sheet.style.transformOrigin="top left";
 
-  let scale=Math.min(1,cellW/Math.max(1,natural.w),cellH/Math.max(1,natural.h));
-  if(!Number.isFinite(scale)||scale<=0)scale=1;
-  scale=Math.max(.02,scale*.975);
+  // Find the largest possible scale while keeping the COMPLETE sheet inside the cell.
+  // Width is expanded before scaling, so the transformed result always uses the full cell width
+  // instead of becoming a tiny narrow table.
+  let lo=.02,hi=1,best=.02;
+  for(let i=0;i<14;i++){
+    const s=(lo+hi)/2;
+    sheet.style.transform="none";
+    sheet.style.width=(cellW/s)+"px";
+    sheet.style.transform="scale("+s+")";
 
-  // Keep the unscaled sheet width tied to the cell width. Scaling then preserves every row/text/image.
-  sheet.style.width=cellW+"px";
-  sheet.style.transform="scale("+scale+")";
-  sheet.dataset.fitScale=scale.toFixed(5);
-  sheet.dataset.naturalWidth=String(natural.w);
-  sheet.dataset.naturalHeight=String(natural.h);
-
-  // Safety correction based on actual transformed bounds.
-  for(let pass=0;pass<6;pass++){
     const sr=sheet.getBoundingClientRect();
-    if(sr.width<=cellW+0.5&&sr.height<=cellH+0.5)break;
-    let factor=Math.min(cellW/Math.max(1,sr.width),cellH/Math.max(1,sr.height),.97);
-    if(!Number.isFinite(factor)||factor<=0||factor>=1)factor=.94;
-    scale=Math.max(.02,scale*factor);
-    sheet.style.transform="scale("+scale+")";
-    sheet.dataset.fitScale=scale.toFixed(5);
+    const fits=sr.width<=cellW+1&&sr.height<=cellH+1;
+    if(fits){best=s;lo=s}else hi=s;
   }
+
+  best=Math.max(.02,Math.min(1,best*.992));
+  sheet.style.transform="none";
+  sheet.style.width=(cellW/best)+"px";
+  sheet.style.transform="scale("+best+")";
+  sheet.dataset.fitScale=best.toFixed(5);
+
+  const finalRect=sheet.getBoundingClientRect();
+  const ok=finalRect.width<=cellW+1&&finalRect.height<=cellH+1;
+  cell.dataset.fitOk=ok?"1":"0";
+  return ok;
 }
 function fitExportPageContent(page){
   const content=page.querySelector(".page-content");
   const grid=content?.querySelector(".grid");
-  if(!content||!grid)return;
+  if(!content||!grid)return true;
 
   setPageDensity(page);
   content.style.transform="none";
-  content.style.height="auto";
   content.style.overflow="hidden";
-  grid.style.transform="none";
-  grid.style.width="100%";
-  grid.style.height="100%";
 
   const allCells=[...grid.children].filter(el=>el.classList?.contains("fit-cell"));
   const cells=allCells.filter(el=>!el.classList.contains("fit-cell-empty"));
-  if(!allCells.length)return;
+  if(!allCells.length)return true;
 
-  const shape=exportGridShape(Math.max(1,Number(displayPrefs.items_per_page)||1),displayPrefs.orientation);
-  const selected=Math.max(1,Number(displayPrefs.items_per_page)||1);
+  const selected=Math.max(1,Math.min(20,Number(displayPrefs.items_per_page)||1));
+  const shape=exportGridShape(selected,displayPrefs.orientation);
   const gap=selected>=17?4:selected>=13?5:selected>=7?7:10;
+
+  // Use the exact allocated flex height of page-content, not auto/scroll height.
+  const contentH=Math.max(1,content.clientHeight);
+  grid.style.transform="none";
+  grid.style.width="100%";
+  grid.style.height=contentH+"px";
+  grid.style.minHeight=contentH+"px";
+  grid.style.maxHeight=contentH+"px";
   grid.style.gap=gap+"px";
   grid.style.gridTemplateColumns="repeat("+shape.cols+",minmax(0,1fr))";
   grid.style.gridTemplateRows="repeat("+shape.rows+",minmax(0,1fr))";
   grid.style.gridAutoRows="minmax(0,1fr)";
 
-  cells.forEach(cell=>{
+  allCells.forEach(cell=>{
     cell.style.width="100%";
     cell.style.height="100%";
+    cell.style.minWidth="0";
+    cell.style.minHeight="0";
     cell.style.overflow="hidden";
   });
 
   page.dataset.gridCols=String(shape.cols);
   page.dataset.gridRows=String(shape.rows);
 
-  // Must run after grid tracks are committed.
-  requestAnimationFrame(()=>cells.forEach(fitExportSheetInCell));
+  let ok=true;
+  cells.forEach(cell=>{if(!fitExportSheetInCell(cell))ok=false});
+  page.dataset.fitOk=ok?"1":"0";
+  return ok;
+}
+function validateExportLayout(){
+  let ok=true;
+  document.querySelectorAll("#pages .page").forEach(page=>{
+    const pr=page.getBoundingClientRect();
+    const content=page.querySelector(".page-content");
+    if(!content){ok=false;return}
+    const cr=content.getBoundingClientRect();
+    if(cr.right>pr.right+1||cr.bottom>pr.bottom+1)ok=false;
+    page.querySelectorAll(".fit-cell:not(.fit-cell-empty)").forEach(cell=>{
+      const sheet=cell.querySelector(":scope > .sheet");
+      if(!sheet){ok=false;return}
+      const a=cell.getBoundingClientRect(),b=sheet.getBoundingClientRect();
+      if(b.left<a.left-1||b.top<a.top-1||b.right>a.right+1||b.bottom>a.bottom+1)ok=false;
+    });
+  });
+  return ok;
 }
 async function fitAllExportPages(){
   const pages=[...document.querySelectorAll("#pages .page")];
 
   await Promise.all(pages.flatMap(page=>[...page.querySelectorAll("img")].map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=img.onerror=r}))));
   if(document.fonts?.ready){try{await document.fonts.ready}catch{}}
+
+  // Reset preview transform before measuring the physical A4 layout.
+  document.querySelectorAll(".page-wrap").forEach(w=>{
+    const p=w.querySelector(".page");
+    if(p){p.style.transform="none";w.style.width="auto";w.style.height="auto"}
+  });
+
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
 
-  // Layout tracks first, then fit every sheet in its own fixed cell.
   for(let pass=0;pass<4;pass++){
     pages.forEach(fitExportPageContent);
     await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-    pages.forEach(page=>{
-      page.querySelectorAll(".fit-cell").forEach(fitExportSheetInCell);
+  }
+
+  // One final conservative correction only for cells that still exceed a boundary.
+  pages.forEach(page=>{
+    page.querySelectorAll(".fit-cell:not(.fit-cell-empty)").forEach(cell=>{
+      if(cell.dataset.fitOk!=="1")fitExportSheetInCell(cell);
     });
-  }
+  });
 
-  // Final verification: no transformed sheet may cross its own cell boundary.
-  for(const page of pages){
-    for(const cell of page.querySelectorAll(".fit-cell")){
-      const sheet=cell.querySelector(":scope > .sheet");if(!sheet)continue;
-      for(let pass=0;pass<8;pass++){
-        const cr=cell.getBoundingClientRect(),sr=sheet.getBoundingClientRect();
-        const overW=sr.width-cr.width,overH=sr.height-cr.height;
-        if(overW<=0.5&&overH<=0.5)break;
-        const current=Number(sheet.dataset.fitScale||1);
-        let factor=Math.min(
-          cr.width/Math.max(1,sr.width),
-          cr.height/Math.max(1,sr.height),
-          .97
-        );
-        if(!Number.isFinite(factor)||factor<=0||factor>=1)factor=.94;
-        const next=Math.max(.02,current*factor);
-        sheet.style.transform="scale("+next+")";
-        sheet.dataset.fitScale=next.toFixed(5);
-        await new Promise(r=>requestAnimationFrame(r));
-      }
-    }
-  }
-
+  pages.forEach(page=>page.dataset.layoutValid=validateExportLayout()?"1":"0");
   fitPreviewPages();
+  return validateExportLayout();
 }
 function drinkSheet(id,items){
   items=[...items].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
@@ -635,8 +661,9 @@ async function render(ds,rows){
 }
 
 async function ensureExportFitBeforeCapture(){
-  await fitAllExportPages();
+  const ok=await fitAllExportPages();
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  if(!ok||!validateExportLayout()) throw new Error("Layout A4 ยังไม่พอดี กรุณาเปลี่ยนจำนวนรายการต่อหน้าแล้วลองใหม่");
 }
 async function pageCanvas(el){
   if(document.fonts?.ready)await document.fonts.ready;
