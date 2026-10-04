@@ -62,6 +62,32 @@ th{min-height:29px;height:auto}
 .page.density-high .note{font-size:8.6px;padding:4px 6px;line-height:1.2}
 .page.density-high .sheet-body{min-height:95px;grid-template-columns:56px minmax(0,1fr)}
 /* Exact A4 export fitting */
+
+/* Cell isolation: every selected table owns one fixed A4 grid cell */
+.page .fit-cell{
+  position:relative!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+.page .fit-cell>.sheet{
+  position:absolute!important;
+  top:0!important;
+  left:0!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin:0!important;
+  box-sizing:border-box!important;
+  transform-origin:top left!important;
+}
+
 .page .page-content{
   flex:1 1 auto!important;
   min-height:0!important;
@@ -83,7 +109,7 @@ th{min-height:29px;height:auto}
   overflow:hidden!important;
   box-sizing:border-box!important;
 }
-.page .grid>.sheet{
+.page .grid>.sheet,.page .fit-cell>.sheet{
   width:100%!important;
   min-width:0!important;
   max-width:none!important;
@@ -254,6 +280,7 @@ async function saveExportPrefs(){
   try{
     await api({action:"save",dataset:"settings",row:{key:"display_preferences_"+ds,value:displayPrefs}});
     await load();
+    await fitAllExportPages();
     msg.textContent="บันทึก Layout สำหรับ Export แล้ว • ใช้เฉพาะหัวข้อนี้";
   }catch(e){msg.textContent=e.message}
 }
@@ -322,9 +349,11 @@ function pageOverflow(page){
   if(!content)return false;
   const pr=page.getBoundingClientRect(),cr=content.getBoundingClientRect();
   if(cr.right>pr.right+1||cr.bottom>pr.bottom+1)return true;
-  return [...content.querySelectorAll(".sheet")].some(sheet=>{
-    const r=sheet.getBoundingClientRect();
-    return r.right>cr.right+1||r.bottom>cr.bottom+1||r.left<cr.left-1||r.top<cr.top-1;
+  return [...content.querySelectorAll(".fit-cell")].some(cell=>{
+    const sheet=cell.querySelector(":scope > .sheet");
+    if(!sheet)return false;
+    const c=cell.getBoundingClientRect(),s=sheet.getBoundingClientRect();
+    return s.right>c.right+1||s.bottom>c.bottom+1||s.left<c.left-1||s.top<c.top-1;
   });
 }
 async function waitForSheetImages(sheet){
@@ -369,18 +398,40 @@ function measureNaturalBounds(sheet){
   });
   return {w:maxRight,h:maxBottom};
 }
-function fitExportSheet(sheet,cellW,cellH){
+function fitExportSheetInCell(cell){
+  const sheet=cell.querySelector(":scope > .sheet");if(!sheet)return;
   resetExportSheet(sheet);
+
+  const cr=cell.getBoundingClientRect();
+  const cellW=Math.max(1,cr.width-2),cellH=Math.max(1,cr.height-2);
+
+  // First measure at the real cell width so text wraps naturally for this layout/theme.
+  sheet.style.width=cellW+"px";
+  sheet.style.maxWidth="none";
+  sheet.style.position="absolute";
   const natural=measureNaturalBounds(sheet);
-  let scale=Math.min(1,(cellW-2)/Math.max(1,natural.w),(cellH-2)/Math.max(1,natural.h));
+
+  let scale=Math.min(1,cellW/Math.max(1,natural.w),cellH/Math.max(1,natural.h));
   if(!Number.isFinite(scale)||scale<=0)scale=1;
-  // No practical minimum: selected layout count must always fit and preserve all rows.
-  scale=Math.max(.025,scale*.975);
+  scale=Math.max(.02,scale*.975);
+
+  // Keep the unscaled sheet width tied to the cell width. Scaling then preserves every row/text/image.
+  sheet.style.width=cellW+"px";
   sheet.style.transform="scale("+scale+")";
-  sheet.style.width=(100/scale)+"%";
   sheet.dataset.fitScale=scale.toFixed(5);
   sheet.dataset.naturalWidth=String(natural.w);
   sheet.dataset.naturalHeight=String(natural.h);
+
+  // Safety correction based on actual transformed bounds.
+  for(let pass=0;pass<6;pass++){
+    const sr=sheet.getBoundingClientRect();
+    if(sr.width<=cellW+0.5&&sr.height<=cellH+0.5)break;
+    let factor=Math.min(cellW/Math.max(1,sr.width),cellH/Math.max(1,sr.height),.97);
+    if(!Number.isFinite(factor)||factor<=0||factor>=1)factor=.94;
+    scale=Math.max(.02,scale*factor);
+    sheet.style.transform="scale("+scale+")";
+    sheet.dataset.fitScale=scale.toFixed(5);
+  }
 }
 function fitExportPageContent(page){
   const content=page.querySelector(".page-content");
@@ -395,11 +446,10 @@ function fitExportPageContent(page){
   grid.style.width="100%";
   grid.style.height="100%";
 
-  const sheets=[...grid.children].filter(el=>el.classList?.contains("sheet"));
-  if(!sheets.length)return;
-  sheets.forEach(resetExportSheet);
+  const cells=[...grid.children].filter(el=>el.classList?.contains("fit-cell"));
+  if(!cells.length)return;
 
-  const shape=exportGridShape(sheets.length,displayPrefs.orientation);
+  const shape=exportGridShape(cells.length,displayPrefs.orientation);
   const selected=Math.max(1,Number(displayPrefs.items_per_page)||1);
   const gap=selected>=17?4:selected>=13?5:selected>=7?7:10;
   grid.style.gap=gap+"px";
@@ -407,51 +457,57 @@ function fitExportPageContent(page){
   grid.style.gridTemplateRows="repeat("+shape.rows+",minmax(0,1fr))";
   grid.style.gridAutoRows="minmax(0,1fr)";
 
-  const gr=grid.getBoundingClientRect();
-  const cellW=Math.max(1,(gr.width-gap*(shape.cols-1))/shape.cols);
-  const cellH=Math.max(1,(gr.height-gap*(shape.rows-1))/shape.rows);
-  sheets.forEach(sheet=>fitExportSheet(sheet,cellW,cellH));
+  cells.forEach(cell=>{
+    cell.style.width="100%";
+    cell.style.height="100%";
+    cell.style.overflow="hidden";
+  });
 
   page.dataset.gridCols=String(shape.cols);
   page.dataset.gridRows=String(shape.rows);
+
+  // Must run after grid tracks are committed.
+  requestAnimationFrame(()=>cells.forEach(fitExportSheetInCell));
 }
 async function fitAllExportPages(){
   const pages=[...document.querySelectorAll("#pages .page")];
+
   await Promise.all(pages.flatMap(page=>[...page.querySelectorAll("img")].map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=img.onerror=r}))));
   if(document.fonts?.ready){try{await document.fonts.ready}catch{}}
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
 
-  // Multiple passes handle text re-wrap after width changes.
-  for(let pass=0;pass<3;pass++){
+  // Layout tracks first, then fit every sheet in its own fixed cell.
+  for(let pass=0;pass<4;pass++){
     pages.forEach(fitExportPageContent);
     await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    pages.forEach(page=>{
+      page.querySelectorAll(".fit-cell").forEach(fitExportSheetInCell);
+    });
   }
 
-  // Final safety pass: shrink only offending sheet until its complete bounds fit inside its grid cell.
+  // Final verification: no transformed sheet may cross its own cell boundary.
   for(const page of pages){
-    const grid=page.querySelector(".grid");if(!grid)continue;
-    const sheets=[...grid.children].filter(el=>el.classList?.contains("sheet"));
-    for(const sheet of sheets){
+    for(const cell of page.querySelectorAll(".fit-cell")){
+      const sheet=cell.querySelector(":scope > .sheet");if(!sheet)continue;
       for(let pass=0;pass<8;pass++){
-        const sr=sheet.getBoundingClientRect();
-        const style=getComputedStyle(grid);
-        const colGap=parseFloat(style.columnGap)||0,rowGap=parseFloat(style.rowGap)||0;
-        const shape=exportGridShape(sheets.length,displayPrefs.orientation);
-        const gr=grid.getBoundingClientRect();
-        const cellW=(gr.width-colGap*(shape.cols-1))/shape.cols;
-        const cellH=(gr.height-rowGap*(shape.rows-1))/shape.rows;
-        if(sr.width<=cellW+0.5&&sr.height<=cellH+0.5)break;
+        const cr=cell.getBoundingClientRect(),sr=sheet.getBoundingClientRect();
+        const overW=sr.width-cr.width,overH=sr.height-cr.height;
+        if(overW<=0.5&&overH<=0.5)break;
         const current=Number(sheet.dataset.fitScale||1);
-        let factor=Math.min(cellW/Math.max(1,sr.width),cellH/Math.max(1,sr.height),.97);
+        let factor=Math.min(
+          cr.width/Math.max(1,sr.width),
+          cr.height/Math.max(1,sr.height),
+          .97
+        );
         if(!Number.isFinite(factor)||factor<=0||factor>=1)factor=.94;
-        const next=Math.max(.025,current*factor);
+        const next=Math.max(.02,current*factor);
         sheet.style.transform="scale("+next+")";
-        sheet.style.width=(100/next)+"%";
         sheet.dataset.fitScale=next.toFixed(5);
         await new Promise(r=>requestAnimationFrame(r));
       }
     }
   }
+
   fitPreviewPages();
 }
 function drinkSheet(id,items){
@@ -484,7 +540,10 @@ async function packSheets(title,sheets){
     made.push(obj);
     setPageDensity(obj.page);
     for(const sheet of groups[pi]){
-      obj.grid.appendChild(sheet);
+      const cell=document.createElement("div");
+      cell.className="fit-cell";
+      cell.appendChild(sheet);
+      obj.grid.appendChild(cell);
       await waitForSheetImages(sheet);
     }
     await new Promise(r=>requestAnimationFrame(r));
