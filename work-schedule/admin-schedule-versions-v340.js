@@ -321,5 +321,5 @@
   buildUI340();
   fillBranches340();
   document.querySelectorAll('.cute-mascot').forEach(x=>x.remove());
-  const footer=q('.side footer');if(footer)footer.textContent='Version 3.5 · Employee & Branch Editor';
+  const footer=q('.side footer');if(footer)footer.textContent='Version 3.6 · Displayed Branch Name Editor';
 })();

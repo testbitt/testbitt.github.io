@@ -63,7 +63,8 @@
     .crud-head350{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:15px}.crud-head350 h3{margin:0;color:#174f40}
     .crud-grid350{display:grid;grid-template-columns:1fr 1fr;gap:12px}.crud-grid350 label{display:grid;gap:6px;font-size:12px;color:var(--muted)}.crud-grid350 .wide{grid-column:1/-1}
     .crud-foot350{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.field-note350{font-size:11px;color:var(--muted);margin-top:-4px}
-    .branch-card350{margin-top:14px}.branch-table350{min-width:720px}.branch-code350{font-weight:900;color:#145b48}.branch-name350{font-weight:800}
+    .branch-card350{margin-bottom:14px}.branch-table350{min-width:720px}.branch-code350{font-weight:900;color:#145b48}.branch-name350{font-weight:800}
+    .branch-display350{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.branch-display350 small{font-weight:700}.branch-inline350{border:0;background:#e5f7f0;color:#147255;border-radius:999px;padding:3px 7px;font-size:10px;font-weight:900;cursor:pointer}.branch-inline350:hover{background:#cceee2}
     .admin-api350{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;background:#e5f7f0;color:#147255;font-size:11px;font-weight:900}
     @media(max-width:700px){.crud-grid350{grid-template-columns:1fr}.crud-grid350 .wide{grid-column:auto}.crud-box350{padding:14px}.crud-foot350{flex-direction:column-reverse}.crud-foot350 .btn{width:100%}}
   `;
@@ -82,7 +83,7 @@
       <span class="admin-api350">Cloud · ksp-api V6</span>
     </div>
     <div class="scroll"><table class="data branch-table350" id="branchTable350"></table></div>`;
-  employeeAdmin.appendChild(branchCard);
+  employeeAdmin.insertBefore(branchCard,employeeSection);
 
   const employeeModal=document.createElement('div');
   employeeModal.id='employeeCrudModal';employeeModal.className='crud-modal350';
@@ -140,12 +141,13 @@
     empTable.innerHTML=`<thead><tr><th>รหัส</th><th>ชื่อ</th><th>สาขา</th><th>ตำแหน่ง</th><th>ประเภท</th><th>จัดการ</th></tr></thead><tbody>${rows.map(e=>`<tr>
       <td>${esc350(e.employee_code)}</td>
       <td><b>${esc350(e.name||e.display_name)}</b>${e.first_name||e.last_name?`<br><small>${esc350([e.first_name,e.last_name].filter(Boolean).join(' '))}</small>`:''}</td>
-      <td><b>${esc350(e.branch_code)}</b><br><small>${esc350(e.branch_name||e.branch_code)}</small></td>
+      <td><b>${esc350(e.branch_code)}</b><div class="branch-display350"><small>${esc350(e.branch_name||e.branch_code)}</small><button type="button" class="branch-inline350 editDisplayedBranch350" data-branch-code="${esc350(e.branch_code)}" title="แก้ไขชื่อสาขาที่แสดง">แก้ชื่อที่แสดง</button></div></td>
       <td>${esc350(e.position||'-')}</td><td>${esc350(e.employment_type||'-')}</td>
       <td><div class="emp-actions350"><button type="button" class="btn secondary editEmployee350" data-code="${esc350(e.employee_code)}">แก้ไข</button><button type="button" class="btn ghost deleteEmployee350" data-code="${esc350(e.employee_code)}">ลบ</button></div></td>
     </tr>`).join('')}</tbody>`;
     empTable.querySelectorAll('.editEmployee350').forEach(btn=>btn.onclick=()=>openEmployee350((db.employees||[]).find(e=>String(e.employee_code)===btn.dataset.code)));
     empTable.querySelectorAll('.deleteEmployee350').forEach(btn=>btn.onclick=()=>deleteEmployee350(btn.dataset.code));
+    empTable.querySelectorAll('.editDisplayedBranch350').forEach(btn=>btn.onclick=()=>openBranch350((db.branches||[]).find(b=>String(b.code)===btn.dataset.branchCode)));
   }
 
   function renderBranches350(){
@@ -201,7 +203,7 @@
     if(!adminPin350)return toast('กรุณาออกจาก Admin แล้วเข้าสู่ระบบใหม่ เพื่อยืนยันสิทธิ์','error');
     const name=q('#crudBranchName350').value.trim();if(!name)return toast('กรุณากรอกชื่อสาขา','error');
     const button=q('#branchSave350');button.disabled=true;button.textContent='กำลังบันทึก...';setSync350('กำลังบันทึกชื่อสาขา...');
-    try{await api350('adminBranchUpdate',{branch_code:editingBranch350.code,branch_name:name});await refreshCloud350();closeBranch350();toast('แก้ไขชื่อสาขาส่วนกลางแล้ว');setSync350('ออนไลน์ · Sync แล้ว')}
+    try{await api350('adminBranchUpdate',{branch_code:editingBranch350.code,branch_name:name});await refreshCloud350();if(typeof renderHistoryCloud==='function')renderHistoryCloud();closeBranch350();toast('แก้ไขชื่อสาขาที่แสดงทุกจุดแล้ว');setSync350('ออนไลน์ · Sync แล้ว')}
     catch(error){setSync350('บันทึกชื่อสาขาไม่สำเร็จ',true);toast('บันทึกไม่สำเร็จ: '+(error?.message||String(error)),'error')}
     finally{button.disabled=false;button.textContent='บันทึกชื่อสาขา'}
   };
@@ -219,5 +221,5 @@
   if(typeof previousOpenAdmin==='function')window.openAdmin=function(){const result=previousOpenAdmin.apply(this,arguments);if(q('#admin-employees.active'))window.renderEmployees();return result};
 
   fillBranchControls350();renderEmployees350();renderBranches350();
-  const footer=q('.side footer');if(footer)footer.textContent='Version 3.5 · Employee & Branch Editor';
+  const footer=q('.side footer');if(footer)footer.textContent='Version 3.6 · Displayed Branch Name Editor';
 })();
