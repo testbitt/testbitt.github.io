@@ -115,7 +115,6 @@
           <label>รหัสสาขา<input id="crudBranchCode350" readonly></label>
           <label>ชื่อสาขา<input id="crudBranchName350" required></label>
         </div>
-        <p class="field-note350">ชื่อใหม่จะอัปเดตใน Filter ตารางงาน ประวัติ Version และไฟล์ Export โดยไม่เปลี่ยนรหัสสาขา</p>
         <div class="crud-foot350"><button type="button" class="btn ghost" id="branchModalCancel350">ยกเลิก</button><button type="submit" class="btn primary" id="branchSave350">บันทึกชื่อสาขา</button></div>
       </form>
     </div>`;
@@ -221,5 +220,5 @@
   if(typeof previousOpenAdmin==='function')window.openAdmin=function(){const result=previousOpenAdmin.apply(this,arguments);if(q('#admin-employees.active'))window.renderEmployees();return result};
 
   fillBranchControls350();renderEmployees350();renderBranches350();
-  const footer=q('.side footer');if(footer)footer.textContent='Version 3.6 · Displayed Branch Name Editor';
+  const footer=q('.side footer');if(footer)footer.textContent='Version 3.6.1 · Displayed Branch Name Editor';
 })();
