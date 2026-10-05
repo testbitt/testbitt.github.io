@@ -314,6 +314,13 @@ th{min-height:29px;height:auto}
 const ADMIN_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-admin";
 let pin=sessionStorage.getItem("yothe_admin_pin")||"",drinkMeta={};
 const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
+const COLOR_NAMES=[
+"Yothé Red","Rose","Berry","Bright Red","Coral Red","Orange","Burnt Orange","Amber","Golden Brown","Yellow",
+"Lime","Olive Green","Fresh Green","Leaf Green","Emerald","Mint Green","Teal Mint","Deep Teal","Cyan","Ocean Cyan",
+"Sky Blue","Deep Sky","Blue","Royal Blue","Indigo","Deep Indigo","Periwinkle","Violet","Lavender","Purple",
+"Orchid","Magenta","Pink Violet","Deep Pink","Pink","Warm Pink","Dark Red","Rust","Brown Gold","Olive",
+"Forest Green","Deep Emerald","Dark Teal","Deep Cyan","Navy","Midnight Indigo","Plum","Dark Magenta","Wine","Charcoal"
+];
 const THEME_CLASSES=Array.from({length:50},(_,i)=>"theme-"+String(i+1).padStart(2,"0"));
 const THEME_NAMES=[
 "Japanese Soft","Zen Minimal","Sakura Card","Torii Frame","Wash Paper",
@@ -372,7 +379,6 @@ async function saveExportPrefs(){
   try{
     await api({action:"save",dataset:"settings",row:{key:"display_preferences_"+ds,value:displayPrefs}});
     await load();
-    await fitAllExportPages();
     msg.textContent="บันทึก Layout สำหรับ Export แล้ว • ใช้เฉพาะหัวข้อนี้";
   }catch(e){msg.textContent=e.message}
 }
@@ -404,7 +410,6 @@ async function load(){
       rows=a.data||[];drinkMeta=Object.fromEntries((b.data||[]).map(x=>[x.recipe_id,x]));
     }else rows=(await api({action:"list",dataset:ds})).data||[];
     await render(ds,rows);
-    await fitAllExportPages();
     msg.textContent="พร้อม Export • "+rows.length+" รายการ • "+document.querySelectorAll("#pages .page").length+" หน้า A4";
   }catch(e){
     document.getElementById("pages").innerHTML='<div class="page-wrap"><section class="page '+document.getElementById("orientation").value+'"><div class="state">'+esc(e.message)+'</div></section></div>';fitPreviewPages();
@@ -417,7 +422,6 @@ function makePage(title){
   wrap.className="page-wrap";
   p.innerHTML='<div class="page-title">'+esc(title)+'</div><div class="page-content"></div>';
   wrap.appendChild(p);document.getElementById("pages").appendChild(wrap);
-  requestAnimationFrame(fitPreviewPages);
   return p;
 }
 function fitPreviewPages(){
@@ -666,9 +670,7 @@ async function packSheets(title,sheets){
       obj.grid.appendChild(blank);
     }
     await new Promise(r=>requestAnimationFrame(r));
-    fitExportPageContent(obj.page);
   }
-  await fitAllExportPages();
 }
 function expirySheet(name,items){
   const a=document.createElement("article");a.className="sheet sheet-expiry";
@@ -699,7 +701,8 @@ async function render(ds,rows){
   await packSheets(title,sheets);
   const imgs=[...document.querySelectorAll("#pages img")];
   await Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=img.onerror=r})));
-  await new Promise(r=>requestAnimationFrame(r));
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  await fitAllExportPages();
   const bad=[...document.querySelectorAll("#pages .page")].filter(pageOverflow);
   if(bad.length) console.warn("A4 overflow detected",bad.length);
 }
