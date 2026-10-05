@@ -403,6 +403,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
       <button class="tab" draggable="true" data-dataset="uniforms">เครื่องแต่งกาย</button>
       <button class="tab" data-dataset="courses">บทเรียนอื่น ๆ</button>
       <button class="tab" data-dataset="delivery_schedule">รอบการสั่งสินค้า</button>
+      <button class="tab" data-dataset="image_popups">จัดการ Popup</button>
       <button class="tab" data-dataset="menus">จัดการเมนู</button>
       <button class="tab" data-dataset="users">จัดการ User</button>
       <button class="tab" data-dataset="settings">Brand Story / Settings</button>
@@ -590,13 +591,18 @@ const DATASETS={
 
     ["notes","หมายเหตุ","textarea"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
   ]},
+  image_popups:{label:"จัดการ Popup",fields:[
+    ["attachment_id","ไฟล์ต้นฉบับ","number"],["popup_number","หมายเลข Popup","number"],["label","ชื่อ Popup","text"],
+    ["image_url","รูป Popup","imageurl"],["x_pct","ตำแหน่ง X (%)","number"],["y_pct","ตำแหน่ง Y (%)","number"],
+    ["size_px","ขนาดจุดกด (px)","number"],["display_style","รูปแบบ Popup","text"],["active","เปิดใช้งาน","boolean"],["sort_order","ลำดับ","number"]
+  ]},
   settings:{label:"Brand Story / Settings",fields:[
     ["key","Key","text"],["value","Value JSON","json"]
   ]}
 };
 let adminPin=sessionStorage.getItem("yothe_admin_pin")||"";
 const requestedEdit=new URLSearchParams(location.search).get("edit");
-let dataset=["production","drinks","expiry","toppings","uniforms","courses","delivery_schedule","settings","users","menus"].includes(requestedEdit)?requestedEdit:"production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["uniforms","production","drinks","expiry","toppings"], customMenus=[], menuEditingId=null;
+let dataset=["production","drinks","expiry","toppings","uniforms","courses","delivery_schedule","image_popups","settings","users","menus"].includes(requestedEdit)?requestedEdit:"production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["uniforms","production","drinks","expiry","toppings"], customMenus=[], menuEditingId=null;
 
 async function api(payload){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,pin:adminPin})});
