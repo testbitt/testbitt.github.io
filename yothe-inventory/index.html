@@ -22,7 +22,7 @@ button,input,select{font:inherit}.app{min-height:100vh}.top{height:70px;backgrou
 .group-list{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.group{border:1px solid #eee;border-radius:12px;padding:14px;background:white}.group h4{margin:0 0 5px}.right{margin-left:auto}.login{display:none;min-height:100vh;background:linear-gradient(135deg,#fff 0%,#fff2f2 100%);align-items:center;justify-content:center;padding:20px}.login.active{display:flex}.loginbox{width:min(430px,100%);background:white;border:1px solid var(--line);border-radius:20px;padding:28px;box-shadow:0 18px 50px rgba(145,20,20,.12)}.login-logo{width:118px;height:118px;object-fit:contain;display:block;margin:0 auto 8px}.loginbox h1{text-align:center;margin:14px 0 4px}.loginbox p{text-align:center;color:#777;font-size:13px}.loginbox input{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;margin:6px 0}.loginbox .btn{width:100%;margin-top:8px}.loginbox .notice{margin-top:12px}.muted{color:var(--muted);font-size:12px}
 @media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.filters{grid-template-columns:repeat(3,1fr)}}@media(max-width:760px){.layout{grid-template-columns:1fr}.sidebar{position:static;height:auto;display:flex;overflow:auto;border-right:0;border-bottom:1px solid #eee;padding:8px}.navbtn{min-width:max-content;width:auto}.brand small{display:none}.main{padding:12px}.kpis{grid-template-columns:repeat(2,1fr)}.uploads,.two,.three,.group-list{grid-template-columns:1fr}.filters{grid-template-columns:1fr 1fr}.top{padding:0 10px}.status .pill:nth-child(2){display:none}}
 </style>
-</head>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>\n</head>
 <body>
 <div id="login" class="login active">
   <div class="loginbox">
@@ -59,7 +59,7 @@ button,input,select{font:inherit}.app{min-height:100vh}.top{height:70px;backgrou
 <section id="dashboard" class="page active">
  <div class="head"><div><h2>Dashboard / Summary</h2><div class="sub">ภาพรวมสถานะ Inventory ของ YOTHE</div></div></div>
  <div class="grid kpis">
-  <div class="card kpi"><span>RM ทั้งหมด</span><b>0</b></div><div class="card kpi"><span>Usage Source กำหนดแล้ว</span><b>0</b></div>
+  <div class="card kpi"><span>RM ทั้งหมด</span><b id="kpiRM">0</b></div><div class="card kpi"><span>Usage Source กำหนดแล้ว</span><b id="kpiSource">0</b></div>
   <div class="card kpi"><span>Short</span><b>0</b></div><div class="card kpi"><span>Over</span><b>0</b></div>
   <div class="card kpi"><span>Need Conversion</span><b>0</b></div><div class="card kpi"><span>Variance Cost</span><b>฿0</b></div>
  </div>
@@ -137,13 +137,59 @@ function initUploads(){const box=document.getElementById('uploads');box.innerHTM
 function demoLogin(){document.getElementById('login').classList.remove('active');document.getElementById('app').style.display='block';localStorage.setItem('yothe-demo-login','1')}
 function logout(){localStorage.removeItem('yothe-demo-login');location.reload()}
 document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.navbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(b.dataset.page).classList.add('active')});
-function selectUpload(input,i){const f=input.files[0];if(!f)return;document.getElementById('meta'+i).textContent='เลือกไฟล์แล้ว: '+f.name+' • '+Math.round(f.size/1024).toLocaleString()+' KB • รอเชื่อม Parser จริง';document.getElementById('bar'+i).style.width='35%'}
+async function selectUpload(input,i){
+ const f=input.files[0];if(!f)return;
+ const meta=document.getElementById('meta'+i),bar=document.getElementById('bar'+i);
+ meta.textContent='กำลังอ่านไฟล์: '+f.name;bar.style.width='25%';
+ try{
+   if(typeof XLSX==='undefined') throw new Error('Excel parser โหลดไม่สำเร็จ');
+   const buf=await f.arrayBuffer(), wb=XLSX.read(buf,{type:'array',cellDates:true});
+   let payload={fileName:f.name,uploadedAt:new Date().toISOString(),type:uploadTypes[i][0],sheets:{}};
+   wb.SheetNames.forEach(n=>payload.sheets[n]=XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:null}));
+   if(i===2){
+     if(!payload.sheets.Recipe||!payload.sheets.WIP) throw new Error('BOM ต้องมี Sheet Recipe และ WIP');
+     const rh=Object.keys(payload.sheets.Recipe[0]||{}), wh=Object.keys(payload.sheets.WIP[0]||{});
+     ['RecCode','ItemCode','Quantity','UnitDes1','Modif-Date'].forEach(h=>{if(!rh.includes(h))throw new Error('Recipe ไม่พบ Header: '+h)});
+     ['WipCode','FG Qty','RM Qty','RM Unit','Modif-Date'].forEach(h=>{if(!wh.includes(h))throw new Error('WIP ไม่พบ Header: '+h)});
+   }
+   if(i===3){
+     const sn=wb.SheetNames[0], rows=payload.sheets[sn]||[], h=Object.keys(rows[0]||{});
+     ['Code','Detail Raw Material','Unit','Convert','Convert Unit'].forEach(x=>{if(!h.includes(x))throw new Error('Unit Conversion ไม่พบ Header: '+x)});
+   }
+   localStorage.setItem('yothe-upload-'+i,JSON.stringify(payload));
+   const rows=Object.values(payload.sheets).reduce((a,x)=>a+x.length,0);
+   meta.textContent='✓ '+f.name+' • '+rows.toLocaleString()+' rows • '+wb.SheetNames.join(', ')+' • บันทึกในเครื่องแล้ว';
+   bar.style.width='100%';bar.style.background='#168a45';refreshDataStatus();
+ }catch(e){meta.textContent='✕ '+e.message;bar.style.width='100%';bar.style.background='#d72d2d'}
+}
+function refreshDataStatus(){
+ const bom=JSON.parse(localStorage.getItem('yothe-upload-2')||'null');
+ const conv=JSON.parse(localStorage.getItem('yothe-upload-3')||'null');
+ if(bom){
+   const r=(bom.sheets.Recipe||[]), w=(bom.sheets.WIP||[]);
+   const rm=new Set([...r.map(x=>x.ItemCode),...w.map(x=>x['RM Item Code'])].filter(Boolean));
+   document.getElementById('kpiRM').textContent=rm.size.toLocaleString();
+   document.querySelectorAll('.status .pill')[0].textContent='BOM/WIP พร้อมใช้งาน • '+r.length+' Recipe rows • '+w.length+' WIP rows';
+ }
+ if(conv){
+   const sn=Object.keys(conv.sheets)[0], rows=conv.sheets[sn]||[];
+   document.getElementById('kpiSource').textContent=rows.length.toLocaleString();
+ }
+ [0,1,2,3].forEach(i=>{
+   const p=JSON.parse(localStorage.getItem('yothe-upload-'+i)||'null');
+   if(!p)return;
+   const rows=Object.values(p.sheets||{}).reduce((a,x)=>a+x.length,0);
+   const m=document.getElementById('meta'+i),b=document.getElementById('bar'+i);
+   if(m)m.textContent='✓ '+p.fileName+' • '+rows.toLocaleString()+' rows • โหลดไว้ในเครื่องนี้แล้ว';
+   if(b){b.style.width='100%';b.style.background='#168a45'}
+ });
+}
 function fakeImport(input){if(input.files[0])alert('รับไฟล์ '+input.files[0].name+' แล้วใน Demo Mode — ยังไม่เขียนข้อมูลจริงจนกว่าจะเชื่อมฐานข้อมูล YOTHE')}
 function saveGlobal(){localStorage.setItem('yothe-global-source',document.getElementById('globalSource').value);alert('บันทึก Demo Local แล้ว: '+document.getElementById('globalSource').value)}
 function addMapping(){const b=document.getElementById('mappingBody');if(b.querySelector('.empty'))b.innerHTML='';const r=document.createElement('tr');r.innerHTML='<td contenteditable>NEW-ITEM</td><td contenteditable>Product</td><td contenteditable>-</td><td contenteditable>-</td><td contenteditable>false</td><td><select><option>BOM</option><option>Stock Movement</option><option>Item Sale</option></select></td><td contenteditable>1</td><td>'+new Date().toLocaleDateString('th-TH')+'</td><td><button class="btn" onclick="this.closest(\'tr\').remove()">ลบ</button></td>';b.appendChild(r)}
 function createGroup(){const n=prompt('ชื่อ Custom Check Group');if(!n)return;const d=document.createElement('div');d.className='group';d.innerHTML='<h4>'+n+'</h4><div class="muted">Demo Local Group</div><div class="row" style="margin-top:10px"><button class="btn">แก้ไข</button><button class="btn" onclick="this.closest(\'.group\').remove()">ลบ</button></div>';document.getElementById('groups').appendChild(d)}
 function previewCount(){alert('ยังไม่มี RM สำหรับสร้าง Count Form — Upload ข้อมูล YOTHE ก่อน')}
 function downloadTemplate(){const csv='DATASET,REQUIRED_COLUMN,DESCRIPTION\nStock Movement,,Configure after first YOTHE file\nItem Sale,,Configure after first YOTHE file\nBOM,,Configure after first YOTHE file\nUnit Conversion,,Configure after first YOTHE file';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='YOTHE_Upload_Column_Template.csv';a.click();URL.revokeObjectURL(a.href)}
-initUploads();const src=localStorage.getItem('yothe-global-source');if(src)document.getElementById('globalSource').value=src;if(localStorage.getItem('yothe-demo-login'))demoLogin();
+initUploads();refreshDataStatus();const src=localStorage.getItem('yothe-global-source');if(src)document.getElementById('globalSource').value=src;if(localStorage.getItem('yothe-demo-login'))demoLogin();
 </script>
 </body></html>
