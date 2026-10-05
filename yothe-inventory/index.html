@@ -24,7 +24,7 @@ button,input,select{font:inherit}.app{min-height:100vh}.top{height:70px;backgrou
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>\n</head>
 <body>
-<div id="login" class="login active">
+<div id="login" class="login">
   <div class="loginbox">
     <img class="login-logo" src="./yoyhe-logo.svg?v=2" alt="Yothe logo">
     <h1>Yothe' Inventory Stock Checker</h1>
@@ -36,7 +36,7 @@ button,input,select{font:inherit}.app{min-height:100vh}.top{height:70px;backgrou
   </div>
 </div>
 
-<div id="app" class="app" style="display:none">
+<div id="app" class="app" style="display:block">
 <header class="top">
  <div class="brand"><img class="brand-logo" src="./yoyhe-logo.svg?v=2" alt="Yothe logo"><div><h1>Yothe' Inventory Stock Checker</h1><small>Audit Stock • BOM Usage • Actual Count • Inventory Reconciliation</small></div></div>
  <div class="status"><span class="pill">ยังไม่ได้อัปโหลดข้อมูล Yothe'</span><span class="pill">Demo / Local</span><button class="btn ghost" onclick="logout()">ออกจากระบบ</button></div>
@@ -135,7 +135,7 @@ const uploadTypes=[
 ];
 function initUploads(){const box=document.getElementById('uploads');box.innerHTML=uploadTypes.map((x,i)=>`<div class="card"><div class="section-title">${x[0]}</div><div class="upload"><div class="drop"><b>เลือกไฟล์ ${x[0]}</b><div class="muted">รองรับ ${x[1]}</div></div><input type="file" accept="${x[1]}" onchange="selectUpload(this,${i})"></div><div id="meta${i}" class="meta">ยังไม่ได้เลือกไฟล์ • ${x[2]}</div><div class="progress"><i id="bar${i}"></i></div></div>`).join('')}
 function demoLogin(){document.getElementById('login').classList.remove('active');document.getElementById('app').style.display='block';localStorage.setItem('yothe-demo-login','1')}
-function logout(){localStorage.removeItem('yothe-demo-login');location.reload()}
+function logout(){localStorage.removeItem('yothe-demo-login');document.querySelectorAll('.navbtn').forEach(x=>x.classList.remove('active'));document.querySelector('[data-page="dashboard"]').classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('dashboard').classList.add('active')}
 document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.navbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(b.dataset.page).classList.add('active')});
 async function selectUpload(input,i){
  const f=input.files[0];if(!f)return;
@@ -208,6 +208,6 @@ try{initUploads();refreshDataStatus()}catch(e){
  const box=document.getElementById('uploads');
  if(box)box.innerHTML='<div class="notice">เกิดข้อผิดพลาดในการเปิดระบบ Upload: '+String(e.message||e)+'</div>';
 }
-const src=localStorage.getItem('yothe-global-source');if(src)document.getElementById('globalSource').value=src;if(localStorage.getItem('yothe-demo-login'))demoLogin();
+const src=localStorage.getItem('yothe-global-source');if(src)document.getElementById('globalSource').value=src;
 </script>
 </body></html>
