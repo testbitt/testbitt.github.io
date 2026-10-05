@@ -713,7 +713,11 @@ let dataset=["production","drinks","expiry","toppings","uniforms","courses","del
 async function api(payload){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,pin:adminPin})});
   const data=await r.json().catch(()=>({error:"Invalid server response"}));
-  if(!r.ok) throw new Error(data.error||"เกิดข้อผิดพลาด");
+  if(!r.ok){
+    const raw=data?.error;
+    const message=typeof raw==="string" ? raw : (raw?.message || raw?.details || raw?.hint || JSON.stringify(raw||data||{}));
+    throw new Error(message||"เกิดข้อผิดพลาด");
+  }
   return data;
 }
 function esc(v=""){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
