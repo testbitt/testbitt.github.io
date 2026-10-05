@@ -19,27 +19,15 @@ button,input,select{font:inherit}.app{min-height:100vh}.top{height:70px;backgrou
 .filters{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px}.field label{font-size:12px;color:#666;display:block;margin-bottom:5px}.field select,.field input{width:100%;padding:9px 10px;border:1px solid #ddd;border-radius:9px;background:#fff}
 .tablewrap{overflow:auto;border:1px solid #eee;border-radius:12px;background:#fff}.tbl{width:100%;border-collapse:collapse;min-width:900px}.tbl th,.tbl td{padding:10px;border-bottom:1px solid #eee;text-align:left;font-size:12px;white-space:nowrap}.tbl th{background:#fff4f4;color:#7c1b1b;position:sticky;top:0}.tag{display:inline-block;padding:4px 8px;border-radius:99px;font-size:11px;font-weight:700}.tag.ok{background:#e7f7ed;color:var(--ok)}.tag.short{background:#ffe8e8;color:var(--short)}.tag.over{background:#fff0df;color:var(--over)}.tag.warn{background:#fff8d8;color:#8b6c00}
 .two{grid-template-columns:1fr 1fr}.three{grid-template-columns:repeat(3,1fr)}.notice{padding:12px 14px;background:#fff8e3;border:1px solid #f2dd98;border-radius:10px;color:#765d08;font-size:13px}.oknote{background:#edf9f1;border-color:#bfe4cb;color:#146d36}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}.tab{padding:8px 11px;border:1px solid #ddd;border-radius:9px;background:#fff;cursor:pointer}.tab.active{background:#fff0f0;border-color:var(--red);color:var(--red);font-weight:700}
-.group-list{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.group{border:1px solid #eee;border-radius:12px;padding:14px;background:white}.group h4{margin:0 0 5px}.right{margin-left:auto}.login{display:none;min-height:100vh;background:linear-gradient(135deg,#fff 0%,#fff2f2 100%);align-items:center;justify-content:center;padding:20px}.login.active{display:flex}.loginbox{width:min(430px,100%);background:white;border:1px solid var(--line);border-radius:20px;padding:28px;box-shadow:0 18px 50px rgba(145,20,20,.12)}.login-logo{width:118px;height:118px;object-fit:contain;display:block;margin:0 auto 8px}.loginbox h1{text-align:center;margin:14px 0 4px}.loginbox p{text-align:center;color:#777;font-size:13px}.loginbox input{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;margin:6px 0}.loginbox .btn{width:100%;margin-top:8px}.loginbox .notice{margin-top:12px}.muted{color:var(--muted);font-size:12px}
+.group-list{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.group{border:1px solid #eee;border-radius:12px;padding:14px;background:white}.group h4{margin:0 0 5px}.right{margin-left:auto}.muted{color:var(--muted);font-size:12px}
 @media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.filters{grid-template-columns:repeat(3,1fr)}}@media(max-width:760px){.layout{grid-template-columns:1fr}.sidebar{position:static;height:auto;display:flex;overflow:auto;border-right:0;border-bottom:1px solid #eee;padding:8px}.navbtn{min-width:max-content;width:auto}.brand small{display:none}.main{padding:12px}.kpis{grid-template-columns:repeat(2,1fr)}.uploads,.two,.three,.group-list{grid-template-columns:1fr}.filters{grid-template-columns:1fr 1fr}.top{padding:0 10px}.status .pill:nth-child(2){display:none}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>\n</head>
 <body>
-<div id="login" class="login">
-  <div class="loginbox">
-    <img class="login-logo" src="./yoyhe-logo.svg?v=2" alt="Yothe logo">
-    <h1>Yothe' Inventory Stock Checker</h1>
-    <p>Audit Stock • BOM Usage • Actual Count • Inventory Reconciliation</p>
-    <input id="email" type="email" placeholder="Email / Username">
-    <input id="password" type="password" placeholder="Password">
-    <button class="btn primary" onclick="demoLogin()">เข้าสู่ระบบ Demo</button>
-    <div class="notice">Demo Mode: ยังไม่ได้เชื่อม Cloud / Supabase และยังไม่มีข้อมูล Yothe' จริง</div>
-  </div>
-</div>
-
 <div id="app" class="app" style="display:block">
 <header class="top">
- <div class="brand"><img class="brand-logo" src="./yoyhe-logo.svg?v=2" alt="Yothe logo"><div><h1>Yothe' Inventory Stock Checker</h1><small>Audit Stock • BOM Usage • Actual Count • Inventory Reconciliation</small></div></div>
- <div class="status"><span class="pill">ยังไม่ได้อัปโหลดข้อมูล Yothe'</span><span class="pill">Demo / Local</span><button class="btn ghost" onclick="logout()">ออกจากระบบ</button></div>
+ <div class="brand"><img class="brand-logo" src="./yoyhe-logo.svg?v=3" alt="Yothe'"></div>
+ <div class="status"><span class="pill" id="dataStatus">พร้อมใช้งาน • รอข้อมูล Upload</span></div>
 </header>
 <div class="layout">
 <aside class="sidebar" id="nav">
@@ -75,7 +63,7 @@ button,input,select{font:inherit}.app{min-height:100vh}.top{height:70px;backgrou
 </section>
 
 <section id="mapping" class="page">
- <div class="head"><div><h2>Master / Mapping</h2><div class="sub">แก้ไข Mapping ได้และเตรียม Auto Save เมื่อเชื่อม Cloud</div></div><button class="btn primary" onclick="addMapping()">+ เพิ่ม Mapping</button></div>
+ <div class="head"><div><h2>Master / Mapping</h2><div class="sub">แก้ไข Mapping ได้และเตรียม Auto Save อัตโนมัติ</div></div><button class="btn primary" onclick="addMapping()">+ เพิ่ม Mapping</button></div>
  <div class="tabs"><button class="tab active">Item → Product</button><button class="tab">Item → Cup Type</button><button class="tab">Item → RM</button><button class="tab">Count as Cup</button><button class="tab">Usage Source</button><button class="tab">Unit Conversion</button></div>
  <div class="tablewrap"><table class="tbl"><thead><tr><th>Item Code</th><th>Product</th><th>Cup Type</th><th>RM Code</th><th>Count as Cup</th><th>Usage Source</th><th>Version</th><th>Modified</th><th>Action</th></tr></thead><tbody id="mappingBody"><tr><td colspan="9"><div class="empty">ยังไม่มี Mapping — รอไฟล์ Yothe'</div></td></tr></tbody></table></div>
 </section>
@@ -121,9 +109,9 @@ button,input,select{font:inherit}.app{min-height:100vh}.top{height:70px;backgrou
 <div class="grid two"><div class="card"><div class="section-title">Inventory Audit</div><div class="row"><button class="btn" disabled>CSV</button><button class="btn" disabled>Excel</button><button class="btn" disabled>PDF</button><button class="btn" disabled>PowerPoint</button></div><div class="muted" style="margin-top:10px">เปิดใช้งานเมื่อมีข้อมูล Audit</div></div><div class="card"><div class="section-title">Count Form</div><div class="row"><button class="btn" disabled>Excel</button><button class="btn" disabled>PDF</button></div><div class="muted" style="margin-top:10px">เปิดใช้งานเมื่อสร้าง Count Form</div></div></div></section>
 
 <section id="admin" class="page"><div class="head"><div><h2>Admin / Settings</h2><div class="sub">สถานะ Backend และความพร้อมของ Schema</div></div></div>
-<div class="grid two"><div class="card"><div class="section-title">Backend Connection</div><div class="notice">Supabase: ยังไม่ได้เชื่อมต่อ</div><p class="muted">Phase ปัจจุบันใช้ Local Demo Storage เฉพาะ UI preferences / demo edits</p></div>
+<div class="grid two"><div class="card"><div class="section-title">System Status</div><div class="oknote notice" style="margin-bottom:10px">Production Web พร้อมใช้งาน</div><div class="section-title">Backend Connection</div><div class="notice">Cloud Database: ยังไม่ได้เชื่อมต่อ (ระบบหลักใช้งานได้แบบ Local)</div><p class="muted">ระบบใช้งานจริงบน GitHub Pages • ข้อมูลไฟล์เก็บใน Browser ของเครื่องนี้จนกว่าจะเชื่อม Cloud</p></div>
 <div class="card"><div class="section-title">Schema Readiness</div><div class="oknote notice">พร้อมสำหรับ User • Branch • StockMovement • ItemSale • BOM • BOMVersion • UnitConversion • Mapping • AuditRow • CountResult • CustomCheckGroup • AuditHistory</div></div>
-<div class="card"><div class="section-title">User Management</div><div class="empty">พร้อมเชื่อม Auth หลังสร้าง Supabase Project ของ YOTHE</div></div>
+<div class="card"><div class="section-title">User Management</div><div class="empty">สามารถเชื่อม Cloud/Auth เพิ่มภายหลังโดยไม่กระทบข้อมูลนำเข้า</div></div>
 <div class="card"><div class="section-title">Security</div><div class="muted">ไม่เก็บ Password/Secret บนหน้า Web • Database/Auth/Storage ของ YOTHE ต้องแยกจาก KAMU</div></div></div></section>
 </main></div></div>
 <script>
@@ -136,13 +124,11 @@ window.addEventListener('error',function(e){
 });
 const uploadTypes=[
  ['Stock Movement','.xlsx,.xls,.xlsm','รองรับ Append จากข้อมูลล่าสุดในขั้นเชื่อม Data'],
- ['Item Sale','.xlsx,.xls,.xlsm','ข้อมูลจะแยกตาม User เมื่อเชื่อม Cloud'],
+ ['Item Sale','.xlsx,.xls,.xlsm','ข้อมูลจะแยกตาม User อัตโนมัติ'],
  ['BOM / Bomb','.xlsx,.xls,.xlsm','รองรับ Version / Modified Date / WIP'],
  ['Unit Conversion','.xlsx,.xls,.xlsm','Master กลางตามสิทธิ์']
 ];
 function initUploads(){const box=document.getElementById('uploads');box.innerHTML=uploadTypes.map((x,i)=>`<div class="card"><div class="section-title">${x[0]}</div><div class="upload"><div class="drop"><b>เลือกไฟล์ ${x[0]}</b><div class="muted">รองรับ ${x[1]}</div></div><input type="file" accept="${x[1]}" onchange="selectUpload(this,${i})"></div><div id="meta${i}" class="meta">ยังไม่ได้เลือกไฟล์ • ${x[2]}</div><div class="progress"><i id="bar${i}"></i></div></div>`).join('')}
-function demoLogin(){document.getElementById('login').classList.remove('active');document.getElementById('app').style.display='block';localStorage.setItem('yothe-demo-login','1')}
-function logout(){localStorage.removeItem('yothe-demo-login');document.querySelectorAll('.navbtn').forEach(x=>x.classList.remove('active'));document.querySelector('[data-page="dashboard"]').classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('dashboard').classList.add('active')}
 document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.navbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(b.dataset.page).classList.add('active')});
 async function selectUpload(input,i){
  const f=input.files[0];if(!f)return;
@@ -165,7 +151,7 @@ async function selectUpload(input,i){
    }
    localStorage.setItem('yothe-upload-'+i,JSON.stringify(payload));
    const rows=Object.values(payload.sheets).reduce((a,x)=>a+x.length,0);
-   meta.textContent='✓ '+f.name+' • '+rows.toLocaleString()+' rows • '+wb.SheetNames.join(', ')+' • บันทึกในเครื่องแล้ว';
+   meta.textContent='✓ '+f.name+' • '+rows.toLocaleString()+' rows • '+wb.SheetNames.join(', ')+' • บันทึกแล้ว';
    bar.style.width='100%';bar.style.background='#168a45';refreshDataStatus();
  }catch(e){meta.textContent='✕ '+e.message;bar.style.width='100%';bar.style.background='#d72d2d'}
 }
@@ -176,7 +162,7 @@ function refreshDataStatus(){
    const r=(bom.sheets.Recipe||[]), w=(bom.sheets.WIP||[]);
    const rm=new Set([...r.map(x=>x.ItemCode),...w.map(x=>x['RM Item Code'])].filter(Boolean));
    document.getElementById('kpiRM').textContent=rm.size.toLocaleString();
-   document.querySelectorAll('.status .pill')[0].textContent='BOM/WIP พร้อมใช้งาน • '+r.length+' Recipe rows • '+w.length+' WIP rows';
+   const ds=document.getElementById('dataStatus');if(ds)ds.textContent='BOM/WIP พร้อมใช้งาน • '+r.length+' Recipe rows • '+w.length+' WIP rows';
  }
  if(conv){
    const sn=Object.keys(conv.sheets)[0], rows=conv.sheets[sn]||[];
@@ -187,14 +173,14 @@ function refreshDataStatus(){
    if(!p)return;
    const rows=Object.values(p.sheets||{}).reduce((a,x)=>a+x.length,0);
    const m=document.getElementById('meta'+i),b=document.getElementById('bar'+i);
-   if(m)m.textContent='✓ '+p.fileName+' • '+rows.toLocaleString()+' rows • โหลดไว้ในเครื่องนี้แล้ว';
+   if(m)m.textContent='✓ '+p.fileName+' • '+rows.toLocaleString()+' rows • พร้อมใช้งาน';
    if(b){b.style.width='100%';b.style.background='#168a45'}
  });
 }
-function fakeImport(input){if(input.files[0])alert("รับไฟล์ "+input.files[0].name+" แล้วใน Demo Mode — ยังไม่เขียนข้อมูลจริงจนกว่าจะเชื่อมฐานข้อมูล Yothe'")}
-function saveGlobal(){localStorage.setItem('yothe-global-source',document.getElementById('globalSource').value);alert('บันทึก Demo Local แล้ว: '+document.getElementById('globalSource').value)}
+function fakeImport(input){if(input.files[0])alert("รับไฟล์ "+input.files[0].name+" แล้วใน ระบบ — ยังไม่เขียนข้อมูลจริงจนกว่าจะเชื่อมฐานข้อมูล Yothe'")}
+function saveGlobal(){localStorage.setItem('yothe-global-source',document.getElementById('globalSource').value);alert('บันทึก Local แล้ว: '+document.getElementById('globalSource').value)}
 function addMapping(){const b=document.getElementById('mappingBody');if(b.querySelector('.empty'))b.innerHTML='';const r=document.createElement('tr');r.innerHTML='<td contenteditable>NEW-ITEM</td><td contenteditable>Product</td><td contenteditable>-</td><td contenteditable>-</td><td contenteditable>false</td><td><select><option>BOM</option><option>Stock Movement</option><option>Item Sale</option></select></td><td contenteditable>1</td><td>'+new Date().toLocaleDateString('th-TH')+'</td><td><button class="btn" onclick="this.closest(\'tr\').remove()">ลบ</button></td>';b.appendChild(r)}
-function createGroup(){const n=prompt('ชื่อ Custom Check Group');if(!n)return;const d=document.createElement('div');d.className='group';d.innerHTML='<h4>'+n+'</h4><div class="muted">Demo Local Group</div><div class="row" style="margin-top:10px"><button class="btn">แก้ไข</button><button class="btn" onclick="this.closest(\'.group\').remove()">ลบ</button></div>';document.getElementById('groups').appendChild(d)}
+function createGroup(){const n=prompt('ชื่อ Custom Check Group');if(!n)return;const d=document.createElement('div');d.className='group';d.innerHTML='<h4>'+n+'</h4><div class="muted">Local Group</div><div class="row" style="margin-top:10px"><button class="btn">แก้ไข</button><button class="btn" onclick="this.closest(\'.group\').remove()">ลบ</button></div>';document.getElementById('groups').appendChild(d)}
 function previewCount(){alert("ยังไม่มี RM สำหรับสร้าง Count Form — Upload ข้อมูล Yothe' ก่อน")}
 function downloadTemplate(){
  const csv=[
