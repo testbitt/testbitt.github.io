@@ -449,8 +449,8 @@ async function loadDeliverySchedule(){
     el.innerHTML=rows.length?rows.map(r=>
       '<section class="delivery-supplier-card">'+
         '<div class="delivery-supplier-title">'+esc(r.supplier_name||"Supplier")+'</div>'+
-        '<div class="delivery-table-wrap"><table class="delivery-table"><thead><tr><th>วัน</th><th>รอบสั่งสินค้า</th><th>เวลาสั่ง</th><th>รอบส่งสินค้า</th><th>เวลาส่ง</th></tr></thead><tbody>'+
-          days.map(([k,d])=>'<tr><td><strong>'+d+'</strong></td><td>'+esc(r[k+"_order_round"]||"-")+'</td><td>'+esc(r[k+"_order_time"]||"-")+'</td><td>'+esc(r[k+"_delivery_round"]||"-")+'</td><td>'+esc(r[k+"_delivery_time"]||"-")+'</td></tr>').join("")+
+        '<div class="delivery-table-wrap"><table class="delivery-table"><thead><tr><th>วัน</th><th>เวลาสั่ง</th><th>รอบส่งสินค้า</th><th>เวลาส่ง</th></tr></thead><tbody>'+
+          days.map(([k,d])=>'<tr><td><strong>'+d+'</strong></td><td>'+esc(r[k+"_order_time"]||"-")+'</td><td>'+esc(r[k+"_delivery_round"]||"-")+'</td><td>'+esc(r[k+"_delivery_time"]||"-")+'</td></tr>').join("")+
         '</tbody></table></div>'+
         (r.notes?'<div class="delivery-notes">'+esc(r.notes)+'</div>':'')+
       '</section>'
