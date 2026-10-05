@@ -1184,6 +1184,12 @@ function renderPopupManager(){
   document.getElementById("popupAttachmentSelect")?.addEventListener("change",e=>{popupAttachmentId=e.target.value;popupSelectedId=null;renderPopupManager()});
   document.querySelectorAll(".popup-marker").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();popupSelectedId=b.dataset.popupId;renderPopupManager()}));
   bindPopupMarkerDrag();
+  document.querySelectorAll(".popup-card input,.popup-card select,.popup-card button,.popup-card textarea,.popup-card label").forEach(el=>{
+    if(el.dataset.popupControlBound)return;
+    el.dataset.popupControlBound="1";
+    el.addEventListener("click",e=>e.stopPropagation());
+    el.addEventListener("pointerdown",e=>e.stopPropagation());
+  });
   document.getElementById("popupPreviewStage")?.addEventListener("click",async e=>{
     if(e.target.closest(".popup-marker")||!popupSelectedId)return;
     const stage=e.currentTarget,rect=stage.getBoundingClientRect();
@@ -1194,7 +1200,7 @@ function renderPopupManager(){
   });
 }
 function popupCardHtml(r){
-  return `<div class="popup-card ${String(r.id)===String(popupSelectedId)?'active-card':''}" onclick="popupSelectedId='${r.id}';renderPopupManager()">
+  return `<div class="popup-card ${String(r.id)===String(popupSelectedId)?'active-card':''}" onclick="if(event.target.closest('input,select,button,textarea,label'))return;popupSelectedId='${r.id}';renderPopupManager()">
     <div class="popup-card-grid">
       <div>
         ${r.image_url?'<img class="popup-card-thumb" src="'+esc(r.image_url)+'" alt="">':'<div class="popup-card-thumb" style="display:grid;place-items:center;color:#94a3b8">ไม่มีรูป</div>'}
@@ -1207,7 +1213,7 @@ function popupCardHtml(r){
           <div class="field"><label>ขนาดจุด</label><input class="input" type="number" min="24" max="120" value="${esc(r.size_px||40)}" onchange="savePopupPatch('${r.id}',{size_px:Number(this.value)})"></div>
           <div class="field"><label>X (%)</label><input class="input" type="number" step=".1" min="0" max="100" value="${esc(r.x_pct||50)}" onchange="savePopupPatch('${r.id}',{x_pct:Number(this.value)})"></div>
           <div class="field"><label>Y (%)</label><input class="input" type="number" step=".1" min="0" max="100" value="${esc(r.y_pct||50)}" onchange="savePopupPatch('${r.id}',{y_pct:Number(this.value)})"></div>
-          <div class="field" style="grid-column:1/-1"><label>รูปแบบ Popup (50 แบบ)</label><select class="input" onchange="savePopupPatch('${r.id}',{display_style:this.value})">${popupStyleOptions(r.display_style||"style-2")}</select></div>
+          <div class="field" style="grid-column:1/-1"><label>รูปแบบ Popup (50 แบบ)</label><select class="input" onchange="event.stopPropagation();savePopupPatch('${r.id}',{display_style:this.value})" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">${popupStyleOptions(r.display_style||"style-2")}</select></div>
           <div class="field"><label>สถานะ</label><select class="input" onchange="savePopupPatch('${r.id}',{active:this.value==='true'})"><option value="true" ${r.active!==false?'selected':''}>แสดง</option><option value="false" ${r.active===false?'selected':''}>ซ่อน</option></select></div>
           <div class="field"><label>ลำดับ</label><input class="input" type="number" value="${esc(r.sort_order||0)}" onchange="savePopupPatch('${r.id}',{sort_order:Number(this.value)})"></div>
           <div class="field" style="grid-column:1/-1"><label>ชื่อ Popup</label><input class="input" value="${esc(r.label||"")}" onchange="savePopupPatch('${r.id}',{label:this.value})"></div>
