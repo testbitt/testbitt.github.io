@@ -147,6 +147,10 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 .delivery-supplier-card{margin:0 0 22px;background:#fff;border:1px solid #ead8d1;border-radius:18px;overflow:hidden;box-shadow:0 8px 24px rgba(111,64,45,.08)}
 .delivery-supplier-title{display:flex;align-items:center;gap:9px;padding:15px 18px;background:linear-gradient(135deg,#fff8f4,#fff1ec);color:var(--red);font-weight:900;font-size:21px;border-bottom:1px solid #ead8d1}
 .delivery-supplier-title:before{content:"📦";font-size:20px}
+.delivery-supplier-image{padding:14px 14px 0;text-align:center}
+.delivery-supplier-image img{display:block;width:100%;max-height:260px;object-fit:contain;border-radius:12px;background:#fff}
+.delivery-supplier-card[data-accent] .delivery-supplier-title{background:linear-gradient(135deg,color-mix(in srgb,var(--supplier-accent) 10%,#fff),#fff);color:var(--supplier-accent);border-bottom-color:color-mix(in srgb,var(--supplier-accent) 25%,#ead8d1)}
+.delivery-supplier-card[data-accent] .delivery-table th{background:linear-gradient(180deg,color-mix(in srgb,var(--supplier-accent) 82%,#fff),var(--supplier-accent))}
 .delivery-supplier-card .delivery-table-wrap{padding:14px 14px 16px;box-sizing:border-box}
 .delivery-notes{margin:0 14px 14px;padding:11px 13px;background:#fff8e8;border:1px solid #f0dfb2;border-radius:10px;font-size:14px;line-height:1.5}
 @media(max-width:700px){
@@ -486,8 +490,9 @@ async function loadDeliverySchedule(){
     if(wrap)wrap.style.display="";
     if(head)head.style.display="";
     el.innerHTML=clean.map(({r,activeDays})=>
-      '<section class="delivery-supplier-card">'+
+      '<section class="delivery-supplier-card" '+(/^#[0-9A-Fa-f]{6}$/.test(r.theme_color||"")?'data-accent="1" style="--supplier-accent:'+esc(r.theme_color)+'"':'')+'>'+
         '<div class="delivery-supplier-title">'+esc(r.supplier_name||"Supplier")+'</div>'+
+        (r.image_url?'<div class="delivery-supplier-image"><img src="'+esc(r.image_url)+'" alt="'+esc(r.supplier_name||"Supplier")+'"></div>':'')+
         (activeDays.length?'<div class="delivery-table-wrap"><table class="delivery-table"><thead><tr><th>วัน</th><th>เวลาสั่ง</th><th>รอบส่งสินค้า</th><th>เวลาส่ง</th></tr></thead><tbody>'+
           activeDays.map(([k,d])=>'<tr><td><strong>'+d+'</strong></td><td>'+esc(r[k+"_order_time"]||"-")+'</td><td>'+esc(r[k+"_delivery_round"]||"-")+'</td><td>'+esc(r[k+"_delivery_time"]||"-")+'</td></tr>').join("")+
         '</tbody></table></div>':'')+
