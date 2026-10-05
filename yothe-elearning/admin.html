@@ -361,8 +361,12 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .delivery-day-name{font-weight:900;color:var(--red)}
 .delivery-day-row .input{margin:0;padding:10px 11px}
 .delivery-editor-note{display:grid;grid-template-columns:1fr;gap:8px}
+.delivery-media-row{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(220px,.7fr);gap:14px;align-items:start}
+.delivery-editor-preview{display:block;margin-top:8px;width:min(240px,100%);max-height:160px;object-fit:contain;border:1px solid #e5e7eb;border-radius:12px;background:#fff}
+.delivery-color-control{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;align-items:center}
+.delivery-color-control input[type="color"]{width:64px;height:44px;padding:3px;border:1px solid #d1d5db;border-radius:10px;background:#fff}
 @media(max-width:760px){
- .delivery-editor-top{grid-template-columns:1fr}
+ .delivery-editor-top,.delivery-media-row{grid-template-columns:1fr}
  .delivery-week{overflow-x:auto}
  .delivery-week-head,.delivery-day-row{min-width:700px;grid-template-columns:105px 180px 210px 180px}
 }</style>
@@ -561,7 +565,7 @@ const DATASETS={
     ["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
   ]},
   delivery_schedule:{label:"รอบการสั่งสินค้า",fields:[
-    ["supplier_name","ชื่อ Supplier","text"],
+    ["supplier_name","ชื่อ Supplier","text"],["image_url","รูปภาพ","imageurl"],["theme_color","สีประจำ Supplier","text"],
 
     ["mon_order_time","จันทร์ • เวลาสั่ง","text"],
     ["mon_delivery_round","จันทร์ • รอบส่งสินค้า","text"],["mon_delivery_time","จันทร์ • เวลาส่ง","text"],
@@ -1294,11 +1298,11 @@ function renderDeliveryScheduleSheets(){
   wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>
     '<section class="'+pageClass(page.length)+'"><div class="page-title">รอบการสั่งสินค้า • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content recipe-admin-grid">'+
     page.map(r=>'<article class="recipe-sheet" data-group-key="'+esc(String(r.id))+'">'+
-      '<div class="recipe-title">'+esc(r.supplier_name||"Supplier")+'</div>'+
+      '<div class="recipe-title" style="background:'+( /^#[0-9A-Fa-f]{6}$/.test(r.theme_color||"")?esc(r.theme_color):'var(--red)')+'">'+esc(r.supplier_name||"Supplier")+'</div>'+
       '<div class="edit-layout"><aside class="edit-sidebar"><div class="edit-sidebar-title">จัดการ Supplier</div>'+
       '<button class="btn secondary" onclick="editRow('+r.id+')">แก้ไขข้อมูล 7 วัน</button>'+
       '<button class="btn danger" onclick="deleteRow('+r.id+')">ลบ</button></aside>'+
-      '<div class="edit-content"><table class="recipe-table"><thead><tr><th>วัน</th><th>เวลาสั่ง</th><th>รอบส่งสินค้า</th><th>เวลาส่ง</th></tr></thead><tbody>'+
+      '<div class="edit-content">'+(r.image_url?'<div class="layout-photo"><img src="'+esc(r.image_url)+'" alt="'+esc(r.supplier_name||"Supplier")+'"></div>':'')+'<table class="recipe-table"><thead><tr><th>วัน</th><th>เวลาสั่ง</th><th>รอบส่งสินค้า</th><th>เวลาส่ง</th></tr></thead><tbody>'+
       days.map(([k,d])=>'<tr><td><strong>'+d+'</strong></td><td>'+esc(r[k+"_order_time"]||"-")+'</td><td>'+esc(r[k+"_delivery_round"]||"-")+'</td><td>'+esc(r[k+"_delivery_time"]||"-")+'</td></tr>').join("")+
       '</tbody></table>'+(r.notes?'<div class="recipe-note">'+esc(r.notes)+'</div>':'')+'</div></div></article>'
     ).join("")+
@@ -1618,6 +1622,10 @@ function deliveryEditorHtml(row={}){
       '<div class="field" style="margin:0"><label>ลำดับ</label><input class="input" name="sort_order" type="number" value="'+esc(row.sort_order??0)+'"></div>'+
       '<div class="field" style="margin:0"><label>เผยแพร่</label><select class="input" name="is_published"><option value="true" '+(row.is_published!==false?"selected":"")+'>ใช่</option><option value="false" '+(row.is_published===false?"selected":"")+'>ไม่</option></select></div>'+
     '</div>'+
+    '<div class="delivery-media-row">'+
+      '<div class="field" style="margin:0"><label>รูป Supplier / สินค้า</label><div class="row"><input class="input" style="flex:1" name="image_url" value="'+esc(row.image_url??"")+'" placeholder="URL รูปภาพ"><button class="btn secondary" type="button" onclick="uploadEditorImage(\'image_url\')">ใส่/เปลี่ยนรูป</button></div>'+(row.image_url?'<img class="delivery-editor-preview" src="'+esc(row.image_url)+'" alt="">':'')+'</div>'+
+      '<div class="field" style="margin:0"><label>สีประจำ Supplier</label><div class="delivery-color-control"><input id="deliveryThemeColor" type="color" value="'+esc(/^#[0-9A-Fa-f]{6}$/.test(row.theme_color||"")?row.theme_color:"#c9302c")+'"><input class="input" name="theme_color" value="'+esc(row.theme_color||"#c9302c")+'" maxlength="7" placeholder="#c9302c"></div></div>'+
+    '</div>'+
     '<div class="delivery-week">'+
       '<div class="delivery-week-head"><div>วัน</div><div>เวลาสั่ง</div><div>รอบส่งสินค้า</div><div>เวลาส่ง</div></div>'+
       days.map(([k,d])=>'<div class="delivery-day-row">'+
@@ -1644,6 +1652,13 @@ function openEditor(row){
     return '<div class="field"><label>'+esc(label)+'</label><input class="input" name="'+key+'" type="'+type+'" value="'+esc(val??"")+'"></div>';
   }).join("");
   const form=document.getElementById("editForm");
+  if(dataset==="delivery_schedule"){
+    const cp=document.getElementById("deliveryThemeColor"),txt=form.querySelector('[name="theme_color"]');
+    if(cp&&txt){
+      cp.addEventListener("input",()=>{txt.value=cp.value;txt.dispatchEvent(new Event("input",{bubbles:true}))});
+      txt.addEventListener("input",()=>{if(/^#[0-9A-Fa-f]{6}$/.test(txt.value))cp.value=txt.value});
+    }
+  }
   form.querySelectorAll("input,select,textarea").forEach(el=>{
     el.addEventListener("input",scheduleAutoSave);
     el.addEventListener("change",scheduleAutoSave);
