@@ -310,6 +310,14 @@ function stepAttachment(dir){
   attachmentViewerIndex=next;
   renderAttachmentViewer();
 }
+function syncCustomMenuPosition(){
+  const nav=document.getElementById("navLinks");
+  const coursesBtn=nav.querySelector('[data-view="courses"]');
+  const admin=nav.querySelector('a[href="admin.html"]');
+  if(!coursesBtn)return;
+  [...nav.querySelectorAll("[data-custom-menu]")].forEach(btn=>nav.insertBefore(btn,coursesBtn));
+  if(admin)nav.appendChild(admin);
+}
 function renderCustomMenus(list=[]){
   customMenus=Array.isArray(list)?list:[];
   const nav=document.getElementById("navLinks");
@@ -334,6 +342,7 @@ function renderCustomMenus(list=[]){
     section.innerHTML='<div class="section-head"><div><h2>'+esc(m.label)+'</h2>'+(m.description?'<p>'+esc(m.description)+'</p>':'')+'</div></div><div id="attachments-'+esc(m.section)+'" class="attachments"></div>';
     main.insertBefore(section,coursesView);
   });
+  syncCustomMenuPosition();
   setAuthUI(!!token);
 }
 async function loadSettings(){const rows=await api("settings"),map=Object.fromEntries(rows.map(x=>[x.key,x.value]));settingsMap=map;applyTheme(map.display_preferences||{});renderMenuOrder(map.menu_order||["uniforms","production","drinks","expiry","toppings"]);renderCustomMenus(map.custom_menus||[]);renderBrandStoryValue(map.brand_story||{});if(token)await loadAttachments("home")}
@@ -347,8 +356,10 @@ function renderMenuOrder(order){
   nav.insertBefore(home,nav.firstChild);
   if(uniforms) nav.insertBefore(uniforms,home.nextSibling);
   rest.forEach(k=>{const el=nav.querySelector('[data-view="'+k+'"]');if(el)nav.insertBefore(el,coursesBtn)});
+  syncCustomMenuPosition();
   nav.appendChild(coursesBtn);
   nav.appendChild(admin);
+  syncCustomMenuPosition();
 }
 function showView(view){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));document.getElementById("view-"+view)?.classList.add("active");document.querySelectorAll('#navLinks [data-view]').forEach(x=>x.classList.toggle("active",x.dataset.view===view));window.scrollTo({top:0,behavior:"smooth"});loadView(view).finally(()=>requestAnimationFrame(initMotionObserver))}
 async function loadView(view){
