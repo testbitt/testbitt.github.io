@@ -316,6 +316,32 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 
 /* Popup image only: no text */
 .object-focus-hint{display:none!important}
+
+/* Sound toggle */
+.sound-toggle{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-height:36px;
+  padding:7px 11px;
+  border:1px solid rgba(255,255,255,.45);
+  border-radius:999px;
+  background:rgba(255,255,255,.14);
+  color:#fff;
+  font-weight:900;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:transform .18s ease,background .18s ease,border-color .18s ease;
+}
+.sound-toggle:hover{transform:translateY(-1px);background:rgba(255,255,255,.22)}
+.sound-toggle.muted{background:rgba(0,0,0,.18);border-color:rgba(255,255,255,.28)}
+.sound-toggle .sound-label{font-size:12px}
+@media(max-width:760px){
+  .sound-toggle{padding:7px 9px;min-width:38px}
+  .sound-toggle .sound-label{display:none}
+}
 </style>
 </head>
 <body>
@@ -344,6 +370,7 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
     <button class="auth-only hidden-auth" data-view="courses">บทเรียนอื่น ๆ</button>
     <a class="auth-only hidden-auth" href="admin.html">Admin</a>
   </nav>
+  <button id="soundToggleBtn" class="sound-toggle" type="button" aria-pressed="false" title="ปิดเสียง"><span id="soundToggleIcon">🔊</span><span id="soundToggleLabel" class="sound-label">เสียง</span></button>
   <div id="userBox" class="userbox hidden"><span id="currentUser"></span><button id="logoutBtn" class="btn secondary" style="padding:7px 10px">Logout</button></div>
 </div></header>
 
@@ -415,9 +442,29 @@ const catMeows=catMeowFiles.map(src=>{
   return a;
 });
 let lastMeowIndex=-1;
+let soundMuted=localStorage.getItem("yothe_sound_muted")==="1";
+function syncSoundToggle(){
+  const btn=document.getElementById("soundToggleBtn");
+  const icon=document.getElementById("soundToggleIcon");
+  const label=document.getElementById("soundToggleLabel");
+  if(!btn)return;
+  btn.classList.toggle("muted",soundMuted);
+  btn.setAttribute("aria-pressed",soundMuted?"true":"false");
+  btn.title=soundMuted?"เปิดเสียง":"ปิดเสียง";
+  if(icon)icon.textContent=soundMuted?"🔇":"🔊";
+  if(label)label.textContent=soundMuted?"ปิดเสียง":"เสียง";
+}
+function setSoundMuted(muted){
+  soundMuted=!!muted;
+  localStorage.setItem("yothe_sound_muted",soundMuted?"1":"0");
+  if(soundMuted){
+    catMeows.forEach(a=>{try{a.pause();a.currentTime=0}catch{}});
+  }
+  syncSoundToggle();
+}
 function playMenuMeow(){
   try{
-    if(!catMeows.length)return;
+    if(soundMuted||!catMeows.length)return;
     let idx=Math.floor(Math.random()*catMeows.length);
     if(catMeows.length>1&&idx===lastMeowIndex){
       idx=(idx+1+Math.floor(Math.random()*(catMeows.length-1)))%catMeows.length;
@@ -1022,6 +1069,11 @@ document.addEventListener("keydown",e=>{
     closeObjectFocus();
   }
 });
+
+document.getElementById("soundToggleBtn")?.addEventListener("click",()=>{
+  setSoundMuted(!soundMuted);
+});
+syncSoundToggle();
 </script>
 
 <div id="objectFocusPopup" class="object-focus-popup hidden" aria-hidden="true">
