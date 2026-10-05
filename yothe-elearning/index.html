@@ -402,6 +402,17 @@ function renderCourseLessonMenus(rows=[]){
     nav.insertBefore(btn,coursesBtn);
   });
 
+  if(!nav.querySelector('[data-delivery-schedule="1"]')){
+    const deliveryBtn=document.createElement("button");
+    deliveryBtn.className="auth-only hidden-auth course-lesson-menu";
+    deliveryBtn.dataset.courseMenu="1";
+    deliveryBtn.dataset.deliverySchedule="1";
+    deliveryBtn.dataset.courseCategory="วัตถุดิบขนม";
+    deliveryBtn.dataset.deliveryMainFallback="1";
+    deliveryBtn.textContent="รอบการส่งสินค้า";
+    nav.insertBefore(deliveryBtn,coursesBtn);
+  }
+
   syncCustomMenuPosition();
   syncCourseLessonMenuPosition();
   setAuthUI(!!token);
