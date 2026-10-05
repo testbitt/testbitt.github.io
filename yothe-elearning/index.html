@@ -124,14 +124,19 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
 
-.delivery-wrap{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
-.delivery-head{padding:18px 20px;background:linear-gradient(135deg,#fff8f4,#fde8e3);border-bottom:1px solid var(--line)}
-.delivery-head h2{margin:0;color:var(--red);font-size:28px}.delivery-head p{margin:6px 0 0;color:var(--muted)}
+.delivery-wrap{background:transparent;border:0;border-radius:0;overflow:visible;box-shadow:none}
+.delivery-head{padding:0 0 18px;border:0;background:transparent}
+.delivery-head h2{margin:0;color:var(--red);font-size:32px;font-weight:900}.delivery-head p{margin:6px 0 0;color:var(--muted)}
 .delivery-table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.delivery-table{width:100%;border-collapse:collapse;min-width:980px;table-layout:auto}
-.delivery-table th,.delivery-table td{padding:13px 12px;border:1px solid #e5e7eb;vertical-align:middle;white-space:nowrap;overflow-wrap:normal;word-break:normal}
-.delivery-table th{background:var(--red);color:#fff;font-weight:900;text-align:center}
-.delivery-table td{font-size:15px;line-height:1.45;color:#222}
+.delivery-table{width:100%;border-collapse:separate;border-spacing:0;min-width:900px;table-layout:auto}
+.delivery-table th,.delivery-table td{padding:13px 14px;border-right:1px solid #eadfd9;border-bottom:1px solid #eadfd9;vertical-align:middle;white-space:nowrap;overflow-wrap:normal;word-break:normal}
+.delivery-table th:first-child,.delivery-table td:first-child{border-left:1px solid #eadfd9}
+.delivery-table thead th{border-top:1px solid #eadfd9}
+.delivery-table th{background:linear-gradient(180deg,#d94a42,var(--red));color:#fff;font-weight:900;text-align:center}
+.delivery-table th:first-child{border-radius:10px 0 0 0}.delivery-table th:last-child{border-radius:0 10px 0 0}
+.delivery-table tbody tr:last-child td:first-child{border-radius:0 0 0 10px}.delivery-table tbody tr:last-child td:last-child{border-radius:0 0 10px 0}
+.delivery-table tbody tr:nth-child(even) td{background:#fffaf8}
+.delivery-table td{font-size:15px;line-height:1.45;color:#222;background:#fff}
 .delivery-table td:first-child{font-weight:900;color:#8b1e1e}
 .delivery-table th:nth-child(1),.delivery-table td:nth-child(1){min-width:110px}
 .delivery-table th:nth-child(2),.delivery-table td:nth-child(2){min-width:170px}
@@ -139,9 +144,11 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 .delivery-table th:nth-child(4),.delivery-table td:nth-child(4){min-width:170px}
 .delivery-table th:nth-child(5),.delivery-table td:nth-child(5){min-width:120px}
 .delivery-empty{padding:30px;text-align:center;color:var(--muted)}
-.delivery-supplier-card{margin:0 0 18px;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.06)}
-.delivery-supplier-title{padding:14px 16px;background:#fff4f1;color:var(--red);font-weight:900;font-size:20px;border-bottom:1px solid var(--line)}
-.delivery-notes{padding:12px 14px;background:#fffaf5;border-top:1px solid var(--line);font-size:14px;line-height:1.5}
+.delivery-supplier-card{margin:0 0 22px;background:#fff;border:1px solid #ead8d1;border-radius:18px;overflow:hidden;box-shadow:0 8px 24px rgba(111,64,45,.08)}
+.delivery-supplier-title{display:flex;align-items:center;gap:9px;padding:15px 18px;background:linear-gradient(135deg,#fff8f4,#fff1ec);color:var(--red);font-weight:900;font-size:21px;border-bottom:1px solid #ead8d1}
+.delivery-supplier-title:before{content:"📦";font-size:20px}
+.delivery-supplier-card .delivery-table-wrap{padding:14px 14px 16px;box-sizing:border-box}
+.delivery-notes{margin:0 14px 14px;padding:11px 13px;background:#fff8e8;border:1px solid #f0dfb2;border-radius:10px;font-size:14px;line-height:1.5}
 @media(max-width:700px){
   .delivery-wrap{border-radius:12px}.delivery-head{padding:14px}.delivery-head h2{font-size:22px}
   .delivery-table{min-width:880px}.delivery-table th,.delivery-table td{padding:10px 9px;font-size:13px;white-space:nowrap}
@@ -437,25 +444,61 @@ function openCourseCategory(category){
   if(search)search.value="";
   showView("courses");
 }
+async function syncDeliveryMenuVisibility(){
+  try{
+    const rows=await api("delivery_schedule");
+    const days=["mon","tue","wed","thu","fri","sat","sun"];
+    const hasData=rows.some(r=>
+      days.some(k=>String(r[k+"_order_time"]||"").trim()||String(r[k+"_delivery_round"]||"").trim()||String(r[k+"_delivery_time"]||"").trim())||
+      String(r.notes||"").trim()
+    );
+    document.querySelectorAll('[data-delivery-schedule="1"]').forEach(el=>el.classList.toggle("hidden-auth",!hasData||!token));
+    return hasData;
+  }catch{return false}
+}
 async function loadDeliverySchedule(){
   const el=document.getElementById("deliveryScheduleList");if(!el)return;
-  el.innerHTML='<div class="delivery-empty">กำลังโหลดรอบการสั่งสินค้า...</div>';
+  const wrap=document.querySelector("#view-delivery-schedule .delivery-wrap");
+  const head=document.querySelector("#view-delivery-schedule .delivery-head");
+  el.innerHTML='<div class="delivery-empty">กำลังโหลดรอบการส่งสินค้า...</div>';
   try{
     const rows=await api("delivery_schedule");
     const days=[
       ["mon","จันทร์"],["tue","อังคาร"],["wed","พุธ"],["thu","พฤหัสบดี"],
       ["fri","ศุกร์"],["sat","เสาร์"],["sun","อาทิตย์"]
     ];
-    el.innerHTML=rows.length?rows.map(r=>
+    const clean=rows.map(r=>{
+      const activeDays=days.filter(([k])=>
+        String(r[k+"_order_time"]||"").trim()||
+        String(r[k+"_delivery_round"]||"").trim()||
+        String(r[k+"_delivery_time"]||"").trim()
+      );
+      return {r,activeDays};
+    }).filter(x=>x.activeDays.length||String(x.r.notes||"").trim());
+
+    if(!clean.length){
+      if(head)head.style.display="none";
+      if(wrap)wrap.style.display="none";
+      el.innerHTML="";
+      return;
+    }
+
+    if(wrap)wrap.style.display="";
+    if(head)head.style.display="";
+    el.innerHTML=clean.map(({r,activeDays})=>
       '<section class="delivery-supplier-card">'+
         '<div class="delivery-supplier-title">'+esc(r.supplier_name||"Supplier")+'</div>'+
-        '<div class="delivery-table-wrap"><table class="delivery-table"><thead><tr><th>วัน</th><th>เวลาสั่ง</th><th>รอบส่งสินค้า</th><th>เวลาส่ง</th></tr></thead><tbody>'+
-          days.map(([k,d])=>'<tr><td><strong>'+d+'</strong></td><td>'+esc(r[k+"_order_time"]||"-")+'</td><td>'+esc(r[k+"_delivery_round"]||"-")+'</td><td>'+esc(r[k+"_delivery_time"]||"-")+'</td></tr>').join("")+
-        '</tbody></table></div>'+
-        (r.notes?'<div class="delivery-notes">'+esc(r.notes)+'</div>':'')+
+        (activeDays.length?'<div class="delivery-table-wrap"><table class="delivery-table"><thead><tr><th>วัน</th><th>เวลาสั่ง</th><th>รอบส่งสินค้า</th><th>เวลาส่ง</th></tr></thead><tbody>'+
+          activeDays.map(([k,d])=>'<tr><td><strong>'+d+'</strong></td><td>'+esc(r[k+"_order_time"]||"-")+'</td><td>'+esc(r[k+"_delivery_round"]||"-")+'</td><td>'+esc(r[k+"_delivery_time"]||"-")+'</td></tr>').join("")+
+        '</tbody></table></div>':'')+
+        (String(r.notes||"").trim()?'<div class="delivery-notes">'+esc(r.notes)+'</div>':'')+
       '</section>'
-    ).join(""):'<div class="delivery-empty">ยังไม่มีข้อมูลรอบการสั่งสินค้า</div>';
-  }catch(e){el.innerHTML='<div class="delivery-empty">'+esc(e.message)+'</div>'}
+    ).join("");
+  }catch(e){
+    if(wrap)wrap.style.display="";
+    if(head)head.style.display="";
+    el.innerHTML='<div class="delivery-empty">'+esc(e.message)+'</div>';
+  }
 }
 async function loadSettings(){
   const [rows,courseRows]=await Promise.all([api("settings"),api("courses").catch(()=>[])]);
@@ -465,6 +508,7 @@ async function loadSettings(){
   renderMenuOrder(map.menu_order||["uniforms","production","drinks","expiry","toppings"]);
   renderCustomMenus(map.custom_menus||[]);
   renderCourseLessonMenus(courseRows||[]);
+  await syncDeliveryMenuVisibility();
   renderBrandStoryValue(map.brand_story||{});
   if(token)await loadAttachments("home");
 }
