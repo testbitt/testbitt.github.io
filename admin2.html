@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>KSL Admin2</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,"Noto Sans Thai",Tahoma,sans-serif;background:linear-gradient(135deg,#eef7f2,#f8fbf9);color:#173e30}
+.wrap{min-height:100vh;display:grid;place-items:center;padding:20px}
+.card{width:min(460px,100%);background:#fff;border:1px solid #cfe4d9;border-radius:22px;padding:28px;box-shadow:0 14px 40px rgba(23,76,57,.10)}
+.kicker{font-size:12px;font-weight:900;letter-spacing:.7px;color:#1a7453}
+h1{margin:6px 0 8px;font-size:25px;color:#174c39}
+p{margin:0 0 18px;color:#6b8178;font-size:13px}
+label{display:block;font-size:12px;font-weight:800;margin-bottom:6px}
+input{width:100%;border:1px solid #bfdccc;border-radius:11px;padding:12px 13px;font-size:16px;outline:none}
+input:focus{border-color:#176b4d;box-shadow:0 0 0 3px rgba(23,107,77,.10)}
+button{width:100%;margin-top:12px;border:0;border-radius:11px;padding:12px 14px;background:#176b4d;color:#fff;font-weight:900;font-size:15px;cursor:pointer}
+.msg{min-height:20px;margin-top:10px;font-size:12px;color:#a33}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <main class="card">
+    <div class="kicker">KAMU KAMU • ADMIN2</div>
+    <h1>เข้าสู่ Media Builder</h1>
+    <p>กรอกรหัสผ่านเพื่อเข้าใช้งาน 3 เมนูสำหรับสร้างและแก้ไขสื่อการสอน</p>
+    <form id="loginForm">
+      <label for="pass">รหัสผ่าน</label>
+      <input id="pass" type="password" inputmode="numeric" autocomplete="current-password" required autofocus>
+      <button type="submit">เข้าสู่ระบบ</button>
+      <div class="msg" id="msg"></div>
+    </form>
+  </main>
+</div>
+<script>
+const EXPECTED='5672097b893f34d3a7428b76ba086aa7114aaca114ad2b91fbfc9e0bbca948cd';
+async function sha256(s){
+  const b=new TextEncoder().encode(String(s||''));
+  const h=await crypto.subtle.digest('SHA-256',b);
+  return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+document.getElementById('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const msg=document.getElementById('msg');
+  msg.textContent='';
+  const value=document.getElementById('pass').value;
+  const digest=await sha256(value);
+  if(digest!==EXPECTED){
+    msg.textContent='รหัสผ่านไม่ถูกต้อง';
+    document.getElementById('pass').select();
+    return;
+  }
+  try{sessionStorage.setItem('KSL_ADMIN2_AUTH','1')}catch(_){}
+  location.replace('./?admin2=1');
+});
+</script>
+</body>
+</html>
