@@ -356,6 +356,83 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
   text-align:center!important;
   vertical-align:middle!important;
 }
+
+/* Public table anti-overlap */
+#appRoot .recipe-card,
+#appRoot .delivery-supplier-card,
+#appRoot .delivery-table-wrap,
+#appRoot .table-wrap{
+  min-width:0!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+}
+#appRoot table{
+  width:100%!important;
+  max-width:100%!important;
+  border-collapse:collapse!important;
+  table-layout:auto!important;
+}
+#appRoot th,
+#appRoot td{
+  box-sizing:border-box!important;
+  min-width:0!important;
+  max-width:none!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  hyphens:auto;
+  line-height:1.35!important;
+  vertical-align:middle!important;
+}
+#appRoot th{
+  text-align:center!important;
+  font-weight:900!important;
+}
+#appRoot td{
+  position:relative;
+  overflow:visible!important;
+}
+#appRoot .recipe-table,
+#appRoot .delivery-table{
+  table-layout:auto!important;
+}
+#appRoot .recipe-table th,
+#appRoot .recipe-table td,
+#appRoot .delivery-table th,
+#appRoot .delivery-table td{
+  padding:8px 10px!important;
+}
+@media(max-width:900px){
+  #appRoot .recipe-card,
+  #appRoot .delivery-supplier-card{
+    overflow-x:auto!important;
+    -webkit-overflow-scrolling:touch;
+  }
+  #appRoot .recipe-table,
+  #appRoot .delivery-table{
+    width:max-content!important;
+    min-width:100%!important;
+    table-layout:auto!important;
+  }
+  #appRoot .recipe-table th,
+  #appRoot .recipe-table td,
+  #appRoot .delivery-table th,
+  #appRoot .delivery-table td{
+    min-width:110px!important;
+    max-width:260px!important;
+  }
+}
+@media(max-width:560px){
+  #appRoot .recipe-table th,
+  #appRoot .recipe-table td,
+  #appRoot .delivery-table th,
+  #appRoot .delivery-table td{
+    min-width:96px!important;
+    max-width:220px!important;
+    padding:7px 8px!important;
+    font-size:13px!important;
+  }
+}
 </style>
 </head>
 <body>
