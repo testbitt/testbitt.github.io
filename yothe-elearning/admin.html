@@ -545,9 +545,30 @@ const DATASETS={
     ["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
   ]},
   delivery_schedule:{label:"รอบการสั่งสินค้า",fields:[
-    ["supplier_name","ชื่อ Supplier","text"],["order_round","รอบสั่งสินค้า","text"],["order_time","เวลาสั่ง","text"],
-    ["delivery_round","รอบส่งสินค้า","text"],["delivery_time","เวลาส่ง","text"],["notes","หมายเหตุ","textarea"],
-    ["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
+    ["supplier_name","ชื่อ Supplier","text"],
+
+    ["mon_order_round","จันทร์ • รอบสั่งสินค้า","text"],["mon_order_time","จันทร์ • เวลาสั่ง","text"],
+    ["mon_delivery_round","จันทร์ • รอบส่งสินค้า","text"],["mon_delivery_time","จันทร์ • เวลาส่ง","text"],
+
+    ["tue_order_round","อังคาร • รอบสั่งสินค้า","text"],["tue_order_time","อังคาร • เวลาสั่ง","text"],
+    ["tue_delivery_round","อังคาร • รอบส่งสินค้า","text"],["tue_delivery_time","อังคาร • เวลาส่ง","text"],
+
+    ["wed_order_round","พุธ • รอบสั่งสินค้า","text"],["wed_order_time","พุธ • เวลาสั่ง","text"],
+    ["wed_delivery_round","พุธ • รอบส่งสินค้า","text"],["wed_delivery_time","พุธ • เวลาส่ง","text"],
+
+    ["thu_order_round","พฤหัสบดี • รอบสั่งสินค้า","text"],["thu_order_time","พฤหัสบดี • เวลาสั่ง","text"],
+    ["thu_delivery_round","พฤหัสบดี • รอบส่งสินค้า","text"],["thu_delivery_time","พฤหัสบดี • เวลาส่ง","text"],
+
+    ["fri_order_round","ศุกร์ • รอบสั่งสินค้า","text"],["fri_order_time","ศุกร์ • เวลาสั่ง","text"],
+    ["fri_delivery_round","ศุกร์ • รอบส่งสินค้า","text"],["fri_delivery_time","ศุกร์ • เวลาส่ง","text"],
+
+    ["sat_order_round","เสาร์ • รอบสั่งสินค้า","text"],["sat_order_time","เสาร์ • เวลาสั่ง","text"],
+    ["sat_delivery_round","เสาร์ • รอบส่งสินค้า","text"],["sat_delivery_time","เสาร์ • เวลาส่ง","text"],
+
+    ["sun_order_round","อาทิตย์ • รอบสั่งสินค้า","text"],["sun_order_time","อาทิตย์ • เวลาสั่ง","text"],
+    ["sun_delivery_round","อาทิตย์ • รอบส่งสินค้า","text"],["sun_delivery_time","อาทิตย์ • เวลาส่ง","text"],
+
+    ["notes","หมายเหตุ","textarea"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
   ]},
   settings:{label:"Brand Story / Settings",fields:[
     ["key","Key","text"],["value","Value JSON","json"]
@@ -1109,6 +1130,7 @@ function renderTable(){
   if(dataset==="expiry"){renderExpirySheets();return}
   if(dataset==="uniforms"){renderUniformSheets();return}
   if(dataset==="courses"){renderCourseSheets();return}
+  if(dataset==="delivery_schedule"){renderDeliveryScheduleSheets();return}
   const fields=DATASETS[dataset].fields,visible=fields.slice(0,6),pages=chunk(rows,displayPrefs.items_per_page);
   wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>'<section class="'+pageClass(page.length)+'"><div class="page-title">'+esc(DATASETS[dataset].label)+' • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content"><table><thead><tr><th>ID</th>'+visible.map(f=>'<th>'+esc(f[1])+'</th>').join("")+'<th class="actions">จัดการ</th></tr></thead><tbody>'+page.map(r=>'<tr><td>'+r.id+'</td>'+visible.map(f=>'<td>'+formatCell(r[f[0]])+'</td>').join("")+'<td class="actions"><button class="btn small secondary" onclick="editRow('+r.id+')">แก้ไข</button> <button class="btn small danger" onclick="deleteRow('+r.id+')">ลบ</button></td></tr>').join("")+'</tbody></table></div></section>').join("")+'</div>';scheduleReviewFit();
 }
@@ -1246,6 +1268,28 @@ function rowEditSidebar(items,labelFn){
   }).join("")+'</div>';
 }
 
+function renderDeliveryScheduleSheets(){
+  const wrap=document.getElementById("tableWrap");
+  const days=[
+    ["mon","จันทร์"],["tue","อังคาร"],["wed","พุธ"],["thu","พฤหัสบดี"],
+    ["fri","ศุกร์"],["sat","เสาร์"],["sun","อาทิตย์"]
+  ];
+  const pages=chunk(rows,displayPrefs.items_per_page);
+  wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>
+    '<section class="'+pageClass(page.length)+'"><div class="page-title">รอบการสั่งสินค้า • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content recipe-admin-grid">'+
+    page.map(r=>'<article class="recipe-sheet" data-group-key="'+esc(String(r.id))+'">'+
+      '<div class="recipe-title">'+esc(r.supplier_name||"Supplier")+'</div>'+
+      '<div class="edit-layout"><aside class="edit-sidebar"><div class="edit-sidebar-title">จัดการ Supplier</div>'+
+      '<button class="btn secondary" onclick="editRow('+r.id+')">แก้ไขข้อมูล 7 วัน</button>'+
+      '<button class="btn danger" onclick="deleteRow('+r.id+')">ลบ</button></aside>'+
+      '<div class="edit-content"><table class="recipe-table"><thead><tr><th>วัน</th><th>รอบสั่งสินค้า</th><th>เวลาสั่ง</th><th>รอบส่งสินค้า</th><th>เวลาส่ง</th></tr></thead><tbody>'+
+      days.map(([k,d])=>'<tr><td><strong>'+d+'</strong></td><td>'+esc(r[k+"_order_round"]||"-")+'</td><td>'+esc(r[k+"_order_time"]||"-")+'</td><td>'+esc(r[k+"_delivery_round"]||"-")+'</td><td>'+esc(r[k+"_delivery_time"]||"-")+'</td></tr>').join("")+
+      '</tbody></table>'+(r.notes?'<div class="recipe-note">'+esc(r.notes)+'</div>':'')+'</div></div></article>'
+    ).join("")+
+    '</div></section>'
+  ).join("")+'</div>';
+  scheduleReviewFit();
+}
 function renderProductionSheets(){
   const groups={};rows.forEach(r=>{(groups[r.recipe_name||"ไม่ระบุชื่อ"]??=[]).push(r)});
   renderGroupedSheets(Object.entries(groups),"สูตรการผลิต",(name,items)=>{items=[...items].sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||(Number(a.id)||0)-(Number(b.id)||0));return `
