@@ -88,8 +88,18 @@ button,input,select{font:inherit}.app{min-height:100vh}.top{height:70px;backgrou
 
 <section id="count" class="page">
  <div class="head"><div><h2>สร้างแบบฟอร์มตรวจนับ</h2><div class="sub">สร้างจาก Branch • Date • Custom Check • RM Filter</div></div></div>
- <div class="card"><div class="filters"><div class="field"><label>Branch</label><select><option>เลือก Branch</option></select></div><div class="field"><label>Stock Date</label><input type="date"></div><div class="field"><label>Item Sale Date</label><input type="date"></div><div class="field"><label>Custom Check</label><select><option>Standard</option></select></div><div class="field"><label>RM Filter</label><select><option>ทั้งหมด</option></select></div><div class="field"><label>&nbsp;</label><button class="btn primary" style="width:100%" onclick="previewCount()">Preview</button></div></div></div>
- <div class="card" style="margin-top:12px"><div class="row"><b>Count Form Preview</b><span class="right"></span><button class="btn" disabled>Export Excel</button><button class="btn" disabled>Export PDF</button></div><div class="empty" style="margin-top:10px">ยังไม่มีรายการตรวจนับ • แบบฟอร์มจะไม่แสดง Theory</div></div>
+ <div class="card"><div class="filters">
+  <div class="field"><label>Branch Code</label><input id="countBranchCode" type="text" placeholder="กรอกรหัสสาขา"></div>
+  <div class="field"><label>Branch Name</label><input id="countBranchName" type="text" placeholder="กรอกชื่อสาขา"></div>
+  <div class="field"><label>Stock Date</label><input id="countStockDate" type="date"></div>
+  <div class="field"><label>Item Sale Date</label><input id="countSaleDate" type="date"></div>
+  <div class="field"><label>Custom Check</label><select id="countCustom"><option>Standard</option></select></div>
+  <div class="field"><label>RM Filter</label><select id="countRMFilter"><option value="">ทั้งหมด</option></select></div>
+ </div><div class="row" style="margin-top:12px"><button class="btn primary" onclick="previewCount()">สร้างรายการตรวจนับ</button><span id="countSourceNote" class="muted"></span></div></div>
+ <div class="card" style="margin-top:12px">
+  <div class="row"><b>Count Form Preview</b><span class="right"></span><button class="btn" id="countExcelBtn" disabled>Export Excel</button><button class="btn" id="countPdfBtn" disabled>Export PDF</button></div>
+  <div id="countPreview" class="empty" style="margin-top:10px">ยังไม่มีรายการตรวจนับ • แบบฟอร์มจะไม่แสดง Theory</div>
+ </div>
 </section>
 
 <section id="importcount" class="page">
@@ -236,6 +246,7 @@ function applyDatasetToUI(i,p){
  const bom=window.yotheData['yothe-upload-2'];
  const conv=window.yotheData['yothe-upload-3'];
  renderBomMapping(bom,conv);
+ refreshCountFormData();
 }
 async function restoreUploadedData(){
  const data=[];
@@ -313,7 +324,79 @@ function fakeImport(input){if(input.files[0])alert("รับไฟล์ "+inpu
 function saveGlobal(){localStorage.setItem('yothe-global-source',document.getElementById('globalSource').value);alert('บันทึก Local แล้ว: '+document.getElementById('globalSource').value)}
 function addMapping(){const b=document.getElementById('mappingBody');if(b.querySelector('.empty'))b.innerHTML='';const r=document.createElement('tr');r.innerHTML='<td contenteditable>NEW-ITEM</td><td contenteditable>Product</td><td contenteditable>-</td><td contenteditable>-</td><td contenteditable>false</td><td><select><option>BOM</option><option>Stock Movement</option><option>Item Sale</option></select></td><td contenteditable>1</td><td>'+new Date().toLocaleDateString('th-TH')+'</td><td><button class="btn" onclick="this.closest(\'tr\').remove()">ลบ</button></td>';b.appendChild(r)}
 function createGroup(){const n=prompt('ชื่อ Custom Check Group');if(!n)return;const d=document.createElement('div');d.className='group';d.innerHTML='<h4>'+n+'</h4><div class="muted">Local Group</div><div class="row" style="margin-top:10px"><button class="btn">แก้ไข</button><button class="btn" onclick="this.closest(\'.group\').remove()">ลบ</button></div>';document.getElementById('groups').appendChild(d)}
-function previewCount(){alert("ยังไม่มี RM สำหรับสร้าง Count Form — Upload ข้อมูล Yothe' ก่อน")}
+function getAvailableRM(){
+ const stock=window.yotheData['yothe-upload-0'];
+ const bom=window.yotheData['yothe-upload-2'];
+ const conv=window.yotheData['yothe-upload-3'];
+ const map=new Map();
+ if(stock){
+  Object.values(stock.sheets||{}).flat().forEach(x=>{
+   const code=x.RMCode??x['RM Code']??x.ItemCode??x.Code;
+   if(code&&!map.has(String(code)))map.set(String(code),{
+    code:String(code),desc:x.Description??x['Detail Raw Material']??x.ItemName??'',unit:x.Unit??x['Unit Description']??''
+   });
+  });
+ }
+ if(!map.size&&bom){
+  const r=(bom.sheets.Recipe||[]),w=(bom.sheets.WIP||[]);
+  r.forEach(x=>{
+   const code=x.ItemCode??x['Item Code'];
+   if(code&&!map.has(String(code)))map.set(String(code),{code:String(code),desc:x.Description??x.ItemName??'',unit:x.UnitDes1??x.Unit??''});
+  });
+  w.forEach(x=>{
+   const code=x['RM Item Code']??x.RMCode;
+   if(code&&!map.has(String(code)))map.set(String(code),{code:String(code),desc:x['RM Description']??x.Description??'',unit:x['RM Unit']??x.Unit??''});
+  });
+ }
+ if(conv){
+  const rows=Object.values(conv.sheets||{}).flat();
+  rows.forEach(x=>{
+   const code=x.Code??x.RMCode??x['RM Code'];
+   if(!code)return;
+   const k=String(code);
+   const cur=map.get(k)||{code:k,desc:'',unit:''};
+   if(!cur.desc)cur.desc=x['Detail Raw Material']??x.Description??'';
+   if(!cur.unit)cur.unit=x.Unit??'';
+   map.set(k,cur);
+  });
+ }
+ return [...map.values()].sort((a,b)=>a.code.localeCompare(b.code));
+}
+function refreshCountFormData(){
+ const rms=getAvailableRM();
+ const sel=document.getElementById('countRMFilter');
+ if(sel){
+  const v=sel.value;
+  sel.innerHTML='<option value="">ทั้งหมด</option>'+rms.map(x=>'<option value="'+esc(x.code)+'">'+esc(x.code)+' - '+esc(x.desc)+'</option>').join('');
+  if([...sel.options].some(o=>o.value===v))sel.value=v;
+ }
+ const note=document.getElementById('countSourceNote');
+ if(note){
+  const stock=window.yotheData['yothe-upload-0'];
+  note.textContent=rms.length ? ('พร้อมตรวจนับ '+rms.length.toLocaleString()+' RM • แหล่งข้อมูล: '+(stock?'Stock Movement':'BOM / Unit Conversion')) : 'ยังไม่มี RM สำหรับตรวจนับ';
+ }
+}
+function previewCount(){
+ const rms=getAvailableRM();
+ const filter=document.getElementById('countRMFilter')?.value||'';
+ const rows=filter?rms.filter(x=>x.code===filter):rms;
+ const host=document.getElementById('countPreview');
+ if(!host)return;
+ if(!rows.length){host.className='empty';host.innerHTML='ยังไม่มี RM สำหรับตรวจนับ — Upload BOM / Unit Conversion / Stock Movement ก่อน';return}
+ const bc=document.getElementById('countBranchCode')?.value||'';
+ const bn=document.getElementById('countBranchName')?.value||'';
+ const sd=document.getElementById('countStockDate')?.value||'';
+ const id=document.getElementById('countSaleDate')?.value||'';
+ const cc=document.getElementById('countCustom')?.value||'Standard';
+ host.className='';
+ host.innerHTML=
+  '<div class="muted" style="margin-bottom:8px">Branch: '+esc(bc)+(bn?' - '+esc(bn):'')+' • Stock Date: '+esc(sd)+' • Item Sale Date: '+esc(id)+' • Custom Check: '+esc(cc)+'</div>'+
+  '<div class="tablewrap"><table class="tbl"><thead><tr><th>RM Code</th><th>Description</th><th>Unit</th><th>จำนวนตรวจนับ</th><th>หมายเหตุ</th><th>ชื่อผู้ตรวจ</th></tr></thead><tbody>'+
+  rows.map(x=>'<tr><td>'+esc(x.code)+'</td><td>'+esc(x.desc)+'</td><td>'+esc(x.unit)+'</td><td contenteditable></td><td contenteditable></td><td contenteditable></td></tr>').join('')+
+  '</tbody></table></div>';
+ const xb=document.getElementById('countExcelBtn'),pb=document.getElementById('countPdfBtn');
+ if(xb)xb.disabled=false;if(pb)pb.disabled=false;
+}
 function downloadTemplate(){
  const csv=[
   'DATASET,REQUIRED_COLUMN,DESCRIPTION',
