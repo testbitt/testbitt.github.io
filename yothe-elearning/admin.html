@@ -387,6 +387,84 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .popup-style-preview{height:76px;border-radius:12px;background:#fff7f5;border:1px solid #f3d7d2;display:grid;place-items:center;overflow:hidden}
 .popup-style-preview img{max-height:66px;max-width:80%;object-fit:contain}
 @media(max-width:900px){.popup-manager{grid-template-columns:1fr}.popup-preview-stage img{max-height:58vh}}
+
+/* Popup manager UX upgrade */
+.popup-manager-shell{display:grid;gap:14px}
+.popup-toolbar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;padding:12px;background:#fff8f6;border:1px solid #f3d7d2;border-radius:14px}
+.popup-toolbar .field{margin:0;min-width:260px;flex:1}
+.popup-summary{font-size:13px;font-weight:800;color:#7f1d1d}
+.popup-preview-wrap{position:sticky;top:86px;align-self:start}
+.popup-marker{touch-action:none}
+.popup-marker.dragging{cursor:grabbing;outline:4px solid rgba(37,99,235,.25);background:#2563eb}
+.popup-card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.popup-image-status{font-size:12px;margin-top:6px;color:#64748b;min-height:18px}
+.popup-admin-modal{position:fixed;inset:0;z-index:200;background:rgba(15,10,10,.72);display:grid;place-items:center;padding:18px;backdrop-filter:blur(4px)}
+.popup-admin-modal-card{width:min(520px,92vw);aspect-ratio:1/1;background:#fff;border:4px solid #fff;border-radius:26px;box-shadow:0 30px 100px rgba(0,0,0,.42);display:grid;place-items:center;position:relative;overflow:hidden}
+.popup-admin-modal-card img{max-width:92%;max-height:92%;object-fit:contain}
+.popup-admin-close{position:absolute;right:10px;top:10px;width:38px;height:38px;border:0;border-radius:50%;background:#fff;color:var(--red);font-size:22px;font-weight:900;box-shadow:0 3px 12px rgba(0,0,0,.18);z-index:3}
+.popup-admin-style-label{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.62);color:#fff;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;white-space:nowrap}
+@media(max-width:900px){.popup-preview-wrap{position:static}}
+/* Admin popup 50 styles */
+@keyframes apopA{0%{opacity:0;transform:scale(.7)}70%{opacity:1;transform:scale(1.04)}100%{opacity:1;transform:scale(1)}}
+@keyframes awigA{0%{opacity:0;transform:rotate(-3deg)}70%{opacity:1;transform:rotate(3deg)}100%{opacity:1;transform:rotate(0)}}
+@keyframes azoomA{0%{opacity:0;transform:scale(.45)}70%{opacity:1;transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+@keyframes azoomB{0%{opacity:0;transform:scale(1.35)}70%{opacity:1;transform:scale(.96)}100%{opacity:1;transform:scale(1)}}
+@keyframes arotL{0%{opacity:0;transform:rotate(-18deg) scale(.8)}70%{opacity:1;transform:rotate(3deg)}100%{opacity:1;transform:rotate(0)}}
+@keyframes arotR{0%{opacity:0;transform:rotate(18deg) scale(.8)}70%{opacity:1;transform:rotate(-3deg)}100%{opacity:1;transform:rotate(0)}}
+@keyframes aupA{0%{opacity:0;transform:translateY(40px)}70%{opacity:1;transform:translateY(-6px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes adnA{0%{opacity:0;transform:translateY(-40px)}70%{opacity:1;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes altA{0%{opacity:0;transform:translateX(50px)}70%{opacity:1;transform:translateX(-6px)}100%{opacity:1;transform:translateX(0)}}
+@keyframes artA{0%{opacity:0;transform:translateX(-50px)}70%{opacity:1;transform:translateX(6px)}100%{opacity:1;transform:translateX(0)}}
+.popup-admin-modal-card.style-1{animation:apopA .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-2{animation:awigA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-3{animation:azoomA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-4{animation:azoomB .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-5{animation:arotL .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-6{animation:arotR .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-7{animation:aupA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-8{animation:adnA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-9{animation:altA .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-10{animation:artA .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-11{animation:apopA .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-12{animation:awigA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-13{animation:azoomA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-14{animation:azoomB .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-15{animation:arotL .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-16{animation:arotR .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-17{animation:aupA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-18{animation:adnA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-19{animation:altA .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-20{animation:artA .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-21{animation:apopA .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-22{animation:awigA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-23{animation:azoomA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-24{animation:azoomB .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-25{animation:arotL .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-26{animation:arotR .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-27{animation:aupA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-28{animation:adnA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-29{animation:altA .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-30{animation:artA .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-31{animation:apopA .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-32{animation:awigA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-33{animation:azoomA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-34{animation:azoomB .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-35{animation:arotL .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-36{animation:arotR .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-37{animation:aupA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-38{animation:adnA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-39{animation:altA .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-40{animation:artA .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-41{animation:apopA .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-42{animation:awigA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-43{animation:azoomA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-44{animation:azoomB .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-45{animation:arotL .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-46{animation:arotR .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-47{animation:aupA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-48{animation:adnA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-49{animation:altA .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.popup-admin-modal-card.style-50{animation:artA .42s ease both }
 </style>
 </head>
 <body>
@@ -916,17 +994,18 @@ function renderPopupManager(){
   const att=popupAttachments.find(x=>String(x.id)===String(popupAttachmentId));
   const items=popupRowsForCurrent();
   wrap.innerHTML=`
-    <div class="panel" style="box-shadow:none;border:0;padding:0">
-      <div class="row" style="align-items:end;margin-bottom:14px">
+    <div class="panel popup-manager-shell" style="box-shadow:none;border:0;padding:0">
+      <div class="popup-toolbar">
         <div class="field" style="margin:0;min-width:320px;flex:1"><label>เลือกไฟล์รูปต้นฉบับ</label>
           <select id="popupAttachmentSelect" class="input">${popupAttachments.map(a=>'<option value="'+a.id+'" '+(String(a.id)===String(popupAttachmentId)?'selected':'')+'>'+esc(a.title||a.file_name)+'</option>').join("")}</select>
         </div>
         <button class="btn primary" type="button" onclick="addPopupItem()">+ เพิ่ม Popup</button>
+        <div class="popup-summary">แก้ไขหลายจุดได้ในภาพเดียว</div>
       </div>
       ${!att?'<div class="muted">ยังไม่มีไฟล์รูปสำหรับสร้าง Popup</div>':`
       <div class="popup-manager">
         <div class="popup-preview-wrap">
-          <div class="help" style="margin:0 0 8px">คลิกจุด Popup ก่อน แล้วคลิกตำแหน่งใหม่บนรูปเพื่อย้ายตำแหน่ง</div>
+          <div class="help" style="margin:0 0 8px">ลากจุด Popup ไปวางตำแหน่งที่ต้องการ หรือคลิกจุดแล้วคลิกตำแหน่งใหม่บนรูป</div>
           <div id="popupPreviewStage" class="popup-preview-stage">
             <img id="popupBaseImage" src="${esc(att.url)}" alt="${esc(att.title||att.file_name)}">
             ${items.map(r=>'<button type="button" class="popup-marker '+(String(r.id)===String(popupSelectedId)?'selected':'')+'" data-popup-id="'+r.id+'" style="left:'+Number(r.x_pct||50)+'%;top:'+Number(r.y_pct||50)+'%;width:'+Math.max(24,Number(r.size_px||40))+'px;height:'+Math.max(24,Number(r.size_px||40))+'px">'+esc(r.popup_number||1)+'</button>').join("")}
@@ -939,6 +1018,7 @@ function renderPopupManager(){
     </div>`;
   document.getElementById("popupAttachmentSelect")?.addEventListener("change",e=>{popupAttachmentId=e.target.value;popupSelectedId=null;renderPopupManager()});
   document.querySelectorAll(".popup-marker").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();popupSelectedId=b.dataset.popupId;renderPopupManager()}));
+  bindPopupMarkerDrag();
   document.getElementById("popupPreviewStage")?.addEventListener("click",async e=>{
     if(e.target.closest(".popup-marker")||!popupSelectedId)return;
     const stage=e.currentTarget,rect=stage.getBoundingClientRect();
@@ -967,13 +1047,66 @@ function popupCardHtml(r){
           <div class="field"><label>ลำดับ</label><input class="input" type="number" value="${esc(r.sort_order||0)}" onchange="savePopupPatch('${r.id}',{sort_order:Number(this.value)})"></div>
           <div class="field" style="grid-column:1/-1"><label>ชื่อ Popup</label><input class="input" value="${esc(r.label||"")}" onchange="savePopupPatch('${r.id}',{label:this.value})"></div>
         </div>
-        <div class="row" style="margin-top:8px">
+        <div class="popup-card-actions">
+          <button class="btn small secondary" type="button" onclick="event.stopPropagation();previewPopupAdmin('${r.id}')">ดูตัวอย่าง Popup</button>
+          ${r.image_url?'<button class="btn small secondary" type="button" onclick="event.stopPropagation();removePopupImage(\''+r.id+'\')">ลบรูป</button>':''}
           <button class="btn small danger" type="button" onclick="event.stopPropagation();deletePopupItem('${r.id}')">ลบ Popup</button>
         </div>
+        <div id="popupImageStatus-${r.id}" class="popup-image-status"></div>
       </div>
     </div>
   </div>`;
 }
+
+function bindPopupMarkerDrag(){
+  document.querySelectorAll(".popup-marker").forEach(marker=>{
+    marker.onpointerdown=e=>{
+      e.preventDefault();e.stopPropagation();
+      popupSelectedId=marker.dataset.popupId;
+      const stage=document.getElementById("popupPreviewStage");
+      marker.setPointerCapture?.(e.pointerId);
+      marker.classList.add("dragging");
+      const move=ev=>{
+        const rect=stage.getBoundingClientRect();
+        const x=Math.max(0,Math.min(100,(ev.clientX-rect.left)/rect.width*100));
+        const y=Math.max(0,Math.min(100,(ev.clientY-rect.top)/rect.height*100));
+        marker.style.left=x+"%";marker.style.top=y+"%";
+        marker.dataset.dragX=x.toFixed(3);marker.dataset.dragY=y.toFixed(3);
+      };
+      const up=async()=>{
+        marker.classList.remove("dragging");
+        marker.onpointermove=null;marker.onpointerup=null;marker.onpointercancel=null;
+        if(marker.dataset.dragX){
+          await savePopupPatch(marker.dataset.popupId,{x_pct:Number(marker.dataset.dragX),y_pct:Number(marker.dataset.dragY)},true);
+        } else renderPopupManager();
+      };
+      marker.onpointermove=move;marker.onpointerup=up;marker.onpointercancel=up;
+    };
+  });
+}
+window.previewPopupAdmin=id=>{
+  const r=popupRows.find(x=>String(x.id)===String(id));if(!r)return;
+  if(!r.image_url){alert("Popup นี้ยังไม่ได้แนบรูป");return}
+  const modal=document.getElementById("popupAdminPreviewModal");
+  const card=document.getElementById("popupAdminPreviewCard");
+  const img=document.getElementById("popupAdminPreviewImage");
+  const style=String(r.display_style||"style-2");
+  card.className="popup-admin-modal-card "+style;
+  img.src=r.image_url;
+  document.getElementById("popupAdminStyleLabel").textContent=(r.label||("Popup "+r.popup_number))+" • "+style;
+  modal.classList.remove("hidden");modal.setAttribute("aria-hidden","false");
+};
+window.closePopupAdminPreview=()=>{
+  const modal=document.getElementById("popupAdminPreviewModal");if(!modal)return;
+  modal.classList.add("hidden");modal.setAttribute("aria-hidden","true");
+  document.getElementById("popupAdminPreviewImage")?.removeAttribute("src");
+  const card=document.getElementById("popupAdminPreviewCard");if(card)card.className="popup-admin-modal-card";
+};
+window.removePopupImage=async id=>{
+  if(!confirm("ลบรูปที่แสดงของ Popup นี้?"))return;
+  await savePopupPatch(id,{image_url:null});
+};
+
 window.addPopupItem=async()=>{
   if(!popupAttachmentId){alert("กรุณาเลือกไฟล์รูปต้นฉบับก่อน");return}
   const used=popupRowsForCurrent().map(x=>Number(x.popup_number)||0);
@@ -986,12 +1119,12 @@ window.addPopupItem=async()=>{
     popupSelectedId=res.data?.id||null;await loadPopupManager();
   }catch(err){alert("เพิ่ม Popup ไม่สำเร็จ: "+err.message)}
 };
-window.savePopupPatch=async(id,patch)=>{
+window.savePopupPatch=async(id,patch,quiet=false)=>{
   try{
     const r=popupRows.find(x=>String(x.id)===String(id));if(!r)return;
     const row={...r,...patch};delete row.id;delete row.created_at;delete row.updated_at;
     await api({action:"save",dataset:"image_popups",id:r.id,row});
-    await loadPopupManager();
+    if(quiet){Object.assign(r,patch);renderPopupManager()}else await loadPopupManager();
   }catch(err){alert("บันทึก Popup ไม่สำเร็จ: "+err.message)}
 };
 window.deletePopupItem=async id=>{
@@ -1937,5 +2070,13 @@ async function onDisplayChange(){
 window.addEventListener("resize",scheduleReviewFit);
 validateStored();
 </script>
+
+<div id="popupAdminPreviewModal" class="popup-admin-modal hidden" aria-hidden="true" onclick="if(event.target===this)closePopupAdminPreview()">
+  <div id="popupAdminPreviewCard" class="popup-admin-modal-card">
+    <button class="popup-admin-close" type="button" onclick="closePopupAdminPreview()">×</button>
+    <img id="popupAdminPreviewImage" alt="Popup preview">
+    <div id="popupAdminStyleLabel" class="popup-admin-style-label"></div>
+  </div>
+</div>
 </body>
 </html>
