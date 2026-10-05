@@ -127,6 +127,13 @@ button,input,select{font:inherit}.app{min-height:100vh}.top{height:70px;backgrou
 <div class="card"><div class="section-title">Security</div><div class="muted">ไม่เก็บ Password/Secret บนหน้า Web • Database/Auth/Storage ของ YOTHE ต้องแยกจาก KAMU</div></div></div></section>
 </main></div></div>
 <script>
+window.addEventListener('error',function(e){
+ console.error(e.error||e.message);
+ const s=document.querySelector('.status');
+ if(s && !document.getElementById('jsErrorBadge')){
+   const b=document.createElement('span');b.id='jsErrorBadge';b.className='pill';b.textContent='Script Error';s.prepend(b);
+ }
+});
 const uploadTypes=[
  ['Stock Movement','.xlsx,.xls,.xlsm','รองรับ Append จากข้อมูลล่าสุดในขั้นเชื่อม Data'],
  ['Item Sale','.xlsx,.xls,.xlsm','ข้อมูลจะแยกตาม User เมื่อเชื่อม Cloud'],
@@ -184,11 +191,11 @@ function refreshDataStatus(){
    if(b){b.style.width='100%';b.style.background='#168a45'}
  });
 }
-function fakeImport(input){if(input.files[0])alert('รับไฟล์ '+input.files[0].name+' แล้วใน Demo Mode — ยังไม่เขียนข้อมูลจริงจนกว่าจะเชื่อมฐานข้อมูล Yothe'')}
+function fakeImport(input){if(input.files[0])alert("รับไฟล์ "+input.files[0].name+" แล้วใน Demo Mode — ยังไม่เขียนข้อมูลจริงจนกว่าจะเชื่อมฐานข้อมูล Yothe'")}
 function saveGlobal(){localStorage.setItem('yothe-global-source',document.getElementById('globalSource').value);alert('บันทึก Demo Local แล้ว: '+document.getElementById('globalSource').value)}
 function addMapping(){const b=document.getElementById('mappingBody');if(b.querySelector('.empty'))b.innerHTML='';const r=document.createElement('tr');r.innerHTML='<td contenteditable>NEW-ITEM</td><td contenteditable>Product</td><td contenteditable>-</td><td contenteditable>-</td><td contenteditable>false</td><td><select><option>BOM</option><option>Stock Movement</option><option>Item Sale</option></select></td><td contenteditable>1</td><td>'+new Date().toLocaleDateString('th-TH')+'</td><td><button class="btn" onclick="this.closest(\'tr\').remove()">ลบ</button></td>';b.appendChild(r)}
 function createGroup(){const n=prompt('ชื่อ Custom Check Group');if(!n)return;const d=document.createElement('div');d.className='group';d.innerHTML='<h4>'+n+'</h4><div class="muted">Demo Local Group</div><div class="row" style="margin-top:10px"><button class="btn">แก้ไข</button><button class="btn" onclick="this.closest(\'.group\').remove()">ลบ</button></div>';document.getElementById('groups').appendChild(d)}
-function previewCount(){alert('ยังไม่มี RM สำหรับสร้าง Count Form — Upload ข้อมูล Yothe' ก่อน')}
+function previewCount(){alert("ยังไม่มี RM สำหรับสร้าง Count Form — Upload ข้อมูล Yothe' ก่อน")}
 function downloadTemplate(){
  const csv=[
   'DATASET,REQUIRED_COLUMN,DESCRIPTION',
