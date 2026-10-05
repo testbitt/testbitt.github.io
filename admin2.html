@@ -53,7 +53,7 @@ document.getElementById('loginForm').addEventListener('submit',async e=>{
     return;
   }
   try{sessionStorage.setItem('KSL_ADMIN2_AUTH','1')}catch(_){}
-  location.replace('./app.html?restore=63&admin2=1');
+  location.replace('./app.html?restore=63&admin2=1&t='+Date.now());
 });
 </script>
 </body>
