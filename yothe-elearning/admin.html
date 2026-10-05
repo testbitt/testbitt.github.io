@@ -547,25 +547,25 @@ const DATASETS={
   delivery_schedule:{label:"รอบการสั่งสินค้า",fields:[
     ["supplier_name","ชื่อ Supplier","text"],
 
-    ["mon_order_round","จันทร์ • รอบสั่งสินค้า","text"],["mon_order_time","จันทร์ • เวลาสั่ง","text"],
+    ["mon_order_time","จันทร์ • เวลาสั่ง","text"],
     ["mon_delivery_round","จันทร์ • รอบส่งสินค้า","text"],["mon_delivery_time","จันทร์ • เวลาส่ง","text"],
 
-    ["tue_order_round","อังคาร • รอบสั่งสินค้า","text"],["tue_order_time","อังคาร • เวลาสั่ง","text"],
+    ["tue_order_time","อังคาร • เวลาสั่ง","text"],
     ["tue_delivery_round","อังคาร • รอบส่งสินค้า","text"],["tue_delivery_time","อังคาร • เวลาส่ง","text"],
 
-    ["wed_order_round","พุธ • รอบสั่งสินค้า","text"],["wed_order_time","พุธ • เวลาสั่ง","text"],
+    ["wed_order_time","พุธ • เวลาสั่ง","text"],
     ["wed_delivery_round","พุธ • รอบส่งสินค้า","text"],["wed_delivery_time","พุธ • เวลาส่ง","text"],
 
-    ["thu_order_round","พฤหัสบดี • รอบสั่งสินค้า","text"],["thu_order_time","พฤหัสบดี • เวลาสั่ง","text"],
+    ["thu_order_time","พฤหัสบดี • เวลาสั่ง","text"],
     ["thu_delivery_round","พฤหัสบดี • รอบส่งสินค้า","text"],["thu_delivery_time","พฤหัสบดี • เวลาส่ง","text"],
 
-    ["fri_order_round","ศุกร์ • รอบสั่งสินค้า","text"],["fri_order_time","ศุกร์ • เวลาสั่ง","text"],
+    ["fri_order_time","ศุกร์ • เวลาสั่ง","text"],
     ["fri_delivery_round","ศุกร์ • รอบส่งสินค้า","text"],["fri_delivery_time","ศุกร์ • เวลาส่ง","text"],
 
-    ["sat_order_round","เสาร์ • รอบสั่งสินค้า","text"],["sat_order_time","เสาร์ • เวลาสั่ง","text"],
+    ["sat_order_time","เสาร์ • เวลาสั่ง","text"],
     ["sat_delivery_round","เสาร์ • รอบส่งสินค้า","text"],["sat_delivery_time","เสาร์ • เวลาส่ง","text"],
 
-    ["sun_order_round","อาทิตย์ • รอบสั่งสินค้า","text"],["sun_order_time","อาทิตย์ • เวลาสั่ง","text"],
+    ["sun_order_time","อาทิตย์ • เวลาสั่ง","text"],
     ["sun_delivery_round","อาทิตย์ • รอบส่งสินค้า","text"],["sun_delivery_time","อาทิตย์ • เวลาส่ง","text"],
 
     ["notes","หมายเหตุ","textarea"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
@@ -1282,8 +1282,8 @@ function renderDeliveryScheduleSheets(){
       '<div class="edit-layout"><aside class="edit-sidebar"><div class="edit-sidebar-title">จัดการ Supplier</div>'+
       '<button class="btn secondary" onclick="editRow('+r.id+')">แก้ไขข้อมูล 7 วัน</button>'+
       '<button class="btn danger" onclick="deleteRow('+r.id+')">ลบ</button></aside>'+
-      '<div class="edit-content"><table class="recipe-table"><thead><tr><th>วัน</th><th>รอบสั่งสินค้า</th><th>เวลาสั่ง</th><th>รอบส่งสินค้า</th><th>เวลาส่ง</th></tr></thead><tbody>'+
-      days.map(([k,d])=>'<tr><td><strong>'+d+'</strong></td><td>'+esc(r[k+"_order_round"]||"-")+'</td><td>'+esc(r[k+"_order_time"]||"-")+'</td><td>'+esc(r[k+"_delivery_round"]||"-")+'</td><td>'+esc(r[k+"_delivery_time"]||"-")+'</td></tr>').join("")+
+      '<div class="edit-content"><table class="recipe-table"><thead><tr><th>วัน</th><th>เวลาสั่ง</th><th>รอบส่งสินค้า</th><th>เวลาส่ง</th></tr></thead><tbody>'+
+      days.map(([k,d])=>'<tr><td><strong>'+d+'</strong></td><td>'+esc(r[k+"_order_time"]||"-")+'</td><td>'+esc(r[k+"_delivery_round"]||"-")+'</td><td>'+esc(r[k+"_delivery_time"]||"-")+'</td></tr>').join("")+
       '</tbody></table>'+(r.notes?'<div class="recipe-note">'+esc(r.notes)+'</div>':'')+'</div></div></article>'
     ).join("")+
     '</div></section>'
