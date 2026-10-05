@@ -3449,44 +3449,42 @@ function installAdmin2Home(){
     location.replace('admin2.html');
     return false;
   }
-  if(document.getElementById('kslAdmin2Home'))return true;
-  const home=document.createElement('div');
+
+  // Admin2 must show only its three Media Builder menus.
+  document.documentElement.classList.add('ksl-admin2-mode');
+  [...document.body.children].forEach(el=>{
+    if(el.id!=='kslAdmin2Home'&&el.id!=='kslMediaOverlay')el.style.setProperty('display','none','important');
+  });
+
+  let home=document.getElementById('kslAdmin2Home');
+  if(home)return true;
+
+  home=document.createElement('div');
   home.id='kslAdmin2Home';
-  home.style.cssText='position:fixed;inset:0;z-index:2147482000;background:linear-gradient(135deg,#f3faf6,#eef6f1);font-family:system-ui,-apple-system,"Noto Sans Thai",Tahoma,sans-serif;color:#173e30;overflow:auto;padding:28px';
+  home.style.cssText='position:fixed;inset:0;z-index:2147482990;background:#f5faf7;font-family:system-ui,-apple-system,"Noto Sans Thai",Tahoma,sans-serif;color:#173e30;overflow:auto;padding:28px;display:flex;align-items:flex-start;justify-content:center';
   home.innerHTML=
-    '<div style="max-width:1250px;margin:0 auto">'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px">'+
-        '<div><div style="font-size:12px;font-weight:900;letter-spacing:.6px;color:#1a7453">ADMIN2 MEDIA BUILDER</div><h1 style="margin:5px 0 4px;font-size:28px;color:#174c39">🎨 สร้างสื่อการสอนสำหรับติดหน้าสาขา</h1><div style="color:#6b8178;font-size:13px">เข้าใช้งานได้เฉพาะ 3 เมนู Media Builder</div></div>'+
-        '<button id="kslAdmin2Logout" type="button" style="border:1px solid #bfdccc;background:#fff;color:#175941;border-radius:11px;padding:10px 14px;font-weight:800;cursor:pointer">ออกจากระบบ</button>'+
-      '</div>'+
-      '<div style="background:#fff;border:1px solid #cfe4d9;border-radius:22px;padding:22px;box-shadow:0 8px 24px rgba(23,76,57,.06)">'+
-        '<div style="display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:14px" id="kslAdmin2MenuGrid">'+
-          '<button data-admin2-media="drink" type="button" style="min-height:92px;border:2px solid #bfdccc;background:#fff;color:#175941;border-radius:16px;padding:14px;font-size:17px;font-weight:900;cursor:pointer">🧋 สื่อสูตรการชง<br><small style="font-size:12px;font-weight:700">เลือกหลายเมนูต่อ A4</small></button>'+
-          '<button data-admin2-media="production" type="button" style="min-height:92px;border:2px solid #bfdccc;background:#fff;color:#175941;border-radius:16px;padding:14px;font-size:17px;font-weight:900;cursor:pointer">🧑‍🍳 สื่อสูตรการผลิต<br><small style="font-size:12px;font-weight:700">Production Recipe</small></button>'+
-          '<button data-admin2-media="holding" type="button" style="min-height:92px;border:2px solid #bfdccc;background:#fff;color:#175941;border-radius:16px;padding:14px;font-size:17px;font-weight:900;cursor:pointer">⏳ สื่อตารางวันหมดอายุ<br><small style="font-size:12px;font-weight:700">Holding Time</small></button>'+
-        '</div>'+
+    '<div style="width:min(1500px,100%);margin-top:18px">'+
+      '<div id="kslAdmin2MenuGrid" style="display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:16px">'+
+        '<button data-admin2-media="drink" type="button" style="min-height:110px;border:2px solid #bfdccc;background:#fff;color:#175941;border-radius:18px;padding:18px;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 5px 0 rgba(23,107,77,.08)">🧋 สื่อสูตรการชง<br><small style="font-size:13px;font-weight:700">เลือกหลายเมนูต่อ A4</small></button>'+
+        '<button data-admin2-media="production" type="button" style="min-height:110px;border:2px solid #bfdccc;background:#fff;color:#175941;border-radius:18px;padding:18px;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 5px 0 rgba(23,107,77,.08)">🧑‍🍳 สื่อสูตรการผลิต<br><small style="font-size:13px;font-weight:700">Production Recipe</small></button>'+
+        '<button data-admin2-media="holding" type="button" style="min-height:110px;border:2px solid #bfdccc;background:#fff;color:#175941;border-radius:18px;padding:18px;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 5px 0 rgba(23,107,77,.08)">⏳ สื่อตารางวันหมดอายุ<br><small style="font-size:13px;font-weight:700">Holding Time</small></button>'+
       '</div>'+
     '</div>'+
-    '<style>@media(max-width:800px){#kslAdmin2MenuGrid{grid-template-columns:1fr!important}#kslAdmin2Home{padding:16px!important}}</style>';
+    '<style>'+
+      'html.ksl-admin2-mode body{overflow:hidden!important;background:#f5faf7!important}'+
+      'html.ksl-admin2-mode body>#kslAdmin2Home{display:flex!important}'+
+      'html.ksl-admin2-mode body>#kslMediaOverlay{display:none!important}'+
+      'html.ksl-admin2-mode body>#kslMediaOverlay.show{display:block!important;z-index:2147483000!important}'+
+      '@media(max-width:900px){#kslAdmin2MenuGrid{grid-template-columns:1fr!important}#kslAdmin2Home{padding:16px!important}}'+
+    '</style>';
   document.body.appendChild(home);
+
   home.addEventListener('click',e=>{
     const btn=e.target.closest('[data-admin2-media]');
-    if(btn)openBuilder(btn.dataset.admin2Media);
-  });
-  home.querySelector('#kslAdmin2Logout')?.addEventListener('click',()=>{
-    try{sessionStorage.removeItem('KSL_ADMIN2_AUTH')}catch(_){}
-    location.replace('admin2.html');
+    if(!btn)return;
+    openBuilder(btn.dataset.admin2Media);
   });
   return true;
-}
-
-
-function enforceCentralSyncTop(){
- const manage=document.getElementById('manage');
- const central=document.getElementById('kslCentralSyncCard');
- if(!manage||!central)return false;
- if(manage.firstElementChild!==central)manage.insertBefore(central,manage.firstChild);
- return true;
 }
 
 function installAdminCard(){
