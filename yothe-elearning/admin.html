@@ -382,6 +382,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
       <button class="tab" draggable="true" data-dataset="toppings">Topping</button>
       <button class="tab" draggable="true" data-dataset="uniforms">เครื่องแต่งกาย</button>
       <button class="tab" data-dataset="courses">บทเรียนอื่น ๆ</button>
+      <button class="tab" data-dataset="delivery_schedule">ตารางจัดส่งสินค้า</button>
       <button class="tab" data-dataset="menus">จัดการเมนู</button>
       <button class="tab" data-dataset="users">จัดการ User</button>
       <button class="tab" data-dataset="settings">Brand Story / Settings</button>
@@ -543,13 +544,18 @@ const DATASETS={
     ["thumbnail_url","รูปภาพ","imageurl"],["estimated_minutes","ระยะเวลา (นาที)","number"],["difficulty","ระดับ","text"],
     ["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
   ]},
+  delivery_schedule:{label:"ตารางจัดส่งสินค้า",fields:[
+    ["supplier_name","ชื่อ Supplier","text"],["order_round","รอบสั่งสินค้า","text"],["order_time","เวลาสั่ง","text"],
+    ["delivery_round","รอบส่งสินค้า","text"],["delivery_time","เวลาส่ง","text"],["notes","หมายเหตุ","textarea"],
+    ["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
+  ]},
   settings:{label:"Brand Story / Settings",fields:[
     ["key","Key","text"],["value","Value JSON","json"]
   ]}
 };
 let adminPin=sessionStorage.getItem("yothe_admin_pin")||"";
 const requestedEdit=new URLSearchParams(location.search).get("edit");
-let dataset=["production","drinks","expiry","toppings","uniforms","courses","settings","users","menus"].includes(requestedEdit)?requestedEdit:"production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["uniforms","production","drinks","expiry","toppings"], customMenus=[], menuEditingId=null;
+let dataset=["production","drinks","expiry","toppings","uniforms","courses","delivery_schedule","settings","users","menus"].includes(requestedEdit)?requestedEdit:"production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["uniforms","production","drinks","expiry","toppings"], customMenus=[], menuEditingId=null;
 
 async function api(payload){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,pin:adminPin})});
@@ -724,7 +730,7 @@ function syncAdminPageChrome(){
   document.getElementById("reviewLayoutPanel")?.classList.toggle("hidden",hideReview);
 
   document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers||dataset==="menus");
-  document.getElementById("attachmentPanel")?.classList.toggle("hidden",hideForUsers);
+  document.getElementById("attachmentPanel")?.classList.toggle("hidden",hideForUsers||dataset==="delivery_schedule");
 }
 document.getElementById("tabs").addEventListener("click",e=>{
   const b=e.target.closest(".tab"); if(!b)return;
