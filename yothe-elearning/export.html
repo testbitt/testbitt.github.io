@@ -228,6 +228,9 @@ th{min-height:29px;height:auto}
 .theme-50 .sheet{border:3px double #777;border-radius:8px}.theme-50 .sheet-title{background:#f7f4ee!important;color:#222!important;font-family:Georgia,serif}.theme-50 th{background:#ece8df!important;color:#222!important}.theme-50 .note{background:#faf6ea!important;color:#5d4a2f!important}
 
 
+/* Incomplete page expansion */
+.page .grid[data-count="1"]{grid-template-columns:1fr!important}
+
 /* Full-width A4 cell geometry + theme color clipping */
 .page .fit-cell{
   padding:0!important;
@@ -552,7 +555,7 @@ function pageOverflow(page){
   if(!content)return false;
   const pr=page.getBoundingClientRect(),cr=content.getBoundingClientRect();
   if(cr.right>pr.right+1||cr.bottom>pr.bottom+1)return true;
-  return [...content.querySelectorAll(".fit-cell:not(.fit-cell-empty)")].some(cell=>{
+  return [...content.querySelectorAll(".fit-cell")].some(cell=>{
     const sheet=cell.querySelector(":scope > .sheet");
     if(!sheet)return false;
     const c=cell.getBoundingClientRect(),s=sheet.getBoundingClientRect();
@@ -568,7 +571,10 @@ function setPageDensity(page){
 }
 function exportGridShape(count,orientation){
   count=Math.max(1,Math.min(Number(count)||1,20));
-  const cols=orientation==="landscape"?3:2;
+  let cols;
+  if(count===1) cols=1;
+  else if(orientation==="landscape") cols=Math.min(3,count);
+  else cols=Math.min(2,count);
   return {cols,rows:Math.ceil(count/cols)};
 }
 function resetExportSheet(sheet){
@@ -646,11 +652,12 @@ function fitExportPageContent(page){
   content.style.overflow="hidden";
 
   const allCells=[...grid.children].filter(el=>el.classList?.contains("fit-cell"));
-  const cells=allCells.filter(el=>!el.classList.contains("fit-cell-empty"));
+  const cells=allCells;
   if(!allCells.length)return true;
 
   const selected=Math.max(1,Math.min(20,Number(displayPrefs.items_per_page)||1));
-  const shape=exportGridShape(selected,displayPrefs.orientation);
+  const actualCount=Math.max(1,allCells.length);
+  const shape=exportGridShape(actualCount,displayPrefs.orientation);
   const gap=displayPrefs.orientation==="landscape"?8:10;
 
   // Use the exact allocated flex height of page-content, not auto/scroll height.
@@ -676,6 +683,7 @@ function fitExportPageContent(page){
     cell.style.overflow="hidden";
   });
 
+  grid.dataset.count=String(actualCount);
   page.dataset.gridCols=String(shape.cols);
   page.dataset.gridRows=String(shape.rows);
 
@@ -692,7 +700,7 @@ function validateExportLayout(){
     if(!content){ok=false;return}
     const cr=content.getBoundingClientRect();
     if(cr.right>pr.right+1||cr.bottom>pr.bottom+1)ok=false;
-    page.querySelectorAll(".fit-cell:not(.fit-cell-empty)").forEach(cell=>{
+    page.querySelectorAll(".fit-cell").forEach(cell=>{
       const sheet=cell.querySelector(":scope > .sheet");
       if(!sheet){ok=false;return}
       const a=cell.getBoundingClientRect(),b=sheet.getBoundingClientRect();
@@ -722,7 +730,7 @@ async function fitAllExportPages(){
 
   // One final conservative correction only for cells that still exceed a boundary.
   pages.forEach(page=>{
-    page.querySelectorAll(".fit-cell:not(.fit-cell-empty)").forEach(cell=>{
+    page.querySelectorAll(".fit-cell").forEach(cell=>{
       if(cell.dataset.fitOk!=="1")fitExportSheetInCell(cell);
     });
   });
@@ -767,13 +775,6 @@ async function packSheets(title,sheets){
       cell.appendChild(sheet);
       obj.grid.appendChild(cell);
       await waitForSheetImages(sheet);
-    }
-    // Preserve exactly the selected layout on every page. Incomplete final pages keep blank cells.
-    for(let bi=groups[pi].length;bi<perPage;bi++){
-      const blank=document.createElement("div");
-      blank.className="fit-cell fit-cell-empty";
-      blank.setAttribute("aria-hidden","true");
-      obj.grid.appendChild(blank);
     }
     await new Promise(r=>requestAnimationFrame(r));
   }
