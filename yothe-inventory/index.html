@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YOTHE Inventory Stock Checker</title>
+<style>
+:root{--red:#d72d2d;--red2:#a91515;--pale:#fff1f1;--line:#f1caca;--text:#242424;--muted:#747474;--ok:#168a45;--short:#d72d2d;--over:#e87817;--warn:#c39400;--bg:#f7f8fa}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select{font:inherit}.app{min-height:100vh}.top{height:70px;background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:center;gap:12px}.mark{width:44px;height:44px;border:4px solid var(--red);border-radius:50% 48% 46% 52%;display:grid;place-items:center;color:var(--red);font-weight:900}.brand h1{font-size:18px;margin:0}.brand small{display:block;color:var(--muted);margin-top:2px}
+.status{display:flex;align-items:center;gap:10px;font-size:12px}.pill{padding:7px 10px;border-radius:999px;background:var(--pale);color:var(--red2);border:1px solid var(--line);font-weight:700}.layout{display:grid;grid-template-columns:245px 1fr;min-height:calc(100vh - 70px)}
+.sidebar{background:#fff;border-right:1px solid #eee;padding:14px;position:sticky;top:70px;height:calc(100vh - 70px);overflow:auto}.navbtn{width:100%;display:flex;align-items:center;gap:10px;border:0;background:transparent;padding:11px 12px;border-radius:10px;text-align:left;cursor:pointer;color:#444;margin:2px 0}.navbtn:hover{background:#faf2f2}.navbtn.active{background:var(--red);color:#fff;font-weight:700}
+.main{padding:20px;min-width:0}.page{display:none}.page.active{display:block}.head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:16px}.head h2{margin:0;font-size:24px}.sub{color:var(--muted);font-size:13px;margin-top:5px}
+.grid{display:grid;gap:14px}.kpis{grid-template-columns:repeat(6,minmax(130px,1fr))}.card{background:#fff;border:1px solid #eee;border-radius:14px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.03)}.card.red{border-color:var(--line)}.kpi b{font-size:24px;display:block;margin-top:7px}.kpi span{font-size:12px;color:var(--muted)}
+.empty{border:1px dashed #ddd;background:#fcfcfc;border-radius:12px;padding:30px;text-align:center;color:var(--muted)}.empty strong{display:block;color:#555;margin-bottom:5px}
+.section-title{font-weight:800;margin:4px 0 10px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.btn{border:1px solid var(--line);background:#fff;color:var(--red2);padding:9px 12px;border-radius:9px;cursor:pointer;font-weight:700}.btn.primary{background:var(--red);border-color:var(--red);color:white}.btn.ghost{color:#555;border-color:#ddd}.btn:disabled{opacity:.45;cursor:not-allowed}
+.uploads{grid-template-columns:repeat(2,minmax(260px,1fr))}.upload{position:relative}.upload input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}.drop{padding:22px;border:1.5px dashed var(--line);border-radius:12px;background:#fffafa;text-align:center}.meta{font-size:12px;color:var(--muted);margin-top:10px}.progress{height:7px;background:#eee;border-radius:99px;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;background:var(--red);width:0}
+.filters{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px}.field label{font-size:12px;color:#666;display:block;margin-bottom:5px}.field select,.field input{width:100%;padding:9px 10px;border:1px solid #ddd;border-radius:9px;background:#fff}
+.tablewrap{overflow:auto;border:1px solid #eee;border-radius:12px;background:#fff}.tbl{width:100%;border-collapse:collapse;min-width:900px}.tbl th,.tbl td{padding:10px;border-bottom:1px solid #eee;text-align:left;font-size:12px;white-space:nowrap}.tbl th{background:#fff4f4;color:#7c1b1b;position:sticky;top:0}.tag{display:inline-block;padding:4px 8px;border-radius:99px;font-size:11px;font-weight:700}.tag.ok{background:#e7f7ed;color:var(--ok)}.tag.short{background:#ffe8e8;color:var(--short)}.tag.over{background:#fff0df;color:var(--over)}.tag.warn{background:#fff8d8;color:#8b6c00}
+.two{grid-template-columns:1fr 1fr}.three{grid-template-columns:repeat(3,1fr)}.notice{padding:12px 14px;background:#fff8e3;border:1px solid #f2dd98;border-radius:10px;color:#765d08;font-size:13px}.oknote{background:#edf9f1;border-color:#bfe4cb;color:#146d36}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}.tab{padding:8px 11px;border:1px solid #ddd;border-radius:9px;background:#fff;cursor:pointer}.tab.active{background:#fff0f0;border-color:var(--red);color:var(--red);font-weight:700}
+.group-list{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.group{border:1px solid #eee;border-radius:12px;padding:14px;background:white}.group h4{margin:0 0 5px}.right{margin-left:auto}.login{display:none;min-height:100vh;background:linear-gradient(135deg,#fff 0%,#fff2f2 100%);align-items:center;justify-content:center;padding:20px}.login.active{display:flex}.loginbox{width:min(430px,100%);background:white;border:1px solid var(--line);border-radius:20px;padding:28px;box-shadow:0 18px 50px rgba(145,20,20,.12)}.bigmark{width:90px;height:90px;margin:auto;border:7px solid var(--red);border-radius:50%;display:grid;place-items:center;color:var(--red);font-size:28px;font-weight:900}.loginbox h1{text-align:center;margin:14px 0 4px}.loginbox p{text-align:center;color:#777;font-size:13px}.loginbox input{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;margin:6px 0}.loginbox .btn{width:100%;margin-top:8px}.loginbox .notice{margin-top:12px}.muted{color:var(--muted);font-size:12px}
+@media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.filters{grid-template-columns:repeat(3,1fr)}}@media(max-width:760px){.layout{grid-template-columns:1fr}.sidebar{position:static;height:auto;display:flex;overflow:auto;border-right:0;border-bottom:1px solid #eee;padding:8px}.navbtn{min-width:max-content;width:auto}.brand small{display:none}.main{padding:12px}.kpis{grid-template-columns:repeat(2,1fr)}.uploads,.two,.three,.group-list{grid-template-columns:1fr}.filters{grid-template-columns:1fr 1fr}.top{padding:0 10px}.status .pill:nth-child(2){display:none}}
+</style>
+</head>
+<body>
+<div id="login" class="login active">
+  <div class="loginbox">
+    <div class="bigmark">Y</div>
+    <h1>YOTHE Inventory Stock Checker</h1>
+    <p>Audit Stock • BOM Usage • Actual Count • Inventory Reconciliation</p>
+    <input id="email" type="email" placeholder="Email / Username">
+    <input id="password" type="password" placeholder="Password">
+    <button class="btn primary" onclick="demoLogin()">เข้าสู่ระบบ Demo</button>
+    <div class="notice">Demo Mode: ยังไม่ได้เชื่อม Cloud / Supabase และยังไม่มีข้อมูล YOTHE จริง</div>
+  </div>
+</div>
+
+<div id="app" class="app" style="display:none">
+<header class="top">
+ <div class="brand"><div class="mark">Y</div><div><h1>YOTHE Inventory Stock Checker</h1><small>Audit Stock • BOM Usage • Actual Count • Inventory Reconciliation</small></div></div>
+ <div class="status"><span class="pill">ยังไม่ได้อัปโหลดข้อมูล YOTHE</span><span class="pill">Demo / Local</span><button class="btn ghost" onclick="logout()">ออกจากระบบ</button></div>
+</header>
+<div class="layout">
+<aside class="sidebar" id="nav">
+ <button class="navbtn active" data-page="dashboard">▦ Dashboard</button>
+ <button class="navbtn" data-page="upload">⇧ Upload Database</button>
+ <button class="navbtn" data-page="mapping">⌘ Master / Mapping</button>
+ <button class="navbtn" data-page="audit">✓ Inventory Audit</button>
+ <button class="navbtn" data-page="custom">☷ Custom Check</button>
+ <button class="navbtn" data-page="count">▤ Count Form</button>
+ <button class="navbtn" data-page="importcount">⇩ Import Count Result</button>
+ <button class="navbtn" data-page="history">◴ History</button>
+ <button class="navbtn" data-page="recon">↔ Reconciliation</button>
+ <button class="navbtn" data-page="export">⇱ Export Center</button>
+ <button class="navbtn" data-page="admin">⚙ Admin / Settings</button>
+</aside>
+<main class="main">
+<section id="dashboard" class="page active">
+ <div class="head"><div><h2>Dashboard / Summary</h2><div class="sub">ภาพรวมสถานะ Inventory ของ YOTHE</div></div></div>
+ <div class="grid kpis">
+  <div class="card kpi"><span>RM ทั้งหมด</span><b>0</b></div><div class="card kpi"><span>Usage Source กำหนดแล้ว</span><b>0</b></div>
+  <div class="card kpi"><span>Short</span><b>0</b></div><div class="card kpi"><span>Over</span><b>0</b></div>
+  <div class="card kpi"><span>Need Conversion</span><b>0</b></div><div class="card kpi"><span>Variance Cost</span><b>฿0</b></div>
+ </div>
+ <div class="section-title" style="margin-top:18px">Cup Usage</div>
+ <div class="grid three"><div class="card">BOM Usage<div class="empty">0 — รอข้อมูล BOM</div></div><div class="card">Stock Movement<div class="empty">0 — รอ Stock Movement</div></div><div class="card">Item Sale<div class="empty">0 — รอ Item Sale</div></div></div>
+ <div class="card" style="margin-top:14px"><div class="section-title">Summary</div><div class="empty"><strong>ยังไม่มีข้อมูลสำหรับสรุป</strong>Summary by Cup Type • Branch • Average / Day • Total • Item Sale Day Count</div></div>
+</section>
+
+<section id="upload" class="page">
+ <div class="head"><div><h2>Upload Database</h2><div class="sub">สร้างระบบไว้ก่อน และนำไฟล์จริงเข้าภายหลัง</div></div><button class="btn" onclick="downloadTemplate()">Download Required Columns Template</button></div>
+ <div class="notice">ระบบนี้ยังไม่ Hard-code Product Code / RM Code / BOM ใด ๆ จาก KAMU โดย Mapping จะสร้างจากไฟล์ YOTHE จริงเท่านั้น</div>
+ <div class="grid uploads" style="margin-top:14px" id="uploads"></div>
+</section>
+
+<section id="mapping" class="page">
+ <div class="head"><div><h2>Master / Mapping</h2><div class="sub">แก้ไข Mapping ได้และเตรียม Auto Save เมื่อเชื่อม Cloud</div></div><button class="btn primary" onclick="addMapping()">+ เพิ่ม Mapping</button></div>
+ <div class="tabs"><button class="tab active">Item → Product</button><button class="tab">Item → Cup Type</button><button class="tab">Item → RM</button><button class="tab">Count as Cup</button><button class="tab">Usage Source</button><button class="tab">Unit Conversion</button></div>
+ <div class="tablewrap"><table class="tbl"><thead><tr><th>Item Code</th><th>Product</th><th>Cup Type</th><th>RM Code</th><th>Count as Cup</th><th>Usage Source</th><th>Version</th><th>Modified</th><th>Action</th></tr></thead><tbody id="mappingBody"><tr><td colspan="9"><div class="empty">ยังไม่มี Mapping — รอไฟล์ YOTHE</div></td></tr></tbody></table></div>
+</section>
+
+<section id="audit" class="page">
+ <div class="head"><div><h2>Inventory Audit</h2><div class="sub">Usage Source: BOM / Stock Movement / Item Sale</div></div><div class="row"><select id="globalSource"><option>BOM</option><option>Stock Movement</option><option>Item Sale</option></select><button class="btn primary" onclick="saveGlobal()">บันทึก Usage Source กลาง</button></div></div>
+ <div class="card"><div class="filters">
+   <div class="field"><label>Branch</label><select><option>ทั้งหมด</option></select></div>
+   <div class="field"><label>Item Sale Date</label><input type="date"></div>
+   <div class="field"><label>RM</label><select><option>ทั้งหมด</option></select></div>
+   <div class="field"><label>Status</label><select><option>ทั้งหมด</option><option>OK</option><option>Short</option><option>Over</option><option>Warning</option></select></div>
+   <div class="field"><label>Custom Check</label><select><option>Standard</option></select></div>
+   <div class="field"><label>Usage Source</label><select><option>BOM</option><option>Stock Movement</option><option>Item Sale</option></select></div>
+ </div></div>
+ <div class="tablewrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>RM Code</th><th>Description</th><th>Unit</th><th>Beginning / Stock Ref</th><th>Usage</th><th>Actual Count</th><th>Count Diff</th><th>Diff %</th><th>Std.Cost</th><th>Variance Cost</th><th>Status</th></tr></thead><tbody><tr><td colspan="11"><div class="empty">ยังไม่มีข้อมูล Inventory Audit — กรุณา Upload ฐานข้อมูล YOTHE ก่อน</div></td></tr></tbody></table></div>
+</section>
+
+<section id="custom" class="page">
+ <div class="head"><div><h2>Custom Check</h2><div class="sub">สร้างกลุ่ม RM สำหรับตรวจนับหลายรูปแบบ</div></div><button class="btn primary" onclick="createGroup()">+ Create Group</button></div>
+ <div class="group-list" id="groups"><div class="group"><h4>Standard <span class="tag warn">System</span></h4><div class="muted">RM ทั้งหมดจาก Stock Movement • Auto Sync • ห้ามลบ/เปลี่ยนชื่อ</div><div class="empty" style="margin-top:10px;padding:16px">0 RM — รอ Upload</div></div></div>
+</section>
+
+<section id="count" class="page">
+ <div class="head"><div><h2>สร้างแบบฟอร์มตรวจนับ</h2><div class="sub">สร้างจาก Branch • Date • Custom Check • RM Filter</div></div></div>
+ <div class="card"><div class="filters"><div class="field"><label>Branch</label><select><option>เลือก Branch</option></select></div><div class="field"><label>Stock Date</label><input type="date"></div><div class="field"><label>Item Sale Date</label><input type="date"></div><div class="field"><label>Custom Check</label><select><option>Standard</option></select></div><div class="field"><label>RM Filter</label><select><option>ทั้งหมด</option></select></div><div class="field"><label>&nbsp;</label><button class="btn primary" style="width:100%" onclick="previewCount()">Preview</button></div></div></div>
+ <div class="card" style="margin-top:12px"><div class="row"><b>Count Form Preview</b><span class="right"></span><button class="btn" disabled>Export Excel</button><button class="btn" disabled>Export PDF</button></div><div class="empty" style="margin-top:10px">ยังไม่มีรายการตรวจนับ • แบบฟอร์มจะไม่แสดง Theory</div></div>
+</section>
+
+<section id="importcount" class="page">
+ <div class="head"><div><h2>Import Count Result</h2><div class="sub">รองรับ Excel / CSV</div></div></div>
+ <div class="card"><div class="upload"><div class="drop"><b>ลากไฟล์ Count Result มาวาง หรือคลิกเพื่อเลือก</b><div class="muted">ตรวจ Branch Code • Stock Date • RM Code • จำนวนตรวจนับ</div></div><input type="file" accept=".xlsx,.xls,.xlsm,.csv" onchange="fakeImport(this)"></div></div>
+ <div class="notice" style="margin-top:12px">กติกา: ช่องว่างไม่ทับข้อมูลเดิม • ค่า 0 Import ได้ • แจ้ง RM ที่ไม่พบ • แจ้งค่าที่ไม่ถูกต้อง</div>
+</section>
+
+<section id="history" class="page"><div class="head"><div><h2>History</h2><div class="sub">Snapshot การตรวจย้อนหลัง แยกตาม User</div></div><button class="btn primary">+ เพิ่ม Snapshot</button></div>
+<div class="tablewrap"><table class="tbl"><thead><tr><th>Branch</th><th>Date</th><th>Custom Check</th><th>Actual Count</th><th>Diff</th><th>Diff %</th><th>Variance Cost</th><th>Status</th><th>Inspector</th><th>Created / Updated</th><th>Action</th></tr></thead><tbody><tr><td colspan="11"><div class="empty">ยังไม่มี History</div></td></tr></tbody></table></div></section>
+
+<section id="recon" class="page"><div class="head"><div><h2>Reconciliation</h2><div class="sub">ตรวจความครบถ้วนของ Data / BOM / Mapping</div></div></div>
+<div class="grid three"><div class="card">Item ไม่มี Recipe<b style="display:block;font-size:24px;margin-top:8px">0</b></div><div class="card">RM ใน BOM ไม่พบใน Stock<b style="display:block;font-size:24px;margin-top:8px">0</b></div><div class="card">Need Unit Conversion<b style="display:block;font-size:24px;margin-top:8px">0</b></div><div class="card">Usage Variance<b style="display:block;font-size:24px;margin-top:8px">0</b></div><div class="card">Mapping ไม่ครบ<b style="display:block;font-size:24px;margin-top:8px">0</b></div><div class="card">BOM / WIP แตกสูตรไม่ได้<b style="display:block;font-size:24px;margin-top:8px">0</b></div></div>
+<div class="empty" style="margin-top:14px">รอข้อมูล YOTHE เพื่อทำ Reconciliation</div></section>
+
+<section id="export" class="page"><div class="head"><div><h2>Export Center</h2><div class="sub">YOTHE_&lt;Report&gt;_&lt;Branch&gt;_&lt;Date&gt;_&lt;CustomCheck&gt;</div></div></div>
+<div class="grid two"><div class="card"><div class="section-title">Inventory Audit</div><div class="row"><button class="btn" disabled>CSV</button><button class="btn" disabled>Excel</button><button class="btn" disabled>PDF</button><button class="btn" disabled>PowerPoint</button></div><div class="muted" style="margin-top:10px">เปิดใช้งานเมื่อมีข้อมูล Audit</div></div><div class="card"><div class="section-title">Count Form</div><div class="row"><button class="btn" disabled>Excel</button><button class="btn" disabled>PDF</button></div><div class="muted" style="margin-top:10px">เปิดใช้งานเมื่อสร้าง Count Form</div></div></div></section>
+
+<section id="admin" class="page"><div class="head"><div><h2>Admin / Settings</h2><div class="sub">สถานะ Backend และความพร้อมของ Schema</div></div></div>
+<div class="grid two"><div class="card"><div class="section-title">Backend Connection</div><div class="notice">Supabase: ยังไม่ได้เชื่อมต่อ</div><p class="muted">Phase ปัจจุบันใช้ Local Demo Storage เฉพาะ UI preferences / demo edits</p></div>
+<div class="card"><div class="section-title">Schema Readiness</div><div class="oknote notice">พร้อมสำหรับ User • Branch • StockMovement • ItemSale • BOM • BOMVersion • UnitConversion • Mapping • AuditRow • CountResult • CustomCheckGroup • AuditHistory</div></div>
+<div class="card"><div class="section-title">User Management</div><div class="empty">พร้อมเชื่อม Auth หลังสร้าง Supabase Project ของ YOTHE</div></div>
+<div class="card"><div class="section-title">Security</div><div class="muted">ไม่เก็บ Password/Secret บนหน้า Web • Database/Auth/Storage ของ YOTHE ต้องแยกจาก KAMU</div></div></div></section>
+</main></div></div>
+<script>
+const uploadTypes=[
+ ['Stock Movement','.xlsx,.xls,.xlsm','รองรับ Append จากข้อมูลล่าสุดในขั้นเชื่อม Data'],
+ ['Item Sale','.xlsx,.xls,.xlsm','ข้อมูลจะแยกตาม User เมื่อเชื่อม Cloud'],
+ ['BOM / Bomb','.xlsx,.xls,.xlsm','รองรับ Version / Modified Date / WIP'],
+ ['Unit Conversion','.xlsx,.xls,.xlsm','Master กลางตามสิทธิ์']
+];
+function initUploads(){const box=document.getElementById('uploads');box.innerHTML=uploadTypes.map((x,i)=>`<div class="card"><div class="section-title">${x[0]}</div><div class="upload"><div class="drop"><b>เลือกไฟล์ ${x[0]}</b><div class="muted">รองรับ ${x[1]}</div></div><input type="file" accept="${x[1]}" onchange="selectUpload(this,${i})"></div><div id="meta${i}" class="meta">ยังไม่ได้เลือกไฟล์ • ${x[2]}</div><div class="progress"><i id="bar${i}"></i></div></div>`).join('')}
+function demoLogin(){document.getElementById('login').classList.remove('active');document.getElementById('app').style.display='block';localStorage.setItem('yothe-demo-login','1')}
+function logout(){localStorage.removeItem('yothe-demo-login');location.reload()}
+document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.navbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(b.dataset.page).classList.add('active')});
+function selectUpload(input,i){const f=input.files[0];if(!f)return;document.getElementById('meta'+i).textContent='เลือกไฟล์แล้ว: '+f.name+' • '+Math.round(f.size/1024).toLocaleString()+' KB • รอเชื่อม Parser จริง';document.getElementById('bar'+i).style.width='35%'}
+function fakeImport(input){if(input.files[0])alert('รับไฟล์ '+input.files[0].name+' แล้วใน Demo Mode — ยังไม่เขียนข้อมูลจริงจนกว่าจะเชื่อมฐานข้อมูล YOTHE')}
+function saveGlobal(){localStorage.setItem('yothe-global-source',document.getElementById('globalSource').value);alert('บันทึก Demo Local แล้ว: '+document.getElementById('globalSource').value)}
+function addMapping(){const b=document.getElementById('mappingBody');if(b.querySelector('.empty'))b.innerHTML='';const r=document.createElement('tr');r.innerHTML='<td contenteditable>NEW-ITEM</td><td contenteditable>Product</td><td contenteditable>-</td><td contenteditable>-</td><td contenteditable>false</td><td><select><option>BOM</option><option>Stock Movement</option><option>Item Sale</option></select></td><td contenteditable>1</td><td>'+new Date().toLocaleDateString('th-TH')+'</td><td><button class="btn" onclick="this.closest(\'tr\').remove()">ลบ</button></td>';b.appendChild(r)}
+function createGroup(){const n=prompt('ชื่อ Custom Check Group');if(!n)return;const d=document.createElement('div');d.className='group';d.innerHTML='<h4>'+n+'</h4><div class="muted">Demo Local Group</div><div class="row" style="margin-top:10px"><button class="btn">แก้ไข</button><button class="btn" onclick="this.closest(\'.group\').remove()">ลบ</button></div>';document.getElementById('groups').appendChild(d)}
+function previewCount(){alert('ยังไม่มี RM สำหรับสร้าง Count Form — Upload ข้อมูล YOTHE ก่อน')}
+function downloadTemplate(){const csv='DATASET,REQUIRED_COLUMN,DESCRIPTION\nStock Movement,,Configure after first YOTHE file\nItem Sale,,Configure after first YOTHE file\nBOM,,Configure after first YOTHE file\nUnit Conversion,,Configure after first YOTHE file';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='YOTHE_Upload_Column_Template.csv';a.click();URL.revokeObjectURL(a.href)}
+initUploads();const src=localStorage.getItem('yothe-global-source');if(src)document.getElementById('globalSource').value=src;if(localStorage.getItem('yothe-demo-login'))demoLogin();
+</script>
+</body></html>
