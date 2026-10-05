@@ -476,6 +476,145 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .popup-public-preview-stage .popup-marker{z-index:3}
 .popup-public-close{position:absolute;right:10px;top:10px;z-index:6;width:38px;height:38px;border:0;border-radius:50%;background:#fff;color:var(--red);font-weight:900;font-size:22px}
 @media(max-width:760px){.popup-source-upload{grid-template-columns:1fr}.popup-toolbar{align-items:stretch}}
+
+/* Popup manager layout v2 — no overlap */
+.popup-manager-shell{display:grid;gap:18px;min-width:0}
+.popup-toolbar{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:12px!important;
+  align-items:stretch!important;
+  padding:14px!important;
+  overflow:hidden;
+}
+.popup-toolbar-main{
+  display:grid;
+  grid-template-columns:minmax(260px,1fr) auto auto;
+  gap:10px;
+  align-items:end;
+  min-width:0;
+}
+.popup-toolbar-main .field{margin:0!important;min-width:0!important}
+.popup-toolbar-main .btn{white-space:nowrap;align-self:end}
+.popup-summary{
+  display:block;
+  width:100%;
+  padding:9px 11px;
+  border-radius:10px;
+  background:#fff;
+  border:1px solid #f2ded9;
+  color:#7f1d1d;
+  overflow-wrap:anywhere;
+}
+.popup-source-upload{
+  display:grid!important;
+  grid-template-columns:minmax(180px,.7fr) minmax(240px,1.25fr) auto!important;
+  gap:10px!important;
+  align-items:end!important;
+  width:100%;
+  min-width:0;
+  padding-top:12px;
+  border-top:1px solid #f0ddd7;
+}
+.popup-source-upload .field{margin:0!important;min-width:0!important}
+.popup-source-upload .input{min-width:0;max-width:100%}
+.popup-source-upload .btn{white-space:nowrap}
+.popup-manager{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.2fr) minmax(360px,.8fr)!important;
+  gap:18px!important;
+  align-items:start;
+  min-width:0;
+}
+.popup-preview-wrap{
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+}
+.popup-preview-stage{
+  display:block!important;
+  width:fit-content;
+  max-width:100%;
+  margin:0 auto;
+}
+.popup-preview-stage img{
+  display:block;
+  width:auto;
+  max-width:100%!important;
+  height:auto;
+  max-height:70vh!important;
+  object-fit:contain;
+}
+.popup-list{
+  display:grid;
+  gap:12px;
+  min-width:0;
+  max-width:100%;
+}
+.popup-card{
+  min-width:0;
+  overflow:hidden;
+}
+.popup-card-grid{
+  display:grid!important;
+  grid-template-columns:96px minmax(0,1fr)!important;
+  gap:12px!important;
+  align-items:start;
+  min-width:0;
+}
+.popup-card-grid>div{min-width:0}
+.popup-card-thumb{
+  width:96px!important;
+  height:96px!important;
+  max-width:100%;
+}
+.popup-controls{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:9px!important;
+  min-width:0;
+}
+.popup-controls .field{
+  min-width:0!important;
+  width:100%;
+  margin:0!important;
+}
+.popup-controls .input,
+.popup-controls select{
+  min-width:0!important;
+  max-width:100%!important;
+  width:100%!important;
+}
+.popup-card-actions{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px!important;
+  width:100%;
+}
+.popup-card-actions .btn{
+  min-width:0;
+  width:100%;
+  white-space:normal;
+}
+.popup-card-actions .danger{grid-column:1/-1}
+@media(max-width:1080px){
+  .popup-manager{grid-template-columns:1fr!important}
+  .popup-preview-wrap{position:static!important}
+  .popup-toolbar-main{grid-template-columns:minmax(0,1fr) auto}
+  .popup-toolbar-main .popup-public-action{grid-column:1/-1;width:100%}
+}
+@media(max-width:760px){
+  .popup-toolbar-main{grid-template-columns:1fr!important}
+  .popup-toolbar-main .btn{width:100%}
+  .popup-source-upload{grid-template-columns:1fr!important}
+  .popup-source-upload .btn{width:100%}
+  .popup-card-grid{grid-template-columns:1fr!important}
+  .popup-card-thumb{width:120px!important;height:120px!important}
+  .popup-controls{grid-template-columns:1fr!important}
+  .popup-controls .field[style*="grid-column"]{grid-column:auto!important}
+  .popup-card-actions{grid-template-columns:1fr!important}
+  .popup-card-actions .danger{grid-column:auto}
+}
 </style>
 </head>
 <body>
@@ -1011,12 +1150,14 @@ function renderPopupManager(){
   wrap.innerHTML=`
     <div class="panel popup-manager-shell" style="box-shadow:none;border:0;padding:0">
       <div class="popup-toolbar">
-        <div class="field" style="margin:0;min-width:320px;flex:1"><label>เลือกไฟล์รูปต้นฉบับ</label>
-          <select id="popupAttachmentSelect" class="input">${popupAttachments.map(a=>'<option value="'+a.id+'" '+(String(a.id)===String(popupAttachmentId)?'selected':'')+'>'+esc(a.title||a.file_name)+'</option>').join("")}</select>
+        <div class="popup-toolbar-main">
+          <div class="field"><label>เลือกไฟล์รูปต้นฉบับ</label>
+            <select id="popupAttachmentSelect" class="input">${popupAttachments.map(a=>'<option value="'+a.id+'" '+(String(a.id)===String(popupAttachmentId)?'selected':'')+'>'+esc(a.title||a.file_name)+'</option>').join("")}</select>
+          </div>
+          <button class="btn primary" type="button" onclick="addPopupItem()">+ เพิ่ม Popup</button>
+          <button class="btn secondary popup-public-action" type="button" onclick="previewCurrentPopupBoard()">Preview แบบ Public</button>
         </div>
-        <button class="btn primary" type="button" onclick="addPopupItem()">+ เพิ่ม Popup</button>
-        <button class="btn secondary" type="button" onclick="previewCurrentPopupBoard()">Preview แบบ Public</button>
-        <div class="popup-summary">แก้ไขหลายจุดได้ในภาพเดียว</div>
+        <div class="popup-summary">เลือกไฟล์ต้นฉบับ → เพิ่ม Popup → ลากจุดบนภาพ → แนบรูปและเลือกรูปแบบการแสดงผล</div>
         <div class="popup-source-upload">
           <div class="field"><label>เมนูปลายทาง</label><select id="popupSourceSection" class="input"></select></div>
           <div class="field"><label>Upload รูปต้นฉบับใหม่</label><input id="popupSourceFile" class="input" type="file" accept="image/jpeg,image/png,image/webp"></div>
@@ -1026,13 +1167,15 @@ function renderPopupManager(){
       ${!att?'<div class="muted">ยังไม่มีไฟล์รูปสำหรับสร้าง Popup</div>':`
       <div class="popup-manager">
         <div class="popup-preview-wrap">
-          <div class="help" style="margin:0 0 8px">ลากจุด Popup ไปวางตำแหน่งที่ต้องการ หรือคลิกจุดแล้วคลิกตำแหน่งใหม่บนรูป</div>
+          <div style="font-weight:900;font-size:18px;margin:0 0 4px">ตำแหน่ง Popup บนรูป</div>
+          <div class="help" style="margin:0 0 10px">ลากจุด Popup ไปวางตำแหน่งที่ต้องการ หรือคลิกจุดแล้วคลิกตำแหน่งใหม่บนรูป</div>
           <div id="popupPreviewStage" class="popup-preview-stage">
             <img id="popupBaseImage" src="${esc(att.url)}" alt="${esc(att.title||att.file_name)}">
             ${items.map(r=>'<button type="button" class="popup-marker '+(String(r.id)===String(popupSelectedId)?'selected':'')+'" data-popup-id="'+r.id+'" style="left:'+Number(r.x_pct||50)+'%;top:'+Number(r.y_pct||50)+'%;width:'+Math.max(24,Number(r.size_px||40))+'px;height:'+Math.max(24,Number(r.size_px||40))+'px">'+esc(r.popup_number||1)+'</button>').join("")}
           </div>
         </div>
         <div class="popup-list">
+          <div style="font-weight:900;font-size:18px">ตั้งค่า Popup</div>
           ${items.length?items.map(r=>popupCardHtml(r)).join(""):'<div class="muted">ยังไม่มี Popup ในรูปนี้ กด “+ เพิ่ม Popup”</div>'}
         </div>
       </div>`}
