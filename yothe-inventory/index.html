@@ -15,7 +15,7 @@ button,input,select{font:inherit}.app{min-height:100vh}.top{height:70px;backgrou
 .grid{display:grid;gap:14px}.kpis{grid-template-columns:repeat(6,minmax(130px,1fr))}.card{background:#fff;border:1px solid #eee;border-radius:14px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.03)}.card.red{border-color:var(--line)}.kpi b{font-size:24px;display:block;margin-top:7px}.kpi span{font-size:12px;color:var(--muted)}
 .empty{border:1px dashed #ddd;background:#fcfcfc;border-radius:12px;padding:30px;text-align:center;color:var(--muted)}.empty strong{display:block;color:#555;margin-bottom:5px}
 .section-title{font-weight:800;margin:4px 0 10px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.btn{border:1px solid var(--line);background:#fff;color:var(--red2);padding:9px 12px;border-radius:9px;cursor:pointer;font-weight:700}.btn.primary{background:var(--red);border-color:var(--red);color:white}.btn.ghost{color:#555;border-color:#ddd}.btn:disabled{opacity:.45;cursor:not-allowed}
-.uploads{grid-template-columns:repeat(2,minmax(260px,1fr))}.upload{position:relative}.upload input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2}.drop{padding:22px;border:1.5px dashed var(--line);border-radius:12px;background:#fffafa;text-align:center}.meta{font-size:12px;color:var(--muted);margin-top:10px}.progress{height:7px;background:#eee;border-radius:99px;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;background:var(--red);width:0}
+.uploads{grid-template-columns:repeat(2,minmax(260px,1fr))}.upload{position:relative}.upload input[type=file]{display:block;width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer}.drop{padding:16px;border:1.5px dashed var(--line);border-radius:12px;background:#fffafa;text-align:center;margin-bottom:8px}.meta{font-size:12px;color:var(--muted);margin-top:10px}.progress{height:7px;background:#eee;border-radius:99px;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;background:var(--red);width:0}
 .filters{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px}.field label{font-size:12px;color:#666;display:block;margin-bottom:5px}.field select,.field input{width:100%;padding:9px 10px;border:1px solid #ddd;border-radius:9px;background:#fff}
 .tablewrap{overflow:auto;border:1px solid #eee;border-radius:12px;background:#fff}.tbl{width:100%;border-collapse:collapse;min-width:900px}.tbl th,.tbl td{padding:10px;border-bottom:1px solid #eee;text-align:left;font-size:12px;white-space:nowrap}.tbl th{background:#fff4f4;color:#7c1b1b;position:sticky;top:0}.tag{display:inline-block;padding:4px 8px;border-radius:99px;font-size:11px;font-weight:700}.tag.ok{background:#e7f7ed;color:var(--ok)}.tag.short{background:#ffe8e8;color:var(--short)}.tag.over{background:#fff0df;color:var(--over)}.tag.warn{background:#fff8d8;color:#8b6c00}
 .two{grid-template-columns:1fr 1fr}.three{grid-template-columns:repeat(3,1fr)}.notice{padding:12px 14px;background:#fff8e3;border:1px solid #f2dd98;border-radius:10px;color:#765d08;font-size:13px}.oknote{background:#edf9f1;border-color:#bfe4cb;color:#146d36}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}.tab{padding:8px 11px;border:1px solid #ddd;border-radius:9px;background:#fff;cursor:pointer}.tab.active{background:#fff0f0;border-color:var(--red);color:var(--red);font-weight:700}
@@ -123,7 +123,7 @@ window.addEventListener('error',function(e){
  }
 });
 
-const DB_NAME='yothe-inventory-db', DB_STORE='datasets';
+const DB_NAME='yothe-inventory-db', DB_STORE='datasets'; window.yotheData=window.yotheData||{};
 function openDB(){
  return new Promise((resolve,reject)=>{
   const req=indexedDB.open(DB_NAME,1);
@@ -132,30 +132,34 @@ function openDB(){
  });
 }
 async function saveDataset(key,value){
+ window.yotheData[key]=value;
+ try{localStorage.setItem(key,JSON.stringify(value))}catch(e){console.warn('localStorage save failed',e)}
  try{
   const db=await openDB();
   await new Promise((resolve,reject)=>{
    const tx=db.transaction(DB_STORE,'readwrite');
    tx.objectStore(DB_STORE).put(value,key);
-   tx.oncomplete=resolve; tx.onerror=()=>reject(tx.error);
+   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
   });
-  return true;
- }catch(e){
-  console.error('IndexedDB save failed',e);
-  try{localStorage.setItem(key,JSON.stringify(value));return true}catch(e2){throw e2}
- }
+ }catch(e){console.warn('IndexedDB save failed',e)}
+ return true;
 }
 async function loadDataset(key){
+ if(window.yotheData[key])return window.yotheData[key];
+ try{
+  const raw=localStorage.getItem(key);
+  if(raw){const v=JSON.parse(raw);window.yotheData[key]=v;return v}
+ }catch(e){console.warn('localStorage read failed',e)}
  try{
   const db=await openDB();
   const v=await new Promise((resolve,reject)=>{
    const tx=db.transaction(DB_STORE,'readonly');
    const req=tx.objectStore(DB_STORE).get(key);
-   req.onsuccess=()=>resolve(req.result||null); req.onerror=()=>reject(req.error);
+   req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error);
   });
-  if(v)return v;
+  if(v){window.yotheData[key]=v;return v}
  }catch(e){console.warn('IndexedDB read failed',e)}
- try{return JSON.parse(localStorage.getItem(key)||'null')}catch(e){return null}
+ return null;
 }
 function esc(v){
  return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -210,6 +214,29 @@ function renderBomMapping(bom,conv){
   body.innerHTML=rows.map(r=>'<tr><td>'+esc(r.item)+'</td><td>'+esc(r.product)+'</td><td>'+esc(r.cup)+'</td><td>'+esc(r.rm)+'</td><td>'+esc(r.count)+'</td><td>'+esc(r.source)+'</td><td>'+esc(r.version)+'</td><td>'+esc(r.modified)+'</td><td><span class="tag ok">จากไฟล์</span></td></tr>').join('');
  }
 }
+
+function applyDatasetToUI(i,p){
+ if(!p)return;
+ const rows=Object.values(p.sheets||{}).reduce((a,x)=>a+(Array.isArray(x)?x.length:0),0);
+ const m=document.getElementById('meta'+i),b=document.getElementById('bar'+i);
+ if(m)m.textContent='✓ '+p.fileName+' • '+rows.toLocaleString()+' rows • อัปเดตแล้ว';
+ if(b){b.style.width='100%';b.style.background='#168a45'}
+ renderDatasetPreview(i,p);
+ if(i===2){
+  const r=(p.sheets.Recipe||[]),w=(p.sheets.WIP||[]);
+  const rm=new Set([...r.map(x=>x.ItemCode),...w.map(x=>x['RM Item Code']??x.RMCode)].filter(Boolean));
+  const k=document.getElementById('kpiRM');if(k)k.textContent=rm.size.toLocaleString();
+  const ds=document.getElementById('dataStatus');if(ds)ds.textContent='BOM/WIP อัปเดตแล้ว • '+r.length+' Recipe • '+w.length+' WIP';
+ }
+ if(i===3){
+  const sn=Object.keys(p.sheets||{})[0],rr=(p.sheets[sn]||[]);
+  const k=document.getElementById('kpiSource');if(k)k.textContent=rr.length.toLocaleString();
+  const ds=document.getElementById('dataStatus');if(ds)ds.textContent='Unit Conversion อัปเดตแล้ว • '+rr.length+' รายการ';
+ }
+ const bom=window.yotheData['yothe-upload-2'];
+ const conv=window.yotheData['yothe-upload-3'];
+ renderBomMapping(bom,conv);
+}
 async function restoreUploadedData(){
  const data=[];
  for(let i=0;i<4;i++){
@@ -217,12 +244,7 @@ async function restoreUploadedData(){
   if(p){
    // migrate old localStorage data into IndexedDB
    try{await saveDataset('yothe-upload-'+i,p)}catch(e){}
-   data[i]=p;
-   const rows=Object.values(p.sheets||{}).reduce((a,x)=>a+(Array.isArray(x)?x.length:0),0);
-   const m=document.getElementById('meta'+i),b=document.getElementById('bar'+i);
-   if(m)m.textContent='✓ '+p.fileName+' • '+rows.toLocaleString()+' rows • พร้อมใช้งาน';
-   if(b){b.style.width='100%';b.style.background='#168a45'}
-   renderDatasetPreview(i,p);
+   data[i]=p;window.yotheData['yothe-upload-'+i]=p;applyDatasetToUI(i,p);
   }
  }
  const bom=data[2],conv=data[3];
@@ -244,7 +266,21 @@ const uploadTypes=[
  ['BOM / Bomb','.xlsx,.xls,.xlsm','รองรับ Version / Modified Date / WIP'],
  ['Unit Conversion','.xlsx,.xls,.xlsm','Master กลางตามสิทธิ์']
 ];
-function initUploads(){const box=document.getElementById('uploads');box.innerHTML=uploadTypes.map((x,i)=>`<div class="card"><div class="section-title">${x[0]}</div><div class="upload"><div class="drop"><b>เลือกไฟล์ ${x[0]}</b><div class="muted">รองรับ ${x[1]}</div></div><input type="file" accept="${x[1]}" onchange="selectUpload(this,${i})"></div><div id="meta${i}" class="meta">ยังไม่ได้เลือกไฟล์ • ${x[2]}</div><div class="progress"><i id="bar${i}"></i></div></div>`).join('')}
+function initUploads(){
+ const box=document.getElementById('uploads');
+ box.innerHTML=uploadTypes.map((x,i)=>`
+  <div class="card" id="uploadCard${i}">
+   <div class="section-title">${x[0]}</div>
+   <div class="drop"><b>เลือกไฟล์ ${x[0]}</b><div class="muted">รองรับ ${x[1]}</div></div>
+   <div class="upload"><input id="fileInput${i}" type="file" accept="${x[1]}"></div>
+   <div id="meta${i}" class="meta">ยังไม่ได้เลือกไฟล์ • ${x[2]}</div>
+   <div class="progress"><i id="bar${i}"></i></div>
+  </div>`).join('');
+ uploadTypes.forEach((x,i)=>{
+   const el=document.getElementById('fileInput'+i);
+   if(el)el.addEventListener('change',ev=>selectUpload(ev.target,i));
+ });
+}
 document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.navbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(b.dataset.page).classList.add('active')});
 async function selectUpload(input,i){
  const f=input.files[0];if(!f)return;
@@ -266,10 +302,11 @@ async function selectUpload(input,i){
      ['Code','Detail Raw Material','Unit','Convert','Convert Unit'].forEach(x=>{if(!h.includes(x))throw new Error('Unit Conversion ไม่พบ Header: '+x)});
    }
    await saveDataset('yothe-upload-'+i,payload);
+   window.yotheData['yothe-upload-'+i]=payload;
+   applyDatasetToUI(i,payload);
    const rows=Object.values(payload.sheets).reduce((a,x)=>a+x.length,0);
-   meta.textContent='✓ '+f.name+' • '+rows.toLocaleString()+' rows • '+wb.SheetNames.join(', ')+' • บันทึกแล้ว';
-   bar.style.width='100%';bar.style.background='#168a45';renderDatasetPreview(i,payload);await restoreUploadedData();
- }catch(e){meta.textContent='✕ '+e.message;bar.style.width='100%';bar.style.background='#d72d2d'}
+   meta.textContent='✓ '+f.name+' • '+rows.toLocaleString()+' rows • '+wb.SheetNames.join(', ')+' • อัปเดตข้อมูลแล้ว';
+ }catch(e){console.error(e);meta.textContent='✕ Upload ไม่สำเร็จ: '+(e.message||e);bar.style.width='100%';bar.style.background='#d72d2d';alert('Upload ไม่สำเร็จ: '+(e.message||e))}
 }
 async function refreshDataStatus(){await restoreUploadedData()}
 function fakeImport(input){if(input.files[0])alert("รับไฟล์ "+input.files[0].name+" แล้วใน ระบบ — ยังไม่เขียนข้อมูลจริงจนกว่าจะเชื่อมฐานข้อมูล Yothe'")}
@@ -291,11 +328,17 @@ function downloadTemplate(){
  document.body.appendChild(a);a.click();a.remove();
  setTimeout(()=>URL.revokeObjectURL(u),1000);
 }
-try{initUploads();restoreUploadedData()}catch(e){
- console.error(e);
- const box=document.getElementById('uploads');
- if(box)box.innerHTML='<div class="notice">เกิดข้อผิดพลาดในการเปิดระบบ Upload: '+String(e.message||e)+'</div>';
-}
-const src=localStorage.getItem('yothe-global-source');if(src)document.getElementById('globalSource').value=src;
+document.addEventListener('DOMContentLoaded',async()=>{
+ try{
+  initUploads();
+  await restoreUploadedData();
+  const src=localStorage.getItem('yothe-global-source');
+  if(src&&document.getElementById('globalSource'))document.getElementById('globalSource').value=src;
+ }catch(e){
+  console.error(e);
+  const box=document.getElementById('uploads');
+  if(box)box.innerHTML='<div class="notice">เกิดข้อผิดพลาดในการเปิดระบบ Upload: '+String(e.message||e)+'</div>';
+ }
+});
 </script>
 </body></html>
