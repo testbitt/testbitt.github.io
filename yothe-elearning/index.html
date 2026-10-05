@@ -227,14 +227,8 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 .menu-board-stage>img{
   display:block;max-width:100%;max-height:calc(90vh - 170px);object-fit:contain;
 }
-.cup-hotspot-grid{
-  position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);
-  grid-template-rows:repeat(3,1fr);z-index:3;
-}
-.cup-hotspot{
-  position:relative;border:0;background:transparent;cursor:pointer;padding:0;
-  display:grid;place-items:center;
-}
+.cup-hotspot-layer{position:absolute;inset:0;z-index:3}
+.cup-hotspot{position:absolute;transform:translate(-50%,-50%);border:0;background:transparent;cursor:pointer;padding:0;display:grid;place-items:center}
 .cup-hotspot>span{
   width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
   background:rgba(198,39,35,.92);color:#fff;font-weight:900;font-size:15px;
@@ -256,6 +250,67 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 @media(max-width:560px){
   .cup-hotspot>span{width:28px;height:28px;font-size:13px}
 }
+/* 50 popup styles */
+@keyframes popA{0%{opacity:0;transform:scale(.7)}70%{opacity:1;transform:scale(1.04)}100%{opacity:1;transform:scale(1)}}
+@keyframes wigA{0%{opacity:0;transform:rotate(-3deg)}70%{opacity:1;transform:rotate(3deg)}100%{opacity:1;transform:rotate(0)}}
+@keyframes zoomA{0%{opacity:0;transform:scale(.45)}70%{opacity:1;transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+@keyframes zoomB{0%{opacity:0;transform:scale(1.35)}70%{opacity:1;transform:scale(.96)}100%{opacity:1;transform:scale(1)}}
+@keyframes rotL{0%{opacity:0;transform:rotate(-18deg) scale(.8)}70%{opacity:1;transform:rotate(3deg)}100%{opacity:1;transform:rotate(0)}}
+@keyframes rotR{0%{opacity:0;transform:rotate(18deg) scale(.8)}70%{opacity:1;transform:rotate(-3deg)}100%{opacity:1;transform:rotate(0)}}
+@keyframes upA{0%{opacity:0;transform:translateY(40px)}70%{opacity:1;transform:translateY(-6px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes dnA{0%{opacity:0;transform:translateY(-40px)}70%{opacity:1;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes ltA{0%{opacity:0;transform:translateX(50px)}70%{opacity:1;transform:translateX(-6px)}100%{opacity:1;transform:translateX(0)}}
+@keyframes rtA{0%{opacity:0;transform:translateX(-50px)}70%{opacity:1;transform:translateX(6px)}100%{opacity:1;transform:translateX(0)}}
+.object-focus-card.style-1{animation:popA .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-2{animation:wigA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-3{animation:zoomA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-4{animation:zoomB .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-5{animation:rotL .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-6{animation:rotR .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-7{animation:upA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-8{animation:dnA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-9{animation:ltA .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-10{animation:rtA .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-11{animation:popA .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-12{animation:wigA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-13{animation:zoomA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-14{animation:zoomB .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-15{animation:rotL .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-16{animation:rotR .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-17{animation:upA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-18{animation:dnA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-19{animation:ltA .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-20{animation:rtA .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-21{animation:popA .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-22{animation:wigA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-23{animation:zoomA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-24{animation:zoomB .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-25{animation:rotL .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-26{animation:rotR .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-27{animation:upA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-28{animation:dnA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-29{animation:ltA .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-30{animation:rtA .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-31{animation:popA .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-32{animation:wigA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-33{animation:zoomA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-34{animation:zoomB .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-35{animation:rotL .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-36{animation:rotR .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-37{animation:upA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-38{animation:dnA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-39{animation:ltA .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-40{animation:rtA .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-41{animation:popA .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-42{animation:wigA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-43{animation:zoomA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-44{animation:zoomB .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-45{animation:rotL .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-46{animation:rotR .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-47{animation:upA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-48{animation:dnA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-49{animation:ltA .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-50{animation:rtA .42s ease both }
 </style>
 </head>
 <body>
@@ -441,29 +496,34 @@ async function loadAttachments(section){
     }).join("")+'</div>';
   }catch(e){el.innerHTML='<div class="state">โหลดไฟล์แนบไม่สำเร็จ: '+esc(e.message)+'</div>'}
 }
-const MENU_BOARD_ATTACHMENT_IDS=new Set(["26"]);
-function isNumberedMenuBoard(file){
-  return !!file && MENU_BOARD_ATTACHMENT_IDS.has(String(file.id));
+let currentImagePopups=[];
+async function loadImagePopups(attachmentId){
+  try{
+    const rows=await api("image_popups",{attachment_id:Number(attachmentId)});
+    currentImagePopups=Array.isArray(rows)?rows:[];
+  }catch{currentImagePopups=[]}
+  return currentImagePopups;
 }
-function numberedHotspotsHtml(){
-  return '<div class="cup-hotspot-grid">'+
-    Array.from({length:9},(_,i)=>'<button type="button" class="cup-hotspot" data-cup-number="'+(i+1)+'" aria-label="เปิดรูปหมายเลข '+(i+1)+'"><span>'+(i+1)+'</span></button>').join("")+
-  '</div>';
+function popupHotspotsHtml(rows=[]){
+  if(!rows.length)return "";
+  return '<div class="cup-hotspot-layer">'+rows.map(r=>
+    '<button type="button" class="cup-hotspot" data-popup-row-id="'+r.id+'" style="left:'+Number(r.x_pct||50)+'%;top:'+Number(r.y_pct||50)+'%;width:'+Math.max(24,Number(r.size_px||40))+'px;height:'+Math.max(24,Number(r.size_px||40))+'px" aria-label="เปิด Popup '+esc(r.popup_number||"")+'"><span>'+esc(r.popup_number||"")+'</span></button>'
+  ).join("")+'</div>';
 }
-function openCupPopup(number){
-  const n=Math.max(1,Math.min(9,Number(number)||1));
-  const col=(n-1)%3,row=Math.floor((n-1)/3);
-  const pos=[0,50,100];
+function openConfiguredPopup(row){
+  if(!row?.image_url)return;
   const popup=document.getElementById("objectFocusPopup");
   const focus=document.getElementById("objectFocusImage");
   const hint=document.getElementById("objectFocusHint");
-  focus.classList.add("cup-sprite");
-  focus.style.backgroundImage='url("assets/cup-popup-sprite.webp")';
-  focus.style.backgroundSize="300% 300%";
-  focus.style.backgroundPosition=pos[col]+"% "+pos[row]+"%";
-  if(hint)hint.textContent="รูปหมายเลข "+n+" • แตะเพื่อปิด";
-  popup.classList.remove("hidden");
-  popup.setAttribute("aria-hidden","false");
+  const card=popup?.querySelector(".object-focus-card");
+  focus.classList.remove("cup-sprite");
+  focus.style.backgroundImage='url("'+String(row.image_url).replace(/"/g,'%22')+'")';
+  focus.style.backgroundSize="contain";
+  focus.style.backgroundPosition="center";
+  focus.style.backgroundRepeat="no-repeat";
+  if(card){card.className="object-focus-card popup-style "+(row.display_style||"style-2")}
+  if(hint)hint.textContent=(row.label||("Popup "+(row.popup_number||"")))+" • แตะเพื่อปิด";
+  popup.classList.remove("hidden");popup.setAttribute("aria-hidden","false");
   playMenuMeow();
 }
 function openObjectFocusFromImage(img,event){
@@ -497,11 +557,12 @@ function closeObjectFocus(){
     focus.style.backgroundPosition="";
     focus.style.backgroundSize="";
     focus.classList.remove("cup-sprite");
+    const card=document.querySelector("#objectFocusPopup .object-focus-card");if(card)card.className="object-focus-card";
   }
   const hint=document.getElementById("objectFocusHint");
   if(hint)hint.textContent="แตะอีกครั้งเพื่อปิด";
 }
-function renderAttachmentViewer(){
+async function renderAttachmentViewer(){
   const files=attachmentSets[attachmentViewerSection]||[];
   const f=files[attachmentViewerIndex];
   if(!f)return closeAttachmentViewer();
@@ -510,8 +571,9 @@ function renderAttachmentViewer(){
   document.getElementById("attachmentViewerCount").textContent=(attachmentViewerIndex+1)+" / "+files.length;
   const body=document.getElementById("attachmentViewerBody");
   if(info.type==="image"){
-    if(isNumberedMenuBoard(f)){
-      body.innerHTML='<div class="menu-board-stage"><img src="'+esc(f.url)+'" alt="'+esc(f.title||f.file_name)+'" draggable="false">'+numberedHotspotsHtml()+'</div>';
+    const configured=await loadImagePopups(f.id);
+    if(configured.length){
+      body.innerHTML='<div class="menu-board-stage"><img src="'+esc(f.url)+'" alt="'+esc(f.title||f.file_name)+'" draggable="false">'+popupHotspotsHtml(configured)+'</div>';
     }else{
       body.innerHTML='<img class="viewer-interactive-image" src="'+esc(f.url)+'" alt="'+esc(f.title||f.file_name)+'" draggable="false">';
     }
@@ -842,11 +904,11 @@ document.addEventListener("click",e=>{
   if(focusClose || (focusPopup && e.target.id==="objectFocusPopup")){
     e.preventDefault();closeObjectFocus();return;
   }
-  const cupHotspot=e.target.closest("[data-cup-number]");
-  if(cupHotspot){
-    e.preventDefault();
-    e.stopPropagation();
-    openCupPopup(cupHotspot.dataset.cupNumber);
+  const popupHotspot=e.target.closest("[data-popup-row-id]");
+  if(popupHotspot){
+    e.preventDefault();e.stopPropagation();
+    const row=currentImagePopups.find(x=>String(x.id)===String(popupHotspot.dataset.popupRowId));
+    if(row)openConfiguredPopup(row);
     return;
   }
   const viewerImg=e.target.closest(".viewer-interactive-image");
