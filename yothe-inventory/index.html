@@ -174,6 +174,24 @@ async function loadDataset(key){
 function esc(v){
  return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
+function normKey(v){return String(v??'').trim().toLowerCase().replace(/[\s_\-./()]+/g,'')}
+function pick(obj,names){
+ const keys=Object.keys(obj||{}), map=new Map(keys.map(k=>[normKey(k),k]));
+ for(const n of names){const k=map.get(normKey(n));if(k!==undefined&&obj[k]!==undefined&&obj[k]!==null&&obj[k]!=='')return obj[k]}
+ return '';
+}
+function findSheet(payload,names){
+ const sheets=payload?.sheets||{}, keys=Object.keys(sheets);
+ for(const n of names){const hit=keys.find(k=>normKey(k)===normKey(n));if(hit)return sheets[hit]||[]}
+ for(const n of names){const hit=keys.find(k=>normKey(k).includes(normKey(n)));if(hit)return sheets[hit]||[]}
+ return [];
+}
+function getBomParts(payload){
+ return {
+  recipe:findSheet(payload,['Recipe','Recipes','BOM','Bomb']),
+  wip:findSheet(payload,['WIP','Wip','Work In Process'])
+ };
+}
 function renderDatasetPreview(i,p){
  const host=document.getElementById('uploadPreview'); if(!host||!p)return;
  let existing=document.getElementById('preview-'+i);
@@ -195,33 +213,44 @@ function renderDatasetPreview(i,p){
 }
 function renderBomMapping(bom,conv){
  const body=document.getElementById('mappingBody'); if(!body)return;
- const recipe=(bom&&bom.sheets&&bom.sheets.Recipe)||[];
- const wip=(bom&&bom.sheets&&bom.sheets.WIP)||[];
- const convRows=conv&&conv.sheets ? (conv.sheets[Object.keys(conv.sheets)[0]]||[]) : [];
- if(!recipe.length&&!wip.length&&!convRows.length)return;
+ const {recipe,wip}=getBomParts(bom);
+ const convRows=conv&&conv.sheets ? Object.values(conv.sheets).flat() : [];
  const rows=[];
- recipe.slice(0,200).forEach(x=>rows.push({
-  item:x.RecCode??x['Rec Code']??x.RecipeCode??'',
-  product:x.Description??x.RecName??x['Recipe Name']??'',
-  cup:'',
-  rm:x.ItemCode??x['Item Code']??'',
-  count:'',
+ recipe.slice(0,400).forEach(x=>rows.push({
+  item:pick(x,['RecCode','Rec Code','RecipeCode','Recipe Code','FG Code','Product Code']),
+  product:pick(x,['Description','RecName','Recipe Name','Product','Product Name']),
+  cup:pick(x,['Cup Type','CupType']),
+  rm:pick(x,['ItemCode','Item Code','RM Item Code','RMCode','RM Code','Raw Material Code']),
+  count:pick(x,['Count as Cup','CountAsCup']),
   source:'BOM',
-  version:x.Version??'',
-  modified:x['Modif-Date']??x.ModifiedDate??''
+  version:pick(x,['Version','Ver']),
+  modified:pick(x,['Modif-Date','ModifiedDate','Modified Date','Update Date'])
  }));
- wip.slice(0,200).forEach(x=>rows.push({
-  item:x.WipCode??x['WIP Code']??'',
-  product:'WIP',
-  cup:'',
-  rm:x['RM Item Code']??x.RMCode??'',
-  count:'',
+ wip.slice(0,400).forEach(x=>rows.push({
+  item:pick(x,['WipCode','WIP Code','FG Code','Product Code']),
+  product:pick(x,['Description','WIP Description','Product','Product Name'])||'WIP',
+  cup:pick(x,['Cup Type','CupType']),
+  rm:pick(x,['RM Item Code','RMCode','RM Code','ItemCode','Item Code','Raw Material Code','Code']),
+  count:pick(x,['Count as Cup','CountAsCup']),
   source:'BOM',
-  version:x.Version??'',
-  modified:x['Modif-Date']??x.ModifiedDate??''
+  version:pick(x,['Version','Ver']),
+  modified:pick(x,['Modif-Date','ModifiedDate','Modified Date','Update Date'])
  }));
- if(rows.length){
-  body.innerHTML=rows.map(r=>'<tr><td>'+esc(r.item)+'</td><td>'+esc(r.product)+'</td><td>'+esc(r.cup)+'</td><td>'+esc(r.rm)+'</td><td>'+esc(r.count)+'</td><td>'+esc(r.source)+'</td><td>'+esc(r.version)+'</td><td>'+esc(r.modified)+'</td><td><span class="tag ok">จากไฟล์</span></td></tr>').join('');
+ convRows.slice(0,400).forEach(x=>rows.push({
+  item:pick(x,['Code','RMCode','RM Code','ItemCode','Item Code']),
+  product:pick(x,['Detail Raw Material','Description','RM Description']),
+  cup:'',
+  rm:pick(x,['Code','RMCode','RM Code','ItemCode','Item Code']),
+  count:'',
+  source:'Unit Conversion',
+  version:pick(x,['Version','Ver']),
+  modified:pick(x,['Modif-Date','ModifiedDate','Modified Date','Update Date'])
+ }));
+ const clean=rows.filter(r=>r.item||r.rm||r.product);
+ if(clean.length){
+  body.innerHTML=clean.map(r=>'<tr><td>'+esc(r.item)+'</td><td>'+esc(r.product)+'</td><td>'+esc(r.cup)+'</td><td>'+esc(r.rm)+'</td><td>'+esc(r.count)+'</td><td>'+esc(r.source)+'</td><td>'+esc(r.version)+'</td><td>'+esc(r.modified)+'</td><td><span class="tag ok">จากไฟล์</span></td></tr>').join('');
+ }else{
+  body.innerHTML='<tr><td colspan="9"><div class="empty">ยังไม่มี Mapping — Upload BOM / Unit Conversion ก่อน</div></td></tr>';
  }
 }
 
@@ -233,10 +262,13 @@ function applyDatasetToUI(i,p){
  if(b){b.style.width='100%';b.style.background='#168a45'}
  renderDatasetPreview(i,p);
  if(i===2){
-  const r=(p.sheets.Recipe||[]),w=(p.sheets.WIP||[]);
-  const rm=new Set([...r.map(x=>x.ItemCode),...w.map(x=>x['RM Item Code']??x.RMCode)].filter(Boolean));
+  const {recipe:r,wip:w}=getBomParts(p);
+  const rm=new Set([
+   ...r.map(x=>pick(x,['ItemCode','Item Code','RM Item Code','RMCode','RM Code','Raw Material Code'])),
+   ...w.map(x=>pick(x,['RM Item Code','RMCode','RM Code','ItemCode','Item Code','Raw Material Code','Code']))
+  ].filter(Boolean).map(String));
   const k=document.getElementById('kpiRM');if(k)k.textContent=rm.size.toLocaleString();
-  const ds=document.getElementById('dataStatus');if(ds)ds.textContent='BOM/WIP อัปเดตแล้ว • '+r.length+' Recipe • '+w.length+' WIP';
+  const ds=document.getElementById('dataStatus');if(ds)ds.textContent='BOM/WIP อัปเดตแล้ว • '+r.length+' Recipe • '+w.length+' WIP • '+rm.size+' RM';
  }
  if(i===3){
   const sn=Object.keys(p.sheets||{})[0],rr=(p.sheets[sn]||[]);
@@ -260,10 +292,13 @@ async function restoreUploadedData(){
  }
  const bom=data[2],conv=data[3];
  if(bom){
-  const r=(bom.sheets.Recipe||[]),w=(bom.sheets.WIP||[]);
-  const rm=new Set([...r.map(x=>x.ItemCode),...w.map(x=>x['RM Item Code']??x.RMCode)].filter(Boolean));
+  const {recipe:r,wip:w}=getBomParts(bom);
+  const rm=new Set([
+   ...r.map(x=>pick(x,['ItemCode','Item Code','RM Item Code','RMCode','RM Code','Raw Material Code'])),
+   ...w.map(x=>pick(x,['RM Item Code','RMCode','RM Code','ItemCode','Item Code','Raw Material Code','Code']))
+  ].filter(Boolean).map(String));
   const k=document.getElementById('kpiRM');if(k)k.textContent=rm.size.toLocaleString();
-  const ds=document.getElementById('dataStatus');if(ds)ds.textContent='ข้อมูล Upload พร้อมใช้งาน';
+  const ds=document.getElementById('dataStatus');if(ds)ds.textContent='ข้อมูล Upload พร้อมใช้งาน • '+rm.size+' RM';
  }
  if(conv){
   const sn=Object.keys(conv.sheets||{})[0],rows=(conv.sheets[sn]||[]);
@@ -303,14 +338,18 @@ async function selectUpload(input,i){
    let payload={fileName:f.name,uploadedAt:new Date().toISOString(),type:uploadTypes[i][0],sheets:{}};
    wb.SheetNames.forEach(n=>payload.sheets[n]=XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:null}));
    if(i===2){
-     if(!payload.sheets.Recipe||!payload.sheets.WIP) throw new Error('BOM ต้องมี Sheet Recipe และ WIP');
-     const rh=Object.keys(payload.sheets.Recipe[0]||{}), wh=Object.keys(payload.sheets.WIP[0]||{});
-     ['RecCode','ItemCode','Quantity','UnitDes1','Modif-Date'].forEach(h=>{if(!rh.includes(h))throw new Error('Recipe ไม่พบ Header: '+h)});
-     ['WipCode','FG Qty','RM Qty','RM Unit','Modif-Date'].forEach(h=>{if(!wh.includes(h))throw new Error('WIP ไม่พบ Header: '+h)});
+     const {recipe,wip}=getBomParts(payload);
+     if(!recipe.length&&!wip.length) throw new Error('ไม่พบข้อมูล BOM/Recipe/WIP ในไฟล์');
+     const sample=recipe[0]||wip[0]||{};
+     const hasRM=!!pick(sample,['ItemCode','Item Code','RM Item Code','RMCode','RM Code','Raw Material Code','Code']);
+     if(!hasRM) console.warn('BOM header แตกต่างจากมาตรฐาน ระบบจะยังแสดง Preview และพยายาม Mapping อัตโนมัติ');
    }
    if(i===3){
-     const sn=wb.SheetNames[0], rows=payload.sheets[sn]||[], h=Object.keys(rows[0]||{});
-     ['Code','Detail Raw Material','Unit','Convert','Convert Unit'].forEach(x=>{if(!h.includes(x))throw new Error('Unit Conversion ไม่พบ Header: '+x)});
+     const rows=Object.values(payload.sheets||{}).flat();
+     if(!rows.length) throw new Error('Unit Conversion ไม่มีข้อมูล');
+     const sample=rows[0]||{};
+     const hasCode=!!pick(sample,['Code','RMCode','RM Code','ItemCode','Item Code']);
+     if(!hasCode) console.warn('Unit Conversion header แตกต่างจากมาตรฐาน ระบบจะยังแสดง Preview');
    }
    await saveDataset('yothe-upload-'+i,payload);
    window.yotheData['yothe-upload-'+i]=payload;
@@ -329,38 +368,22 @@ function getAvailableRM(){
  const bom=window.yotheData['yothe-upload-2'];
  const conv=window.yotheData['yothe-upload-3'];
  const map=new Map();
- if(stock){
-  Object.values(stock.sheets||{}).flat().forEach(x=>{
-   const code=x.RMCode??x['RM Code']??x.ItemCode??x.Code;
-   if(code&&!map.has(String(code)))map.set(String(code),{
-    code:String(code),desc:x.Description??x['Detail Raw Material']??x.ItemName??'',unit:x.Unit??x['Unit Description']??''
-   });
-  });
+ const add=(x)=>{
+  const code=pick(x,['RMCode','RM Code','RM Item Code','Raw Material Code','ItemCode','Item Code','Code']);
+  if(!code)return;
+  const k=String(code).trim(); if(!k)return;
+  const cur=map.get(k)||{code:k,desc:'',unit:''};
+  if(!cur.desc)cur.desc=pick(x,['Description','Detail Raw Material','RM Description','ItemName','Item Name','Raw Material']);
+  if(!cur.unit)cur.unit=pick(x,['Unit','Unit Description','UnitDes1','RM Unit','Convert Unit']);
+  map.set(k,cur);
+ };
+ if(stock)Object.values(stock.sheets||{}).flat().forEach(add);
+ if(bom){
+  const {recipe,wip}=getBomParts(bom);
+  recipe.forEach(add); wip.forEach(add);
  }
- if(!map.size&&bom){
-  const r=(bom.sheets.Recipe||[]),w=(bom.sheets.WIP||[]);
-  r.forEach(x=>{
-   const code=x.ItemCode??x['Item Code'];
-   if(code&&!map.has(String(code)))map.set(String(code),{code:String(code),desc:x.Description??x.ItemName??'',unit:x.UnitDes1??x.Unit??''});
-  });
-  w.forEach(x=>{
-   const code=x['RM Item Code']??x.RMCode;
-   if(code&&!map.has(String(code)))map.set(String(code),{code:String(code),desc:x['RM Description']??x.Description??'',unit:x['RM Unit']??x.Unit??''});
-  });
- }
- if(conv){
-  const rows=Object.values(conv.sheets||{}).flat();
-  rows.forEach(x=>{
-   const code=x.Code??x.RMCode??x['RM Code'];
-   if(!code)return;
-   const k=String(code);
-   const cur=map.get(k)||{code:k,desc:'',unit:''};
-   if(!cur.desc)cur.desc=x['Detail Raw Material']??x.Description??'';
-   if(!cur.unit)cur.unit=x.Unit??'';
-   map.set(k,cur);
-  });
- }
- return [...map.values()].sort((a,b)=>a.code.localeCompare(b.code));
+ if(conv)Object.values(conv.sheets||{}).flat().forEach(add);
+ return [...map.values()].sort((a,b)=>a.code.localeCompare(b.code,undefined,{numeric:true}));
 }
 function refreshCountFormData(){
  const rms=getAvailableRM();
