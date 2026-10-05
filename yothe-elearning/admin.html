@@ -464,7 +464,8 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .popup-admin-modal-card.style-47{animation:aupA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
 .popup-admin-modal-card.style-48{animation:adnA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
 .popup-admin-modal-card.style-49{animation:altA .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
-.popup-admin-modal-card.style-50{animation:artA .42s ease both }
+.popup-admin-modal-card.style-50{animation:none!important;transform:none!important}
+.popup-admin-modal-card.style-51{animation:none!important;transform:none!important}
 
 /* Popup source uploader */
 .popup-source-upload{display:grid;grid-template-columns:minmax(180px,.7fr) minmax(240px,1fr) auto;gap:8px;align-items:end;width:100%}
@@ -1115,7 +1116,7 @@ window.moveCustomMenu=async(id,dir)=>{
   try{await saveCustomMenus();renderMenuBuilder()}catch(err){alert(err.message)}
 };
 
-const POPUP_STYLES=["เด้งนุ่ม","ดุ๊กดิ๊ก","ซูมเข้า","ซูมออก","หมุนซ้าย","หมุนขวา","ลอยขึ้น","ลอยลง","เลื่อนซ้าย","เลื่อนขวา","Bounce","Pulse","Flip X","Flip Y","Swing","Tada","Rubber","Jello","Shake X","Shake Y","Heartbeat","Flash","Glow","Pop","Spring","Float","Wave","Tilt","Wobble","Spin","Zoom Bounce","Slide Bounce","Fade Up","Fade Down","Fade Left","Fade Right","Scale Pulse","Soft Rotate","Kawaii Hop","Cat Wiggle","Elastic","Snap","Drop","Rise","Sway","Twist","Bubble","Blink","Soft Float","นิ่ง"];
+const POPUP_STYLES=["เด้งนุ่ม","ดุ๊กดิ๊ก","ซูมเข้า","ซูมออก","หมุนซ้าย","หมุนขวา","ลอยขึ้น","ลอยลง","เลื่อนซ้าย","เลื่อนขวา","Bounce","Pulse","Flip X","Flip Y","Swing","Tada","Rubber","Jello","Shake X","Shake Y","Heartbeat","Flash","Glow","Pop","Spring","Float","Wave","Tilt","Wobble","Spin","Zoom Bounce","Slide Bounce","Fade Up","Fade Down","Fade Left","Fade Right","Scale Pulse","Soft Rotate","Kawaii Hop","Cat Wiggle","Elastic","Snap","Drop","Rise","Sway","Twist","Bubble","Blink","Soft Float","นิ่ง","นิ่งสนิท (ไม่เคลื่อนไหว)"];
 let popupAttachments=[],popupRows=[],popupAttachmentId=null,popupSelectedId=null;
 
 async function loadPopupManager(){
@@ -1213,7 +1214,7 @@ function popupCardHtml(r){
           <div class="field"><label>ขนาดจุด</label><input class="input" type="number" min="24" max="120" value="${esc(r.size_px||40)}" onchange="savePopupPatch('${r.id}',{size_px:Number(this.value)})"></div>
           <div class="field"><label>X (%)</label><input class="input" type="number" step=".1" min="0" max="100" value="${esc(r.x_pct||50)}" onchange="savePopupPatch('${r.id}',{x_pct:Number(this.value)})"></div>
           <div class="field"><label>Y (%)</label><input class="input" type="number" step=".1" min="0" max="100" value="${esc(r.y_pct||50)}" onchange="savePopupPatch('${r.id}',{y_pct:Number(this.value)})"></div>
-          <div class="field" style="grid-column:1/-1"><label>รูปแบบ Popup (50 แบบ)</label><select class="input" onchange="event.stopPropagation();savePopupPatch('${r.id}',{display_style:this.value})" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">${popupStyleOptions(r.display_style||"style-2")}</select></div>
+          <div class="field" style="grid-column:1/-1"><label>รูปแบบ Popup (51 แบบ)</label><select class="input" onchange="event.stopPropagation();savePopupPatch('${r.id}',{display_style:this.value})" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">${popupStyleOptions(r.display_style||"style-2")}</select></div>
           <div class="field"><label>สถานะ</label><select class="input" onchange="savePopupPatch('${r.id}',{active:this.value==='true'})"><option value="true" ${r.active!==false?'selected':''}>แสดง</option><option value="false" ${r.active===false?'selected':''}>ซ่อน</option></select></div>
           <div class="field"><label>ลำดับ</label><input class="input" type="number" value="${esc(r.sort_order||0)}" onchange="savePopupPatch('${r.id}',{sort_order:Number(this.value)})"></div>
           <div class="field" style="grid-column:1/-1"><label>ชื่อ Popup</label><input class="input" value="${esc(r.label||"")}" onchange="savePopupPatch('${r.id}',{label:this.value})"></div>
