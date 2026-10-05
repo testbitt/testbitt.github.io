@@ -59,7 +59,7 @@ button,input,select{font:inherit}.app{min-height:100vh}.top{height:70px;backgrou
 <section id="upload" class="page">
  <div class="head"><div><h2>Upload Database</h2><div class="sub">สร้างระบบไว้ก่อน และนำไฟล์จริงเข้าภายหลัง</div></div><button class="btn" onclick="downloadTemplate()">Download Required Columns Template</button></div>
  <div class="notice">ระบบนี้ยังไม่ Hard-code Product Code / RM Code / BOM ใด ๆ จาก KAMU โดย Mapping จะสร้างจากไฟล์ Yothe' จริงเท่านั้น</div>
- <div class="grid uploads" style="margin-top:14px" id="uploads"></div>
+ <div class="grid uploads" style="margin-top:14px" id="uploads"></div><div id="uploadPreview" style="margin-top:16px"></div>
 </section>
 
 <section id="mapping" class="page">
@@ -78,7 +78,7 @@ button,input,select{font:inherit}.app{min-height:100vh}.top{height:70px;backgrou
    <div class="field"><label>Custom Check</label><select><option>Standard</option></select></div>
    <div class="field"><label>Usage Source</label><select><option>BOM</option><option>Stock Movement</option><option>Item Sale</option></select></div>
  </div></div>
- <div class="tablewrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>RM Code</th><th>Description</th><th>Unit</th><th>Beginning / Stock Ref</th><th>Usage</th><th>Actual Count</th><th>Count Diff</th><th>Diff %</th><th>Std.Cost</th><th>Variance Cost</th><th>Status</th></tr></thead><tbody><tr><td colspan="11"><div class="empty">ยังไม่มีข้อมูล Inventory Audit — กรุณา Upload ฐานข้อมูล Yothe' ก่อน</div></td></tr></tbody></table></div>
+ <div class="tablewrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>RM Code</th><th>Description</th><th>Unit</th><th>Beginning / Stock Ref</th><th>Usage</th><th>Actual Count</th><th>Count Diff</th><th>Diff %</th><th>Std.Cost</th><th>Variance Cost</th><th>Status</th></tr></thead><tbody id="auditBody"><tr><td colspan="11"><div class="empty">ยังไม่มีข้อมูล Inventory Audit — กรุณา Upload Stock Movement / Item Sale ก่อน</div></td></tr></tbody></table></div>
 </section>
 
 <section id="custom" class="page">
@@ -122,6 +122,122 @@ window.addEventListener('error',function(e){
    const b=document.createElement('span');b.id='jsErrorBadge';b.className='pill';b.textContent='Script Error';s.prepend(b);
  }
 });
+
+const DB_NAME='yothe-inventory-db', DB_STORE='datasets';
+function openDB(){
+ return new Promise((resolve,reject)=>{
+  const req=indexedDB.open(DB_NAME,1);
+  req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(DB_STORE))db.createObjectStore(DB_STORE)};
+  req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error);
+ });
+}
+async function saveDataset(key,value){
+ try{
+  const db=await openDB();
+  await new Promise((resolve,reject)=>{
+   const tx=db.transaction(DB_STORE,'readwrite');
+   tx.objectStore(DB_STORE).put(value,key);
+   tx.oncomplete=resolve; tx.onerror=()=>reject(tx.error);
+  });
+  return true;
+ }catch(e){
+  console.error('IndexedDB save failed',e);
+  try{localStorage.setItem(key,JSON.stringify(value));return true}catch(e2){throw e2}
+ }
+}
+async function loadDataset(key){
+ try{
+  const db=await openDB();
+  const v=await new Promise((resolve,reject)=>{
+   const tx=db.transaction(DB_STORE,'readonly');
+   const req=tx.objectStore(DB_STORE).get(key);
+   req.onsuccess=()=>resolve(req.result||null); req.onerror=()=>reject(req.error);
+  });
+  if(v)return v;
+ }catch(e){console.warn('IndexedDB read failed',e)}
+ try{return JSON.parse(localStorage.getItem(key)||'null')}catch(e){return null}
+}
+function esc(v){
+ return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function renderDatasetPreview(i,p){
+ const host=document.getElementById('uploadPreview'); if(!host||!p)return;
+ let existing=document.getElementById('preview-'+i);
+ if(!existing){existing=document.createElement('div');existing.id='preview-'+i;existing.className='card';existing.style.marginBottom='14px';host.appendChild(existing)}
+ const sheets=Object.entries(p.sheets||{});
+ let html='<div class="row"><div><div class="section-title">'+esc(p.type)+'</div><div class="muted">'+esc(p.fileName)+' • '+new Date(p.uploadedAt).toLocaleString('th-TH')+'</div></div></div>';
+ sheets.forEach(([name,rows])=>{
+   const safeRows=Array.isArray(rows)?rows:[];
+   const cols=Object.keys(safeRows[0]||{});
+   html+='<div style="margin-top:14px"><b>Sheet: '+esc(name)+'</b> <span class="tag ok">'+safeRows.length.toLocaleString()+' rows</span></div>';
+   if(!safeRows.length){html+='<div class="empty" style="margin-top:8px">ไม่มีข้อมูลใน Sheet นี้</div>';return}
+   const showCols=cols.slice(0,10), showRows=safeRows.slice(0,50);
+   html+='<div class="tablewrap" style="margin-top:8px;max-height:380px"><table class="tbl"><thead><tr>'+showCols.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+
+     showRows.map(r=>'<tr>'+showCols.map(k=>'<td>'+esc(r[k])+'</td>').join('')+'</tr>').join('')+
+     '</tbody></table></div>';
+   if(safeRows.length>50)html+='<div class="muted" style="margin-top:6px">แสดง 50 รายการแรกจาก '+safeRows.length.toLocaleString()+' รายการ</div>';
+ });
+ existing.innerHTML=html;
+}
+function renderBomMapping(bom,conv){
+ const body=document.getElementById('mappingBody'); if(!body)return;
+ const recipe=(bom&&bom.sheets&&bom.sheets.Recipe)||[];
+ const wip=(bom&&bom.sheets&&bom.sheets.WIP)||[];
+ const convRows=conv&&conv.sheets ? (conv.sheets[Object.keys(conv.sheets)[0]]||[]) : [];
+ if(!recipe.length&&!wip.length&&!convRows.length)return;
+ const rows=[];
+ recipe.slice(0,200).forEach(x=>rows.push({
+  item:x.RecCode??x['Rec Code']??x.RecipeCode??'',
+  product:x.Description??x.RecName??x['Recipe Name']??'',
+  cup:'',
+  rm:x.ItemCode??x['Item Code']??'',
+  count:'',
+  source:'BOM',
+  version:x.Version??'',
+  modified:x['Modif-Date']??x.ModifiedDate??''
+ }));
+ wip.slice(0,200).forEach(x=>rows.push({
+  item:x.WipCode??x['WIP Code']??'',
+  product:'WIP',
+  cup:'',
+  rm:x['RM Item Code']??x.RMCode??'',
+  count:'',
+  source:'BOM',
+  version:x.Version??'',
+  modified:x['Modif-Date']??x.ModifiedDate??''
+ }));
+ if(rows.length){
+  body.innerHTML=rows.map(r=>'<tr><td>'+esc(r.item)+'</td><td>'+esc(r.product)+'</td><td>'+esc(r.cup)+'</td><td>'+esc(r.rm)+'</td><td>'+esc(r.count)+'</td><td>'+esc(r.source)+'</td><td>'+esc(r.version)+'</td><td>'+esc(r.modified)+'</td><td><span class="tag ok">จากไฟล์</span></td></tr>').join('');
+ }
+}
+async function restoreUploadedData(){
+ const data=[];
+ for(let i=0;i<4;i++){
+  let p=await loadDataset('yothe-upload-'+i);
+  if(p){
+   // migrate old localStorage data into IndexedDB
+   try{await saveDataset('yothe-upload-'+i,p)}catch(e){}
+   data[i]=p;
+   const rows=Object.values(p.sheets||{}).reduce((a,x)=>a+(Array.isArray(x)?x.length:0),0);
+   const m=document.getElementById('meta'+i),b=document.getElementById('bar'+i);
+   if(m)m.textContent='✓ '+p.fileName+' • '+rows.toLocaleString()+' rows • พร้อมใช้งาน';
+   if(b){b.style.width='100%';b.style.background='#168a45'}
+   renderDatasetPreview(i,p);
+  }
+ }
+ const bom=data[2],conv=data[3];
+ if(bom){
+  const r=(bom.sheets.Recipe||[]),w=(bom.sheets.WIP||[]);
+  const rm=new Set([...r.map(x=>x.ItemCode),...w.map(x=>x['RM Item Code']??x.RMCode)].filter(Boolean));
+  const k=document.getElementById('kpiRM');if(k)k.textContent=rm.size.toLocaleString();
+  const ds=document.getElementById('dataStatus');if(ds)ds.textContent='ข้อมูล Upload พร้อมใช้งาน';
+ }
+ if(conv){
+  const sn=Object.keys(conv.sheets||{})[0],rows=(conv.sheets[sn]||[]);
+  const k=document.getElementById('kpiSource');if(k)k.textContent=rows.length.toLocaleString();
+ }
+ renderBomMapping(bom,conv);
+}
 const uploadTypes=[
  ['Stock Movement','.xlsx,.xls,.xlsm','รองรับ Append จากข้อมูลล่าสุดในขั้นเชื่อม Data'],
  ['Item Sale','.xlsx,.xls,.xlsm','ข้อมูลจะแยกตาม User อัตโนมัติ'],
@@ -149,34 +265,13 @@ async function selectUpload(input,i){
      const sn=wb.SheetNames[0], rows=payload.sheets[sn]||[], h=Object.keys(rows[0]||{});
      ['Code','Detail Raw Material','Unit','Convert','Convert Unit'].forEach(x=>{if(!h.includes(x))throw new Error('Unit Conversion ไม่พบ Header: '+x)});
    }
-   localStorage.setItem('yothe-upload-'+i,JSON.stringify(payload));
+   await saveDataset('yothe-upload-'+i,payload);
    const rows=Object.values(payload.sheets).reduce((a,x)=>a+x.length,0);
    meta.textContent='✓ '+f.name+' • '+rows.toLocaleString()+' rows • '+wb.SheetNames.join(', ')+' • บันทึกแล้ว';
-   bar.style.width='100%';bar.style.background='#168a45';refreshDataStatus();
+   bar.style.width='100%';bar.style.background='#168a45';renderDatasetPreview(i,payload);await restoreUploadedData();
  }catch(e){meta.textContent='✕ '+e.message;bar.style.width='100%';bar.style.background='#d72d2d'}
 }
-function refreshDataStatus(){
- const bom=JSON.parse(localStorage.getItem('yothe-upload-2')||'null');
- const conv=JSON.parse(localStorage.getItem('yothe-upload-3')||'null');
- if(bom){
-   const r=(bom.sheets.Recipe||[]), w=(bom.sheets.WIP||[]);
-   const rm=new Set([...r.map(x=>x.ItemCode),...w.map(x=>x['RM Item Code'])].filter(Boolean));
-   document.getElementById('kpiRM').textContent=rm.size.toLocaleString();
-   const ds=document.getElementById('dataStatus');if(ds)ds.textContent='BOM/WIP พร้อมใช้งาน • '+r.length+' Recipe rows • '+w.length+' WIP rows';
- }
- if(conv){
-   const sn=Object.keys(conv.sheets)[0], rows=conv.sheets[sn]||[];
-   document.getElementById('kpiSource').textContent=rows.length.toLocaleString();
- }
- [0,1,2,3].forEach(i=>{
-   const p=JSON.parse(localStorage.getItem('yothe-upload-'+i)||'null');
-   if(!p)return;
-   const rows=Object.values(p.sheets||{}).reduce((a,x)=>a+x.length,0);
-   const m=document.getElementById('meta'+i),b=document.getElementById('bar'+i);
-   if(m)m.textContent='✓ '+p.fileName+' • '+rows.toLocaleString()+' rows • พร้อมใช้งาน';
-   if(b){b.style.width='100%';b.style.background='#168a45'}
- });
-}
+async function refreshDataStatus(){await restoreUploadedData()}
 function fakeImport(input){if(input.files[0])alert("รับไฟล์ "+input.files[0].name+" แล้วใน ระบบ — ยังไม่เขียนข้อมูลจริงจนกว่าจะเชื่อมฐานข้อมูล Yothe'")}
 function saveGlobal(){localStorage.setItem('yothe-global-source',document.getElementById('globalSource').value);alert('บันทึก Local แล้ว: '+document.getElementById('globalSource').value)}
 function addMapping(){const b=document.getElementById('mappingBody');if(b.querySelector('.empty'))b.innerHTML='';const r=document.createElement('tr');r.innerHTML='<td contenteditable>NEW-ITEM</td><td contenteditable>Product</td><td contenteditable>-</td><td contenteditable>-</td><td contenteditable>false</td><td><select><option>BOM</option><option>Stock Movement</option><option>Item Sale</option></select></td><td contenteditable>1</td><td>'+new Date().toLocaleDateString('th-TH')+'</td><td><button class="btn" onclick="this.closest(\'tr\').remove()">ลบ</button></td>';b.appendChild(r)}
@@ -196,7 +291,7 @@ function downloadTemplate(){
  document.body.appendChild(a);a.click();a.remove();
  setTimeout(()=>URL.revokeObjectURL(u),1000);
 }
-try{initUploads();refreshDataStatus()}catch(e){
+try{initUploads();restoreUploadedData()}catch(e){
  console.error(e);
  const box=document.getElementById('uploads');
  if(box)box.innerHTML='<div class="notice">เกิดข้อผิดพลาดในการเปิดระบบ Upload: '+String(e.message||e)+'</div>';
