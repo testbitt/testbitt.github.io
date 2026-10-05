@@ -114,6 +114,21 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
+
+.delivery-wrap{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+.delivery-head{padding:18px 20px;background:linear-gradient(135deg,#fff8f4,#fde8e3);border-bottom:1px solid var(--line)}
+.delivery-head h2{margin:0;color:var(--red);font-size:28px}.delivery-head p{margin:6px 0 0;color:var(--muted)}
+.delivery-table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.delivery-table{width:100%;border-collapse:collapse;min-width:860px;table-layout:fixed}
+.delivery-table th,.delivery-table td{padding:13px 12px;border:1px solid #e5e7eb;vertical-align:top;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+.delivery-table th{background:var(--red);color:#fff;font-weight:900;text-align:center}
+.delivery-table td{font-size:15px;line-height:1.45;color:#222}
+.delivery-table td:first-child{font-weight:900;color:#8b1e1e}
+.delivery-empty{padding:30px;text-align:center;color:var(--muted)}
+@media(max-width:700px){
+  .delivery-wrap{border-radius:12px}.delivery-head{padding:14px}.delivery-head h2{font-size:22px}
+  .delivery-table{min-width:720px}.delivery-table th,.delivery-table td{padding:10px 9px;font-size:13px}
+}
 </style>
 </head>
 <body>
@@ -161,6 +176,12 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
   <section id="view-expiry" class="view"><div class="section-head"><div><h2>วันหมดอายุ</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="expiryList"></div><div id="attachments-expiry" class="attachments"></div></section>
   <section id="view-toppings" class="view"><div class="section-head"><div><h2>Topping</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="toppingList" class="grid"></div><div id="attachments-toppings" class="attachments"></div></section>
   <section id="view-uniforms" class="view"><div class="section-head"><div><h2>เครื่องแต่งกาย</h2></div></div><div id="uniformList" class="grid"></div><div id="attachments-uniforms" class="attachments"></div></section>
+  <section id="view-delivery-schedule" class="view">
+    <div class="delivery-wrap">
+      <div class="delivery-head"><h2>ตารางการจัดส่งสินค้า</h2><p>รอบสั่งสินค้า รอบส่งสินค้า เวลา และ Supplier</p></div>
+      <div id="deliveryScheduleList" class="delivery-table-wrap"></div>
+    </div>
+  </section>
   <section id="view-courses" class="view"><div class="section-head"><div><h2>บทเรียนทั้งหมด</h2><p>รวมบทเรียนทั้งหมดที่มีอยู่ใน Yothé E-Learning</p></div></div><div id="courseCategoryHeading" class="hidden" style="margin:0 0 12px;font-weight:900;font-size:22px;color:var(--red)"></div><input id="courseSearch" class="search" placeholder="ค้นหาบทเรียนทั้งหมด..."><div id="courseList" class="cards"></div><div id="attachments-courses" class="attachments"></div></section>
 </main>
 </div>
@@ -388,6 +409,16 @@ function openCourseCategory(category){
   if(search)search.value="";
   showView("courses");
 }
+async function loadDeliverySchedule(){
+  const el=document.getElementById("deliveryScheduleList");if(!el)return;
+  el.innerHTML='<div class="delivery-empty">กำลังโหลดตารางจัดส่งสินค้า...</div>';
+  try{
+    const rows=await api("delivery_schedule");
+    el.innerHTML=rows.length?'<table class="delivery-table"><thead><tr><th>Supplier</th><th>รอบสั่งสินค้า</th><th>เวลาสั่ง</th><th>รอบส่งสินค้า</th><th>เวลาส่ง</th><th>หมายเหตุ</th></tr></thead><tbody>'+
+      rows.map(r=>'<tr><td>'+esc(r.supplier_name||"-")+'</td><td>'+esc(r.order_round||"-")+'</td><td>'+esc(r.order_time||"-")+'</td><td>'+esc(r.delivery_round||"-")+'</td><td>'+esc(r.delivery_time||"-")+'</td><td>'+esc(r.notes||"-")+'</td></tr>').join("")+
+      '</tbody></table>':'<div class="delivery-empty">ยังไม่มีข้อมูลตารางจัดส่งสินค้า</div>';
+  }catch(e){el.innerHTML='<div class="delivery-empty">'+esc(e.message)+'</div>'}
+}
 async function loadSettings(){
   const [rows,courseRows]=await Promise.all([api("settings"),api("courses").catch(()=>[])]);
   const map=Object.fromEntries(rows.map(x=>[x.key,x.value]));
@@ -420,7 +451,11 @@ function showView(view){
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
   document.getElementById("view-"+view)?.classList.add("active");
   document.querySelectorAll('#navLinks [data-view]').forEach(x=>x.classList.toggle("active",x.dataset.view===view&&!pendingCourseCategory));
-  document.querySelectorAll('#navLinks [data-course-menu]').forEach(x=>x.classList.toggle("active",view==="courses"&&pendingCourseCategory&&x.dataset.courseCategory===pendingCourseCategory));
+  document.querySelectorAll('#navLinks [data-course-menu]').forEach(x=>{
+    const isDelivery=view==="delivery-schedule"&&x.dataset.deliverySchedule==="1";
+    const isCourse=view==="courses"&&pendingCourseCategory&&x.dataset.courseCategory===pendingCourseCategory;
+    x.classList.toggle("active",isDelivery||isCourse);
+  });
   window.scrollTo({top:0,behavior:"smooth"});
   loadView(view).finally(()=>requestAnimationFrame(initMotionObserver));
 }
@@ -432,6 +467,7 @@ async function loadView(view){
     if(view==="toppings"){renderToppings(await api("toppings"));await loadAttachments("toppings");return}
     if(view==="expiry"){renderExpiry(await api("expiry"));await loadAttachments("expiry");return}
     if(view==="uniforms"){renderUniforms(await api("uniforms"));await loadAttachments("uniforms");return}
+    if(view==="delivery-schedule"){await loadDeliverySchedule();return}
     if(view==="courses"){await loadAllLessons();await loadAttachments("courses");return}
     if(view.startsWith("custom-")){await loadAttachments(view);return}
   }catch(e){
@@ -536,7 +572,12 @@ document.addEventListener("click",e=>{
     e.preventDefault();
     playMenuMeow();
     if(!token){openLogin();return}
-    openCourseCategory(courseMenu.dataset.courseCategory||courseMenu.textContent||"");
+    if(courseMenu.dataset.deliverySchedule==="1"){
+      pendingCourseCategory="";
+      showView("delivery-schedule");
+    }else{
+      openCourseCategory(courseMenu.dataset.courseCategory||courseMenu.textContent||"");
+    }
     return;
   }
   const lesson=e.target.closest("[data-open-view]");
