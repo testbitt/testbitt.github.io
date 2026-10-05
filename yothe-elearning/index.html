@@ -157,6 +157,67 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
   .delivery-wrap{border-radius:12px}.delivery-head{padding:14px}.delivery-head h2{font-size:22px}
   .delivery-table{min-width:880px}.delivery-table th,.delivery-table td{padding:10px 9px;font-size:13px;white-space:nowrap}
 }
+
+/* Interactive object focus popup for lesson images */
+.attachment-viewer-body img.viewer-interactive-image{
+  cursor:zoom-in;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+.object-focus-popup{
+  position:fixed;inset:0;z-index:340;
+  background:rgba(15,10,10,.74);
+  display:grid;place-items:center;padding:18px;
+  backdrop-filter:blur(4px);
+}
+.object-focus-card{
+  width:min(520px,92vw);
+  aspect-ratio:1/1;
+  background:#fff;
+  border:4px solid #fff;
+  border-radius:28px;
+  overflow:hidden;
+  box-shadow:0 30px 100px rgba(0,0,0,.42);
+  position:relative;
+  animation:yotheObjectPop .28s cubic-bezier(.2,.9,.25,1.2) both,
+            yotheObjectWiggle 1.35s ease-in-out .28s infinite;
+}
+.object-focus-image{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  background-repeat:no-repeat;
+  background-color:#fff;
+}
+.object-focus-hint{
+  position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
+  background:rgba(0,0,0,.62);color:#fff;
+  padding:7px 12px;border-radius:999px;
+  font-size:12px;font-weight:800;white-space:nowrap;
+}
+.object-focus-close{
+  position:absolute;right:10px;top:10px;z-index:2;
+  width:36px;height:36px;border:0;border-radius:50%;
+  background:rgba(255,255,255,.94);color:var(--red);
+  font-size:20px;font-weight:900;cursor:pointer;
+  box-shadow:0 3px 12px rgba(0,0,0,.18);
+}
+@keyframes yotheObjectPop{
+  0%{opacity:0;transform:scale(.55) rotate(-7deg)}
+  70%{opacity:1;transform:scale(1.06) rotate(2deg)}
+  100%{opacity:1;transform:scale(1) rotate(0)}
+}
+@keyframes yotheObjectWiggle{
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  25%{transform:translateY(-5px) rotate(-1.5deg)}
+  50%{transform:translateY(1px) rotate(1.5deg)}
+  75%{transform:translateY(-3px) rotate(-.8deg)}
+}
+@media(prefers-reduced-motion:reduce){
+  .object-focus-card{animation:yotheObjectPop .15s ease both}
+}
+@media(max-width:560px){
+  .object-focus-card{width:min(88vw,430px);border-radius:22px}
+}
 </style>
 </head>
 <body>
@@ -342,6 +403,31 @@ async function loadAttachments(section){
     }).join("")+'</div>';
   }catch(e){el.innerHTML='<div class="state">โหลดไฟล์แนบไม่สำเร็จ: '+esc(e.message)+'</div>'}
 }
+function openObjectFocusFromImage(img,event){
+  if(!img?.src)return;
+  const rect=img.getBoundingClientRect();
+  if(!rect.width||!rect.height)return;
+  const x=Math.max(0,Math.min(1,(event.clientX-rect.left)/rect.width));
+  const y=Math.max(0,Math.min(1,(event.clientY-rect.top)/rect.height));
+
+  const popup=document.getElementById("objectFocusPopup");
+  const focus=document.getElementById("objectFocusImage");
+  focus.style.backgroundImage='url("'+img.src.replace(/"/g,'%22')+'")';
+  // 230% zoom, centered at the exact point the user clicked.
+  focus.style.backgroundSize="230% auto";
+  focus.style.backgroundPosition=(x*100)+"% "+(y*100)+"%";
+  popup.classList.remove("hidden");
+  popup.setAttribute("aria-hidden","false");
+  playMenuMeow();
+}
+function closeObjectFocus(){
+  const popup=document.getElementById("objectFocusPopup");
+  if(!popup)return;
+  popup.classList.add("hidden");
+  popup.setAttribute("aria-hidden","true");
+  const focus=document.getElementById("objectFocusImage");
+  if(focus)focus.style.backgroundImage="";
+}
 function renderAttachmentViewer(){
   const files=attachmentSets[attachmentViewerSection]||[];
   const f=files[attachmentViewerIndex];
@@ -351,7 +437,7 @@ function renderAttachmentViewer(){
   document.getElementById("attachmentViewerCount").textContent=(attachmentViewerIndex+1)+" / "+files.length;
   const body=document.getElementById("attachmentViewerBody");
   if(info.type==="image"){
-    body.innerHTML='<img src="'+esc(f.url)+'" alt="'+esc(f.title||f.file_name)+'">';
+    body.innerHTML='<img class="viewer-interactive-image" src="'+esc(f.url)+'" alt="'+esc(f.title||f.file_name)+'" draggable="false">';
   }else if(info.type==="pdf"){
     body.innerHTML='<iframe src="'+esc(f.url)+'#toolbar=1&navpanes=1"></iframe>';
   }else{
@@ -674,6 +760,18 @@ document.getElementById("logoutBtn").onclick=async()=>{
   await loadPublicHome();
 };
 document.addEventListener("click",e=>{
+  const focusClose=e.target.closest("#objectFocusClose");
+  const focusPopup=e.target.closest("#objectFocusPopup");
+  if(focusClose || (focusPopup && e.target.id==="objectFocusPopup")){
+    e.preventDefault();closeObjectFocus();return;
+  }
+  const viewerImg=e.target.closest(".viewer-interactive-image");
+  if(viewerImg){
+    e.preventDefault();
+    openObjectFocusFromImage(viewerImg,e);
+    return;
+  }
+
   const courseMenu=e.target.closest("[data-course-menu]");
   if(courseMenu){
     e.preventDefault();
@@ -764,6 +862,21 @@ function initMotionObserver(){
   },{threshold:.08,rootMargin:"0px 0px -20px 0px"});
   document.querySelectorAll(".sheet,.card,.attachment-card,.story,.home-entry").forEach(el=>io.observe(el));
 }
+
+document.getElementById("objectFocusImage")?.addEventListener("click",closeObjectFocus);
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&!document.getElementById("objectFocusPopup")?.classList.contains("hidden")){
+    closeObjectFocus();
+  }
+});
 </script>
+
+<div id="objectFocusPopup" class="object-focus-popup hidden" aria-hidden="true">
+  <div class="object-focus-card" role="dialog" aria-modal="true" aria-label="ขยายรูปที่เลือก">
+    <button id="objectFocusClose" class="object-focus-close" type="button" aria-label="ปิด">×</button>
+    <div id="objectFocusImage" class="object-focus-image"></div>
+    <div class="object-focus-hint">แตะอีกครั้งเพื่อปิด</div>
+  </div>
+</div>
 </body>
 </html>
