@@ -161,7 +161,7 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
   <section id="view-expiry" class="view"><div class="section-head"><div><h2>วันหมดอายุ</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="expiryList"></div><div id="attachments-expiry" class="attachments"></div></section>
   <section id="view-toppings" class="view"><div class="section-head"><div><h2>Topping</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="toppingList" class="grid"></div><div id="attachments-toppings" class="attachments"></div></section>
   <section id="view-uniforms" class="view"><div class="section-head"><div><h2>เครื่องแต่งกาย</h2></div></div><div id="uniformList" class="grid"></div><div id="attachments-uniforms" class="attachments"></div></section>
-  <section id="view-courses" class="view"><div class="section-head"><div><h2>บทเรียนทั้งหมด</h2><p>รวมบทเรียนทั้งหมดที่มีอยู่ใน Yothé E-Learning</p></div></div><input id="courseSearch" class="search" placeholder="ค้นหาบทเรียนทั้งหมด..."><div id="courseList" class="cards"></div><div id="attachments-courses" class="attachments"></div></section>
+  <section id="view-courses" class="view"><div class="section-head"><div><h2>บทเรียนทั้งหมด</h2><p>รวมบทเรียนทั้งหมดที่มีอยู่ใน Yothé E-Learning</p></div></div><div id="courseCategoryHeading" class="hidden" style="margin:0 0 12px;font-weight:900;font-size:22px;color:var(--red)"></div><input id="courseSearch" class="search" placeholder="ค้นหาบทเรียนทั้งหมด..."><div id="courseList" class="cards"></div><div id="attachments-courses" class="attachments"></div></section>
 </main>
 </div>
 
@@ -193,7 +193,7 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 const LOGIN_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-login";
 const PUBLIC_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-public";
 const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
-let token="",currentUser=null,cache={},courses=[],settingsMap={},attachmentSets={},attachmentViewerSection="",attachmentViewerIndex=0,customMenus=[],courseNavRows=[],pendingCourseTitle="";
+let token="",currentUser=null,cache={},courses=[],settingsMap={},attachmentSets={},attachmentViewerSection="",attachmentViewerIndex=0,customMenus=[],courseNavRows=[],pendingCourseCategory="";
 const realCatMeow=new Audio("data:audio/mpeg;base64,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/zlGp//6n6dB4blvRE/Ze9SyBD//2rWC/7u4NuSy4D7//83rqOtN7q1Hq6X/8zjEaRTiorZeVg8kYDmf/uVDwuc4VnyYE0B2hVTx1nQ//5zhm///nOcv///JQ398jNthCH///yEIprIOey25ZP9CROPVo3/7+D1tsuAZDmf2XK7198oPTXzaZDwt9UxxWasqNtO0SMgHyQP/8zjEdBNSsu5eS0Umpj/3dmMmGOdKBEu87Xt/qEO9t1a97St7Feu9VT/zAV///9FT6jzNBrOmPET2mqN//NQvdvtgG4WvSjD1kVzZKpqrE+BYM6amsp3dBJH+TRMQnZu39SkKylmw+AoKKF//8zjEhRUCsvJeWoUu/tprMHhYUJ9Kf0tMYDBwhj7zKYSUzaJMZyCBGUvV/t3oZWQOjr+twkVvWoKBspSNd9bgJ0Qvu/66kkEzlAMZu6onctF4sZfygLgiBpn/Ts7vWPDUak/0Xe54lVI1lAX/8zjEkBbqrvJeU0rSR8KFzMLg0bUGpkAlsDEBxaNnVK/lz9lVYHEDvJ6wVQBDn/pJVYAPEkksgFYU3//+kIiOYmxo3KqnmqnZSkEp0uF4XYKwiC/3dJFrMu2px8jsJBNLr6vO0srJmD1L32v/8zjEkxYKVtpeacb2stGWZOoAEU9XlRXR3+Zt17R8F4+KYr994Yfrt3HGi8OW5IPkiih/BJBWmtgAASAVDfWXAAJDnVXemOSABcBQ4WUF1JFc9Qa/o9SzUWcHskWIgptT3/RatUxLos0cBFz/8zjEmRl6orD+iVmq3BRwfoRQI4lCRc/yvqBUVR/xKGxi1OzFd4CAgDDA9spVYAtoWptuugBEy03/VZHT0dM3EEQPEGwWNMwQk6pahzpIX/hQooQ7i4SNfr/o6iKPjQLgPB2JZxn/avOUgeL/8zjEkhTJQqZeUCYMKcw3QRCBBjLf/ojo7OhlXPdtvSqmmmmFCYkC8cIh7Rk6IDEgEoNlkgALm/7+Kbslnok1IwBCAKHSO+BgXs/pmYp6t/QxhYRQn/770agGUOjAMIkRj/7Mh9kQ6irKIsL/8zjEnReqos5eiM8Lqf//1zGNNaXX//MpREWU7aMfMJqAAC0L+f//gA5hEf/+u9J1sZ/BQCzmX/8wcjFNr6cWlk+sB0bH/ybp7eX5MZpSoKrVc25lbu0/V5ygJdaZbb36+bfkGAUVFEf/DrP/8zjEnRRitrpeOsqSLvGX750IKi0ACQRQJaihutywCS8BMSdDowLu9K5vLHfwxN8/6yZC3zlgWdNWBd2xzytzbj42jL2gmHG/UUi72r/b++/baVwz+levrt9f/WoQ5QDUA5DlUhBiXPzlcmH/8zjEqhSpBs5fTUADVrLXFvrL17X23mtCgKlh50FTp4SlQ0WWdBVx4SlQ0WWdBV0SlTtZ0FcSlTtZ0S4lWdzvK+d5XrOoxL53/9dMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/8zjEthHYioGXmDAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/8zjEzRM4fcgDzxgCVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU=");
 realCatMeow.preload="auto";
 realCatMeow.volume=0.55;
@@ -358,40 +358,34 @@ function renderCourseLessonMenus(rows=[]){
   const coursesBtn=nav.querySelector('[data-view="courses"]');
   if(!coursesBtn)return;
 
-  const seen=new Set();
+  const groups=new Map();
   courseNavRows
-    .filter(r=>r&&r.is_published!==false&&String(r.title||"").trim())
+    .filter(r=>r&&r.is_published!==false&&String(r.category||"").trim()&&String(r.title||"").trim())
     .sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||(Number(a.id)||0)-(Number(b.id)||0))
     .forEach(r=>{
-      const title=String(r.title||"").trim();
-      const key=title.toLowerCase();
-      if(seen.has(key))return;
-      seen.add(key);
-      const btn=document.createElement("button");
-      btn.className="auth-only hidden-auth course-lesson-menu";
-      btn.dataset.courseMenu="1";
-      btn.dataset.courseTitle=title;
-      btn.textContent=title;
-      nav.insertBefore(btn,coursesBtn);
+      const category=String(r.category||"").trim();
+      if(!groups.has(category))groups.set(category,[]);
+      groups.get(category).push(r);
     });
+
+  groups.forEach((items,category)=>{
+    const btn=document.createElement("button");
+    btn.className="auth-only hidden-auth course-lesson-menu";
+    btn.dataset.courseMenu="1";
+    btn.dataset.courseCategory=category;
+    btn.textContent=category;
+    btn.title=items.map(x=>String(x.title||"").trim()).filter(Boolean).join(" • ");
+    nav.insertBefore(btn,coursesBtn);
+  });
 
   syncCustomMenuPosition();
   syncCourseLessonMenuPosition();
   setAuthUI(!!token);
 }
-async function loadCourseLessonMenus(){
-  try{
-    const rows=await api("courses");
-    renderCourseLessonMenus(rows||[]);
-  }catch(e){
-    console.warn("โหลดชื่อบทเรียนบนแถบเมนูไม่สำเร็จ",e);
-    renderCourseLessonMenus([]);
-  }
-}
-function openCourseLesson(title){
-  pendingCourseTitle=String(title||"").trim();
+function openCourseCategory(category){
+  pendingCourseCategory=String(category||"").trim();
   const search=document.getElementById("courseSearch");
-  if(search)search.value=pendingCourseTitle;
+  if(search)search.value="";
   showView("courses");
 }
 async function loadSettings(){
@@ -425,8 +419,8 @@ function renderMenuOrder(order){
 function showView(view){
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
   document.getElementById("view-"+view)?.classList.add("active");
-  document.querySelectorAll('#navLinks [data-view]').forEach(x=>x.classList.toggle("active",x.dataset.view===view&&!pendingCourseTitle));
-  document.querySelectorAll('#navLinks [data-course-menu]').forEach(x=>x.classList.toggle("active",view==="courses"&&pendingCourseTitle&&x.dataset.courseTitle===pendingCourseTitle));
+  document.querySelectorAll('#navLinks [data-view]').forEach(x=>x.classList.toggle("active",x.dataset.view===view&&!pendingCourseCategory));
+  document.querySelectorAll('#navLinks [data-course-menu]').forEach(x=>x.classList.toggle("active",view==="courses"&&pendingCourseCategory&&x.dataset.courseCategory===pendingCourseCategory));
   window.scrollTo({top:0,behavior:"smooth"});
   loadView(view).finally(()=>requestAnimationFrame(initMotionObserver));
 }
@@ -485,8 +479,17 @@ async function loadAllLessons(){
   }catch(e){el.innerHTML='<div class="state">'+esc(e.message)+'</div>'}
 }
 function renderCourses(){
-  const q=(pendingCourseTitle||document.getElementById("courseSearch").value).trim().toLowerCase();
-  const list=courses.filter(c=>((c.title||"")+" "+(c.description||"")+" "+(c.category||"")+" "+(c.meta||"")).toLowerCase().includes(q));
+  const heading=document.getElementById("courseCategoryHeading");
+  if(heading){
+    heading.textContent=pendingCourseCategory?pendingCourseCategory:"";
+    heading.classList.toggle("hidden",!pendingCourseCategory);
+  }
+  const q=document.getElementById("courseSearch").value.trim().toLowerCase();
+  const list=courses.filter(c=>{
+    const inCategory=!pendingCourseCategory||String(c.category||"").trim()===pendingCourseCategory;
+    const inSearch=!q||((c.title||"")+" "+(c.description||"")+" "+(c.category||"")+" "+(c.meta||"")).toLowerCase().includes(q);
+    return inCategory&&inSearch;
+  });
   document.getElementById("courseList").innerHTML=list.map(c=>
     '<article class="card" data-open-view="'+esc(c.view)+'" style="cursor:pointer">'+(c.thumbnail_url?'<img src="'+esc(c.thumbnail_url)+'" style="width:100%;aspect-ratio:16/9;object-fit:contain;margin-bottom:10px;border-radius:12px;background:#fff">':'')+'<h3>'+esc(c.title||"")+'</h3>'+
       '<p>'+esc(c.description||"")+'</p>'+
@@ -533,7 +536,7 @@ document.addEventListener("click",e=>{
     e.preventDefault();
     playMenuMeow();
     if(!token){openLogin();return}
-    openCourseLesson(courseMenu.dataset.courseTitle||courseMenu.textContent||"");
+    openCourseCategory(courseMenu.dataset.courseCategory||courseMenu.textContent||"");
     return;
   }
   const lesson=e.target.closest("[data-open-view]");
@@ -547,7 +550,7 @@ document.addEventListener("click",e=>{
     e.preventDefault();
     playMenuMeow();
     if(b.dataset.view==="courses"){
-      pendingCourseTitle="";
+      pendingCourseCategory="";
       const search=document.getElementById("courseSearch");
       if(search)search.value="";
     }
@@ -560,7 +563,7 @@ document.addEventListener("click",e=>{
     playMenuMeow();
   }
 });
-document.getElementById("courseSearch").addEventListener("input",()=>{pendingCourseTitle="";renderCourses()});
+document.getElementById("courseSearch").addEventListener("input",renderCourses);
 document.getElementById("attachmentPrevBtn").onclick=()=>stepAttachment(-1);
 document.getElementById("attachmentNextBtn").onclick=()=>stepAttachment(1);
 document.getElementById("attachmentCloseBtn").onclick=closeAttachmentViewer;
