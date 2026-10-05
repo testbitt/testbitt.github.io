@@ -349,7 +349,23 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 
 @media(max-width:760px){.grid2,.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}.wrap{padding:18px 12px 40px}.panel{padding:16px}.recipe-body{grid-template-columns:110px 1fr}.recipe-photo{min-height:180px;padding:8px}.recipe-title{font-size:18px}.recipe-table th,.recipe-table td{font-size:13px;padding:8px 7px}.recipe-note{font-size:12.5px}}
 /* Layout theme is scoped to #tableWrap only */
-</style>
+/* Delivery schedule editor: one easy 7-day grid */
+.delivery-editor{display:grid;gap:14px}
+.delivery-editor-top{display:grid;grid-template-columns:minmax(220px,1.4fr) minmax(100px,.45fr) minmax(130px,.55fr);gap:12px;align-items:end}
+.delivery-week{border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;background:#fff}
+.delivery-week-head,.delivery-day-row{display:grid;grid-template-columns:120px minmax(150px,1fr) minmax(170px,1.2fr) minmax(150px,1fr);align-items:center}
+.delivery-week-head{background:var(--red);color:#fff;font-weight:900}
+.delivery-week-head>div,.delivery-day-row>div{padding:10px 11px;min-width:0}
+.delivery-day-row{border-top:1px solid #e5e7eb}
+.delivery-day-row:nth-child(odd){background:#fffaf8}
+.delivery-day-name{font-weight:900;color:var(--red)}
+.delivery-day-row .input{margin:0;padding:10px 11px}
+.delivery-editor-note{display:grid;grid-template-columns:1fr;gap:8px}
+@media(max-width:760px){
+ .delivery-editor-top{grid-template-columns:1fr}
+ .delivery-week{overflow-x:auto}
+ .delivery-week-head,.delivery-day-row{min-width:700px;grid-template-columns:105px 180px 210px 180px}
+}</style>
 </head>
 <body>
 <header class="top"><div class="topin">
@@ -1590,10 +1606,36 @@ function scheduleAutoSave(){
   clearTimeout(autoSaveTimer);
   autoSaveTimer=setTimeout(performAutoSave,700);
 }
+function deliveryEditorHtml(row={}){
+  const days=[
+    ["mon","จันทร์"],["tue","อังคาร"],["wed","พุธ"],["thu","พฤหัสบดี"],
+    ["fri","ศุกร์"],["sat","เสาร์"],["sun","อาทิตย์"]
+  ];
+  const input=(name,val,placeholder="")=>'<input class="input" name="'+name+'" type="text" value="'+esc(val??"")+'" placeholder="'+esc(placeholder)+'">';
+  return '<div class="delivery-editor">'+
+    '<div class="delivery-editor-top">'+
+      '<div class="field" style="margin:0"><label>ชื่อ Supplier</label>'+input("supplier_name",row.supplier_name,"ชื่อ Supplier")+'</div>'+
+      '<div class="field" style="margin:0"><label>ลำดับ</label><input class="input" name="sort_order" type="number" value="'+esc(row.sort_order??0)+'"></div>'+
+      '<div class="field" style="margin:0"><label>เผยแพร่</label><select class="input" name="is_published"><option value="true" '+(row.is_published!==false?"selected":"")+'>ใช่</option><option value="false" '+(row.is_published===false?"selected":"")+'>ไม่</option></select></div>'+
+    '</div>'+
+    '<div class="delivery-week">'+
+      '<div class="delivery-week-head"><div>วัน</div><div>เวลาสั่ง</div><div>รอบส่งสินค้า</div><div>เวลาส่ง</div></div>'+
+      days.map(([k,d])=>'<div class="delivery-day-row">'+
+        '<div class="delivery-day-name">'+d+'</div>'+
+        '<div>'+input(k+"_order_time",row[k+"_order_time"],"เช่น 12:00")+'</div>'+
+        '<div>'+input(k+"_delivery_round",row[k+"_delivery_round"],"เช่น รอบเช้า / รอบบ่าย")+'</div>'+
+        '<div>'+input(k+"_delivery_time",row[k+"_delivery_time"],"เช่น 09:00")+'</div>'+
+      '</div>').join("")+
+    '</div>'+
+    '<div class="delivery-editor-note"><label style="font-weight:800">หมายเหตุ</label><textarea class="input" name="notes" rows="3" placeholder="หมายเหตุเพิ่มเติม">'+esc(row.notes??"")+'</textarea></div>'+
+  '</div>';
+}
 function openEditor(row){
   editingId=row?.id??null; const fields=DATASETS[dataset].fields;
-  document.getElementById("editorTitle").textContent=editingId?"แก้ไขข้อมูล":"เพิ่มข้อมูล";
-  document.getElementById("formFields").innerHTML=fields.map(([key,label,type])=>{
+  document.getElementById("editorTitle").textContent=dataset==="delivery_schedule"?(editingId?"แก้ไขรอบการส่งสินค้า":"เพิ่มรอบการส่งสินค้า"):(editingId?"แก้ไขข้อมูล":"เพิ่มข้อมูล");
+  if(dataset==="delivery_schedule"){
+    document.getElementById("formFields").innerHTML=deliveryEditorHtml(row||{is_published:true,sort_order:0});
+  }else document.getElementById("formFields").innerHTML=fields.map(([key,label,type])=>{
     let val=row?.[key];
     if(type==="json") val=val==null?"{}":JSON.stringify(val,null,2);
     if(type==="boolean") return '<div class="field"><label>'+esc(label)+'</label><select name="'+key+'"><option value="true" '+(val!==false?"selected":"")+'>ใช่</option><option value="false" '+(val===false?"selected":"")+'>ไม่</option></select></div>';
