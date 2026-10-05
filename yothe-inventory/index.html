@@ -22,11 +22,11 @@ button,input,select{font:inherit}.app{min-height:100vh}.top{height:70px;backgrou
 .group-list{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.group{border:1px solid #eee;border-radius:12px;padding:14px;background:white}.group h4{margin:0 0 5px}.right{margin-left:auto}.muted{color:var(--muted);font-size:12px}
 @media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.filters{grid-template-columns:repeat(3,1fr)}}@media(max-width:760px){.layout{grid-template-columns:1fr}.sidebar{position:static;height:auto;display:flex;overflow:auto;border-right:0;border-bottom:1px solid #eee;padding:8px}.navbtn{min-width:max-content;width:auto}.brand small{display:none}.main{padding:12px}.kpis{grid-template-columns:repeat(2,1fr)}.uploads,.two,.three,.group-list{grid-template-columns:1fr}.filters{grid-template-columns:1fr 1fr}.top{padding:0 10px}.status .pill:nth-child(2){display:none}}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>\n</head>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script></head>
 <body>
 <div id="app" class="app" style="display:block">
 <header class="top">
- <div class="brand"><img class="brand-logo" src="./yoyhe-logo.svg?v=3" alt="Yothe'"></div>
+ <div class="brand"><img class="brand-logo" src="./yoyhe-logo.svg?v=4" alt="Yothe'"><div><h1>Yothe' Inventory Stock Checker</h1><small>Audit Stock • BOM Usage • Actual Count • Inventory Reconciliation</small></div></div>
  <div class="status"><span class="pill" id="dataStatus">พร้อมใช้งาน • รอข้อมูล Upload</span></div>
 </header>
 <div class="layout">
@@ -189,7 +189,7 @@ function downloadTemplate(){
   'Item Sale,,Configure after first YOTHE file',
   'BOM,,Configure after first YOTHE file',
   'Unit Conversion,,Configure after first YOTHE file'
- ].join('\\n');
+ ].join(String.fromCharCode(10));
  const a=document.createElement('a');
  const u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
  a.href=u;a.download='Yothe_Upload_Column_Template.csv';
