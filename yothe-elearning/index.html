@@ -433,6 +433,25 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
     font-size:13px!important;
   }
 }
+
+/* Replacement navbar logo */
+.navbar-brand-image{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  flex:0 0 auto!important;
+  min-width:0!important;
+}
+.navbar-logo-custom{
+  display:block!important;
+  width:auto!important;
+  height:54px!important;
+  max-width:min(260px,38vw)!important;
+  object-fit:contain!important;
+}
+@media(max-width:760px){
+  .navbar-logo-custom{height:44px!important;max-width:180px!important}
+}
 </style>
 </head>
 <body>
@@ -450,7 +469,7 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 
 <div id="appRoot">
 <header class="topbar"><div class="nav">
-  <button class="brand" data-view="home" style="border:0;background:none;padding:0"><img class="brand-cat" src="assets/yothe-cat.svg" alt="Yothé Cat"><img class="brand-wordmark" src="assets/yothe-wordmark.svg" alt="Yothé"><span>E-Learning</span></button>
+  <button class="brand navbar-brand-image" data-view="home" style="border:0;background:none;padding:0"><img class="navbar-logo-custom" src="assets/yothe-navbar-logo.webp" alt="Yothé"></button>
   <nav id="navLinks" class="navlinks">
     <button data-view="home" class="active">Home</button>
     <button class="auth-only hidden-auth" data-view="uniforms">เครื่องแต่งกาย</button>
