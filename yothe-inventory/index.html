@@ -15,7 +15,7 @@ button,input,select{font:inherit}.app{min-height:100vh}.top{height:70px;backgrou
 .grid{display:grid;gap:14px}.kpis{grid-template-columns:repeat(6,minmax(130px,1fr))}.card{background:#fff;border:1px solid #eee;border-radius:14px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.03)}.card.red{border-color:var(--line)}.kpi b{font-size:24px;display:block;margin-top:7px}.kpi span{font-size:12px;color:var(--muted)}
 .empty{border:1px dashed #ddd;background:#fcfcfc;border-radius:12px;padding:30px;text-align:center;color:var(--muted)}.empty strong{display:block;color:#555;margin-bottom:5px}
 .section-title{font-weight:800;margin:4px 0 10px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.btn{border:1px solid var(--line);background:#fff;color:var(--red2);padding:9px 12px;border-radius:9px;cursor:pointer;font-weight:700}.btn.primary{background:var(--red);border-color:var(--red);color:white}.btn.ghost{color:#555;border-color:#ddd}.btn:disabled{opacity:.45;cursor:not-allowed}
-.uploads{grid-template-columns:repeat(2,minmax(260px,1fr))}.upload{position:relative}.upload input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}.drop{padding:22px;border:1.5px dashed var(--line);border-radius:12px;background:#fffafa;text-align:center}.meta{font-size:12px;color:var(--muted);margin-top:10px}.progress{height:7px;background:#eee;border-radius:99px;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;background:var(--red);width:0}
+.uploads{grid-template-columns:repeat(2,minmax(260px,1fr))}.upload{position:relative}.upload input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2}.drop{padding:22px;border:1.5px dashed var(--line);border-radius:12px;background:#fffafa;text-align:center}.meta{font-size:12px;color:var(--muted);margin-top:10px}.progress{height:7px;background:#eee;border-radius:99px;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;background:var(--red);width:0}
 .filters{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px}.field label{font-size:12px;color:#666;display:block;margin-bottom:5px}.field select,.field input{width:100%;padding:9px 10px;border:1px solid #ddd;border-radius:9px;background:#fff}
 .tablewrap{overflow:auto;border:1px solid #eee;border-radius:12px;background:#fff}.tbl{width:100%;border-collapse:collapse;min-width:900px}.tbl th,.tbl td{padding:10px;border-bottom:1px solid #eee;text-align:left;font-size:12px;white-space:nowrap}.tbl th{background:#fff4f4;color:#7c1b1b;position:sticky;top:0}.tag{display:inline-block;padding:4px 8px;border-radius:99px;font-size:11px;font-weight:700}.tag.ok{background:#e7f7ed;color:var(--ok)}.tag.short{background:#ffe8e8;color:var(--short)}.tag.over{background:#fff0df;color:var(--over)}.tag.warn{background:#fff8d8;color:#8b6c00}
 .two{grid-template-columns:1fr 1fr}.three{grid-template-columns:repeat(3,1fr)}.notice{padding:12px 14px;background:#fff8e3;border:1px solid #f2dd98;border-radius:10px;color:#765d08;font-size:13px}.oknote{background:#edf9f1;border-color:#bfe4cb;color:#146d36}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}.tab{padding:8px 11px;border:1px solid #ddd;border-radius:9px;background:#fff;cursor:pointer}.tab.active{background:#fff0f0;border-color:var(--red);color:var(--red);font-weight:700}
@@ -199,7 +199,25 @@ function saveGlobal(){localStorage.setItem('yothe-global-source',document.getEle
 function addMapping(){const b=document.getElementById('mappingBody');if(b.querySelector('.empty'))b.innerHTML='';const r=document.createElement('tr');r.innerHTML='<td contenteditable>NEW-ITEM</td><td contenteditable>Product</td><td contenteditable>-</td><td contenteditable>-</td><td contenteditable>false</td><td><select><option>BOM</option><option>Stock Movement</option><option>Item Sale</option></select></td><td contenteditable>1</td><td>'+new Date().toLocaleDateString('th-TH')+'</td><td><button class="btn" onclick="this.closest(\'tr\').remove()">ลบ</button></td>';b.appendChild(r)}
 function createGroup(){const n=prompt('ชื่อ Custom Check Group');if(!n)return;const d=document.createElement('div');d.className='group';d.innerHTML='<h4>'+n+'</h4><div class="muted">Demo Local Group</div><div class="row" style="margin-top:10px"><button class="btn">แก้ไข</button><button class="btn" onclick="this.closest(\'.group\').remove()">ลบ</button></div>';document.getElementById('groups').appendChild(d)}
 function previewCount(){alert('ยังไม่มี RM สำหรับสร้าง Count Form — Upload ข้อมูล YOTHE ก่อน')}
-function downloadTemplate(){const csv='DATASET,REQUIRED_COLUMN,DESCRIPTION\nStock Movement,,Configure after first YOTHE file\nItem Sale,,Configure after first YOTHE file\nBOM,,Configure after first YOTHE file\nUnit Conversion,,Configure after first YOTHE file';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='YOTHE_Upload_Column_Template.csv';a.click();URL.revokeObjectURL(a.href)}
-initUploads();refreshDataStatus();const src=localStorage.getItem('yothe-global-source');if(src)document.getElementById('globalSource').value=src;if(localStorage.getItem('yothe-demo-login'))demoLogin();
+function downloadTemplate(){
+ const csv=[
+  'DATASET,REQUIRED_COLUMN,DESCRIPTION',
+  'Stock Movement,,Configure after first YOTHE file',
+  'Item Sale,,Configure after first YOTHE file',
+  'BOM,,Configure after first YOTHE file',
+  'Unit Conversion,,Configure after first YOTHE file'
+ ].join('\\n');
+ const a=document.createElement('a');
+ const u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+ a.href=u;a.download='YOTHE_Upload_Column_Template.csv';
+ document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+try{initUploads();refreshDataStatus()}catch(e){
+ console.error(e);
+ const box=document.getElementById('uploads');
+ if(box)box.innerHTML='<div class="notice">เกิดข้อผิดพลาดในการเปิดระบบ Upload: '+String(e.message||e)+'</div>';
+}
+const src=localStorage.getItem('yothe-global-source');if(src)document.getElementById('globalSource').value=src;if(localStorage.getItem('yothe-demo-login'))demoLogin();
 </script>
 </body></html>
