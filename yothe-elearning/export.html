@@ -275,6 +275,14 @@ th{min-height:29px;height:auto}
 .page.fit-tight th,.page.fit-tight td,.page.fit-ultra th,.page.fit-ultra td{font-size:inherit;padding:inherit;line-height:inherit}
 .page.density-medium .grid,.page.density-high .grid,.page.fit-tight .grid,.page.fit-ultra .grid{gap:var(--theme-gap,10px)}
 
+
+/* Export clarity tuning */
+.page th,.page td{border-width:1px!important}
+.page .sheet{backface-visibility:hidden}
+.page .sheet-title{-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision}
+.page th,.page td,.page .note{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.btn:disabled{opacity:.55;cursor:wait}
+
 @media(max-width:1180px){.wrap{max-width:100%;padding:20px 14px 50px}.controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.topin{padding:8px 14px}.brand{font-size:19px}.brand img{width:38px;height:44px}.preview-shell{padding:12px}.panel{padding:14px}}
 @media(max-width:680px){.controls{grid-template-columns:1fr}.wrap{padding:14px 8px 40px}.preview-shell{padding:8px;border-radius:10px}.btn{width:100%}.topin{align-items:flex-start;flex-wrap:wrap}.back{font-size:13px}}
@@ -481,10 +489,8 @@ function measureNaturalBounds(sheet){
 }
 function fitExportSheetInCell(cell){
   const sheet=cell.querySelector(":scope > .sheet");if(!sheet)return true;
-
   const cr=cell.getBoundingClientRect();
-  const cellW=Math.max(1,cr.width-2);
-  const cellH=Math.max(1,cr.height-2);
+  const cellW=Math.max(1,cr.width-2),cellH=Math.max(1,cr.height-2);
 
   sheet.style.position="absolute";
   sheet.style.top="0";
@@ -495,29 +501,31 @@ function fitExportSheetInCell(cell){
   sheet.style.overflow="visible";
   sheet.style.transformOrigin="top left";
 
-  // Find the largest possible scale while keeping the COMPLETE sheet inside the cell.
-  // Width is expanded before scaling, so the transformed result always uses the full cell width
-  // instead of becoming a tiny narrow table.
-  let lo=.02,hi=1,best=.02;
-  for(let i=0;i<14;i++){
-    const s=(lo+hi)/2;
-    sheet.style.transform="none";
-    sheet.style.width=(cellW/s)+"px";
-    sheet.style.transform="scale("+s+")";
+  // Fast fit: start from real cell width, measure once, then refine at most twice.
+  let scale=1;
+  sheet.style.transform="none";
+  sheet.style.width=cellW+"px";
+  let h=Math.max(sheet.scrollHeight,sheet.getBoundingClientRect().height,1);
+  if(h>cellH) scale=Math.max(.04,cellH/h);
 
-    const sr=sheet.getBoundingClientRect();
-    const fits=sr.width<=cellW+1&&sr.height<=cellH+1;
-    if(fits){best=s;lo=s}else hi=s;
+  for(let i=0;i<2;i++){
+    sheet.style.transform="none";
+    sheet.style.width=(cellW/scale)+"px";
+    sheet.style.transform="scale("+scale+")";
+    const r=sheet.getBoundingClientRect();
+    const factor=Math.min(1,cellW/Math.max(1,r.width),cellH/Math.max(1,r.height));
+    if(factor>=.995)break;
+    scale=Math.max(.04,scale*factor*.99);
   }
 
-  best=Math.max(.02,Math.min(1,best*.992));
+  scale=Math.min(1,scale);
   sheet.style.transform="none";
-  sheet.style.width=(cellW/best)+"px";
-  sheet.style.transform="scale("+best+")";
-  sheet.dataset.fitScale=best.toFixed(5);
+  sheet.style.width=(cellW/scale)+"px";
+  sheet.style.transform="scale("+scale+")";
+  sheet.dataset.fitScale=scale.toFixed(4);
 
-  const finalRect=sheet.getBoundingClientRect();
-  const ok=finalRect.width<=cellW+1&&finalRect.height<=cellH+1;
+  const fr=sheet.getBoundingClientRect();
+  const ok=fr.width<=cellW+1&&fr.height<=cellH+1;
   cell.dataset.fitOk=ok?"1":"0";
   return ok;
 }
@@ -597,7 +605,7 @@ async function fitAllExportPages(){
 
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
 
-  for(let pass=0;pass<4;pass++){
+  for(let pass=0;pass<2;pass++){
     pages.forEach(fitExportPageContent);
     await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
   }
@@ -609,9 +617,10 @@ async function fitAllExportPages(){
     });
   });
 
-  pages.forEach(page=>page.dataset.layoutValid=validateExportLayout()?"1":"0");
+  const valid=validateExportLayout();
+  pages.forEach(page=>page.dataset.layoutValid=valid?"1":"0");
   fitPreviewPages();
-  return validateExportLayout();
+  return valid;
 }
 function drinkSheet(id,items){
   items=[...items].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
@@ -700,62 +709,92 @@ async function ensureExportFitBeforeCapture(){
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
   if(!ok||!validateExportLayout()) throw new Error("Layout A4 ยังไม่พอดี กรุณาเปลี่ยนจำนวนรายการต่อหน้าแล้วลองใหม่");
 }
-async function pageCanvas(el){
+let exportBusy=false;
+function setExportBusy(on,label=""){
+  exportBusy=on;
+  document.getElementById("pngBtn").disabled=on;
+  document.getElementById("pdfBtn").disabled=on;
+  if(on&&label)document.getElementById("msg").textContent=label;
+}
+function nextFrame(){return new Promise(r=>requestAnimationFrame(()=>r()))}
+async function pageCanvas(el,qualityMode="pdf"){
   if(document.fonts?.ready)await document.fonts.ready;
-  const old=el.style.transform;el.style.transform="none";
-  await new Promise(r=>requestAnimationFrame(r));
-  const selected=getComputedStyle(document.documentElement).getPropertyValue("--red").trim()||"#d71920";
+  const old=el.style.transform;
+  el.style.transform="none";
+  await nextFrame();
+
+  const pixels=el.offsetWidth*el.offsetHeight;
+  let scale=qualityMode==="png"?2.2:1.85;
+  if(pixels>1200000)scale=Math.min(scale,1.7);
+  if(window.innerWidth<700)scale=Math.min(scale,1.5);
+
   const canvas=await html2canvas(el,{
-    scale:3,useCORS:true,allowTaint:false,backgroundColor:"#ffffff",logging:false,
-    width:el.offsetWidth,height:el.offsetHeight,windowWidth:el.offsetWidth,windowHeight:el.offsetHeight,
-    onclone:(doc)=>{
-      const root=doc.documentElement;
-      root.style.setProperty("--red",selected);
-      doc.querySelectorAll(".page-title,.sheet-title,th").forEach(x=>{
-        x.style.backgroundColor=selected;
-        x.style.color="#ffffff";
-      });
-      doc.querySelectorAll(".note").forEach(x=>{x.style.backgroundColor="#ffef57";x.style.color="#d91d0b"});
-    }
+    scale,
+    useCORS:true,
+    allowTaint:false,
+    backgroundColor:"#ffffff",
+    logging:false,
+    removeContainer:true,
+    imageTimeout:8000,
+    width:el.offsetWidth,
+    height:el.offsetHeight,
+    windowWidth:el.offsetWidth,
+    windowHeight:el.offsetHeight
   });
-  el.style.transform=old;fitPreviewPages();
+  el.style.transform=old;
   return canvas;
 }
 document.getElementById("pngBtn").onclick=async()=>{
+  if(exportBusy)return;
   const msg=document.getElementById("msg");
   try{
+    setExportBusy(true,"กำลังตรวจ Layout...");
     await ensureExportFitBeforeCapture();
     const pages=[...document.querySelectorAll("#pages .page")],ds=document.getElementById("dataset").value;
-    msg.textContent="กำลัง Export PNG "+pages.length+" หน้า...";
     for(let i=0;i<pages.length;i++){
-      const canvas=await pageCanvas(pages[i]),a=document.createElement("a");
-      a.href=canvas.toDataURL("image/png",1);
-      a.download="Yothe_"+ds+"_A4_page_"+String(i+1).padStart(2,"0")+".png";
+      msg.textContent="กำลัง Export PNG หน้า "+(i+1)+" / "+pages.length;
+      const canvas=await pageCanvas(pages[i],"png");
+      const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("สร้าง PNG ไม่สำเร็จ")),"image/png"));
+      const url=URL.createObjectURL(blob),a=document.createElement("a");
+      a.href=url;a.download="Yothe_"+ds+"_A4_page_"+String(i+1).padStart(2,"0")+".png";
       document.body.appendChild(a);a.click();a.remove();
-      await new Promise(r=>setTimeout(r,250));
+      setTimeout(()=>URL.revokeObjectURL(url),1500);
+      canvas.width=1;canvas.height=1;
+      await new Promise(r=>setTimeout(r,80));
     }
     msg.textContent="Export PNG สำเร็จ "+pages.length+" หน้า A4";
   }catch(e){msg.textContent="Export PNG ไม่สำเร็จ: "+e.message}
+  finally{setExportBusy(false)}
 };
 document.getElementById("pdfBtn").onclick=async()=>{
+  if(exportBusy)return;
   const msg=document.getElementById("msg");
   try{
+    setExportBusy(true,"กำลังตรวจ Layout...");
     await ensureExportFitBeforeCapture();
-    const pages=[...document.querySelectorAll("#pages .page")],ds=document.getElementById("dataset").value,ori=displayPrefs.orientation==="landscape"?"landscape":"portrait",{jsPDF}=window.jspdf,pdf=new jsPDF({orientation:ori,unit:"mm",format:"a4"}),pw=ori==="landscape"?297:210,ph=ori==="landscape"?210:297;
-    msg.textContent="กำลัง Export PDF "+pages.length+" หน้า...";
+    const pages=[...document.querySelectorAll("#pages .page")],ds=document.getElementById("dataset").value;
+    const ori=displayPrefs.orientation==="landscape"?"landscape":"portrait";
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:ori,unit:"mm",format:"a4",compress:true});
+    const pw=ori==="landscape"?297:210,ph=ori==="landscape"?210:297;
     for(let i=0;i<pages.length;i++){
-      const canvas=await pageCanvas(pages[i]),img=canvas.toDataURL("image/png",1);
+      msg.textContent="กำลังสร้าง PDF หน้า "+(i+1)+" / "+pages.length;
+      const canvas=await pageCanvas(pages[i],"pdf");
+      const img=canvas.toDataURL("image/jpeg",0.92);
       if(i>0)pdf.addPage("a4",ori);
-      pdf.addImage(img,"PNG",0,0,pw,ph,undefined,"FAST");
+      pdf.addImage(img,"JPEG",0,0,pw,ph,undefined,"FAST");
+      canvas.width=1;canvas.height=1;
+      await new Promise(r=>setTimeout(r,80));
     }
     pdf.save("Yothe_"+ds+"_A4_"+ori+".pdf");
     msg.textContent="Export PDF สำเร็จ "+pages.length+" หน้า A4";
   }catch(e){msg.textContent="Export PDF ไม่สำเร็จ: "+e.message}
+  finally{setExportBusy(false)}
 };
 initExportControls();
 document.getElementById("dataset").onchange=load;
 ["orientation","itemsPerPage","themeSelect","colorSelect"].forEach(id=>document.getElementById(id).addEventListener("change",saveExportPrefs));
-let exportResizeTimer=null;window.addEventListener("resize",()=>{clearTimeout(exportResizeTimer);exportResizeTimer=setTimeout(()=>fitAllExportPages(),140)});
+let exportResizeTimer=null;window.addEventListener("resize",()=>{if(exportBusy)return;clearTimeout(exportResizeTimer);exportResizeTimer=setTimeout(()=>fitAllExportPages(),220)});
 load();
 </script>
 </body>
