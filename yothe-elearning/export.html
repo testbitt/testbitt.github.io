@@ -276,6 +276,23 @@ th{min-height:29px;height:auto}
 .page.density-medium .grid,.page.density-high .grid,.page.fit-tight .grid,.page.fit-ultra .grid{gap:var(--theme-gap,10px)}
 
 
+
+/* Delivery schedule export */
+.sheet-delivery{overflow:hidden}
+.sheet-delivery .delivery-title{font-size:20px!important}
+.sheet-delivery .delivery-photo img{max-height:150px!important;object-fit:contain!important}
+.sheet-delivery .delivery-export-table th,
+.sheet-delivery .delivery-export-table td{
+  font-size:11.5px!important;
+  padding:7px 8px!important;
+  line-height:1.35!important;
+  white-space:nowrap!important;
+}
+.sheet-delivery .delivery-export-table th:nth-child(1){width:18%}
+.sheet-delivery .delivery-export-table th:nth-child(2){width:22%}
+.sheet-delivery .delivery-export-table th:nth-child(3){width:36%}
+.sheet-delivery .delivery-export-table th:nth-child(4){width:24%}
+
 /* Export clarity tuning */
 .page th,.page td{border-width:1px!important}
 .page .sheet{backface-visibility:hidden}
@@ -297,8 +314,8 @@ th{min-height:29px;height:auto}
 <main class="wrap">
 <section class="panel">
   <div class="controls export-controls">
-    <div class="field"><label>หัวข้อ</label><select id="dataset" class="input"><option value="production">สูตรการผลิต</option><option value="drinks">สูตรชงเครื่องดื่ม</option><option value="expiry">วันหมดอายุ</option><option value="toppings">Topping</option><option value="uniforms">เครื่องแต่งกาย</option><option value="courses">บทเรียนอื่น ๆ</option></select></div>
-    <div class="field"><label>ขนาดกระดาษ</label><select id="orientation" class="input"><option value="portrait">A4 แนวตั้ง</option><option value="landscape">A4 แนวนอน</option></select></div>
+    <div class="field"><label>หัวข้อ</label><select id="dataset" class="input"><option value="production">สูตรการผลิต</option><option value="drinks">สูตรชงเครื่องดื่ม</option><option value="expiry">วันหมดอายุ</option><option value="toppings">Topping</option><option value="uniforms">เครื่องแต่งกาย</option><option value="courses">บทเรียนอื่น ๆ</option><option value="delivery_schedule">รอบการสั่งสินค้า</option></select></div>
+    <div class="field"><label>ขนาดกระดาษ</label><select id="orientation" class="input"><option value="portrait">A4 แนวตั้ง • 2 คอลัมน์</option><option value="landscape">A4 แนวนอน • 3 คอลัมน์</option></select></div>
     <div class="field"><label>จำนวนรายการต่อหน้า</label><select id="itemsPerPage" class="input"></select></div>
     <div class="field"><label>Theme (50 แบบ)</label><select id="themeSelect" class="input"></select></div>
     <div class="field"><label>สีหลัก (50 สี)</label><select id="colorSelect" class="input"></select></div>
@@ -306,7 +323,7 @@ th{min-height:29px;height:auto}
     <button id="pngBtn" class="btn primary">Export PNG ความคมชัดสูง</button>
     <button id="pdfBtn" class="btn secondary">Export PDF</button>
   </div>
-  <div id="msg" class="msg">ปรับ Layout สำหรับ Export ได้จากหน้านี้ • Auto Save แยกตามหัวข้อ</div>
+  <div id="msg" class="msg">ปรับ Layout สำหรับ Export ได้จากหน้านี้ • แนวตั้ง 2 คอลัมน์ • แนวนอน 3 คอลัมน์ • Auto Save แยกตามหัวข้อ</div>
 </section>
 <div class="preview-shell"><div id="pages" class="pages"><section class="page portrait"><div class="state">กำลังโหลดข้อมูล...</div></section></div></div>
 </main>
@@ -461,15 +478,7 @@ function setPageDensity(page){
 }
 function exportGridShape(count,orientation){
   count=Math.max(1,Math.min(Number(count)||1,20));
-  const landscape=orientation==="landscape";
-  let cols;
-  if(count===1) cols=1;
-  else if(count<=4) cols=2;
-  else if(count<=6) cols=landscape?3:2;
-  else if(count<=9) cols=3;
-  else if(count<=12) cols=landscape?4:3;
-  else if(count<=16) cols=4;
-  else cols=landscape?5:4;
+  const cols=orientation==="landscape"?3:2;
   return {cols,rows:Math.ceil(count/cols)};
 }
 function resetExportSheet(sheet){
@@ -683,6 +692,29 @@ function uniformSheet(name,items){
   a.innerHTML='<div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th class="imgcol">รูป</th><th>รายการ</th><th>ขนาด</th><th>รายละเอียด</th></tr></thead><tbody>'+items.map(r=>'<tr><td class="imgcol">'+(r.image_url?'<img class="thumb" src="'+esc(r.image_url)+'" crossorigin="anonymous" alt="'+esc(r.item_name||"")+'">':'-')+'</td><td>'+esc(r.item_name||"")+'</td><td>'+esc(r.size_info||"-")+'</td><td>'+esc(r.description||r.usage_notes||"-")+'</td></tr>').join("")+'</tbody></table>';
   return a;
 }
+function deliveryScheduleSheet(row){
+  const a=document.createElement("article");
+  a.className="sheet sheet-delivery";
+  const days=[
+    ["mon","จันทร์"],["tue","อังคาร"],["wed","พุธ"],["thu","พฤหัสบดี"],
+    ["fri","ศุกร์"],["sat","เสาร์"],["sun","อาทิตย์"]
+  ];
+  const activeDays=days.filter(([k])=>
+    String(row[k+"_order_time"]||"").trim()||
+    String(row[k+"_delivery_round"]||"").trim()||
+    String(row[k+"_delivery_time"]||"").trim()
+  );
+  const accent=/^#[0-9A-Fa-f]{6}$/.test(row.theme_color||"")?row.theme_color:"";
+  if(accent)a.style.setProperty("--delivery-accent",accent);
+  a.innerHTML=
+    '<div class="sheet-title delivery-title"'+(accent?' style="background:'+esc(accent)+'!important"':'')+'>'+esc(row.supplier_name||"Supplier")+'</div>'+
+    (row.image_url?'<div class="photo delivery-photo" style="border-right:0;border-bottom:1px solid #d1d5db;min-height:100px"><img src="'+esc(row.image_url)+'" crossorigin="anonymous" alt="'+esc(row.supplier_name||"Supplier")+'"></div>':'')+
+    (activeDays.length?'<table class="delivery-export-table"><thead><tr><th>วัน</th><th>เวลาสั่ง</th><th>รอบส่งสินค้า</th><th>เวลาส่ง</th></tr></thead><tbody>'+
+      activeDays.map(([k,d])=>'<tr><td><strong>'+d+'</strong></td><td>'+esc(row[k+"_order_time"]||"-")+'</td><td>'+esc(row[k+"_delivery_round"]||"-")+'</td><td>'+esc(row[k+"_delivery_time"]||"-")+'</td></tr>').join("")+
+    '</tbody></table>':'<div class="empty">ไม่มีข้อมูลรอบการส่งสินค้า</div>')+
+    (String(row.notes||"").trim()?'<div class="note">'+esc(row.notes)+'</div>':'');
+  return a;
+}
 function courseSheet(row){
   const a=document.createElement("article");a.className="sheet sheet-courses";
   a.innerHTML='<div class="sheet-title">'+esc(row.title||"บทเรียน")+'</div>'+(row.thumbnail_url?'<div class="photo" style="border-right:0;border-bottom:1px solid #d1d5db;min-height:120px"><img src="'+esc(row.thumbnail_url)+'" crossorigin="anonymous" alt="'+esc(row.title||"")+'"></div>':'<div class="photo" style="border-right:0;border-bottom:1px solid #d1d5db;min-height:80px"><div class="empty">ยังไม่มีรูปตัวอย่าง</div></div>')+'<table><tbody><tr><th>หมวดหมู่</th><td>'+esc(row.category||"-")+'</td></tr><tr><th>รายละเอียด</th><td>'+esc(row.description||"-")+'</td></tr><tr><th>ระยะเวลา</th><td>'+esc(row.estimated_minutes||"-")+(row.estimated_minutes?" นาที":"")+'</td></tr><tr><th>ระดับ</th><td>'+esc(row.difficulty||"-")+'</td></tr></tbody></table>';
@@ -696,6 +728,16 @@ async function render(ds,rows){
   else if(ds==="toppings"){const g=groupBy(rows,r=>(r.category||"Topping")+" • "+(r.subcategory||"ทั่วไป"));entries=sortEntriesByLayoutOrder(Object.entries(g));title="Topping";builder=([name,items])=>toppingSheet(name,[...items].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)))}
   else if(ds==="uniforms"){const g=groupBy(rows,r=>r.category||"เครื่องแต่งกาย");entries=sortEntriesByLayoutOrder(Object.entries(g));title="เครื่องแต่งกาย";builder=([name,items])=>uniformSheet(name,[...items].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)))}
   else if(ds==="courses"){entries=sortEntriesByLayoutOrder(rows.slice().sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)).map(r=>[String(r.id),r]));title="บทเรียนอื่น ๆ";builder=([,row])=>courseSheet(row)}
+  else if(ds==="delivery_schedule"){
+    const days=["mon","tue","wed","thu","fri","sat","sun"];
+    const filtered=rows.filter(r=>
+      days.some(k=>String(r[k+"_order_time"]||"").trim()||String(r[k+"_delivery_round"]||"").trim()||String(r[k+"_delivery_time"]||"").trim())||
+      String(r.notes||"").trim()||String(r.image_url||"").trim()
+    );
+    entries=filtered.slice().sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)).map(r=>[String(r.id),r]);
+    title="รอบการสั่งสินค้า";
+    builder=([,row])=>deliveryScheduleSheet(row);
+  }
   else {entries=[];title="Export";builder=()=>document.createElement("div")}
   const sheets=entries.map(builder);
   await packSheets(title,sheets);
