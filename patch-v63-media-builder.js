@@ -3487,14 +3487,22 @@ function installAdmin2Home(){
   return true;
 }
 
+function keepMediaMenusAtTop(){
+ const manage=document.getElementById('manage');
+ const media=document.getElementById('kslMediaAdminCard');
+ if(!manage||!media)return false;
+ if(manage.firstElementChild!==media)manage.insertBefore(media,manage.firstChild);
+ return true;
+}
+
 function installAdminCard(){
  const manage=document.getElementById('manage');if(!manage)return false;
- enforceCentralSyncTop();
- if(document.getElementById('kslMediaAdminCard'))return false;
+ if(document.getElementById('kslMediaAdminCard')){keepMediaMenusAtTop();return false;}
  const card=document.createElement('div');card.id='kslMediaAdminCard';card.className='card';card.style.cssText='margin:0 0 16px;border:1px solid #cfe4d9;background:linear-gradient(135deg,#f8fffb,#eef8f3)';
  card.innerHTML='<div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap"><div><div style="font-size:11px;font-weight:900;color:#1a7453;letter-spacing:.5px">ADMIN MEDIA BUILDER</div><h3 style="margin:4px 0;color:#174c39">🎨 สร้างสื่อการสอนสำหรับติดหน้าสาขา</h3><p style="margin:0;color:#6b8178;font-size:12px">ใช้ข้อมูลล่าสุดที่ Upload • เพิ่มรูปประกอบ • 1 แผ่น A4 เลือกแสดงได้หลายเมนู • Auto Save</p></div><span style="background:#176b4d;color:#fff;border-radius:999px;padding:6px 10px;font-size:10px;font-weight:900">A4 MULTI-MENU</span></div><div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:10px;margin-top:14px"><button class="btn btn-outline" data-media-type="drink" style="min-height:58px">🧋 <b>สื่อสูตรการชง</b><br><small>เลือกหลายเมนูต่อ A4</small></button><button class="btn btn-outline" data-media-type="production" style="min-height:58px">🧑‍🍳 <b>สื่อสูตรการผลิต</b><br><small>Production Recipe</small></button><button class="btn btn-outline" data-media-type="holding" style="min-height:58px">⏳ <b>สื่อตารางวันหมดอายุ</b><br><small>Holding Time</small></button></div>';
  card.addEventListener('click',e=>{const b=e.target.closest('[data-media-type]');if(b)openBuilder(b.dataset.mediaType)});
- const anchor=document.getElementById('kslCentralSyncCard');if(anchor?.nextSibling)manage.insertBefore(card,anchor.nextSibling);else manage.insertBefore(card,manage.firstChild);
+ manage.insertBefore(card,manage.firstChild);
+ keepMediaMenusAtTop();
  return true;
 }
 
@@ -3510,6 +3518,6 @@ document.addEventListener('visibilitychange',()=>{
     refreshDraftFromCloud().catch(e=>console.warn('[KSL Media] refresh on focus',e));
   }
 });
-let tries=0;const timer=setInterval(()=>{tries++;if(ADMIN2_MODE)installAdmin2Home();else{enforceCentralSyncTop();installAdminCard()}if(tries>180)clearInterval(timer)},1000);
+let tries=0;const timer=setInterval(()=>{tries++;if(ADMIN2_MODE)installAdmin2Home();else{installAdminCard();keepMediaMenusAtTop()}if(tries>180)clearInterval(timer)},1000);
 console.info('[KSL] Admin Media Builder V1 ready • multi-menu A4 export');
 })();
