@@ -369,7 +369,25 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
  .delivery-editor-top,.delivery-media-row{grid-template-columns:1fr}
  .delivery-week{overflow-x:auto}
  .delivery-week-head,.delivery-day-row{min-width:700px;grid-template-columns:105px 180px 210px 180px}
-}</style>
+}
+/* Popup manager */
+.popup-manager{display:grid;grid-template-columns:minmax(420px,1.4fr) minmax(320px,.8fr);gap:18px}
+.popup-preview-wrap{background:#f8fafc;border:1px solid #e5e7eb;border-radius:16px;padding:12px}
+.popup-preview-stage{position:relative;display:inline-block;max-width:100%;line-height:0;background:#fff;border-radius:12px;overflow:hidden}
+.popup-preview-stage img{display:block;max-width:100%;max-height:72vh;object-fit:contain}
+.popup-marker{position:absolute;transform:translate(-50%,-50%);border:2px solid #fff;border-radius:999px;background:#c9302c;color:#fff;font-weight:900;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.28);line-height:1}
+.popup-marker.selected{outline:4px solid rgba(37,99,235,.35);background:#2563eb}
+.popup-list{display:grid;gap:12px}
+.popup-card{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fff}
+.popup-card.active-card{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.popup-card-grid{display:grid;grid-template-columns:90px 1fr;gap:12px}
+.popup-card-thumb{width:90px;height:90px;border-radius:12px;border:1px solid #e5e7eb;object-fit:contain;background:#fff}
+.popup-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.popup-controls .field{margin:0}
+.popup-style-preview{height:76px;border-radius:12px;background:#fff7f5;border:1px solid #f3d7d2;display:grid;place-items:center;overflow:hidden}
+.popup-style-preview img{max-height:66px;max-width:80%;object-fit:contain}
+@media(max-width:900px){.popup-manager{grid-template-columns:1fr}.popup-preview-stage img{max-height:58vh}}
+</style>
 </head>
 <body>
 <header class="top"><div class="topin">
@@ -773,11 +791,11 @@ function initMenuDrag(){
 }
 function syncAdminPageChrome(){
   const hideForUsers=dataset==="users";
-  const hideReview=dataset==="users"||dataset==="settings"||dataset==="menus";
+  const hideReview=dataset==="users"||dataset==="settings"||dataset==="menus"||dataset==="image_popups";
   document.getElementById("reviewLayoutPanel")?.classList.toggle("hidden",hideReview);
 
-  document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers||dataset==="menus");
-  document.getElementById("attachmentPanel")?.classList.toggle("hidden",hideForUsers||dataset==="delivery_schedule");
+  document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers||dataset==="menus"||dataset==="image_popups");
+  document.getElementById("attachmentPanel")?.classList.toggle("hidden",hideForUsers||dataset==="delivery_schedule"||dataset==="image_popups");
 }
 document.getElementById("tabs").addEventListener("click",e=>{
   const b=e.target.closest(".tab"); if(!b)return;
@@ -787,7 +805,7 @@ document.getElementById("tabs").addEventListener("click",e=>{
   loadDisplayPrefs().then(loadData);
 });
 document.getElementById("refreshBtn").onclick=loadData;
-document.getElementById("addBtn").onclick=()=>dataset==="users"?document.getElementById("userUsername")?.focus():dataset==="drinks"?openEditor({record_id:"DRK-"+Date.now(),recipe_id:"RECIPE-"+Date.now(),component_type:"Ingredient",sort_order:1,is_published:true}):openEditor(null);
+document.getElementById("addBtn").onclick=()=>dataset==="image_popups"?addPopupItem():dataset==="users"?document.getElementById("userUsername")?.focus():dataset==="drinks"?openEditor({record_id:"DRK-"+Date.now(),recipe_id:"RECIPE-"+Date.now(),component_type:"Ingredient",sort_order:1,is_published:true}):openEditor(null);
 document.getElementById("cancelEdit").onclick=hideEditor;
 
 async function loadCustomMenus(){
@@ -865,8 +883,135 @@ window.moveCustomMenu=async(id,dir)=>{
   [customMenus[i],customMenus[j]]=[customMenus[j],customMenus[i]];
   try{await saveCustomMenus();renderMenuBuilder()}catch(err){alert(err.message)}
 };
+
+const POPUP_STYLES=["เด้งนุ่ม","ดุ๊กดิ๊ก","ซูมเข้า","ซูมออก","หมุนซ้าย","หมุนขวา","ลอยขึ้น","ลอยลง","เลื่อนซ้าย","เลื่อนขวา","Bounce","Pulse","Flip X","Flip Y","Swing","Tada","Rubber","Jello","Shake X","Shake Y","Heartbeat","Flash","Glow","Pop","Spring","Float","Wave","Tilt","Wobble","Spin","Zoom Bounce","Slide Bounce","Fade Up","Fade Down","Fade Left","Fade Right","Scale Pulse","Soft Rotate","Kawaii Hop","Cat Wiggle","Elastic","Snap","Drop","Rise","Sway","Twist","Bubble","Blink","Soft Float","นิ่ง"];
+let popupAttachments=[],popupRows=[],popupAttachmentId=null,popupSelectedId=null;
+
+async function loadPopupManager(){
+  const hint=document.getElementById("datasetHint"),wrap=document.getElementById("tableWrap");
+  hint.textContent="จัดการ Popup • กำลังโหลด...";
+  wrap.innerHTML='<div style="padding:20px" class="muted">กำลังโหลด...</div>';
+  try{
+    const [attRes,popRes]=await Promise.all([
+      api({action:"list_attachments"}),
+      api({action:"list",dataset:"image_popups"})
+    ]);
+    popupAttachments=(attRes.data||[]).filter(x=>String(x.mime_type||"").startsWith("image/")&&x.url);
+    popupRows=popRes.data||[];
+    if(!popupAttachmentId || !popupAttachments.some(x=>String(x.id)===String(popupAttachmentId))){
+      popupAttachmentId=popupAttachments[0]?.id||null;
+    }
+    hint.textContent="จัดการ Popup • "+popupRows.length+" จุด • รูปต้นฉบับ "+popupAttachments.length+" ไฟล์";
+    renderPopupManager();
+  }catch(err){wrap.innerHTML='<div style="padding:20px" class="error">'+esc(err.message)+'</div>'}
+}
+function popupRowsForCurrent(){
+  return popupRows.filter(x=>String(x.attachment_id)===String(popupAttachmentId))
+    .sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||(Number(a.popup_number)||0)-(Number(b.popup_number)||0));
+}
+function popupStyleOptions(selected){
+  return POPUP_STYLES.map((n,i)=>'<option value="style-'+(i+1)+'" '+(selected==="style-"+(i+1)?'selected':'')+'>'+(i+1)+'. '+esc(n)+'</option>').join("");
+}
+function renderPopupManager(){
+  const wrap=document.getElementById("tableWrap");wrap.className="";
+  const att=popupAttachments.find(x=>String(x.id)===String(popupAttachmentId));
+  const items=popupRowsForCurrent();
+  wrap.innerHTML=`
+    <div class="panel" style="box-shadow:none;border:0;padding:0">
+      <div class="row" style="align-items:end;margin-bottom:14px">
+        <div class="field" style="margin:0;min-width:320px;flex:1"><label>เลือกไฟล์รูปต้นฉบับ</label>
+          <select id="popupAttachmentSelect" class="input">${popupAttachments.map(a=>'<option value="'+a.id+'" '+(String(a.id)===String(popupAttachmentId)?'selected':'')+'>'+esc(a.title||a.file_name)+'</option>').join("")}</select>
+        </div>
+        <button class="btn primary" type="button" onclick="addPopupItem()">+ เพิ่ม Popup</button>
+      </div>
+      ${!att?'<div class="muted">ยังไม่มีไฟล์รูปสำหรับสร้าง Popup</div>':`
+      <div class="popup-manager">
+        <div class="popup-preview-wrap">
+          <div class="help" style="margin:0 0 8px">คลิกจุด Popup ก่อน แล้วคลิกตำแหน่งใหม่บนรูปเพื่อย้ายตำแหน่ง</div>
+          <div id="popupPreviewStage" class="popup-preview-stage">
+            <img id="popupBaseImage" src="${esc(att.url)}" alt="${esc(att.title||att.file_name)}">
+            ${items.map(r=>'<button type="button" class="popup-marker '+(String(r.id)===String(popupSelectedId)?'selected':'')+'" data-popup-id="'+r.id+'" style="left:'+Number(r.x_pct||50)+'%;top:'+Number(r.y_pct||50)+'%;width:'+Math.max(24,Number(r.size_px||40))+'px;height:'+Math.max(24,Number(r.size_px||40))+'px">'+esc(r.popup_number||1)+'</button>').join("")}
+          </div>
+        </div>
+        <div class="popup-list">
+          ${items.length?items.map(r=>popupCardHtml(r)).join(""):'<div class="muted">ยังไม่มี Popup ในรูปนี้ กด “+ เพิ่ม Popup”</div>'}
+        </div>
+      </div>`}
+    </div>`;
+  document.getElementById("popupAttachmentSelect")?.addEventListener("change",e=>{popupAttachmentId=e.target.value;popupSelectedId=null;renderPopupManager()});
+  document.querySelectorAll(".popup-marker").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();popupSelectedId=b.dataset.popupId;renderPopupManager()}));
+  document.getElementById("popupPreviewStage")?.addEventListener("click",async e=>{
+    if(e.target.closest(".popup-marker")||!popupSelectedId)return;
+    const stage=e.currentTarget,rect=stage.getBoundingClientRect();
+    const x=Math.max(0,Math.min(100,(e.clientX-rect.left)/rect.width*100));
+    const y=Math.max(0,Math.min(100,(e.clientY-rect.top)/rect.height*100));
+    const r=popupRows.find(x=>String(x.id)===String(popupSelectedId));if(!r)return;
+    await savePopupPatch(r.id,{x_pct:+x.toFixed(3),y_pct:+y.toFixed(3)});
+  });
+}
+function popupCardHtml(r){
+  return `<div class="popup-card ${String(r.id)===String(popupSelectedId)?'active-card':''}" onclick="popupSelectedId='${r.id}';renderPopupManager()">
+    <div class="popup-card-grid">
+      <div>
+        ${r.image_url?'<img class="popup-card-thumb" src="'+esc(r.image_url)+'" alt="">':'<div class="popup-card-thumb" style="display:grid;place-items:center;color:#94a3b8">ไม่มีรูป</div>'}
+        <input id="popupFile-${r.id}" type="file" accept="image/png,image/jpeg,image/webp" hidden onchange="uploadPopupImage('${r.id}',this)">
+        <button class="btn small secondary" type="button" style="width:100%;margin-top:6px" onclick="event.stopPropagation();document.getElementById('popupFile-${r.id}').click()">แนบรูป</button>
+      </div>
+      <div>
+        <div class="popup-controls">
+          <div class="field"><label>หมายเลข</label><input class="input" type="number" value="${esc(r.popup_number||1)}" onchange="savePopupPatch('${r.id}',{popup_number:Number(this.value)})"></div>
+          <div class="field"><label>ขนาดจุด</label><input class="input" type="number" min="24" max="120" value="${esc(r.size_px||40)}" onchange="savePopupPatch('${r.id}',{size_px:Number(this.value)})"></div>
+          <div class="field"><label>X (%)</label><input class="input" type="number" step=".1" min="0" max="100" value="${esc(r.x_pct||50)}" onchange="savePopupPatch('${r.id}',{x_pct:Number(this.value)})"></div>
+          <div class="field"><label>Y (%)</label><input class="input" type="number" step=".1" min="0" max="100" value="${esc(r.y_pct||50)}" onchange="savePopupPatch('${r.id}',{y_pct:Number(this.value)})"></div>
+          <div class="field" style="grid-column:1/-1"><label>รูปแบบ Popup (50 แบบ)</label><select class="input" onchange="savePopupPatch('${r.id}',{display_style:this.value})">${popupStyleOptions(r.display_style||"style-2")}</select></div>
+          <div class="field"><label>สถานะ</label><select class="input" onchange="savePopupPatch('${r.id}',{active:this.value==='true'})"><option value="true" ${r.active!==false?'selected':''}>แสดง</option><option value="false" ${r.active===false?'selected':''}>ซ่อน</option></select></div>
+          <div class="field"><label>ลำดับ</label><input class="input" type="number" value="${esc(r.sort_order||0)}" onchange="savePopupPatch('${r.id}',{sort_order:Number(this.value)})"></div>
+          <div class="field" style="grid-column:1/-1"><label>ชื่อ Popup</label><input class="input" value="${esc(r.label||"")}" onchange="savePopupPatch('${r.id}',{label:this.value})"></div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn small danger" type="button" onclick="event.stopPropagation();deletePopupItem('${r.id}')">ลบ Popup</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+window.addPopupItem=async()=>{
+  if(!popupAttachmentId){alert("กรุณาเลือกไฟล์รูปต้นฉบับก่อน");return}
+  const used=popupRowsForCurrent().map(x=>Number(x.popup_number)||0);
+  let n=1;while(used.includes(n))n++;
+  try{
+    const res=await api({action:"save",dataset:"image_popups",row:{
+      attachment_id:Number(popupAttachmentId),popup_number:n,label:"Popup "+n,x_pct:50,y_pct:50,size_px:40,
+      active:true,sort_order:n,display_style:"style-2"
+    }});
+    popupSelectedId=res.data?.id||null;await loadPopupManager();
+  }catch(err){alert("เพิ่ม Popup ไม่สำเร็จ: "+err.message)}
+};
+window.savePopupPatch=async(id,patch)=>{
+  try{
+    const r=popupRows.find(x=>String(x.id)===String(id));if(!r)return;
+    const row={...r,...patch};delete row.id;delete row.created_at;delete row.updated_at;
+    await api({action:"save",dataset:"image_popups",id:r.id,row});
+    await loadPopupManager();
+  }catch(err){alert("บันทึก Popup ไม่สำเร็จ: "+err.message)}
+};
+window.deletePopupItem=async id=>{
+  if(!confirm("ยืนยันลบ Popup นี้?"))return;
+  try{await api({action:"delete",dataset:"image_popups",id});if(String(popupSelectedId)===String(id))popupSelectedId=null;await loadPopupManager()}catch(err){alert(err.message)}
+};
+window.uploadPopupImage=async(id,input)=>{
+  const file=input.files?.[0];if(!file)return;
+  if(!["image/png","image/jpeg","image/webp"].includes(file.type)){alert("รองรับ PNG / JPG / WEBP");return}
+  if(file.size>4*1024*1024){alert("รูปต้องไม่เกิน 4 MB");return}
+  try{
+    const dataUrl=await new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve(fr.result);fr.onerror=reject;fr.readAsDataURL(file)});
+    const up=await api({action:"upload_record_image",dataset:"image_popups",data_url:dataUrl});
+    await savePopupPatch(id,{image_url:up.url});
+  }catch(err){alert("Upload รูปไม่สำเร็จ: "+err.message)}
+};
 async function loadData(){
   if(dataset==="menus"){await loadCustomMenus();renderMenuBuilder();return}
+  if(dataset==="image_popups"){await loadPopupManager();return}
   await loadGroupOrder();
   const hint=document.getElementById("datasetHint"), wrap=document.getElementById("tableWrap");
   hint.textContent=dataset==="users"?"กำลังโหลดข้อมูล User...":"กำลังโหลด "+DATASETS[dataset].label+"...";wrap.innerHTML='<div style="padding:20px" class="muted">กำลังโหลด...</div>';
