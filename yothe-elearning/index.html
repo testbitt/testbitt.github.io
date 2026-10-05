@@ -441,7 +441,7 @@ async function loadAttachments(section){
     }).join("")+'</div>';
   }catch(e){el.innerHTML='<div class="state">โหลดไฟล์แนบไม่สำเร็จ: '+esc(e.message)+'</div>'}
 }
-const MENU_BOARD_ATTACHMENT_IDS=new Set(["24","26"]);
+const MENU_BOARD_ATTACHMENT_IDS=new Set(["26"]);
 function isNumberedMenuBoard(file){
   return !!file && MENU_BOARD_ATTACHMENT_IDS.has(String(file.id));
 }
