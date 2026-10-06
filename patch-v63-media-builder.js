@@ -208,6 +208,55 @@ function newestRemoteProject(type){
     .filter(p=>p?.id&&(!type||p.type===type))
     .sort((a,b)=>tsValue(b.updatedAt)-tsValue(a.updatedAt))[0]||null;
 }
+
+function projectHasContent(p){
+  if(!p)return false;
+  return (Array.isArray(p.selected)&&p.selected.length>0) ||
+    (Array.isArray(p.customItems)&&p.customItems.length>0) ||
+    (p.overrides&&typeof p.overrides==='object'&&Object.keys(p.overrides).length>0) ||
+    !!text(p.title) || !!text(p.subtitle);
+}
+function latestUsableProject(type){
+  const list=remoteProjects
+    .filter(p=>p?.id&&p.type===type)
+    .sort((a,b)=>tsValue(b.updatedAt)-tsValue(a.updatedAt));
+  if(!list.length)return null;
+  if(projectHasContent(list[0]))return list[0];
+  return list.find(projectHasContent)||list[0];
+}
+async function saveCurrentDraftNow(){
+  if(!draft?.id||!['drink','production','holding','other'].includes(draft.type))return false;
+  const sameRemote=remoteProjects.find(p=>p?.id===draft.id);
+  // Never let an accidental empty draft erase a populated cloud project.
+  if(!projectHasContent(draft)&&projectHasContent(sameRemote)){
+    console.warn('[KSL Media] skipped empty overwrite for',draft.id);
+    setSaveStatus('ป้องกันข้อมูลว่างทับงานเดิม ✓');
+    return false;
+  }
+  draft.updatedAt=now();
+  try{localStorage.setItem(STORE,JSON.stringify(draft))}catch(_){}
+  try{
+    const s=app();
+    if(s){
+      s.mediaBuilderV1=clone(draft);
+      if(typeof dbSet==='function')await Promise.resolve(dbSet(s));
+    }
+  }catch(e){console.warn('[KSL Media] save current app state',e)}
+  await syncProjectOnline(projectSnapshot());
+  return true;
+}
+function freshDraftForType(type,base=draft){
+  const d=defaults();
+  d.type=type;
+  d.template=base?.template||'branch-grid';
+  d.orientation=base?.orientation||'landscape';
+  d.perPage=Number(base?.perPage)||4;
+  d.theme=String(base?.theme||'1');
+  d.bgRemovalMode=base?.bgRemovalMode||'detail';
+  d.name=typeLabel(type);
+  return d;
+}
+
 function applyCloudProject(p,{force=false}={}){
   if(!p?.id)return false;
   const remoteTs=tsValue(p.updatedAt);
@@ -270,7 +319,8 @@ async function refreshDraftFromCloud({force=false}={}){
     if(same&&(force||tsValue(same.updatedAt)>tsValue(draft.updatedAt))){
       const changed=applyCloudProject(same,{force:true});
       if(changed){
-        syncUI();
+        applyTypeCatalogOverrides(draft.type);
+        syncUI(true);
         setSaveStatus('อัปเดตข้อมูลล่าสุดจาก Cloud แล้ว ✓');
       }
       return changed;
@@ -2944,13 +2994,46 @@ function reorderSelectedByDrag(from,to){
   persistDraft(true);
   setSaveStatus('ย้ายลำดับเมนูและบันทึกแล้ว ✓');
 }
-function syncUI(){
+function syncUI(skipPersist=false){
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v};
   set('kslMediaType',draft.type);set('kslMediaTemplate',draft.template);set('kslMediaOrientation',draft.orientation);
   set('kslMediaPerPage',String(draft.perPage));set('kslMediaTheme',String(draft.theme||'1'));set('kslMediaBgRemovalMode',String(draft.bgRemovalMode||'detail'));set('kslMediaTitle',draft.title);set('kslMediaSubtitle',draft.subtitle);
-  renderControls();renderPreview();persistDraft();
+  renderControls();renderPreview();
+  if(!skipPersist)persistDraft();
 }
-function onTypeChange(v){draft.type=v;draft.selected=[];draft.images={};targetImage='';draft.title='';search='';const q=document.getElementById('kslMediaSearch');if(q)q.value='';syncUI()}
+async function onTypeChange(v){
+  if(!['drink','production','holding','other'].includes(v)||v===draft.type)return;
+  const previousType=draft.type;
+  const previousDraft=clone(draft);
+  setSaveStatus('กำลังบันทึก '+typeLabel(previousType)+'...');
+  try{
+    await saveCurrentDraftNow();
+  }catch(e){
+    console.warn('[KSL Media] save before type switch',e);
+    setSaveStatus('บันทึกประเภทเดิมไม่สำเร็จ • ยกเลิกการเปลี่ยนประเภท');
+    const sel=document.getElementById('kslMediaType');if(sel)sel.value=previousType;
+    return;
+  }
+
+  setSaveStatus('กำลังโหลดงานล่าสุด '+typeLabel(v)+'...');
+  try{await loadOnlineMediaState()}catch(e){console.warn('[KSL Media] reload before switch',e)}
+
+  const latest=latestUsableProject(v);
+  if(latest){
+    applyCloudProject(latest,{force:true});
+  }else{
+    draft=freshDraftForType(v,previousDraft);
+    targetImage='';
+  }
+  draft.type=v;
+  applyTypeCatalogOverrides(v);
+  cleanSelection();
+  targetImage='';
+  search='';
+  const q=document.getElementById('kslMediaSearch');if(q)q.value='';
+  syncUI(true);
+  setSaveStatus(latest?'โหลดงานล่าสุด '+typeLabel(v)+' แล้ว ✓':'ยังไม่มีงาน '+typeLabel(v)+' • เริ่มงานใหม่โดยไม่ทับประเภทอื่น');
+}
 
 const BG_REMOVE_MODULE='https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm';
 let bgRemoveModulePromise=null;
@@ -3199,7 +3282,7 @@ function installBuilder(){
       }
     }
   });
-  bind('kslMediaType','change',e=>onTypeChange(e.target.value));
+  bind('kslMediaType','change',async e=>{await onTypeChange(e.target.value)});
   bind('kslMediaTemplate','change',e=>{draft.template=e.target.value;renderPreview();persistDraft()});
   bind('kslMediaTheme','change',e=>{draft.theme=e.target.value;renderPreview();persistDraft(true)});
   bind('kslMediaOrientation','change',e=>{draft.orientation=e.target.value;renderPreview();persistDraft()});
@@ -3369,7 +3452,8 @@ function loadSavedProject(id){
   draft={...defaults(),...clone(p),images:keepImages,overrides:clone(p.overrides||{}),selected:Array.isArray(p.selected)?[...p.selected]:[]};
   targetImage='';
   cleanSelection();
-  syncUI();
+  applyTypeCatalogOverrides(draft.type);
+  syncUI(true);
   setSaveStatus('กำลังแก้ไขงานเดิม: '+(draft.name||'สื่อการสอน')+' • ใช้ “บันทึกทับงานเดิม” เพื่ออัปเดต');
 }
 async function deleteSavedProject(id){
@@ -3611,30 +3695,26 @@ async function exportPageImage(page,format,index){
 async function openBuilder(type){
  installBuilder();loadDraft();
  const requestedType=(type&&['drink','production','holding','other'].includes(type))?type:draft.type;
+ const localDraft=clone(draft);
  const ov=document.getElementById('kslMediaOverlay');ov.classList.add('show');
- setSaveStatus('กำลังดึงข้อมูลล่าสุดจาก Cloud...');
+ setSaveStatus('กำลังดึงงานล่าสุด '+typeLabel(requestedType)+' จาก Cloud...');
  await loadOnlineMediaState();
 
- // Cloud-first: prefer the same project when it exists; on a new/empty device,
- // open the newest saved project of the requested media type.
- const same=remoteProjects.find(p=>p?.id===draft.id);
- if(same){
-   applyCloudProject(same,{force:tsValue(same.updatedAt)>=tsValue(draft.updatedAt)});
+ const latest=latestUsableProject(requestedType);
+ if(latest){
+   applyCloudProject(latest,{force:true});
+ }else if(localDraft?.type===requestedType&&projectHasContent(localDraft)){
+   draft={...defaults(),...localDraft,images:localDraft.images||{},overrides:clone(localDraft.overrides||{}),selected:Array.isArray(localDraft.selected)?[...localDraft.selected]:[]};
  }else{
-   const latest=newestRemoteProject(requestedType);
-   const localIsEmpty=!Array.isArray(draft.selected)||draft.selected.length===0;
-   if(latest&&(localIsEmpty||tsValue(latest.updatedAt)>tsValue(draft.updatedAt))){
-     applyCloudProject(latest,{force:true});
-   }else{
-     draft.type=requestedType;
-     cleanSelection();
-   }
+   draft=freshDraftForType(requestedType,localDraft);
  }
+ draft.type=requestedType;
  applyTypeCatalogOverrides(requestedType);
+ cleanSelection();
  draft.template=draft.template||'branch-grid';
- syncUI();
+ syncUI(true);
  migrateLocalImagesOnline().catch(e=>console.warn('[KSL Media] migrate local images',e));
- setSaveStatus('Sync Cloud ล่าสุดแล้ว ✓');
+ setSaveStatus(latest?'โหลดงานล่าสุด '+typeLabel(requestedType)+' แล้ว ✓':'พร้อมสร้างงานใหม่ '+typeLabel(requestedType)+' ✓');
  setTimeout(()=>document.getElementById('kslMediaPreview')?.scrollTo(0,0),30);
 }
 window.KSL_OPEN_MEDIA_BUILDER=openBuilder;
@@ -3711,8 +3791,9 @@ function installAdminCard(){
 loadDraft();ensureStyles();installBuilder();if(!ADMIN2_MODE)installAdminCard();installAdmin2Home();
 loadOnlineMediaState().then(()=>{
   reconcileDraftFromCloud(draft.type);
+  applyTypeCatalogOverrides(draft.type);
   renderSavedProjects();
-  syncUI();
+  syncUI(true);
   renderPreview();
 }).catch(()=>{});
 document.addEventListener('visibilitychange',()=>{
