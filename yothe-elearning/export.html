@@ -451,6 +451,38 @@ th{min-height:29px;height:auto}
 .page .fit-cell>.sheet .photo{
   flex-shrink:0;
 }
+
+/* Complete-text export safety: never clip text or table rows */
+.page .sheet-title,
+.page .note,
+.page th,
+.page td{
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  height:auto!important;
+  max-height:none!important;
+}
+.page table,
+.page thead,
+.page tbody,
+.page tr{
+  height:auto!important;
+  max-height:none!important;
+  overflow:visible!important;
+}
+.page .sheet-body{
+  overflow:visible!important;
+}
+.page .fit-cell{
+  overflow:hidden!important;
+}
+.page .sheet{
+  overflow:hidden!important;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -784,28 +816,116 @@ function equalizeTablesWithinRows(page){
   const cells=[...grid.querySelectorAll(":scope > .fit-cell")];
   if(!cells.length)return;
 
-  // CSS Grid already allocates equal cell height inside each row.
-  // Re-apply that exact row geometry to every card so long-content cards
-  // cannot visually shrink compared with their neighbours.
   const rows=new Map();
   cells.forEach(cell=>{
     const key=Math.round(cell.offsetTop);
     if(!rows.has(key))rows.set(key,[]);
     rows.get(key).push(cell);
   });
+
+  const resetText=(sheet)=>{
+    sheet.querySelectorAll(".sheet-title,.note,th,td").forEach(el=>{
+      el.style.removeProperty("font-size");
+      el.style.removeProperty("padding");
+      el.style.removeProperty("line-height");
+      el.style.removeProperty("letter-spacing");
+      el.style.removeProperty("height");
+      el.style.removeProperty("max-height");
+      el.style.setProperty("overflow","visible","important");
+      el.style.setProperty("white-space","normal","important");
+      el.style.setProperty("text-overflow","clip","important");
+      el.style.setProperty("overflow-wrap","anywhere","important");
+      el.style.setProperty("word-break","break-word","important");
+    });
+    sheet.querySelectorAll("table,thead,tbody,tr").forEach(el=>{
+      el.style.setProperty("height","auto","important");
+      el.style.setProperty("max-height","none","important");
+      el.style.setProperty("overflow","visible","important");
+    });
+    const body=sheet.querySelector(":scope > .sheet-body");
+    if(body)body.style.setProperty("overflow","visible","important");
+    sheet.querySelectorAll(".photo img,.thumb").forEach(img=>img.style.removeProperty("max-height"));
+  };
+
+  const applyRatio=(sheet,ratio)=>{
+    const tdFont=Math.max(6.2,12.5*ratio);
+    const tdPy=Math.max(1.4,8*ratio);
+    const tdPx=Math.max(2.2,9*ratio);
+    sheet.querySelectorAll("th,td").forEach(el=>{
+      el.style.setProperty("font-size",tdFont+"px","important");
+      el.style.setProperty("padding",tdPy+"px "+tdPx+"px","important");
+      el.style.setProperty("line-height",String(Math.max(1.03,1.42*ratio)),"important");
+      el.style.setProperty("overflow","visible","important");
+      el.style.setProperty("white-space","normal","important");
+    });
+    const title=sheet.querySelector(":scope > .sheet-title");
+    if(title){
+      title.style.setProperty("font-size",Math.max(10.5,22*ratio)+"px","important");
+      title.style.setProperty("padding",Math.max(2.5,9*ratio)+"px "+Math.max(4,12*ratio)+"px","important");
+      title.style.setProperty("line-height",String(Math.max(1.04,1.28*ratio)),"important");
+    }
+    const note=sheet.querySelector(":scope > .note");
+    if(note){
+      note.style.setProperty("font-size",Math.max(6.5,12*ratio)+"px","important");
+      note.style.setProperty("padding",Math.max(2,8*ratio)+"px "+Math.max(3.5,10*ratio)+"px","important");
+      note.style.setProperty("line-height",String(Math.max(1.03,1.4*ratio)),"important");
+    }
+    sheet.querySelectorAll(".photo img").forEach(img=>img.style.setProperty("max-height",Math.max(48,150*ratio)+"px","important"));
+    sheet.querySelectorAll(".thumb").forEach(img=>img.style.setProperty("max-height",Math.max(22,58*ratio)+"px","important"));
+  };
+
   rows.forEach(rowCells=>{
     const rowH=Math.max(...rowCells.map(cell=>cell.getBoundingClientRect().height),1);
+
     rowCells.forEach(cell=>{
       cell.style.height=rowH+"px";
       const sheet=cell.querySelector(":scope > .sheet");
-      if(sheet){
-        sheet.style.height=rowH+"px";
-        sheet.style.minHeight=rowH+"px";
-        sheet.style.maxHeight=rowH+"px";
-        sheet.style.width="100%";
-        sheet.style.maxWidth="100%";
-        sheet.style.transform="none";
-      }
+      if(!sheet)return;
+      sheet.style.width="100%";
+      sheet.style.maxWidth="100%";
+      sheet.style.height=rowH+"px";
+      sheet.style.minHeight=rowH+"px";
+      sheet.style.maxHeight=rowH+"px";
+      sheet.style.transform="none";
+      resetText(sheet);
+    });
+
+    // Use one shared compression ratio for the whole row so every card
+    // stays visually equal while the longest card still shows every line.
+    let ratio=1;
+    for(let pass=0;pass<7;pass++){
+      let worst=1;
+      rowCells.forEach(cell=>{
+        const sheet=cell.querySelector(":scope > .sheet");if(!sheet)return;
+        const needed=Math.max(sheet.scrollHeight,1);
+        worst=Math.min(worst,rowH/needed);
+      });
+      if(worst>=.995)break;
+      ratio=Math.max(.38,ratio*worst*.985);
+      rowCells.forEach(cell=>{
+        const sheet=cell.querySelector(":scope > .sheet");if(sheet)applyRatio(sheet,ratio);
+      });
+    }
+
+    // Last conservative pass: if a row is still too tall, keep shrinking
+    // text/spacing uniformly instead of clipping any text.
+    for(let guard=0;guard<5;guard++){
+      let overflow=false;
+      rowCells.forEach(cell=>{
+        const sheet=cell.querySelector(":scope > .sheet");if(!sheet)return;
+        if(sheet.scrollHeight>rowH+1)overflow=true;
+      });
+      if(!overflow)break;
+      ratio=Math.max(.30,ratio*.90);
+      rowCells.forEach(cell=>{
+        const sheet=cell.querySelector(":scope > .sheet");if(sheet)applyRatio(sheet,ratio);
+      });
+    }
+
+    rowCells.forEach(cell=>{
+      const sheet=cell.querySelector(":scope > .sheet");if(!sheet)return;
+      const ok=sheet.scrollHeight<=rowH+2 && sheet.scrollWidth<=cell.getBoundingClientRect().width+2;
+      cell.dataset.fitOk=ok?"1":"0";
     });
   });
 }
