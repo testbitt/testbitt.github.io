@@ -393,11 +393,38 @@ th{min-height:29px;height:auto}
   border-right-style:none!important;
 }
 
+
+/* Final equal-height safety */
+.page[class] .fit-cell>.sheet{
+  margin:0!important;
+  box-sizing:border-box!important;
+}
+.page[class] .fit-cell>.sheet .sheet-body{
+  min-height:0!important;
+}
 @media(max-width:1180px){.wrap{max-width:100%;padding:20px 14px 50px}.controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.topin{padding:8px 14px}.brand{font-size:19px}.brand img{width:38px;height:44px}.preview-shell{padding:12px}.panel{padding:14px}}
 @media(max-width:680px){.controls{grid-template-columns:1fr}.wrap{padding:14px 8px 40px}.preview-shell{padding:8px;border-radius:10px}.btn{width:100%}.topin{align-items:flex-start;flex-wrap:wrap}.back{font-size:13px}}
 @media(max-width:430px){.brand{font-size:17px}.field label{font-size:12px}.input,.btn{padding:9px 10px}.panel{border-radius:12px}}
 @media print{.top,.panel{display:none!important}.wrap{max-width:none;padding:0}.preview-shell{padding:0;background:#fff;overflow:visible}.pages{display:block}.page-wrap{display:block;width:auto!important;height:auto!important}.page{box-shadow:none;margin:0;transform:none!important;break-after:page;page-break-after:always}.page:last-child{break-after:auto;page-break-after:auto}@page{margin:0}}
+
+/* Equal-height export sheets */
+.page .fit-cell>.sheet{
+  display:flex!important;
+  flex-direction:column!important;
+}
+.page .fit-cell>.sheet>.sheet-body{
+  flex:1 1 auto!important;
+}
+.page .fit-cell>.sheet>table{
+  flex:0 0 auto;
+}
+.page .fit-cell>.sheet .note{
+  flex:0 0 auto;
+}
+.page .fit-cell>.sheet .photo{
+  flex-shrink:0;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -608,37 +635,47 @@ function fitExportSheetInCell(cell){
   sheet.style.right="auto";
   sheet.style.maxWidth="none";
   sheet.style.maxHeight="none";
-  sheet.style.height="auto";
   sheet.style.overflow="hidden";
   sheet.style.transformOrigin="top left";
-
-  // Always make the transformed result occupy the full cell width.
-  let scale=1;
   sheet.style.transform="none";
+
+  // Measure natural content at full cell width first.
   sheet.style.width=cellW+"px";
-
+  sheet.style.height="auto";
+  sheet.style.minHeight="0";
   let naturalH=Math.max(sheet.scrollHeight,sheet.getBoundingClientRect().height,1);
-  if(naturalH>cellH) scale=Math.max(.04,cellH/naturalH);
 
-  for(let i=0;i<3;i++){
+  // Scale down only when the natural content is taller than its A4 cell.
+  let scale=Math.min(1,cellH/naturalH);
+  scale=Math.max(.04,scale);
+
+  // Re-measure after compensating the logical width for transform scaling.
+  for(let i=0;i<4;i++){
     sheet.style.transform="none";
     sheet.style.width=(cellW/scale)+"px";
-    const natural=Math.max(sheet.scrollHeight,sheet.getBoundingClientRect().height,1);
-    sheet.style.transform="scale("+scale+")";
-    const tr=sheet.getBoundingClientRect();
-    const heightFactor=Math.min(1,cellH/Math.max(1,tr.height));
-    if(heightFactor>=.997)break;
-    scale=Math.max(.04,scale*heightFactor*.995);
+    sheet.style.height="auto";
+    const h=Math.max(sheet.scrollHeight,sheet.getBoundingClientRect().height,1);
+    const needed=Math.min(1,cellH/h);
+    if(needed>=.997)break;
+    scale=Math.max(.04,scale*needed*.995);
   }
 
   scale=Math.min(1,scale);
+
+  // Critical: give every card the same VISUAL height as its grid cell.
+  // Logical dimensions are divided by scale so the transformed result fills the cell exactly.
+  const logicalW=cellW/scale;
+  const logicalH=cellH/scale;
   sheet.style.transform="none";
-  sheet.style.width=(cellW/scale)+"px";
+  sheet.style.width=logicalW+"px";
+  sheet.style.height=logicalH+"px";
+  sheet.style.minHeight=logicalH+"px";
+  sheet.style.maxHeight=logicalH+"px";
   sheet.style.transform="scale("+scale+")";
   sheet.dataset.fitScale=scale.toFixed(4);
 
   const fr=sheet.getBoundingClientRect();
-  const ok=fr.width<=cellW+1&&fr.height<=cellH+1;
+  const ok=fr.width<=cellW+1.5&&fr.height<=cellH+1.5;
   cell.dataset.fitOk=ok?"1":"0";
   return ok;
 }
