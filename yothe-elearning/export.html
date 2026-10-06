@@ -408,6 +408,32 @@ th{min-height:29px;height:auto}
 @media(max-width:430px){.brand{font-size:17px}.field label{font-size:12px}.input,.btn{padding:9px 10px}.panel{border-radius:12px}}
 @media print{.top,.panel{display:none!important}.wrap{max-width:none;padding:0}.preview-shell{padding:0;background:#fff;overflow:visible}.pages{display:block}.page-wrap{display:block;width:auto!important;height:auto!important}.page{box-shadow:none;margin:0;transform:none!important;break-after:page;page-break-after:always}.page:last-child{break-after:auto;page-break-after:auto}@page{margin:0}}
 
+/* Row-balanced export cards: every table/card in the same grid row has identical size */
+.page .grid{
+  grid-auto-flow:row!important;
+  align-items:stretch!important;
+}
+.page .grid>.fit-cell{
+  align-self:stretch!important;
+  justify-self:stretch!important;
+  width:100%!important;
+  height:100%!important;
+}
+.page .grid>.fit-cell>.sheet{
+  width:100%!important;
+  height:100%!important;
+  min-height:100%!important;
+  max-height:100%!important;
+  transform:none!important;
+}
+.page .grid>.fit-cell>.sheet>.sheet-body{
+  flex:1 1 auto!important;
+  min-height:0!important;
+}
+.page .grid>.fit-cell>.sheet>table{
+  width:100%!important;
+}
+
 /* Equal-height export sheets */
 .page .fit-cell>.sheet{
   display:flex!important;
@@ -753,6 +779,36 @@ function fitExportPageContent(page){
   page.dataset.fitOk=ok?"1":"0";
   return ok;
 }
+function equalizeTablesWithinRows(page){
+  const grid=page.querySelector(".grid");if(!grid)return;
+  const cells=[...grid.querySelectorAll(":scope > .fit-cell")];
+  if(!cells.length)return;
+
+  // CSS Grid already allocates equal cell height inside each row.
+  // Re-apply that exact row geometry to every card so long-content cards
+  // cannot visually shrink compared with their neighbours.
+  const rows=new Map();
+  cells.forEach(cell=>{
+    const key=Math.round(cell.offsetTop);
+    if(!rows.has(key))rows.set(key,[]);
+    rows.get(key).push(cell);
+  });
+  rows.forEach(rowCells=>{
+    const rowH=Math.max(...rowCells.map(cell=>cell.getBoundingClientRect().height),1);
+    rowCells.forEach(cell=>{
+      cell.style.height=rowH+"px";
+      const sheet=cell.querySelector(":scope > .sheet");
+      if(sheet){
+        sheet.style.height=rowH+"px";
+        sheet.style.minHeight=rowH+"px";
+        sheet.style.maxHeight=rowH+"px";
+        sheet.style.width="100%";
+        sheet.style.maxWidth="100%";
+        sheet.style.transform="none";
+      }
+    });
+  });
+}
 function validateExportLayout(){
   let ok=true;
   document.querySelectorAll("#pages .page").forEach(page=>{
@@ -785,7 +841,7 @@ async function fitAllExportPages(){
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
 
   for(let pass=0;pass<2;pass++){
-    pages.forEach(fitExportPageContent);
+    pages.forEach(page=>{fitExportPageContent(page);equalizeTablesWithinRows(page)});
     await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
   }
 
@@ -795,6 +851,8 @@ async function fitAllExportPages(){
       if(cell.dataset.fitOk!=="1")fitExportSheetInCell(cell);
     });
   });
+
+  pages.forEach(equalizeTablesWithinRows);
 
   const valid=validateExportLayout();
   pages.forEach(page=>page.dataset.layoutValid=valid?"1":"0");
