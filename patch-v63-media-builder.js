@@ -472,14 +472,14 @@ function drinkCard(item){
 }
 function productionCard(item){
   const img=imageFor(item.id),o=effectiveOverride(item);
-  const rows=(o.rows||[]).slice(0,14).map(rec=>'<tr><td class="mb-r-name">'+esc(rec.label||'-')+'</td><td class="mb-r-qty">'+esc((rec.values||[])[0]||'')+'</td><td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>').join('');
+  const rows=(o.rows||[]).slice(0,14).map(rec=>'<tr><td class="mb-r-name">'+esc(rec.label||'-')+'</td><td class="mb-r-qty">'+esc((Array.isArray(rec.values)?rec.values:[rec.value]).map(text).filter(Boolean).join(', '))+'</td><td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>').join('');
   return '<article class="mb-card mb-table-card mb-production-card"><div class="mb-black-title">'+esc(o.title||item.name)+'</div><div class="mb-table-body">'+
     '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">🧑‍🍳</div>')+'</div></div>'+
     '<div class="mb-table-side"><table class="mb-recipe-table mb-production-table"><tbody>'+rows+'</tbody></table>'+(o.note?'<div class="mb-note-line">'+esc(o.note)+'</div>':'')+'</div></div></article>';
 }
 function holdingCard(item){
   const img=imageFor(item.id),o=effectiveOverride(item);
-  const rows=(o.rows||[]).slice(0,14).map(rec=>'<tr><td class="mb-r-name">'+esc(rec.label||'-')+'</td><td class="mb-r-qty">'+esc((rec.values||[])[0]||'')+'</td><td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>').join('');
+  const rows=(o.rows||[]).slice(0,14).map(rec=>'<tr><td class="mb-r-name">'+esc(rec.label||'-')+'</td><td class="mb-r-qty">'+esc((Array.isArray(rec.values)?rec.values:[rec.value]).map(text).filter(Boolean).join(', '))+'</td><td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>').join('');
   return '<article class="mb-card mb-table-card mb-holding-card"><div class="mb-black-title">'+esc(o.title||item.name)+'</div><div class="mb-table-body">'+
     '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">⏳</div>')+'</div></div>'+
     '<div class="mb-table-side"><table class="mb-recipe-table mb-holding-table"><tbody>'+rows+'</tbody></table>'+(o.note?'<div class="mb-note-line">'+esc(o.note)+'</div>':'')+'</div></div></article>';
@@ -2666,11 +2666,11 @@ function renderMediaEditor(){
     '<div class="mb-field"><label>หมายเหตุ</label><textarea class="mb-input" id="mbEditNote" rows="2">'+esc(o.note||'')+'</textarea></div>';
 }
 function editRowHtml(r,i){
-  const vals=Array.isArray(r.values)?r.values.join(' | '):text(r.value);
+  const vals=Array.isArray(r.values)?r.values.filter(v=>text(v)).join(', '):text(r.value);
   return '<div class="mb-edit-row" data-edit-row="'+i+'">'+
     '<div class="mb-row-move"><button class="mb-link mb-er-up" type="button" title="เลื่อนขึ้น">↑</button><button class="mb-link mb-er-down" type="button" title="เลื่อนลง">↓</button></div>'+
     '<input class="mb-input mb-er-label" value="'+esc(r.label||'')+'" placeholder="รายละเอียด / วัตถุดิบ">'+
-    '<input class="mb-input mb-er-value" value="'+esc(vals)+'" placeholder="'+(draft.type==='drink'?'ค่าตามประเภทแก้ว คั่นด้วย |':'ค่า / ปริมาณ')+'">'+
+    '<input class="mb-input mb-er-value" value="'+esc(vals)+'" placeholder="'+(draft.type==='drink'?'ค่าตามประเภทแก้ว คั่นด้วย ,':'ค่า / ปริมาณ หากมีหลายค่าให้คั่นด้วย ,')+'">'+
     '<input class="mb-input mb-er-unit" value="'+esc(r.unit||'')+'" placeholder="หน่วย / ข้อมูลเสริม">'+
     '<button class="mb-link mb-er-del" type="button">ลบ</button></div>';
 }
@@ -2680,7 +2680,7 @@ function collectEditorOverride(){
   const headers=draft.type==='drink'?text(document.getElementById('mbEditHeaders')?.value).split(',').map(text).filter(Boolean):(effectiveOverride(item).headers||[]);
   const rows=[...document.querySelectorAll('#mbEditRows .mb-edit-row')].map(el=>({
     label:text(el.querySelector('.mb-er-label')?.value),
-    values:text(el.querySelector('.mb-er-value')?.value).split('|').map(text),
+    values:text(el.querySelector('.mb-er-value')?.value).split(/[|,]/).map(text).filter(Boolean),
     unit:text(el.querySelector('.mb-er-unit')?.value)
   })).filter(r=>r.label||r.values.some(Boolean)||r.unit);
   return {title,headers,rows,note:text(document.getElementById('mbEditNote')?.value)};
@@ -3035,7 +3035,7 @@ function builderHtml(){
  '<div class="mb-block"><h3>2. เลือกเมนูจากฐานข้อมูล <span class="mb-count" id="kslMediaSelectedCount">0 เมนู</span></h3><div class="mb-field"><input class="mb-input" id="kslMediaSearch" placeholder="ค้นหาเมนู..."></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaAddMenu" type="button">＋ เพิ่มเมนูใหม่</button><button class="mb-link" id="kslMediaSelectAll">เลือกทั้งหมดที่ค้นหา</button><button class="mb-link" id="kslMediaClearSel">ล้างการเลือก</button></div><div id="kslMediaItemList"></div></div>'+
  '<div class="mb-block"><h3>3. หัวเรื่อง</h3><div class="mb-field"><label>หัวเรื่องหลัก</label><input class="mb-input" id="kslMediaTitle" placeholder="ใช้ชื่อประเภทสื่ออัตโนมัติ"></div><div class="mb-field"><label>ข้อความรอง</label><input class="mb-input" id="kslMediaSubtitle" placeholder="เช่น สำหรับพนักงานใหม่ / Updated..."></div></div>'+
  '<div class="mb-block"><h3>4. งานที่บันทึกไว้</h3><div class="mb-field"><select class="mb-select" id="kslMediaSavedProjects"></select></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaLoadProject" type="button">เปิดแก้ไข</button><button class="mb-link" id="kslMediaDeleteProject" type="button">ลบงาน</button></div><div class="mb-note">เปิดงานเดิมแล้วสามารถเพิ่ม/ลดเมนู แก้รายละเอียด เปลี่ยนรูป แล้วกด “บันทึกทับงานเดิม” • หากต้องการแยกเป็นอีกงานให้กด “บันทึกงานใหม่”</div></div>'+ 
- '<div class="mb-block"><h3>5. แก้ไขข้อมูลรายเมนู</h3><div class="mb-field"><label>เมนูที่จะแก้ไข</label><select class="mb-select" id="kslMediaEditTarget"></select></div><div id="kslMediaEditor"></div><div class="mb-note">แก้ไขแล้ว Auto Save เข้า Online Database • ไม่เปลี่ยนฐานสูตรต้นฉบับที่ Upload</div></div>'+ 
+ '<div class="mb-block"><h3>5. แก้ไขข้อมูลรายเมนู</h3><div class="mb-field"><label>เมนูที่จะแก้ไข</label><select class="mb-select" id="kslMediaEditTarget"></select></div><div id="kslMediaEditor"></div><div class="mb-note">กรณีมีข้อมูลหลายค่าในช่องเดียวกัน ให้คั่นด้วยเครื่องหมาย , • แก้ไขแล้ว Auto Save เข้า Online Database • ไม่เปลี่ยนฐานสูตรต้นฉบับที่ Upload</div></div>'+ 
  '<div class="mb-block"><h3>6. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-field"><label>โหมดลบพื้นหลัง</label><select class="mb-select" id="kslMediaBgRemovalMode"><option value="detail">ละเอียด / เก็บวัตถุข้างแก้ว</option><option value="standard">มาตรฐาน / เร็วขึ้น</option></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">โหมดละเอียดจะเพิ่ม Padding ก่อน AI, รักษาผลไม้/Topping/Packaging รอบแก้ว, ปรับ Alpha และลดขอบขาว • บันทึกเป็น PNG โปร่งใส • Auto Save และ Upload รูปใหม่เมนูเดิมจะทับรูปเดิม</div></div>'+
  '</aside><main class="mb-preview-wrap" id="kslMediaPreview"></main></div>'+
  '<section id="kslMediaHistoryPage"><div class="mb-history-head"><div><div class="mb-kamu">KAMU KAMU • MEDIA</div><h2>ประวัติการบันทึกสื่อ</h2><p>เรียกงานเดิมกลับมาแก้ไข เพิ่ม/ลดรายการ เปลี่ยนรูป Theme และบันทึกทับได้</p></div><button class="mb-btn" id="kslMediaHistoryClose">← กลับหน้าสร้างสื่อ</button></div><div id="kslMediaHistoryList"></div></section></div>';
