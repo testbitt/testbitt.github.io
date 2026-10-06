@@ -25,7 +25,7 @@ const unique=a=>[...new Set((a||[]).map(text).filter(Boolean))];
 
 const defaults=()=>({
   id:uid(),name:'สื่อการสอน',type:'drink',template:'branch-grid',orientation:'landscape',
-  perPage:4,theme:'1',bgRemovalMode:'detail',title:'',subtitle:'',selected:[],images:{},overrides:{},createdAt:now(),updatedAt:now()
+  perPage:4,theme:'1',bgRemovalMode:'detail',title:'',subtitle:'',selected:[],images:{},overrides:{},customItems:[],deletedItemIds:[],createdAt:now(),updatedAt:now()
 });
 let draft=defaults(), search='', targetImage='';
 let saveTimer=null;
@@ -369,7 +369,12 @@ function sourceItems(type=draft.type){
     const rows=s.data||s.holdingTime||s.holdingData||[];
     rows.forEach(r=>{const name=text(r['ชื่อวัตถุดิบ']);if(!name)return;const id=stableId(type,name);if(!groups.has(id))groups.set(id,{id,name,en:'',rows:[]});groups.get(id).rows.push(r)});
   }
-  return [...groups.values()].sort((a,b)=>a.name.localeCompare(b.name,'th'));
+  const custom=(Array.isArray(draft.customItems)?draft.customItems:[])
+    .filter(x=>x&&x.type===type&&x.id&&x.name)
+    .map(x=>({id:x.id,name:text(x.name),en:text(x.en),rows:Array.isArray(x.rows)?clone(x.rows):[],custom:true}));
+  custom.forEach(x=>groups.set(x.id,x));
+  const deleted=new Set(Array.isArray(draft.deletedItemIds)?draft.deletedItemIds:[]);
+  return [...groups.values()].filter(x=>!deleted.has(x.id)).sort((a,b)=>a.name.localeCompare(b.name,'th'));
 }
 function selectedItems(){
   const map=new Map(sourceItems().map(x=>[x.id,x]));
@@ -381,6 +386,56 @@ function cleanSelection(){
   if(targetImage&&!valid.has(targetImage))targetImage='';
 }
 
+
+function customMenuId(type,name){
+  return 'custom::'+type+'::'+Date.now().toString(36)+'::'+text(name).toLowerCase().replace(/\s+/g,'-').slice(0,40);
+}
+function addCustomMenu(){
+  const name=text(prompt('ชื่อเมนูใหม่'));
+  if(!name)return;
+  draft.customItems=Array.isArray(draft.customItems)?draft.customItems:[];
+  const id=customMenuId(draft.type,name);
+  draft.customItems.push({id,type:draft.type,name,en:'',rows:[],custom:true});
+  draft.deletedItemIds=(Array.isArray(draft.deletedItemIds)?draft.deletedItemIds:[]).filter(x=>x!==id);
+  if(!draft.selected.includes(id))draft.selected.push(id);
+  draft.overrides=draft.overrides&&typeof draft.overrides==='object'?draft.overrides:{};
+  draft.overrides[id]={
+    title:name,
+    headers:draft.type==='drink'?['STD']:(draft.type==='holding'?['Holding Time']:[]),
+    rows:[],
+    note:''
+  };
+  targetImage=id;
+  renderControls();
+  renderPreview();
+  const edit=document.getElementById('kslMediaEditTarget');if(edit){edit.value=id;renderMediaEditor()}
+  persistDraft(true);
+  setSaveStatus('เพิ่มเมนูใหม่และบันทึก Online แล้ว ✓');
+}
+async function deleteCurrentMenu(){
+  const id=document.getElementById('kslMediaEditTarget')?.value||targetImage||'';
+  if(!id)return alert('เลือกเมนูที่ต้องการลบก่อน');
+  const item=sourceItems().find(x=>x.id===id);
+  if(!item)return;
+  if(!confirm('ลบเมนู “'+item.name+'” ออกจากงานนี้หรือไม่?'))return;
+
+  draft.selected=(draft.selected||[]).filter(x=>x!==id);
+  draft.customItems=Array.isArray(draft.customItems)?draft.customItems:[];
+  const customIndex=draft.customItems.findIndex(x=>x?.id===id);
+  if(customIndex>=0){
+    draft.customItems.splice(customIndex,1);
+    if(draft.overrides)delete draft.overrides[id];
+    try{await persistImageAuto(id,'')}catch(_){}
+  }else{
+    draft.deletedItemIds=Array.isArray(draft.deletedItemIds)?draft.deletedItemIds:[];
+    if(!draft.deletedItemIds.includes(id))draft.deletedItemIds.push(id);
+  }
+  if(targetImage===id)targetImage='';
+  renderControls();
+  renderPreview();
+  persistDraft(true);
+  setSaveStatus('ลบเมนูออกจาก Project แล้ว ✓');
+}
 function pageTitle(){
   if(draft.title)return draft.title;
   if(draft.type==='drink')return 'สูตรการชงเครื่องดื่ม';
@@ -2578,7 +2633,7 @@ function renderControls(){
   const list=document.getElementById('kslMediaItemList');
   if(list)list.innerHTML=filtered.length?filtered.map(x=>{
     const checked=draft.selected.includes(x.id)?'checked':'';
-    return '<label class="mb-check"><input type="checkbox" data-mb-item="'+esc(x.id)+'" '+checked+'><span><b>'+esc(x.name)+'</b>'+(x.en?'<small>'+esc(x.en)+'</small>':'')+'<small>'+x.rows.length+' รายการข้อมูล</small></span></label>';
+    return '<label class="mb-check"><input type="checkbox" data-mb-item="'+esc(x.id)+'" '+checked+'><span><b>'+esc(x.name)+'</b>'+(x.custom?'<small style="color:#7b1fa2;font-weight:800">เมนูสร้างใหม่</small>':'')+(x.en?'<small>'+esc(x.en)+'</small>':'')+'<small>'+x.rows.length+' รายการข้อมูล</small></span></label>';
   }).join(''):'<div class="mb-note" style="padding:10px">ไม่พบข้อมูล</div>';
   const count=document.getElementById('kslMediaSelectedCount');if(count)count.textContent=draft.selected.length+' เมนูที่เลือก';
   const imgSel=document.getElementById('kslMediaImageTarget');
@@ -2607,7 +2662,7 @@ function renderMediaEditor(){
   box.innerHTML='<div class="mb-field"><label>ชื่อที่แสดง</label><input class="mb-input" id="mbEditTitle" value="'+esc(o.title||item.name)+'"></div>'+
     (draft.type==='drink'?'<div class="mb-field"><label>ประเภทแก้ว (คั่นด้วย ,)</label><input class="mb-input" id="mbEditHeaders" value="'+esc(headers)+'"></div>':'')+
     '<div class="mb-edit-list" id="mbEditRows">'+(o.rows||[]).map((r,i)=>editRowHtml(r,i)).join('')+'</div>'+
-    '<button class="mb-link" id="mbAddDetail" type="button">＋ เพิ่มรายละเอียด</button>'+
+    '<div class="mb-list-tools"><button class="mb-link" id="mbAddDetail" type="button">＋ เพิ่มรายละเอียด</button><button class="mb-link" id="mbDeleteMenu" type="button" style="color:#a33;border-color:#e3bcbc">🗑 ลบเมนู</button></div>'+
     '<div class="mb-field"><label>หมายเหตุ</label><textarea class="mb-input" id="mbEditNote" rows="2">'+esc(o.note||'')+'</textarea></div>';
 }
 function editRowHtml(r,i){
@@ -2977,7 +3032,7 @@ function builderHtml(){
  '<div class="mb-block"><h3>1. ประเภทสื่อ</h3><div class="mb-field"><select class="mb-select" id="kslMediaType"><option value="drink">🧋 สูตรการชงเครื่องดื่ม</option><option value="production">🧑‍🍳 สูตรการผลิต</option><option value="holding">⏳ ตารางวันหมดอายุ</option></select></div>'+
  '<div class="mb-inline"><div class="mb-field"><label>Template</label><select class="mb-select" id="kslMediaTemplate"><option value="branch-grid">01 Branch Grid</option><option value="modern">02 KAMU Modern</option><option value="visual">03 Visual Training</option><option value="compact">04 Compact SOP</option><option value="clean">05 Clean White</option><option value="outline">06 Bold Outline</option><option value="soft">07 Soft Card</option><option value="stripe">08 Header Stripe</option><option value="double">09 Double Border</option><option value="rounded">10 Rounded Card</option><option value="square">11 Square Grid</option><option value="minimal">12 Minimal Line</option><option value="classic">13 Classic SOP</option><option value="poster">14 Poster Header</option><option value="label">15 Label Style</option><option value="shadow">16 Soft Shadow</option><option value="frame">17 Framed</option><option value="topline">18 Top Line</option><option value="bottomline">19 Bottom Line</option><option value="leftline">20 Left Accent</option><option value="rightline">21 Right Accent</option><option value="capsule">22 Capsule Header</option><option value="ticket">23 Ticket Card</option><option value="notebook">24 Notebook</option><option value="gridlight">25 Light Grid</option><option value="boldbar">26 Bold Bar</option><option value="split">27 Split Header</option><option value="simple">28 Simple Office</option><option value="training">29 Training Board</option><option value="premium">30 Premium Frame</option></select></div><div class="mb-field"><label>แนวกระดาษ</label><select class="mb-select" id="kslMediaOrientation"><option value="portrait">A4 แนวตั้ง</option><option value="landscape">A4 แนวนอน</option></select></div></div>'+
  '<div class="mb-field"><label>สีสำหรับ Preview / Export (30 สี)</label><select class="mb-select" id="kslMediaTheme"><option value="1">01 KAMU Green</option><option value="2">02 Classic Black</option><option value="3">03 Matcha</option><option value="4">04 Mint</option><option value="5">05 Forest</option><option value="6">06 Cream</option><option value="7">07 Latte</option><option value="8">08 Taro</option><option value="9">09 Thai Tea</option><option value="10">10 Sky</option><option value="11">11 Navy</option><option value="12">12 Rose</option><option value="13">13 Sakura</option><option value="14">14 Minimal Gray</option><option value="15">15 High Contrast</option><option value="16">16 Emerald</option><option value="17">17 Lime</option><option value="18">18 Olive</option><option value="19">19 Teal</option><option value="20">20 Cyan</option><option value="21">21 Royal Blue</option><option value="22">22 Indigo</option><option value="23">23 Violet</option><option value="24">24 Plum</option><option value="25">25 Magenta</option><option value="26">26 Coral</option><option value="27">27 Red</option><option value="28">28 Amber</option><option value="29">29 Chocolate</option><option value="30">30 Slate</option></select></div><div class="mb-field"><label>จำนวนเมนูต่อ A4 (สูงสุด 20)</label><select class="mb-select" id="kslMediaPerPage"><option value="1">1 เมนู</option><option value="2">2 เมนู</option><option value="3">3 เมนู</option><option value="4">4 เมนู</option><option value="5">5 เมนู</option><option value="6">6 เมนู</option><option value="7">7 เมนู</option><option value="8">8 เมนู</option><option value="9">9 เมนู</option><option value="10">10 เมนู</option><option value="11">11 เมนู</option><option value="12">12 เมนู</option><option value="13">13 เมนู</option><option value="14">14 เมนู</option><option value="15">15 เมนู</option><option value="16">16 เมนู</option><option value="17">17 เมนู</option><option value="18">18 เมนู</option><option value="19">19 เมนู</option><option value="20">20 เมนู</option></select><div class="mb-note">แนวตั้งแสดงสูงสุด 20 เมนูต่อหน้าแบบ 2×10 • แนวนอนเลือกได้สูงสุด 20 เมนู • ถ้าเกินจะสร้างหน้าถัดไปอัตโนมัติ</div></div></div>'+
- '<div class="mb-block"><h3>2. เลือกเมนูจากฐานข้อมูล <span class="mb-count" id="kslMediaSelectedCount">0 เมนู</span></h3><div class="mb-field"><input class="mb-input" id="kslMediaSearch" placeholder="ค้นหาเมนู..."></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaSelectAll">เลือกทั้งหมดที่ค้นหา</button><button class="mb-link" id="kslMediaClearSel">ล้างการเลือก</button></div><div id="kslMediaItemList"></div></div>'+
+ '<div class="mb-block"><h3>2. เลือกเมนูจากฐานข้อมูล <span class="mb-count" id="kslMediaSelectedCount">0 เมนู</span></h3><div class="mb-field"><input class="mb-input" id="kslMediaSearch" placeholder="ค้นหาเมนู..."></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaAddMenu" type="button">＋ เพิ่มเมนูใหม่</button><button class="mb-link" id="kslMediaSelectAll">เลือกทั้งหมดที่ค้นหา</button><button class="mb-link" id="kslMediaClearSel">ล้างการเลือก</button></div><div id="kslMediaItemList"></div></div>'+
  '<div class="mb-block"><h3>3. หัวเรื่อง</h3><div class="mb-field"><label>หัวเรื่องหลัก</label><input class="mb-input" id="kslMediaTitle" placeholder="ใช้ชื่อประเภทสื่ออัตโนมัติ"></div><div class="mb-field"><label>ข้อความรอง</label><input class="mb-input" id="kslMediaSubtitle" placeholder="เช่น สำหรับพนักงานใหม่ / Updated..."></div></div>'+
  '<div class="mb-block"><h3>4. งานที่บันทึกไว้</h3><div class="mb-field"><select class="mb-select" id="kslMediaSavedProjects"></select></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaLoadProject" type="button">เปิดแก้ไข</button><button class="mb-link" id="kslMediaDeleteProject" type="button">ลบงาน</button></div><div class="mb-note">เปิดงานเดิมแล้วสามารถเพิ่ม/ลดเมนู แก้รายละเอียด เปลี่ยนรูป แล้วกด “บันทึกทับงานเดิม” • หากต้องการแยกเป็นอีกงานให้กด “บันทึกงานใหม่”</div></div>'+ 
  '<div class="mb-block"><h3>5. แก้ไขข้อมูลรายเมนู</h3><div class="mb-field"><label>เมนูที่จะแก้ไข</label><select class="mb-select" id="kslMediaEditTarget"></select></div><div id="kslMediaEditor"></div><div class="mb-note">แก้ไขแล้ว Auto Save เข้า Online Database • ไม่เปลี่ยนฐานสูตรต้นฉบับที่ Upload</div></div>'+ 
@@ -3051,6 +3106,7 @@ function installBuilder(){
     document.querySelectorAll('#kslMediaPreview .mb-dragging,#kslMediaPreview .mb-drop-target').forEach(x=>x.classList.remove('mb-dragging','mb-drop-target'));
   });
 
+  bind('kslMediaAddMenu','click',addCustomMenu);
   bind('kslMediaSelectAll','click',()=>{const q=search.toLowerCase();sourceItems().filter(x=>!q||(x.name+' '+x.en).toLowerCase().includes(q)).forEach(x=>{if(!draft.selected.includes(x.id))draft.selected.push(x.id)});renderControls();renderPreview();persistDraft()});
   bind('kslMediaClearSel','click',()=>{draft.selected=[];targetImage='';renderControls();renderPreview();persistDraft()});
   bind('kslMediaLoadProject','click',()=>{
@@ -3062,6 +3118,7 @@ function installBuilder(){
   bind('kslMediaEditTarget','change',()=>renderMediaEditor());
   bind('kslMediaEditor','input',()=>scheduleEditorSave());
   bind('kslMediaEditor','click',e=>{
+    if(e.target?.id==='mbDeleteMenu'){deleteCurrentMenu();return;}
     if(e.target?.id==='mbAddDetail'){
       const item=editorItem();if(!item)return;
       const o=collectEditorOverride()||effectiveOverride(item);
@@ -3130,6 +3187,8 @@ function projectSnapshot(){
     subtitle:draft.subtitle,
     selected:[...(draft.selected||[])],
     overrides:clone(draft.overrides||{}),
+    customItems:clone(draft.customItems||[]),
+    deletedItemIds:[...(draft.deletedItemIds||[])],
     createdAt:draft.createdAt,
     updatedAt:draft.updatedAt
   };
