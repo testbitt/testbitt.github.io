@@ -15,7 +15,7 @@ const MEDIA_SUPA_KEY='sb_publishable_C4yHaRSzzgln3d9lplwIpg_QaWlG4ne';
 const MEDIA_BUCKET='ksl-media';
 let onlineImages={};
 let remoteProjects=[];
-let typeCatalogs={drink:{customItems:[],overrides:{}},production:{customItems:[],overrides:{}},holding:{customItems:[],overrides:{}}};
+let typeCatalogs={drink:{customItems:[],overrides:{}},production:{customItems:[],overrides:{}},holding:{customItems:[],overrides:{}},other:{customItems:[],overrides:{}}};
 const text=v=>String(v??'').trim();
 const esc=v=>text(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const clone=v=>{try{return JSON.parse(JSON.stringify(v))}catch(_){return v}};
@@ -162,7 +162,7 @@ async function syncTypeCatalog(type=draft.type){
   await syncProjectOnline(payload);
 }
 function customItemById(id){
-  for(const t of ['drink','production','holding']){
+  for(const t of ['drink','production','holding','other']){
     const hit=(catalogFor(t).customItems||[]).find(x=>x?.id===id);
     if(hit)return {type:t,item:hit};
   }
@@ -182,9 +182,9 @@ async function loadOnlineMediaState(){
       if(x?.updated_at)p.updatedAt=x.updated_at;
       return p;
     }).filter(x=>x?.id);
-    typeCatalogs={drink:{customItems:[],overrides:{}},production:{customItems:[],overrides:{}},holding:{customItems:[],overrides:{}}};
+    typeCatalogs={drink:{customItems:[],overrides:{}},production:{customItems:[],overrides:{}},holding:{customItems:[],overrides:{}},other:{customItems:[],overrides:{}}};
     parsed.forEach(p=>{
-      if(p.catalog&&['drink','production','holding'].includes(p.type)){
+      if(p.catalog&&['drink','production','holding','other'].includes(p.type)){
         typeCatalogs[p.type]={
           customItems:Array.isArray(p.customItems)?clone(p.customItems):[],
           overrides:p.overrides&&typeof p.overrides==='object'?clone(p.overrides):{},
@@ -420,9 +420,11 @@ function sourceItems(type=draft.type){
   }else if(type==='production'){
     const rows=s.productionData||s.productionRecipes||s.production||[];
     rows.forEach(r=>{const name=text(r.recipe_name_th||r.recipe_name_en);if(!name)return;const id=stableId(type,name);if(!groups.has(id))groups.set(id,{id,name,en:text(r.recipe_name_en),rows:[]});const g=groups.get(id);if(!g.en)g.en=text(r.recipe_name_en);g.rows.push(r)});
-  }else{
+  }else if(type==='holding'){
     const rows=s.data||s.holdingTime||s.holdingData||[];
     rows.forEach(r=>{const name=text(r['ชื่อวัตถุดิบ']);if(!name)return;const id=stableId(type,name);if(!groups.has(id))groups.set(id,{id,name,en:'',rows:[]});groups.get(id).rows.push(r)});
+  }else if(type==='other'){
+    // Other media is intentionally user-created only.
   }
   const customMerged=[
     ...(Array.isArray(catalogFor(type).customItems)?catalogFor(type).customItems:[]),
@@ -514,9 +516,12 @@ function pageTitle(){
   if(draft.title)return draft.title;
   if(draft.type==='drink')return 'สูตรการชงเครื่องดื่ม';
   if(draft.type==='production')return 'สูตรการผลิต';
-  return 'ตารางวันหมดอายุ';
+  if(draft.type==='holding')return 'ตารางวันหมดอายุ';
+  return 'สื่ออื่นๆ';
 }
-function typeLabel(t=draft.type){return t==='drink'?'สูตรการชงเครื่องดื่ม':t==='production'?'สูตรการผลิต':'ตารางวันหมดอายุ'}
+function typeLabel(t=draft.type){
+  return t==='drink'?'สูตรการชงเครื่องดื่ม':t==='production'?'สูตรการผลิต':t==='holding'?'ตารางวันหมดอายุ':'สื่ออื่นๆ';
+}
 function chunk(arr,n){const out=[];for(let i=0;i<arr.length;i+=n)out.push(arr.slice(i,i+n));return out.length?out:[[]]}
 
 function lineList(values,max=6){
@@ -558,7 +563,16 @@ function holdingCard(item){
     '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">⏳</div>')+'</div></div>'+
     '<div class="mb-table-side"><table class="mb-recipe-table mb-holding-table"><tbody>'+rows+'</tbody></table>'+(o.note?'<div class="mb-note-line">'+esc(o.note)+'</div>':'')+'</div></div></article>';
 }
-function itemCard(item){return draft.type==='drink'?drinkCard(item):draft.type==='production'?productionCard(item):holdingCard(item)}
+function otherCard(item){
+  const img=imageFor(item.id),o=effectiveOverride(item);
+  const rows=(o.rows||[]).slice(0,14).map(rec=>'<tr><td class="mb-r-name">'+esc(rec.label||'-')+'</td><td class="mb-r-qty">'+esc((Array.isArray(rec.values)?rec.values:[rec.value]).map(text).filter(Boolean).join(', '))+'</td><td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>').join('');
+  return '<article class="mb-card mb-table-card mb-production-card mb-other-card"><div class="mb-black-title">'+esc(o.title||item.name)+'</div><div class="mb-table-body">'+
+    '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">📋</div>')+'</div></div>'+
+    '<div class="mb-table-side"><table class="mb-recipe-table mb-production-table mb-other-table"><tbody>'+rows+'</tbody></table>'+(o.note?'<div class="mb-note-line">'+esc(o.note)+'</div>':'')+'</div></div></article>';
+}
+function itemCard(item){
+  return draft.type==='drink'?drinkCard(item):draft.type==='production'?productionCard(item):draft.type==='holding'?holdingCard(item):otherCard(item);
+}
 
 function rowsFor(){
   return draft.orientation==='landscape' ? 4 : 2;
@@ -3128,7 +3142,7 @@ function builderHtml(){
  '<div class="mb-topbar"><div><h2>🎨 สร้างสื่อการสอน</h2><small id="kslMediaSaveState">บันทึกอัตโนมัติ ✓</small></div>'+
  '<div class="mb-actions"><span class="mb-count" id="kslMediaPageCount">1 หน้า A4</span><button class="mb-btn" id="kslMediaHistory">🕘 ประวัติการบันทึก</button><button class="mb-btn primary" id="kslMediaSaveNew">＋ บันทึกงานใหม่</button><button class="mb-btn" id="kslMediaSaveOverwrite">💾 บันทึกทับงานเดิม</button><button class="mb-btn" id="kslMediaPrint">📄 PDF / Print</button><button class="mb-btn" id="kslMediaJpg">🖼 JPG</button><button class="mb-btn" id="kslMediaPng">PNG</button><button class="mb-btn danger" id="kslMediaClose">✕ ปิด</button></div></div>'+
  '<div class="mb-shell"><aside class="mb-controls">'+
- '<div class="mb-block"><h3>1. ประเภทสื่อ</h3><div class="mb-field"><select class="mb-select" id="kslMediaType"><option value="drink">🧋 สูตรการชงเครื่องดื่ม</option><option value="production">🧑‍🍳 สูตรการผลิต</option><option value="holding">⏳ ตารางวันหมดอายุ</option></select></div>'+
+ '<div class="mb-block"><h3>1. ประเภทสื่อ</h3><div class="mb-field"><select class="mb-select" id="kslMediaType"><option value="drink">🧋 สูตรการชงเครื่องดื่ม</option><option value="production">🧑‍🍳 สูตรการผลิต</option><option value="holding">⏳ ตารางวันหมดอายุ</option><option value="other">📋 สื่ออื่นๆ</option></select></div>'+
  '<div class="mb-inline"><div class="mb-field"><label>Template</label><select class="mb-select" id="kslMediaTemplate"><option value="branch-grid">01 Branch Grid</option><option value="modern">02 KAMU Modern</option><option value="visual">03 Visual Training</option><option value="compact">04 Compact SOP</option><option value="clean">05 Clean White</option><option value="outline">06 Bold Outline</option><option value="soft">07 Soft Card</option><option value="stripe">08 Header Stripe</option><option value="double">09 Double Border</option><option value="rounded">10 Rounded Card</option><option value="square">11 Square Grid</option><option value="minimal">12 Minimal Line</option><option value="classic">13 Classic SOP</option><option value="poster">14 Poster Header</option><option value="label">15 Label Style</option><option value="shadow">16 Soft Shadow</option><option value="frame">17 Framed</option><option value="topline">18 Top Line</option><option value="bottomline">19 Bottom Line</option><option value="leftline">20 Left Accent</option><option value="rightline">21 Right Accent</option><option value="capsule">22 Capsule Header</option><option value="ticket">23 Ticket Card</option><option value="notebook">24 Notebook</option><option value="gridlight">25 Light Grid</option><option value="boldbar">26 Bold Bar</option><option value="split">27 Split Header</option><option value="simple">28 Simple Office</option><option value="training">29 Training Board</option><option value="premium">30 Premium Frame</option></select></div><div class="mb-field"><label>แนวกระดาษ</label><select class="mb-select" id="kslMediaOrientation"><option value="portrait">A4 แนวตั้ง</option><option value="landscape">A4 แนวนอน</option></select></div></div>'+
  '<div class="mb-field"><label>สีสำหรับ Preview / Export (30 สี)</label><select class="mb-select" id="kslMediaTheme"><option value="1">01 KAMU Green</option><option value="2">02 Classic Black</option><option value="3">03 Matcha</option><option value="4">04 Mint</option><option value="5">05 Forest</option><option value="6">06 Cream</option><option value="7">07 Latte</option><option value="8">08 Taro</option><option value="9">09 Thai Tea</option><option value="10">10 Sky</option><option value="11">11 Navy</option><option value="12">12 Rose</option><option value="13">13 Sakura</option><option value="14">14 Minimal Gray</option><option value="15">15 High Contrast</option><option value="16">16 Emerald</option><option value="17">17 Lime</option><option value="18">18 Olive</option><option value="19">19 Teal</option><option value="20">20 Cyan</option><option value="21">21 Royal Blue</option><option value="22">22 Indigo</option><option value="23">23 Violet</option><option value="24">24 Plum</option><option value="25">25 Magenta</option><option value="26">26 Coral</option><option value="27">27 Red</option><option value="28">28 Amber</option><option value="29">29 Chocolate</option><option value="30">30 Slate</option></select></div><div class="mb-field"><label>จำนวนเมนูต่อ A4 (สูงสุด 20)</label><select class="mb-select" id="kslMediaPerPage"><option value="1">1 เมนู</option><option value="2">2 เมนู</option><option value="3">3 เมนู</option><option value="4">4 เมนู</option><option value="5">5 เมนู</option><option value="6">6 เมนู</option><option value="7">7 เมนู</option><option value="8">8 เมนู</option><option value="9">9 เมนู</option><option value="10">10 เมนู</option><option value="11">11 เมนู</option><option value="12">12 เมนู</option><option value="13">13 เมนู</option><option value="14">14 เมนู</option><option value="15">15 เมนู</option><option value="16">16 เมนู</option><option value="17">17 เมนู</option><option value="18">18 เมนู</option><option value="19">19 เมนู</option><option value="20">20 เมนู</option></select><div class="mb-note">แนวตั้งแสดงสูงสุด 20 เมนูต่อหน้าแบบ 2×10 • แนวนอนเลือกได้สูงสุด 20 เมนู • ถ้าเกินจะสร้างหน้าถัดไปอัตโนมัติ</div></div></div>'+
  '<div class="mb-block"><h3>2. เลือกเมนูจากฐานข้อมูล <span class="mb-count" id="kslMediaSelectedCount">0 เมนู</span></h3><div class="mb-field"><input class="mb-input" id="kslMediaSearch" placeholder="ค้นหาเมนู..."></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaAddMenu" type="button">＋ เพิ่มเมนูใหม่</button><button class="mb-link" id="kslMediaSelectAll">เลือกทั้งหมดที่ค้นหา</button><button class="mb-link" id="kslMediaClearSel">ล้างการเลือก</button></div><div id="kslMediaItemList"></div></div>'+
@@ -3581,7 +3595,7 @@ async function exportPageImage(page,format,index){
 
 async function openBuilder(type){
  installBuilder();loadDraft();
- const requestedType=(type&&['drink','production','holding'].includes(type))?type:draft.type;
+ const requestedType=(type&&['drink','production','holding','other'].includes(type))?type:draft.type;
  const ov=document.getElementById('kslMediaOverlay');ov.classList.add('show');
  setSaveStatus('กำลังดึงข้อมูลล่าสุดจาก Cloud...');
  await loadOnlineMediaState();
@@ -3635,10 +3649,11 @@ function installAdmin2Home(){
   home.style.cssText='position:fixed;inset:0;z-index:2147482990;background:#f5faf7;font-family:system-ui,-apple-system,"Noto Sans Thai",Tahoma,sans-serif;color:#173e30;overflow:auto;padding:28px;display:flex;align-items:flex-start;justify-content:center';
   home.innerHTML=
     '<div style="width:min(1500px,100%);margin-top:18px">'+
-      '<div id="kslAdmin2MenuGrid" style="display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:16px">'+
+      '<div id="kslAdmin2MenuGrid" style="display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:16px">'+
         '<button data-admin2-media="drink" type="button" style="min-height:110px;border:2px solid #bfdccc;background:#fff;color:#175941;border-radius:18px;padding:18px;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 5px 0 rgba(23,107,77,.08)">🧋 สื่อสูตรการชง<br><small style="font-size:13px;font-weight:700">เลือกหลายเมนูต่อ A4</small></button>'+
         '<button data-admin2-media="production" type="button" style="min-height:110px;border:2px solid #bfdccc;background:#fff;color:#175941;border-radius:18px;padding:18px;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 5px 0 rgba(23,107,77,.08)">🧑‍🍳 สื่อสูตรการผลิต<br><small style="font-size:13px;font-weight:700">Production Recipe</small></button>'+
         '<button data-admin2-media="holding" type="button" style="min-height:110px;border:2px solid #bfdccc;background:#fff;color:#175941;border-radius:18px;padding:18px;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 5px 0 rgba(23,107,77,.08)">⏳ สื่อตารางวันหมดอายุ<br><small style="font-size:13px;font-weight:700">Holding Time</small></button>'+
+        '<button data-admin2-media="other" type="button" style="min-height:110px;border:2px solid #bfdccc;background:#fff;color:#175941;border-radius:18px;padding:18px;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 5px 0 rgba(23,107,77,.08)">📋 สื่ออื่นๆ<br><small style="font-size:13px;font-weight:700">เพิ่ม/แก้ไข/ลบรายการเอง</small></button>'+
       '</div>'+
     '</div>'+
     '<style>'+
@@ -3670,7 +3685,7 @@ function installAdminCard(){
  const manage=document.getElementById('manage');if(!manage)return false;
  if(document.getElementById('kslMediaAdminCard')){keepMediaMenusAtTop();return false;}
  const card=document.createElement('div');card.id='kslMediaAdminCard';card.className='card';card.style.cssText='margin:0 0 16px;border:1px solid #cfe4d9;background:linear-gradient(135deg,#f8fffb,#eef8f3)';
- card.innerHTML='<div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap"><div><div style="font-size:11px;font-weight:900;color:#1a7453;letter-spacing:.5px">ADMIN MEDIA BUILDER</div><h3 style="margin:4px 0;color:#174c39">🎨 สร้างสื่อการสอนสำหรับติดหน้าสาขา</h3><p style="margin:0;color:#6b8178;font-size:12px">ใช้ข้อมูลล่าสุดที่ Upload • เพิ่มรูปประกอบ • 1 แผ่น A4 เลือกแสดงได้หลายเมนู • Auto Save</p></div><span style="background:#176b4d;color:#fff;border-radius:999px;padding:6px 10px;font-size:10px;font-weight:900">A4 MULTI-MENU</span></div><div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:10px;margin-top:14px"><button class="btn btn-outline" data-media-type="drink" style="min-height:58px">🧋 <b>สื่อสูตรการชง</b><br><small>เลือกหลายเมนูต่อ A4</small></button><button class="btn btn-outline" data-media-type="production" style="min-height:58px">🧑‍🍳 <b>สื่อสูตรการผลิต</b><br><small>Production Recipe</small></button><button class="btn btn-outline" data-media-type="holding" style="min-height:58px">⏳ <b>สื่อตารางวันหมดอายุ</b><br><small>Holding Time</small></button></div>';
+ card.innerHTML='<div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap"><div><div style="font-size:11px;font-weight:900;color:#1a7453;letter-spacing:.5px">ADMIN MEDIA BUILDER</div><h3 style="margin:4px 0;color:#174c39">🎨 สร้างสื่อการสอนสำหรับติดหน้าสาขา</h3><p style="margin:0;color:#6b8178;font-size:12px">ใช้ข้อมูลล่าสุดที่ Upload • เพิ่มรูปประกอบ • 1 แผ่น A4 เลือกแสดงได้หลายเมนู • Auto Save</p></div><span style="background:#176b4d;color:#fff;border-radius:999px;padding:6px 10px;font-size:10px;font-weight:900">A4 MULTI-MENU</span></div><div style="display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:10px;margin-top:14px"><button class="btn btn-outline" data-media-type="drink" style="min-height:58px">🧋 <b>สื่อสูตรการชง</b><br><small>เลือกหลายเมนูต่อ A4</small></button><button class="btn btn-outline" data-media-type="production" style="min-height:58px">🧑‍🍳 <b>สื่อสูตรการผลิต</b><br><small>Production Recipe</small></button><button class="btn btn-outline" data-media-type="holding" style="min-height:58px">⏳ <b>สื่อตารางวันหมดอายุ</b><br><small>Holding Time</small></button><button class="btn btn-outline" data-media-type="other" style="min-height:58px">📋 <b>สื่ออื่นๆ</b><br><small>เพิ่ม/แก้ไข/ลบรายการเอง</small></button></div>';
  card.addEventListener('click',e=>{const b=e.target.closest('[data-media-type]');if(b)openBuilder(b.dataset.mediaType)});
  manage.insertBefore(card,manage.firstChild);
  keepMediaMenusAtTop();
