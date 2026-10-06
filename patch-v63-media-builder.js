@@ -15,6 +15,7 @@ const MEDIA_SUPA_KEY='sb_publishable_C4yHaRSzzgln3d9lplwIpg_QaWlG4ne';
 const MEDIA_BUCKET='ksl-media';
 let onlineImages={};
 let remoteProjects=[];
+let typeCatalogs={drink:{customItems:[],overrides:{}},production:{customItems:[],overrides:{}},holding:{customItems:[],overrides:{}}};
 const text=v=>String(v??'').trim();
 const esc=v=>text(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const clone=v=>{try{return JSON.parse(JSON.stringify(v))}catch(_){return v}};
@@ -133,6 +134,40 @@ async function syncProjectOnline(project){
   const i=remoteProjects.findIndex(x=>x.id===p.id);
   if(i>=0)remoteProjects[i]=p;else remoteProjects.unshift(p);
 }
+
+function catalogId(type){return 'MEDIA-CATALOG-'+type}
+function catalogFor(type=draft.type){
+  if(!typeCatalogs[type])typeCatalogs[type]={customItems:[],overrides:{}};
+  return typeCatalogs[type];
+}
+async function syncTypeCatalog(type=draft.type){
+  const cat=catalogFor(type);
+  const payload={
+    id:catalogId(type),
+    name:'Media Catalog '+type,
+    type,
+    catalog:true,
+    customItems:clone(cat.customItems||[]),
+    overrides:clone(cat.overrides||{}),
+    selected:[],
+    template:'branch-grid',
+    orientation:'landscape',
+    perPage:4,
+    theme:'1',
+    createdAt:cat.createdAt||now(),
+    updatedAt:now()
+  };
+  cat.createdAt=payload.createdAt;
+  cat.updatedAt=payload.updatedAt;
+  await syncProjectOnline(payload);
+}
+function customItemById(id){
+  for(const t of ['drink','production','holding']){
+    const hit=(catalogFor(t).customItems||[]).find(x=>x?.id===id);
+    if(hit)return {type:t,item:hit};
+  }
+  return null;
+}
 async function loadOnlineMediaState(){
   try{
     const [imgs,projects]=await Promise.all([
@@ -141,12 +176,24 @@ async function loadOnlineMediaState(){
     ]);
     onlineImages={};
     (Array.isArray(imgs)?imgs:[]).forEach(x=>{if(x?.menu_id&&x?.public_url)onlineImages[x.menu_id]=x.public_url+(String(x.public_url).includes('?')?'&':'?')+'v='+encodeURIComponent(x.updated_at||Date.now())});
-    remoteProjects=(Array.isArray(projects)?projects:[]).map(x=>{
+    const parsed=(Array.isArray(projects)?projects:[]).map(x=>{
       const p=x?.data&&typeof x.data==='object'?clone(x.data):{};
       if(x?.id&&!p.id)p.id=x.id;
       if(x?.updated_at)p.updatedAt=x.updated_at;
       return p;
     }).filter(x=>x?.id);
+    typeCatalogs={drink:{customItems:[],overrides:{}},production:{customItems:[],overrides:{}},holding:{customItems:[],overrides:{}}};
+    parsed.forEach(p=>{
+      if(p.catalog&&['drink','production','holding'].includes(p.type)){
+        typeCatalogs[p.type]={
+          customItems:Array.isArray(p.customItems)?clone(p.customItems):[],
+          overrides:p.overrides&&typeof p.overrides==='object'?clone(p.overrides):{},
+          createdAt:p.createdAt||'',
+          updatedAt:p.updatedAt||''
+        };
+      }
+    });
+    remoteProjects=parsed.filter(p=>!p.catalog);
   }catch(e){
     console.warn('[KSL Media] load online state',e);
   }
@@ -270,6 +317,8 @@ async function persistImageAuto(id,data){
 
 function overrideFor(id){
   if(draft.overrides?.[id])return draft.overrides[id];
+  const custom=customItemById(id);
+  if(custom&&catalogFor(custom.type).overrides?.[id])return catalogFor(custom.type).overrides[id];
   try{
     const s=app();
     if(s?.mediaOverrides?.[id])return s.mediaOverrides[id];
@@ -326,6 +375,11 @@ async function persistOverrideAuto(id,o){
   if(!id)return;
   draft.overrides=draft.overrides&&typeof draft.overrides==='object'?draft.overrides:{};
   draft.overrides[id]=clone(o);
+  const custom=customItemById(id);
+  if(custom){
+    catalogFor(custom.type).overrides=catalogFor(custom.type).overrides||{};
+    catalogFor(custom.type).overrides[id]=clone(o);
+  }
   draft.updatedAt=now();
   try{localStorage.setItem(STORE,JSON.stringify(draft))}catch(_){}
   setSaveStatus('กำลังบันทึกข้อมูล...');
@@ -348,6 +402,7 @@ async function persistOverrideAuto(id,o){
       if(typeof dbSet==='function')await Promise.resolve(dbSet(s));
     }
     try{await syncProjectOnline(projectSnapshot())}catch(e){console.warn('[KSL Media] override online sync',e)}
+    if(custom){try{await syncTypeCatalog(custom.type)}catch(e){console.warn('[KSL Media] catalog override sync',e)}}
     setSaveStatus('บันทึกข้อมูล Online อัตโนมัติ ✓');
   }catch(e){
     console.warn('[KSL Media] override autosave',e);
@@ -369,10 +424,11 @@ function sourceItems(type=draft.type){
     const rows=s.data||s.holdingTime||s.holdingData||[];
     rows.forEach(r=>{const name=text(r['ชื่อวัตถุดิบ']);if(!name)return;const id=stableId(type,name);if(!groups.has(id))groups.set(id,{id,name,en:'',rows:[]});groups.get(id).rows.push(r)});
   }
-  const custom=(Array.isArray(draft.customItems)?draft.customItems:[])
-    .filter(x=>x&&x.type===type&&x.id&&x.name)
-    .map(x=>({id:x.id,name:text(x.name),en:text(x.en),rows:Array.isArray(x.rows)?clone(x.rows):[],custom:true}));
-  custom.forEach(x=>groups.set(x.id,x));
+  const customMerged=[
+    ...(Array.isArray(catalogFor(type).customItems)?catalogFor(type).customItems:[]),
+    ...(Array.isArray(draft.customItems)?draft.customItems:[])
+  ].filter(x=>x&&x.type===type&&x.id&&x.name);
+  customMerged.forEach(x=>groups.set(x.id,{id:x.id,name:text(x.name),en:text(x.en),rows:Array.isArray(x.rows)?clone(x.rows):[],custom:true}));
   const deleted=new Set(Array.isArray(draft.deletedItemIds)?draft.deletedItemIds:[]);
   return [...groups.values()].filter(x=>!deleted.has(x.id)).sort((a,b)=>a.name.localeCompare(b.name,'th'));
 }
@@ -390,27 +446,38 @@ function cleanSelection(){
 function customMenuId(type,name){
   return 'custom::'+type+'::'+Date.now().toString(36)+'::'+text(name).toLowerCase().replace(/\s+/g,'-').slice(0,40);
 }
-function addCustomMenu(){
+async function addCustomMenu(){
   const name=text(prompt('ชื่อเมนูใหม่'));
   if(!name)return;
-  draft.customItems=Array.isArray(draft.customItems)?draft.customItems:[];
-  const id=customMenuId(draft.type,name);
-  draft.customItems.push({id,type:draft.type,name,en:'',rows:[],custom:true});
-  draft.deletedItemIds=(Array.isArray(draft.deletedItemIds)?draft.deletedItemIds:[]).filter(x=>x!==id);
-  if(!draft.selected.includes(id))draft.selected.push(id);
-  draft.overrides=draft.overrides&&typeof draft.overrides==='object'?draft.overrides:{};
-  draft.overrides[id]={
+  const type=draft.type;
+  const id=customMenuId(type,name);
+  const item={id,type,name,en:'',rows:[],custom:true};
+  const cat=catalogFor(type);
+  cat.customItems=Array.isArray(cat.customItems)?cat.customItems:[];
+  cat.customItems.push(item);
+  cat.overrides=cat.overrides&&typeof cat.overrides==='object'?cat.overrides:{};
+  cat.overrides[id]={
     title:name,
-    headers:draft.type==='drink'?['STD']:(draft.type==='holding'?['Holding Time']:[]),
+    headers:type==='drink'?['STD']:(type==='holding'?['Holding Time']:[]),
     rows:[],
     note:''
   };
+  draft.deletedItemIds=(Array.isArray(draft.deletedItemIds)?draft.deletedItemIds:[]).filter(x=>x!==id);
+  if(!draft.selected.includes(id))draft.selected.push(id);
+  draft.overrides=draft.overrides&&typeof draft.overrides==='object'?draft.overrides:{};
+  draft.overrides[id]=clone(cat.overrides[id]);
   targetImage=id;
   renderControls();
   renderPreview();
   const edit=document.getElementById('kslMediaEditTarget');if(edit){edit.value=id;renderMediaEditor()}
   persistDraft(true);
-  setSaveStatus('เพิ่มเมนูใหม่และบันทึก Online แล้ว ✓');
+  try{
+    await syncTypeCatalog(type);
+    setSaveStatus('เพิ่มเมนูใหม่และบันทึกเข้าประเภท '+typeLabel(type)+' Online แล้ว ✓');
+  }catch(e){
+    console.warn('[KSL Media] catalog add sync',e);
+    setSaveStatus('เพิ่มเมนูใหม่แล้ว • รอ Sync Online');
+  }
 }
 async function deleteCurrentMenu(){
   const id=document.getElementById('kslMediaEditTarget')?.value||targetImage||'';
@@ -421,9 +488,16 @@ async function deleteCurrentMenu(){
 
   draft.selected=(draft.selected||[]).filter(x=>x!==id);
   draft.customItems=Array.isArray(draft.customItems)?draft.customItems:[];
+  const customInfo=customItemById(id);
   const customIndex=draft.customItems.findIndex(x=>x?.id===id);
-  if(customIndex>=0){
-    draft.customItems.splice(customIndex,1);
+  if(customInfo||customIndex>=0){
+    if(customIndex>=0)draft.customItems.splice(customIndex,1);
+    if(customInfo){
+      const cat=catalogFor(customInfo.type);
+      cat.customItems=(cat.customItems||[]).filter(x=>x?.id!==id);
+      if(cat.overrides)delete cat.overrides[id];
+      try{await syncTypeCatalog(customInfo.type)}catch(e){console.warn('[KSL Media] catalog delete sync',e)}
+    }
     if(draft.overrides)delete draft.overrides[id];
     try{await persistImageAuto(id,'')}catch(_){}
   }else{
@@ -3225,7 +3299,7 @@ function getSavedProjects(){
   const map=new Map();
   localProjects().forEach(p=>p?.id&&map.set(p.id,p));
   remoteProjects.forEach(p=>{
-    if(!p?.id)return;
+    if(!p?.id||p.catalog)return;
     const old=map.get(p.id);
     if(!old||String(p.updatedAt||'')>String(old.updatedAt||''))map.set(p.id,p);
   });
