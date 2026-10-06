@@ -629,53 +629,77 @@ function fitExportSheetInCell(cell){
   const cellW=Math.max(1,cr.width);
   const cellH=Math.max(1,cr.height);
 
+  // Keep every card full-width inside its A4 grid cell.
+  // Never shrink the whole card with transform because that creates tiny tables
+  // on pages where one recipe has more rows than the others.
   sheet.style.position="absolute";
   sheet.style.top="0";
   sheet.style.left="0";
   sheet.style.right="auto";
-  sheet.style.maxWidth="none";
-  sheet.style.maxHeight="none";
-  sheet.style.overflow="hidden";
-  sheet.style.transformOrigin="top left";
-  sheet.style.transform="none";
-
-  // Measure natural content at full cell width first.
   sheet.style.width=cellW+"px";
-  sheet.style.height="auto";
-  sheet.style.minHeight="0";
-  let naturalH=Math.max(sheet.scrollHeight,sheet.getBoundingClientRect().height,1);
+  sheet.style.maxWidth=cellW+"px";
+  sheet.style.height=cellH+"px";
+  sheet.style.minHeight=cellH+"px";
+  sheet.style.maxHeight=cellH+"px";
+  sheet.style.overflow="hidden";
+  sheet.style.transform="none";
+  sheet.style.transformOrigin="top left";
+  sheet.style.display="flex";
+  sheet.style.flexDirection="column";
+  sheet.dataset.fitScale="1";
 
-  // Scale down only when the natural content is taller than its A4 cell.
-  let scale=Math.min(1,cellH/naturalH);
-  scale=Math.max(.04,scale);
+  const title=sheet.querySelector(":scope > .sheet-title");
+  const body=sheet.querySelector(":scope > .sheet-body");
+  const directTable=sheet.querySelector(":scope > table");
+  const note=sheet.querySelector(":scope > .note");
+  if(body){body.style.flex="1 1 auto";body.style.minHeight="0";body.style.overflow="hidden"}
+  if(directTable){directTable.style.flex="1 1 auto";directTable.style.minHeight="0"}
+  if(title)title.style.flex="0 0 auto";
+  if(note)note.style.flex="0 0 auto";
 
-  // Re-measure after compensating the logical width for transform scaling.
-  for(let i=0;i<4;i++){
-    sheet.style.transform="none";
-    sheet.style.width=(cellW/scale)+"px";
-    sheet.style.height="auto";
-    const h=Math.max(sheet.scrollHeight,sheet.getBoundingClientRect().height,1);
-    const needed=Math.min(1,cellH/h);
-    if(needed>=.997)break;
-    scale=Math.max(.04,scale*needed*.995);
+  // Restore base export typography before measuring.
+  sheet.querySelectorAll("th,td").forEach(el=>{
+    el.style.removeProperty("font-size");
+    el.style.removeProperty("padding");
+    el.style.removeProperty("line-height");
+  });
+  if(title){title.style.removeProperty("font-size");title.style.removeProperty("padding");title.style.removeProperty("line-height")}
+  if(note){note.style.removeProperty("font-size");note.style.removeProperty("padding");note.style.removeProperty("line-height")}
+  sheet.querySelectorAll(".photo img,.thumb").forEach(img=>img.style.removeProperty("max-height"));
+
+  // If content is too tall, compress typography/row spacing only.
+  // Width always stays 100%, so every card remains balanced across the A4 page.
+  let naturalH=Math.max(sheet.scrollHeight,1);
+  if(naturalH>cellH+1){
+    let ratio=Math.max(.54,Math.min(1,(cellH/naturalH)*.97));
+    for(let pass=0;pass<3;pass++){
+      const tdFont=Math.max(7.2,12.5*ratio);
+      const tdPy=Math.max(2.2,8*ratio);
+      const tdPx=Math.max(3.2,9*ratio);
+      sheet.querySelectorAll("th,td").forEach(el=>{
+        el.style.setProperty("font-size",tdFont+"px","important");
+        el.style.setProperty("padding",tdPy+"px "+tdPx+"px","important");
+        el.style.setProperty("line-height",String(Math.max(1.08,1.42*ratio)),"important");
+      });
+      if(title){
+        title.style.setProperty("font-size",Math.max(13,22*ratio)+"px","important");
+        title.style.setProperty("padding",Math.max(4,9*ratio)+"px "+Math.max(6,12*ratio)+"px","important");
+        title.style.setProperty("line-height",String(Math.max(1.1,1.28*ratio)),"important");
+      }
+      if(note){
+        note.style.setProperty("font-size",Math.max(7.5,12*ratio)+"px","important");
+        note.style.setProperty("padding",Math.max(3,8*ratio)+"px "+Math.max(5,10*ratio)+"px","important");
+        note.style.setProperty("line-height",String(Math.max(1.08,1.4*ratio)),"important");
+      }
+      sheet.querySelectorAll(".photo img").forEach(img=>img.style.setProperty("max-height",Math.max(70,150*ratio)+"px","important"));
+      sheet.querySelectorAll(".thumb").forEach(img=>img.style.setProperty("max-height",Math.max(28,58*ratio)+"px","important"));
+      naturalH=Math.max(sheet.scrollHeight,1);
+      if(naturalH<=cellH+1)break;
+      ratio=Math.max(.48,ratio*(cellH/naturalH)*.98);
+    }
   }
 
-  scale=Math.min(1,scale);
-
-  // Critical: give every card the same VISUAL height as its grid cell.
-  // Logical dimensions are divided by scale so the transformed result fills the cell exactly.
-  const logicalW=cellW/scale;
-  const logicalH=cellH/scale;
-  sheet.style.transform="none";
-  sheet.style.width=logicalW+"px";
-  sheet.style.height=logicalH+"px";
-  sheet.style.minHeight=logicalH+"px";
-  sheet.style.maxHeight=logicalH+"px";
-  sheet.style.transform="scale("+scale+")";
-  sheet.dataset.fitScale=scale.toFixed(4);
-
-  const fr=sheet.getBoundingClientRect();
-  const ok=fr.width<=cellW+1.5&&fr.height<=cellH+1.5;
+  const ok=sheet.scrollWidth<=cellW+2&&sheet.scrollHeight<=cellH+2;
   cell.dataset.fitOk=ok?"1":"0";
   return ok;
 }
