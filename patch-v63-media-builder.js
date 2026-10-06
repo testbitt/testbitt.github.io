@@ -2655,11 +2655,33 @@ function editorItem(){
   const id=document.getElementById('kslMediaEditTarget')?.value||'';
   return selectedItems().find(x=>x.id===id)||null;
 }
+
+function editorSuggestions(){
+  const labels=new Set(),units=new Set();
+  const items=sourceItems(draft.type);
+  items.forEach(item=>{
+    try{
+      const o=effectiveOverride(item);
+      (o.rows||[]).forEach(r=>{
+        const label=text(r.label);if(label)labels.add(label);
+        const unit=text(r.unit);if(unit)units.add(unit);
+      });
+    }catch(_){}
+  });
+  return {
+    labels:[...labels].sort((a,b)=>a.localeCompare(b,'th')),
+    units:[...units].sort((a,b)=>a.localeCompare(b,'th'))
+  };
+}
 function renderMediaEditor(){
   const box=document.getElementById('kslMediaEditor');if(!box)return;
   const item=editorItem();if(!item){box.innerHTML='<div class="mb-note">เลือกเมนูที่ต้องการแก้ไขก่อน</div>';return}
   const o=effectiveOverride(item),headers=(o.headers||[]).join(', ');
-  box.innerHTML='<div class="mb-field"><label>ชื่อที่แสดง</label><input class="mb-input" id="mbEditTitle" value="'+esc(o.title||item.name)+'"></div>'+
+  const sug=editorSuggestions();
+  const labelOptions=sug.labels.map(v=>'<option value="'+esc(v)+'"></option>').join('');
+  const unitOptions=sug.units.map(v=>'<option value="'+esc(v)+'"></option>').join('');
+  box.innerHTML='<datalist id="mbLabelOptions">'+labelOptions+'</datalist><datalist id="mbUnitOptions">'+unitOptions+'</datalist>'+
+    '<div class="mb-field"><label>ชื่อที่แสดง</label><input class="mb-input" id="mbEditTitle" value="'+esc(o.title||item.name)+'"></div>'+
     (draft.type==='drink'?'<div class="mb-field"><label>ประเภทแก้ว (คั่นด้วย ,)</label><input class="mb-input" id="mbEditHeaders" value="'+esc(headers)+'"></div>':'')+
     '<div class="mb-edit-list" id="mbEditRows">'+(o.rows||[]).map((r,i)=>editRowHtml(r,i)).join('')+'</div>'+
     '<div class="mb-list-tools"><button class="mb-link" id="mbAddDetail" type="button">＋ เพิ่มรายละเอียด</button><button class="mb-link" id="mbDeleteMenu" type="button" style="color:#a33;border-color:#e3bcbc">🗑 ลบเมนู</button></div>'+
@@ -2669,9 +2691,9 @@ function editRowHtml(r,i){
   const vals=Array.isArray(r.values)?r.values.filter(v=>text(v)).join(', '):text(r.value);
   return '<div class="mb-edit-row" data-edit-row="'+i+'">'+
     '<div class="mb-row-move"><button class="mb-link mb-er-up" type="button" title="เลื่อนขึ้น">↑</button><button class="mb-link mb-er-down" type="button" title="เลื่อนลง">↓</button></div>'+
-    '<input class="mb-input mb-er-label" value="'+esc(r.label||'')+'" placeholder="รายละเอียด / วัตถุดิบ">'+
+    '<input class="mb-input mb-er-label" list="mbLabelOptions" value="'+esc(r.label||'')+'" placeholder="เลือกหรือพิมพ์ชื่อรายการ / วัตถุดิบ">'+
     '<input class="mb-input mb-er-value" value="'+esc(vals)+'" placeholder="'+(draft.type==='drink'?'ค่าตามประเภทแก้ว คั่นด้วย ,':'ค่า / ปริมาณ หากมีหลายค่าให้คั่นด้วย ,')+'">'+
-    '<input class="mb-input mb-er-unit" value="'+esc(r.unit||'')+'" placeholder="หน่วย / ข้อมูลเสริม">'+
+    '<input class="mb-input mb-er-unit" list="mbUnitOptions" value="'+esc(r.unit||'')+'" placeholder="เลือกหรือพิมพ์หน่วย">'+
     '<button class="mb-link mb-er-del" type="button">ลบ</button></div>';
 }
 function collectEditorOverride(){
@@ -3035,7 +3057,7 @@ function builderHtml(){
  '<div class="mb-block"><h3>2. เลือกเมนูจากฐานข้อมูล <span class="mb-count" id="kslMediaSelectedCount">0 เมนู</span></h3><div class="mb-field"><input class="mb-input" id="kslMediaSearch" placeholder="ค้นหาเมนู..."></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaAddMenu" type="button">＋ เพิ่มเมนูใหม่</button><button class="mb-link" id="kslMediaSelectAll">เลือกทั้งหมดที่ค้นหา</button><button class="mb-link" id="kslMediaClearSel">ล้างการเลือก</button></div><div id="kslMediaItemList"></div></div>'+
  '<div class="mb-block"><h3>3. หัวเรื่อง</h3><div class="mb-field"><label>หัวเรื่องหลัก</label><input class="mb-input" id="kslMediaTitle" placeholder="ใช้ชื่อประเภทสื่ออัตโนมัติ"></div><div class="mb-field"><label>ข้อความรอง</label><input class="mb-input" id="kslMediaSubtitle" placeholder="เช่น สำหรับพนักงานใหม่ / Updated..."></div></div>'+
  '<div class="mb-block"><h3>4. งานที่บันทึกไว้</h3><div class="mb-field"><select class="mb-select" id="kslMediaSavedProjects"></select></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaLoadProject" type="button">เปิดแก้ไข</button><button class="mb-link" id="kslMediaDeleteProject" type="button">ลบงาน</button></div><div class="mb-note">เปิดงานเดิมแล้วสามารถเพิ่ม/ลดเมนู แก้รายละเอียด เปลี่ยนรูป แล้วกด “บันทึกทับงานเดิม” • หากต้องการแยกเป็นอีกงานให้กด “บันทึกงานใหม่”</div></div>'+ 
- '<div class="mb-block"><h3>5. แก้ไขข้อมูลรายเมนู</h3><div class="mb-field"><label>เมนูที่จะแก้ไข</label><select class="mb-select" id="kslMediaEditTarget"></select></div><div id="kslMediaEditor"></div><div class="mb-note">กรณีมีข้อมูลหลายค่าในช่องเดียวกัน ให้คั่นด้วยเครื่องหมาย , • แก้ไขแล้ว Auto Save เข้า Online Database • ไม่เปลี่ยนฐานสูตรต้นฉบับที่ Upload</div></div>'+ 
+ '<div class="mb-block"><h3>5. แก้ไขข้อมูลรายเมนู</h3><div class="mb-field"><label>เมนูที่จะแก้ไข</label><select class="mb-select" id="kslMediaEditTarget"></select></div><div id="kslMediaEditor"></div><div class="mb-note">ช่องชื่อรายการและหน่วยสามารถเลือกจาก Dropdown หรือพิมพ์เองได้ • กรณีมีข้อมูลหลายค่าในช่องเดียวกัน ให้คั่นด้วยเครื่องหมาย , • แก้ไขแล้ว Auto Save เข้า Online Database • ไม่เปลี่ยนฐานสูตรต้นฉบับที่ Upload</div></div>'+ 
  '<div class="mb-block"><h3>6. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-field"><label>โหมดลบพื้นหลัง</label><select class="mb-select" id="kslMediaBgRemovalMode"><option value="detail">ละเอียด / เก็บวัตถุข้างแก้ว</option><option value="standard">มาตรฐาน / เร็วขึ้น</option></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">โหมดละเอียดจะเพิ่ม Padding ก่อน AI, รักษาผลไม้/Topping/Packaging รอบแก้ว, ปรับ Alpha และลดขอบขาว • บันทึกเป็น PNG โปร่งใส • Auto Save และ Upload รูปใหม่เมนูเดิมจะทับรูปเดิม</div></div>'+
  '</aside><main class="mb-preview-wrap" id="kslMediaPreview"></main></div>'+
  '<section id="kslMediaHistoryPage"><div class="mb-history-head"><div><div class="mb-kamu">KAMU KAMU • MEDIA</div><h2>ประวัติการบันทึกสื่อ</h2><p>เรียกงานเดิมกลับมาแก้ไข เพิ่ม/ลดรายการ เปลี่ยนรูป Theme และบันทึกทับได้</p></div><button class="mb-btn" id="kslMediaHistoryClose">← กลับหน้าสร้างสื่อ</button></div><div id="kslMediaHistoryList"></div></section></div>';
