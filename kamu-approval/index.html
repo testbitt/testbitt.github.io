@@ -62,6 +62,8 @@ label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px}.field{wid
 <div><label>ประเภทเอกสาร</label><select id="type" class="field"><option value="">กำลังโหลดจาก Admin...</option></select></div>
 <div><label>เลขที่เอกสาร</label><input id="no" class="field" readonly></div>
 <div><label>ผู้ขอ</label><select id="requester" class="field"><option value="">กำลังโหลดจาก Admin...</option></select></div>
+<div><label>ชื่อผู้อนุมัติ</label><select id="approver" class="field"><option value="">กำลังโหลดจาก Admin...</option></select></div>
+<div><label>อีเมลผู้อนุมัติ</label><input id="approverEmail" class="field" readonly placeholder="เลือกผู้อนุมัติก่อน"></div>
 <div><label>สาขา</label><select id="branch" class="field"><option value="">กำลังโหลดจาก Admin...</option></select></div>
 <div><label>จำนวนเงิน / วงเงิน</label><input id="amount" class="field" type="number" value="0" min="0"></div>
 <div><label>วันที่</label><input id="date" class="field" type="date"></div>
@@ -135,6 +137,7 @@ function newNo(){
 document.getElementById('date').value=new Date().toISOString().slice(0,10);
 type.addEventListener('change',newNo);
 requester.addEventListener('change',onRequesterChange);
+approver.addEventListener('change',onApproverChange);
 newNo();
 
 function go(id){
@@ -166,9 +169,11 @@ function render(){
 function preview(){
  if(!type.value)return alert('กรุณาตั้งค่าและเลือกประเภทเอกสารจาก Admin');
  if(!requester.value)return alert('กรุณาตั้งค่าและเลือกผู้ขอจาก Admin');
+ if(!approver.value)return alert('กรุณาเลือกชื่อผู้อนุมัติ');
+ if(!approverEmail.value)return alert('ผู้อนุมัติยังไม่มี Email กรุณาตั้งค่าใน Admin → Users & Roles');
  if(!branch.value)return alert('กรุณาตั้งค่าและเลือกสาขาจาก Admin');
  let a=+amount.value||0;
- modalBody.innerHTML='<h2>Preview เอกสาร</h2><p><b>'+esc(no.value)+'</b></p><p>ประเภท: '+esc(type.value)+'</p><p>ผู้ขอ: '+esc(requester.value)+'</p><p>สาขา: '+esc(branch.value)+'</p><p>วงเงิน: '+a.toLocaleString()+' บาท</p><p>Flow: '+flow(a).join(' → ')+'</p><p>รายละเอียด: '+esc(detail.value||'-')+'</p><p>ไฟล์แนบ: '+fileInput.files.length+' ไฟล์</p>';
+ modalBody.innerHTML='<h2>Preview เอกสาร</h2><p><b>'+esc(no.value)+'</b></p><p>ประเภท: '+esc(type.value)+'</p><p>ผู้ขอ: '+esc(requester.value)+'</p><p>ผู้อนุมัติ: '+esc(approver.value)+' ('+esc(approverEmail.value)+')</p><p>สาขา: '+esc(branch.value)+'</p><p>วงเงิน: '+a.toLocaleString()+' บาท</p><p>Flow: '+flow(a).join(' → ')+'</p><p>รายละเอียด: '+esc(detail.value||'-')+'</p><p>ไฟล์แนบ: '+fileInput.files.length+' ไฟล์</p>';
  modal.classList.add('show')
 }
 function closeModal(){modal.classList.remove('show')}
@@ -228,11 +233,13 @@ function safeFileName(s){return String(s).replace(/[^a-zA-Z0-9._-]+/g,'_')}
 async function submitReq(){
  if(!type.value)return alert('กรุณาตั้งค่าประเภทเอกสารใน Admin');
  if(!requester.value)return alert('กรุณาเพิ่มและเลือกผู้ขอใน Admin → Users & Roles');
+ if(!approver.value)return alert('กรุณาเลือกชื่อผู้อนุมัติ');
+ if(!approverEmail.value)return alert('ผู้อนุมัติยังไม่มี Email กรุณาตั้งค่าใน Admin → Users & Roles');
  if(!branch.value)return alert('กรุณาตั้งค่าสาขาใน Admin');
  const a=+amount.value||0,f=flow(a),btn=event?.target;
  if(btn){btn.disabled=true;btn.textContent='กำลังส่ง...'}
  try{
-   const payload={document_no:no.value,type:type.value,requester:requester.value,branch:branch.value,amount:a,status:'รออนุมัติ',stage:f[0],detail:detail.value||'-',request_date:date.value,flow:f};
+   const payload={document_no:no.value,type:type.value,requester:requester.value,approver_name:approver.value,approver_email:approverEmail.value,branch:branch.value,amount:a,status:'รออนุมัติ',stage:f[0],detail:detail.value||'-',request_date:date.value,flow:f,email_notify_status:'PENDING'};
    const {data:doc,error}=await sb.from('kamu_approval_documents').insert(payload).select().single(); if(error)throw error;
    const {error:te}=await sb.from('kamu_approval_timeline').insert({document_id:doc.id,actor:payload.requester,action:'สร้างเอกสารและส่งอนุมัติ'}); if(te)throw te;
    const files=[...fileInput.files];
@@ -241,7 +248,20 @@ async function submitReq(){
      const {error:ue}=await sb.storage.from('kamu-approval-files').upload(path,upFile,{contentType:upFile.type||files[i].type,upsert:false}); if(ue)throw ue;
      const {error:ae}=await sb.from('kamu_approval_attachments').insert({document_id:doc.id,file_name:name,storage_path:path,signed:!!sig,signer:sig?.signer||null,signed_at:sig?.signed_at||null}); if(ae)throw ae;
    }
-   detail.value='';amount.value=0;signedAttachments=[];fileInput.value='';renderAttachments();newNo();await loadData();go('documents');alert('ส่งเอกสาร Online เรียบร้อย')
+   let mailMessage='ส่งเอกสาร Online เรียบร้อย';
+   try{
+     const {data:mailData,error:mailError}=await sb.functions.invoke('kamu-approval-notify',{body:{document_id:doc.id}});
+     if(mailError) throw mailError;
+     if(mailData?.status==='sent'||mailData?.status==='already_sent'){
+       mailMessage+='\nส่งอีเมลแจ้งผู้อนุมัติแล้ว: '+payload.approver_email;
+     }else{
+       mailMessage+='\nบันทึกผู้อนุมัติแล้ว แต่ยังส่งอีเมลไม่ได้';
+     }
+   }catch(mailErr){
+     console.error('Email notify:',mailErr);
+     mailMessage+='\nยังส่งอีเมลไม่ได้ เนื่องจากบริการส่งอีเมลยังไม่ได้ตั้งค่า';
+   }
+   detail.value='';amount.value=0;signedAttachments=[];fileInput.value='';renderAttachments();newNo();await loadData();go('documents');alert(mailMessage)
  }catch(err){console.error(err);alert('ส่งเอกสารไม่สำเร็จ: '+err.message)}
  finally{if(btn){btn.disabled=false;btn.textContent='ส่งอนุมัติ'}}
 }
@@ -259,7 +279,7 @@ async function viewReq(id){
    const {data:signed}=await sb.storage.from('kamu-approval-files').createSignedUrl(a.storage_path,3600);
    files+='<div style="padding:8px 0;border-bottom:1px solid var(--line)">📎 <b>'+esc(a.file_name)+'</b> '+(a.signed?'<span class="badge approved">ลงลายเซ็นแล้ว</span>':'')+(signed?.signedUrl?' <a target="_blank" href="'+signed.signedUrl+'">เปิดไฟล์</a>':'')+'</div>';
  }
- modalBody.innerHTML='<h2>'+esc(x.document_no)+'</h2><p>'+badge(x.status)+'</p><p><b>ประเภท:</b> '+esc(x.type)+' &nbsp; <b>สาขา:</b> '+esc(x.branch)+'</p><p><b>วงเงิน:</b> '+x.amount.toLocaleString()+' บาท</p><p><b>ขั้นตอนปัจจุบัน:</b> '+esc(x.stage)+'</p><p><b>รายละเอียด:</b> '+esc(x.detail||'-')+'</p><h3>ไฟล์แนบ</h3>'+(files||'<p>ไม่มีไฟล์แนบ</p>')+'<h3>Timeline</h3><div class="timeline">'+(events||'<p>ยังไม่มี Timeline</p>')+'</div>'
+ modalBody.innerHTML='<h2>'+esc(x.document_no)+'</h2><p>'+badge(x.status)+'</p><p><b>ประเภท:</b> '+esc(x.type)+' &nbsp; <b>สาขา:</b> '+esc(x.branch)+'</p><p><b>ผู้อนุมัติ:</b> '+esc(x.approver_name||'-')+(x.approver_email?' ('+esc(x.approver_email)+')':'')+'</p><p><b>วงเงิน:</b> '+x.amount.toLocaleString()+' บาท</p><p><b>ขั้นตอนปัจจุบัน:</b> '+esc(x.stage)+'</p><p><b>รายละเอียด:</b> '+esc(x.detail||'-')+'</p><h3>ไฟล์แนบ</h3>'+(files||'<p>ไม่มีไฟล์แนบ</p>')+'<h3>Timeline</h3><div class="timeline">'+(events||'<p>ยังไม่มี Timeline</p>')+'</div>'
 }
 
 async function decide(id,action){
@@ -313,7 +333,16 @@ function syncMasterDropdowns(){
    ? '<option value="">-- เลือกผู้ขอ --</option>'+activeUsers.map(x=>'<option value="'+esc(x.full_name)+'" data-branch="'+esc(x.branch_code||'')+'" data-role="'+esc(x.role||'')+'">'+esc(x.full_name)+' — '+esc(x.role||'-')+'</option>').join('')
    : '<option value="">ยังไม่มี User ใน Admin</option>';
  if(activeUsers.some(x=>x.full_name===currentUser))requester.value=currentUser;
+
+ const approverRoles=['Supervisor','Area Manager','Operation Manager','Finance','Admin'];
+ const approvers=activeUsers.filter(x=>approverRoles.includes(x.role));
+ const currentApprover=approver.value;
+ approver.innerHTML=approvers.length
+   ? '<option value="">-- เลือกผู้อนุมัติ --</option>'+approvers.map(x=>'<option value="'+esc(x.full_name)+'">'+esc(x.full_name)+' — '+esc(x.role||'-')+'</option>').join('')
+   : '<option value="">ยังไม่มีผู้อนุมัติใน Admin</option>';
+ if(approvers.some(x=>x.full_name===currentApprover))approver.value=currentApprover;
  onRequesterChange();
+ onApproverChange();
  newNo();
 }
 function onRequesterChange(){
@@ -322,6 +351,10 @@ function onRequesterChange(){
  const br=adminData.branches.find(x=>x.active&&x.branch_code===user.branch_code);
  if(br)branch.value=br.branch_name;
 }
+function onApproverChange(){
+ const u=adminData.users.find(x=>x.active&&x.full_name===approver.value);
+ approverEmail.value=u?.email||'';
+}
 function adminOpen(kind){
  if(kind==='form'){
    adminPanel.innerHTML='<h2>ประเภทเอกสาร</h2><div class="formgrid"><div><label>ชื่อประเภท</label><input id="admFormName" class="field" placeholder="เช่น ค่าใช้จ่าย"></div><div><label>รหัส</label><input id="admFormCode" class="field" placeholder="EXP"></div></div><div class="actions"><button class="btn primary" onclick="addFormType()">+ เพิ่มประเภท</button></div><div class="tablewrap section"><table><thead><tr><th>ชื่อ</th><th>รหัส</th><th>สถานะ</th><th></th></tr></thead><tbody>'+adminData.formTypes.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.code)+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_form_types\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_form_types\','+x.id+',\'form\')">ลบ</button></td></tr>').join('')+'</tbody></table></div>';
@@ -329,7 +362,7 @@ function adminOpen(kind){
    adminPanel.innerHTML='<h2>สาขา</h2><div class="formgrid"><div><label>รหัสสาขา</label><input id="admBranchCode" class="field"></div><div><label>ชื่อสาขา</label><input id="admBranchName" class="field"></div><div><label>Supervisor</label><input id="admBranchSup" class="field"></div><div><label>Area Manager</label><input id="admBranchAM" class="field"></div></div><div class="actions"><button class="btn primary" onclick="addBranch()">+ เพิ่มสาขา</button></div><div class="tablewrap section"><table><thead><tr><th>รหัส</th><th>สาขา</th><th>Supervisor</th><th>AM</th><th>สถานะ</th><th></th></tr></thead><tbody>'+adminData.branches.map(x=>'<tr><td>'+esc(x.branch_code)+'</td><td>'+esc(x.branch_name)+'</td><td>'+esc(x.supervisor||'-')+'</td><td>'+esc(x.area_manager||'-')+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="editBranch('+x.id+')">แก้ไข</button> <button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_branches\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_branches\','+x.id+',\'branch\')">ลบ</button></td></tr>').join('')+'</tbody></table></div>';
  } else if(kind==='user'){
    const branches=adminData.branches.map(x=>'<option value="'+esc(x.branch_code)+'">'+esc(x.branch_name)+'</option>').join('');
-   adminPanel.innerHTML='<h2>Users & Roles</h2><div class="formgrid"><div><label>ชื่อผู้ใช้งาน</label><input id="admUserName" class="field"></div><div><label>Role</label><select id="admUserRole" class="field"><option>Staff</option><option>Team Lead</option><option>Supervisor</option><option>Area Manager</option><option>Operation Manager</option><option>Finance</option><option>Admin</option></select></div><div><label>สาขา</label><select id="admUserBranch" class="field"><option value="">- ไม่ระบุ -</option>'+branches+'</select></div></div><div class="actions"><button class="btn primary" onclick="addUser()">+ เพิ่ม User</button></div><div class="tablewrap section"><table><thead><tr><th>ชื่อ</th><th>Role</th><th>สาขา</th><th>สถานะ</th><th></th></tr></thead><tbody>'+adminData.users.map(x=>'<tr><td>'+esc(x.full_name)+'</td><td>'+esc(x.role)+'</td><td>'+esc(x.branch_code||'-')+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="editUser('+x.id+')">แก้ไข</button> <button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_users\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_users\','+x.id+',\'user\')">ลบ</button></td></tr>').join('')+'</tbody></table></div>';
+   adminPanel.innerHTML='<h2>Users & Roles</h2><div class="formgrid"><div><label>ชื่อผู้ใช้งาน</label><input id="admUserName" class="field"></div><div><label>Email</label><input id="admUserEmail" class="field" type="email" placeholder="name@company.com"></div><div><label>Role</label><select id="admUserRole" class="field"><option>Staff</option><option>Team Lead</option><option>Supervisor</option><option>Area Manager</option><option>Operation Manager</option><option>Finance</option><option>Admin</option></select></div><div><label>สาขา</label><select id="admUserBranch" class="field"><option value="">- ไม่ระบุ -</option>'+branches+'</select></div></div><div class="actions"><button class="btn primary" onclick="addUser()">+ เพิ่ม User</button></div><div class="tablewrap section"><table><thead><tr><th>ชื่อ</th><th>Email</th><th>Role</th><th>สาขา</th><th>สถานะ</th><th></th></tr></thead><tbody>'+adminData.users.map(x=>'<tr><td>'+esc(x.full_name)+'</td><td>'+esc(x.email||'-')+'</td><td>'+esc(x.role)+'</td><td>'+esc(x.branch_code||'-')+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="editUser('+x.id+')">แก้ไข</button> <button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_users\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_users\','+x.id+',\'user\')">ลบ</button></td></tr>').join('')+'</tbody></table></div>';
  } else if(kind==='flow'){
    adminPanel.innerHTML='<h2>Approval Flow</h2><div class="formgrid"><div><label>ชื่อ Flow</label><input id="admFlowName" class="field"></div><div><label>วงเงินเริ่มต้น</label><input id="admFlowMin" class="field" type="number" value="0"></div><div><label>วงเงินสูงสุด</label><input id="admFlowMax" class="field" type="number" placeholder="เว้นว่าง = ไม่จำกัด"></div><div><label>ขั้นตอนอนุมัติ</label><input id="admFlowSteps" class="field" placeholder="Supervisor,Area Manager,Finance"></div></div><div class="actions"><button class="btn primary" onclick="addFlow()">+ เพิ่ม Flow</button></div><div class="tablewrap section"><table><thead><tr><th>ชื่อ</th><th>วงเงิน</th><th>ขั้นตอน</th><th>สถานะ</th><th></th></tr></thead><tbody>'+adminData.flows.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+Number(x.min_amount).toLocaleString()+' - '+(x.max_amount==null?'ไม่จำกัด':Number(x.max_amount).toLocaleString())+'</td><td>'+esc((x.steps||[]).join(' → '))+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="editFlow('+x.id+')">แก้ไข</button> <button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_flows\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_flows\','+x.id+',\'flow\')">ลบ</button></td></tr>').join('')+'</tbody></table></div>';
  }
@@ -345,8 +378,9 @@ async function addBranch(){
  await loadAdmin();adminOpen('branch');
 }
 async function addUser(){
- const full_name=admUserName.value.trim();if(!full_name)return alert('กรอกชื่อผู้ใช้งาน');
- const {error}=await sb.from('kamu_approval_users').insert({full_name,role:admUserRole.value,branch_code:admUserBranch.value||null});if(error)return alert(error.message);
+ const full_name=admUserName.value.trim(),email=admUserEmail.value.trim();if(!full_name)return alert('กรอกชื่อผู้ใช้งาน');
+ if(!email)return alert('กรอก Email ผู้ใช้งาน');
+ const {error}=await sb.from('kamu_approval_users').insert({full_name,email,role:admUserRole.value,branch_code:admUserBranch.value||null});if(error)return alert(error.message);
  await loadAdmin();adminOpen('user');
 }
 async function addFlow(){
@@ -376,9 +410,10 @@ async function editBranch(id){
 async function editUser(id){
  const x=adminData.users.find(v=>v.id===id);if(!x)return;
  const full_name=prompt('ชื่อผู้ใช้งาน',x.full_name);if(full_name===null)return;
+ const email=prompt('Email',x.email||'');if(email===null)return;
  const roleName=prompt('Role',x.role);if(roleName===null)return;
  const branchCode=prompt('รหัสสาขา (เว้นว่างได้)',x.branch_code||'');if(branchCode===null)return;
- const {error}=await sb.from('kamu_approval_users').update({full_name,role:roleName,branch_code:branchCode||null}).eq('id',id);if(error)return alert(error.message);
+ const {error}=await sb.from('kamu_approval_users').update({full_name,email:email||null,role:roleName,branch_code:branchCode||null}).eq('id',id);if(error)return alert(error.message);
  await loadAdmin();adminOpen('user');
 }
 async function editFlow(id){
