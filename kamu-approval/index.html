@@ -124,8 +124,18 @@ const fileInput=document.getElementById('file');
 
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function badge(s){let k=s==='อนุมัติแล้ว'?'approved':(s==='ตีกลับ'||s==='ปฏิเสธ')?'returned':s==='กำลังดำเนินการ'?'progress':'pending';return '<span class="badge '+k+'">'+esc(s)+'</span>'}
-function newNo(){document.getElementById('no').value='KAMU-REQ-'+new Date().getFullYear()+'-'+String(Date.now()).slice(-8)}
-document.getElementById('date').value=new Date().toISOString().slice(0,10);newNo();
+function getSelectedTypeCode(){
+ const selectedName=type.value;
+ const row=adminData.formTypes.find(x=>x.name===selectedName);
+ return (row?.code||'REQ').toUpperCase();
+}
+function newNo(){
+ const code=getSelectedTypeCode();
+ document.getElementById('no').value='KAMU-'+code+'-'+new Date().getFullYear()+'-'+String(Date.now()).slice(-8);
+}
+document.getElementById('date').value=new Date().toISOString().slice(0,10);
+type.addEventListener('change',newNo);
+newNo();
 
 function go(id){
  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
@@ -278,7 +288,10 @@ async function loadAdmin(){
 }
 function syncMasterDropdowns(){
  if(adminData.formTypes.length){
-   type.innerHTML=adminData.formTypes.filter(x=>x.active).map(x=>'<option>'+esc(x.name)+'</option>').join('');
+   const current=type.value;
+   type.innerHTML=adminData.formTypes.filter(x=>x.active).map(x=>'<option value="'+esc(x.name)+'">'+esc(x.name)+'</option>').join('');
+   if([...type.options].some(o=>o.value===current))type.value=current;
+   newNo();
  }
  if(adminData.branches.length){
    branch.innerHTML=adminData.branches.filter(x=>x.active).map(x=>'<option value="'+esc(x.branch_name)+'">'+esc(x.branch_name)+'</option>').join('');
