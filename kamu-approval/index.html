@@ -479,12 +479,12 @@ function onApproverChange(){
 }
 function adminOpen(kind){
  if(kind==='form'){
-   adminPanel.innerHTML='<h2>ประเภทเอกสาร</h2><div class="formgrid"><div><label>ชื่อประเภท</label><input id="admFormName" class="field" placeholder="เช่น ค่าใช้จ่าย"></div><div><label>รหัส</label><input id="admFormCode" class="field" placeholder="EXP"></div></div><div class="actions"><button class="btn primary" onclick="addFormType()">+ เพิ่มประเภท</button></div><div class="tablewrap section"><table><thead><tr><th>ชื่อ</th><th>รหัส</th><th>สถานะ</th><th></th></tr></thead><tbody>'+adminData.formTypes.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.code)+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_form_types\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_form_types\','+x.id+',\'form\')">ลบ</button></td></tr>').join('')+'</tbody></table></div>';
+   adminPanel.innerHTML='<h2>ประเภทเอกสาร</h2><div class="formgrid"><div><label>ชื่อประเภท</label><input id="admFormName" class="field" placeholder="เช่น ค่าใช้จ่าย"></div><div><label>รหัส</label><input id="admFormCode" class="field" placeholder="EXP"></div><div><label>สถานะ</label><select id="admFormActive" class="field"><option value="true">ใช้งาน</option><option value="false">ปิด</option></select></div></div><div class="actions"><button class="btn primary" onclick="addFormType()">+ เพิ่มประเภท</button></div><div class="tablewrap section"><table><thead><tr><th>ชื่อ</th><th>รหัส</th><th>สถานะ</th><th></th></tr></thead><tbody>'+adminData.formTypes.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.code)+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="editFormType('+x.id+')">แก้ไข</button> <button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_form_types\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_form_types\','+x.id+',\'form\')">ลบ</button></td></tr>').join('')+'</tbody></table></div>';
  } else if(kind==='branch'){
-   adminPanel.innerHTML='<h2>สาขา</h2><div class="formgrid"><div><label>รหัสสาขา</label><input id="admBranchCode" class="field"></div><div><label>ชื่อสาขา</label><input id="admBranchName" class="field"></div><div><label>Supervisor</label><input id="admBranchSup" class="field"></div><div><label>Area Manager</label><input id="admBranchAM" class="field"></div></div><div class="actions"><button class="btn primary" onclick="addBranch()">+ เพิ่มสาขา</button></div><div class="tablewrap section"><table><thead><tr><th>รหัส</th><th>สาขา</th><th>Supervisor</th><th>AM</th><th>สถานะ</th><th></th></tr></thead><tbody>'+adminData.branches.map(x=>'<tr><td>'+esc(x.branch_code)+'</td><td>'+esc(x.branch_name)+'</td><td>'+esc(x.supervisor||'-')+'</td><td>'+esc(x.area_manager||'-')+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="editBranch('+x.id+')">แก้ไข</button> <button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_branches\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_branches\','+x.id+',\'branch\')">ลบ</button></td></tr>').join('')+'</tbody></table></div>';
+   adminPanel.innerHTML='<h2>สาขา</h2><div class="formgrid"><div><label>รหัสสาขา</label><input id="admBranchCode" class="field"></div><div><label>ชื่อสาขา</label><input id="admBranchName" class="field"></div><div><label>Supervisor</label><input id="admBranchSup" class="field"></div><div><label>Area Manager</label><input id="admBranchAM" class="field"></div><div><label>สถานะ</label><select id="admBranchActive" class="field"><option value="true">ใช้งาน</option><option value="false">ปิด</option></select></div></div><div class="actions"><button class="btn primary" onclick="addBranch()">+ เพิ่มสาขา</button></div><div class="tablewrap section"><table><thead><tr><th>รหัส</th><th>สาขา</th><th>Supervisor</th><th>AM</th><th>สถานะ</th><th></th></tr></thead><tbody>'+adminData.branches.map(x=>'<tr><td>'+esc(x.branch_code)+'</td><td>'+esc(x.branch_name)+'</td><td>'+esc(x.supervisor||'-')+'</td><td>'+esc(x.area_manager||'-')+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="editBranch('+x.id+')">แก้ไข</button> <button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_branches\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_branches\','+x.id+',\'branch\')">ลบ</button></td></tr>').join('')+'</tbody></table></div>';
  } else if(kind==='user'){
    const branches=adminData.branches.map(x=>'<option value="'+esc(x.branch_code)+'">'+esc(x.branch_name)+'</option>').join('');
-   adminPanel.innerHTML='<h2>Users & Roles</h2><div class="formgrid"><div><label>ชื่อผู้ใช้งาน</label><input id="admUserName" class="field"></div><div><label>Email</label><input id="admUserEmail" class="field" type="email" placeholder="name@company.com"></div><div><label>แผนก</label><input id="admUserDepartment" class="field" placeholder="เช่น Operation / Finance / HR"></div><div><label>Role</label><select id="admUserRole" class="field" onchange="toggleCustomRole()"><option>Staff</option><option>Team Lead</option><option>Supervisor</option><option>Area Manager</option><option>Operation Manager</option><option>Finance</option><option>Admin</option><option>อื่นๆ</option></select><div id="admCustomRoleWrap" style="display:none;margin-top:8px"><label>ระบุ Role / ตำแหน่งอื่นๆ</label><input id="admCustomRole" class="field" placeholder="พิมพ์ชื่อ Role"></div></div><div><label>สาขา</label><select id="admUserBranch" class="field"><option value="">- ไม่ระบุ -</option>'+branches+'</select></div></div><div class="actions"><button class="btn primary" onclick="addUser()">+ เพิ่ม User</button></div><div class="tablewrap section"><table><thead><tr><th>ชื่อ</th><th>Email</th><th>แผนก</th><th>Role</th><th>สาขา</th><th>สถานะ</th><th></th></tr></thead><tbody>'+adminData.users.map(x=>'<tr><td>'+esc(x.full_name)+'</td><td>'+esc(x.email||'-')+'</td><td>'+esc(x.department||'-')+'</td><td>'+esc(x.role)+'</td><td>'+esc(x.branch_code||'-')+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="editUser('+x.id+')">แก้ไข</button> <button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_users\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_users\','+x.id+',\'user\')">ลบ</button></td></tr>').join('')+'</tbody></table></div>';
+   adminPanel.innerHTML='<h2>Users & Roles</h2><div class="formgrid"><div><label>ชื่อผู้ใช้งาน</label><input id="admUserName" class="field"></div><div><label>Email</label><input id="admUserEmail" class="field" type="email" placeholder="name@company.com"></div><div><label>แผนก</label><input id="admUserDepartment" class="field" placeholder="เช่น Operation / Finance / HR"></div><div><label>Role</label><select id="admUserRole" class="field" onchange="toggleCustomRole()"><option>Staff</option><option>Team Lead</option><option>Supervisor</option><option>Area Manager</option><option>Operation Manager</option><option>Finance</option><option>Admin</option><option>อื่นๆ</option></select><div id="admCustomRoleWrap" style="display:none;margin-top:8px"><label>ระบุ Role / ตำแหน่งอื่นๆ</label><input id="admCustomRole" class="field" placeholder="พิมพ์ชื่อ Role"></div></div><div><label>สาขา</label><select id="admUserBranch" class="field"><option value="">- ไม่ระบุ -</option>'+branches+'</select></div><div><label>สถานะ</label><select id="admUserActive" class="field"><option value="true">ใช้งาน</option><option value="false">ปิด</option></select></div></div><div class="actions"><button class="btn primary" onclick="addUser()">+ เพิ่ม User</button></div><div class="tablewrap section"><table><thead><tr><th>ชื่อ</th><th>Email</th><th>แผนก</th><th>Role</th><th>สาขา</th><th>สถานะ</th><th></th></tr></thead><tbody>'+adminData.users.map(x=>'<tr><td>'+esc(x.full_name)+'</td><td>'+esc(x.email||'-')+'</td><td>'+esc(x.department||'-')+'</td><td>'+esc(x.role)+'</td><td>'+esc(x.branch_code||'-')+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="editUser('+x.id+')">แก้ไข</button> <button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_users\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_users\','+x.id+',\'user\')">ลบ</button></td></tr>').join('')+'</tbody></table></div>';
  } else if(kind==='upload'){
    adminPanel.innerHTML='<h2>Upload Users</h2>'+
    '<p style="color:var(--mut)">รองรับ Excel (.xlsx/.xls) และ CSV • คอลัมน์ที่ต้องมี: ชื่อผู้ใช้งาน, Email, แผนก</p>'+
@@ -504,6 +504,7 @@ function adminOpen(kind){
      '<div><label>วงเงินสูงสุด</label><input id="admFlowMax" class="field" type="number" placeholder="เว้นว่าง = ไม่จำกัด" min="0"></div>'+
      '<div><label>Role ผู้อนุมัติ</label><select id="admFlowRole" class="field" onchange="toggleFlowCustomRole()"><option value="">- เลือก Role -</option>'+roleOptions+'<option value="อื่นๆ">อื่นๆ</option></select><div id="admFlowCustomRoleWrap" style="display:none;margin-top:8px"><input id="admFlowCustomRole" class="field" placeholder="พิมพ์ Role / ตำแหน่ง"></div></div>'+
      '<div><label>Email</label><input id="admFlowEmail" class="field" type="email" placeholder="name@company.com"></div>'+
+     '<div><label>สถานะ</label><select id="admFlowActive" class="field"><option value="true">ใช้งาน</option><option value="false">ปิด</option></select></div>'+
    '</div>'+
    '<div class="actions"><button class="btn primary" onclick="addSimpleFlow()">+ เพิ่ม Flow</button></div>'+
    '<div class="tablewrap section"><table><thead><tr><th>ชื่อ Flow</th><th>วงเงิน</th><th>Role ผู้อนุมัติ</th><th>Email</th><th>สถานะ</th><th></th></tr></thead><tbody>'+
@@ -513,13 +514,13 @@ function adminOpen(kind){
  }
 }
 async function addFormType(){
- const name=admFormName.value.trim(),code=admFormCode.value.trim().toUpperCase();if(!name||!code)return alert('กรอกชื่อและรหัส');
- const {error}=await sb.from('kamu_approval_form_types').insert({name,code});if(error)return alert(error.message);
+ const name=admFormName.value.trim(),code=admFormCode.value.trim().toUpperCase(),active=admFormActive.value==='true';if(!name||!code)return alert('กรอกชื่อและรหัส');
+ const {error}=await sb.from('kamu_approval_form_types').insert({name,code,active});if(error)return alert(error.message);
  await loadAdmin();adminOpen('form');
 }
 async function addBranch(){
- const branch_code=admBranchCode.value.trim(),branch_name=admBranchName.value.trim();if(!branch_code||!branch_name)return alert('กรอกรหัสและชื่อสาขา');
- const {error}=await sb.from('kamu_approval_branches').insert({branch_code,branch_name,supervisor:admBranchSup.value.trim()||null,area_manager:admBranchAM.value.trim()||null});if(error)return alert(error.message);
+ const branch_code=admBranchCode.value.trim(),branch_name=admBranchName.value.trim(),active=admBranchActive.value==='true';if(!branch_code||!branch_name)return alert('กรอกรหัสและชื่อสาขา');
+ const {error}=await sb.from('kamu_approval_branches').insert({branch_code,branch_name,supervisor:admBranchSup.value.trim()||null,area_manager:admBranchAM.value.trim()||null,active});if(error)return alert(error.message);
  await loadAdmin();adminOpen('branch');
 }
 function toggleCustomRole(){
@@ -533,7 +534,8 @@ async function addUser(){
  if(!email)return alert('กรอก Email ผู้ใช้งาน');
  const roleValue=admUserRole.value==='อื่นๆ'?(admCustomRole.value||'').trim():admUserRole.value;
  if(!roleValue)return alert('กรุณาระบุ Role / ตำแหน่งอื่นๆ');
- const {error}=await sb.from('kamu_approval_users').insert({full_name,email,department:department||null,role:roleValue,branch_code:admUserBranch.value||null});if(error)return alert(error.message);
+ const active=admUserActive.value==='true';
+ const {error}=await sb.from('kamu_approval_users').insert({full_name,email,department:department||null,role:roleValue,branch_code:admUserBranch.value||null,active});if(error)return alert(error.message);
  await loadAdmin();adminOpen('user');
 }
 function toggleFlowCustomRole(){
@@ -553,7 +555,8 @@ async function addSimpleFlow(){
  if(max!==null && max<min)return alert('วงเงินสูงสุดต้องไม่น้อยกว่าวงเงินเริ่มต้น');
  const email=(admFlowEmail.value||'').trim();
  if(!email)return alert('กรอก Email');
- const {error}=await sb.from('kamu_approval_flows').insert({name,min_amount:min,max_amount:max,steps:[roleName],notification_email:email});
+ const active=admFlowActive.value==='true';
+ const {error}=await sb.from('kamu_approval_flows').insert({name,min_amount:min,max_amount:max,steps:[roleName],notification_email:email,active});
  if(error)return alert(error.message);
  await loadAdmin();adminOpen('flow');
 }
@@ -569,6 +572,7 @@ async function editSimpleFlow(id){
    admFlowRole.value='อื่นๆ';toggleFlowCustomRole();admFlowCustomRole.value=roleName;
  }
  admFlowEmail.value=x.notification_email||'';
+ admFlowActive.value=String(!!x.active);
  const actions=adminPanel.querySelector('.actions');
  actions.innerHTML='<button class="btn primary" onclick="saveSimpleFlow('+id+')">บันทึกการแก้ไข</button> <button class="btn secondary" onclick="adminOpen(\'flow\')">ยกเลิก</button>';
  adminPanel.scrollIntoView({behavior:'smooth',block:'start'});
@@ -581,7 +585,8 @@ async function saveSimpleFlow(id){
  if(max!==null && max<min)return alert('วงเงินสูงสุดต้องไม่น้อยกว่าวงเงินเริ่มต้น');
  const email=(admFlowEmail.value||'').trim();
  if(!email)return alert('กรอก Email');
- const {error}=await sb.from('kamu_approval_flows').update({name,min_amount:min,max_amount:max,steps:[roleName],notification_email:email}).eq('id',id);
+ const active=admFlowActive.value==='true';
+ const {error}=await sb.from('kamu_approval_flows').update({name,min_amount:min,max_amount:max,steps:[roleName],notification_email:email,active}).eq('id',id);
  if(error)return alert(error.message);
  await loadAdmin();adminOpen('flow');
 }
@@ -711,23 +716,72 @@ async function deleteAdmin(table,id,kind){
  const {error}=await sb.from(table).delete().eq('id',id);if(error)return alert(error.message);
  await loadAdmin();adminOpen(kind);
 }
+
+async function editFormType(id){
+ const x=adminData.formTypes.find(v=>v.id===id);if(!x)return;
+ admFormName.value=x.name||'';
+ admFormCode.value=x.code||'';
+ admFormActive.value=String(!!x.active);
+ const actions=adminPanel.querySelector('.actions');
+ actions.innerHTML='<button class="btn primary" onclick="saveFormTypeEdit('+id+')">บันทึกการแก้ไข</button> <button class="btn secondary" onclick="adminOpen(\'form\')">ยกเลิก</button>';
+ adminPanel.scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function saveFormTypeEdit(id){
+ const name=admFormName.value.trim(),code=admFormCode.value.trim().toUpperCase(),active=admFormActive.value==='true';
+ if(!name||!code)return alert('กรอกชื่อประเภทและรหัส');
+ const {error}=await sb.from('kamu_approval_form_types').update({name,code,active}).eq('id',id);
+ if(error)return alert(error.message);
+ await loadAdmin();adminOpen('form');
+}
 async function editBranch(id){
  const x=adminData.branches.find(v=>v.id===id);if(!x)return;
- const branch_name=prompt('ชื่อสาขา',x.branch_name);if(branch_name===null)return;
- const supervisor=prompt('Supervisor',x.supervisor||'');if(supervisor===null)return;
- const area_manager=prompt('Area Manager',x.area_manager||'');if(area_manager===null)return;
- const {error}=await sb.from('kamu_approval_branches').update({branch_name,supervisor:supervisor||null,area_manager:area_manager||null}).eq('id',id);if(error)return alert(error.message);
+ admBranchCode.value=x.branch_code||'';
+ admBranchName.value=x.branch_name||'';
+ admBranchSup.value=x.supervisor||'';
+ admBranchAM.value=x.area_manager||'';
+ admBranchActive.value=String(!!x.active);
+ const actions=adminPanel.querySelector('.actions');
+ actions.innerHTML='<button class="btn primary" onclick="saveBranchEdit('+id+',\''+String(x.branch_code||'').replace(/'/g,"\\'")+'\')">บันทึกการแก้ไข</button> <button class="btn secondary" onclick="adminOpen(\'branch\')">ยกเลิก</button>';
+ adminPanel.scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function saveBranchEdit(id,oldCode){
+ const branch_code=admBranchCode.value.trim(),branch_name=admBranchName.value.trim();
+ if(!branch_code||!branch_name)return alert('กรอกรหัสและชื่อสาขา');
+ const payload={branch_code,branch_name,supervisor:admBranchSup.value.trim()||null,area_manager:admBranchAM.value.trim()||null,active:admBranchActive.value==='true'};
+ const {error}=await sb.from('kamu_approval_branches').update(payload).eq('id',id);
+ if(error)return alert(error.message);
+ if(oldCode && oldCode!==branch_code){
+   const {error:userErr}=await sb.from('kamu_approval_users').update({branch_code}).eq('branch_code',oldCode);
+   if(userErr)console.warn('update related users',userErr);
+ }
  await loadAdmin();adminOpen('branch');
 }
 async function editUser(id){
  const x=adminData.users.find(v=>v.id===id);if(!x)return;
- const full_name=prompt('ชื่อผู้ใช้งาน',x.full_name);if(full_name===null)return;
- const email=prompt('Email',x.email||'');if(email===null)return;
- const department=prompt('แผนก',x.department||'');if(department===null)return;
- const roleName=prompt('Role / ตำแหน่ง',x.role);if(roleName===null)return;
- if(!roleName.trim())return alert('Role ห้ามว่าง');
- const branchCode=prompt('รหัสสาขา (เว้นว่างได้)',x.branch_code||'');if(branchCode===null)return;
- const {error}=await sb.from('kamu_approval_users').update({full_name,email:email||null,department:department||null,role:roleName.trim(),branch_code:branchCode||null}).eq('id',id);if(error)return alert(error.message);
+ admUserName.value=x.full_name||'';
+ admUserEmail.value=x.email||'';
+ admUserDepartment.value=x.department||'';
+ const standard=['Staff','Team Lead','Supervisor','Area Manager','Operation Manager','Finance','Admin'];
+ if(standard.includes(x.role)){
+   admUserRole.value=x.role;toggleCustomRole();
+ }else{
+   admUserRole.value='อื่นๆ';toggleCustomRole();admCustomRole.value=x.role||'';
+ }
+ admUserBranch.value=x.branch_code||'';
+ admUserActive.value=String(!!x.active);
+ const actions=adminPanel.querySelector('.actions');
+ actions.innerHTML='<button class="btn primary" onclick="saveUserEdit('+id+')">บันทึกการแก้ไข</button> <button class="btn secondary" onclick="adminOpen(\'user\')">ยกเลิก</button>';
+ adminPanel.scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function saveUserEdit(id){
+ const full_name=admUserName.value.trim(),email=admUserEmail.value.trim(),department=admUserDepartment.value.trim();
+ if(!full_name)return alert('กรอกชื่อผู้ใช้งาน');
+ if(!email)return alert('กรอก Email');
+ const roleValue=admUserRole.value==='อื่นๆ'?(admCustomRole.value||'').trim():admUserRole.value;
+ if(!roleValue)return alert('กรุณาระบุ Role / ตำแหน่ง');
+ const payload={full_name,email,department:department||null,role:roleValue,branch_code:admUserBranch.value||null,active:admUserActive.value==='true'};
+ const {error}=await sb.from('kamu_approval_users').update(payload).eq('id',id);
+ if(error)return alert(error.message);
  await loadAdmin();adminOpen('user');
 }
 function getFlowConfig(a){
