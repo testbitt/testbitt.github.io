@@ -41,7 +41,6 @@ label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px}.field{wid
 <main class="main">
 <div class="top"><div><h1>KAMU Online Approval</h1><div style="color:var(--mut);font-size:13px">Prototype ระบบอนุมัติเอกสารออนไลน์</div></div>
 <div><select id="role" class="field" style="width:auto"><option>Staff</option><option>Supervisor</option><option>Area Manager</option><option>Finance</option><option>Admin</option></select> <button class="btn primary" onclick="go('create')">+ Quick Create</button></div></div>
-<div class="note">Online Public — ข้อมูลเอกสารและการตั้งค่า Admin บันทึกลงฐานข้อมูลกลางและใช้ร่วมกันทุกเครื่อง</div>
 
 <section id="dashboard" class="view active">
 <div class="grid">
@@ -60,10 +59,10 @@ label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px}.field{wid
 <section id="create" class="view">
 <div class="card"><h2>สร้างเอกสารใหม่</h2>
 <div class="formgrid">
-<div><label>ประเภทเอกสาร</label><select id="type" class="field"><option>ค่าใช้จ่าย</option><option>OT</option><option>จัดซื้อ</option><option>ซ่อมบำรุง</option><option>HR</option><option>Stock</option><option>General Request</option></select></div>
+<div><label>ประเภทเอกสาร</label><select id="type" class="field"><option value="">กำลังโหลดจาก Admin...</option></select></div>
 <div><label>เลขที่เอกสาร</label><input id="no" class="field" readonly></div>
-<div><label>ผู้ขอ</label><input id="requester" class="field" value="Demo User"></div>
-<div><label>สาขา</label><select id="branch" class="field"><option>SILOM</option><option>SIAM</option><option>MEGA BANGNA</option><option>CENTRAL WORLD</option></select></div>
+<div><label>ผู้ขอ</label><select id="requester" class="field"><option value="">กำลังโหลดจาก Admin...</option></select></div>
+<div><label>สาขา</label><select id="branch" class="field"><option value="">กำลังโหลดจาก Admin...</option></select></div>
 <div><label>จำนวนเงิน / วงเงิน</label><input id="amount" class="field" type="number" value="0" min="0"></div>
 <div><label>วันที่</label><input id="date" class="field" type="date"></div>
 <div class="full"><label>รายละเอียด</label><textarea id="detail" class="field"></textarea></div>
@@ -135,13 +134,14 @@ function newNo(){
 }
 document.getElementById('date').value=new Date().toISOString().slice(0,10);
 type.addEventListener('change',newNo);
+requester.addEventListener('change',onRequesterChange);
 newNo();
 
 function go(id){
  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
  document.getElementById(id).classList.add('active');
  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
- if(id==='create')newNo();
+ if(id==='create'){loadAdmin().then(()=>newNo());}
  if(id==='admin')loadAdmin();
  render();
 }
@@ -164,6 +164,9 @@ function render(){
  logs.innerHTML=(logs.length?logs:['Activity Log Online จะแสดงจาก Timeline ของแต่ละเอกสาร']).map(x=>'<div style="padding:8px 0;border-bottom:1px solid var(--line)">'+esc(x)+'</div>').join('');
 }
 function preview(){
+ if(!type.value)return alert('กรุณาตั้งค่าและเลือกประเภทเอกสารจาก Admin');
+ if(!requester.value)return alert('กรุณาตั้งค่าและเลือกผู้ขอจาก Admin');
+ if(!branch.value)return alert('กรุณาตั้งค่าและเลือกสาขาจาก Admin');
  let a=+amount.value||0;
  modalBody.innerHTML='<h2>Preview เอกสาร</h2><p><b>'+esc(no.value)+'</b></p><p>ประเภท: '+esc(type.value)+'</p><p>ผู้ขอ: '+esc(requester.value)+'</p><p>สาขา: '+esc(branch.value)+'</p><p>วงเงิน: '+a.toLocaleString()+' บาท</p><p>Flow: '+flow(a).join(' → ')+'</p><p>รายละเอียด: '+esc(detail.value||'-')+'</p><p>ไฟล์แนบ: '+fileInput.files.length+' ไฟล์</p>';
  modal.classList.add('show')
@@ -223,10 +226,13 @@ async function applySignature(){
 function safeFileName(s){return String(s).replace(/[^a-zA-Z0-9._-]+/g,'_')}
 
 async function submitReq(){
+ if(!type.value)return alert('กรุณาตั้งค่าประเภทเอกสารใน Admin');
+ if(!requester.value)return alert('กรุณาเพิ่มและเลือกผู้ขอใน Admin → Users & Roles');
+ if(!branch.value)return alert('กรุณาตั้งค่าสาขาใน Admin');
  const a=+amount.value||0,f=flow(a),btn=event?.target;
  if(btn){btn.disabled=true;btn.textContent='กำลังส่ง...'}
  try{
-   const payload={document_no:no.value,type:type.value,requester:requester.value||'Demo User',branch:branch.value,amount:a,status:'รออนุมัติ',stage:f[0],detail:detail.value||'-',request_date:date.value,flow:f};
+   const payload={document_no:no.value,type:type.value,requester:requester.value,branch:branch.value,amount:a,status:'รออนุมัติ',stage:f[0],detail:detail.value||'-',request_date:date.value,flow:f};
    const {data:doc,error}=await sb.from('kamu_approval_documents').insert(payload).select().single(); if(error)throw error;
    const {error:te}=await sb.from('kamu_approval_timeline').insert({document_id:doc.id,actor:payload.requester,action:'สร้างเอกสารและส่งอนุมัติ'}); if(te)throw te;
    const files=[...fileInput.files];
@@ -287,15 +293,34 @@ async function loadAdmin(){
  syncMasterDropdowns();
 }
 function syncMasterDropdowns(){
- if(adminData.formTypes.length){
-   const current=type.value;
-   type.innerHTML=adminData.formTypes.filter(x=>x.active).map(x=>'<option value="'+esc(x.name)+'">'+esc(x.name)+'</option>').join('');
-   if([...type.options].some(o=>o.value===current))type.value=current;
-   newNo();
- }
- if(adminData.branches.length){
-   branch.innerHTML=adminData.branches.filter(x=>x.active).map(x=>'<option value="'+esc(x.branch_name)+'">'+esc(x.branch_name)+'</option>').join('');
- }
+ const activeTypes=adminData.formTypes.filter(x=>x.active);
+ const currentType=type.value;
+ type.innerHTML=activeTypes.length
+   ? activeTypes.map(x=>'<option value="'+esc(x.name)+'">'+esc(x.name)+' ['+esc(x.code)+']</option>').join('')
+   : '<option value="">ยังไม่มีประเภทเอกสารใน Admin</option>';
+ if(activeTypes.some(x=>x.name===currentType))type.value=currentType;
+
+ const activeBranches=adminData.branches.filter(x=>x.active);
+ const currentBranch=branch.value;
+ branch.innerHTML=activeBranches.length
+   ? activeBranches.map(x=>'<option value="'+esc(x.branch_name)+'" data-code="'+esc(x.branch_code)+'">'+esc(x.branch_name)+'</option>').join('')
+   : '<option value="">ยังไม่มีสาขาใน Admin</option>';
+ if(activeBranches.some(x=>x.branch_name===currentBranch))branch.value=currentBranch;
+
+ const activeUsers=adminData.users.filter(x=>x.active);
+ const currentUser=requester.value;
+ requester.innerHTML=activeUsers.length
+   ? '<option value="">-- เลือกผู้ขอ --</option>'+activeUsers.map(x=>'<option value="'+esc(x.full_name)+'" data-branch="'+esc(x.branch_code||'')+'" data-role="'+esc(x.role||'')+'">'+esc(x.full_name)+' — '+esc(x.role||'-')+'</option>').join('')
+   : '<option value="">ยังไม่มี User ใน Admin</option>';
+ if(activeUsers.some(x=>x.full_name===currentUser))requester.value=currentUser;
+ onRequesterChange();
+ newNo();
+}
+function onRequesterChange(){
+ const user=adminData.users.find(x=>x.active&&x.full_name===requester.value);
+ if(!user||!user.branch_code)return;
+ const br=adminData.branches.find(x=>x.active&&x.branch_code===user.branch_code);
+ if(br)branch.value=br.branch_name;
 }
 function adminOpen(kind){
  if(kind==='form'){
@@ -374,7 +399,7 @@ sb.channel('kamu-approval-live')
  .on('postgres_changes',{event:'*',schema:'public',table:'kamu_approval_documents'},()=>loadData())
  .subscribe();
 
-loadData();
+loadAdmin().then(()=>loadData());
 </script>
 </body>
 </html>
