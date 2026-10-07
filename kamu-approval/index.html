@@ -20,8 +20,8 @@ table{width:100%;border-collapse:collapse}.tablewrap{overflow:auto}th,td{padding
 label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px}.field{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:white}textarea.field{min-height:90px}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.note{background:#e8f4ef;border:1px solid #c8e4d8;border-radius:12px;padding:12px 14px;font-size:13px;margin-bottom:14px}
 .timeline{border-left:3px solid #d9e6df;padding-left:16px}.event{margin-bottom:14px}.event small{color:var(--mut)}.modal{position:fixed;inset:0;background:#0006;display:none;align-items:center;justify-content:center;padding:16px}.modal.show{display:flex}.dialog{background:white;border-radius:16px;padding:20px;max-width:700px;width:100%;max-height:90vh;overflow:auto}
-.mobile{display:none}
-@media(max-width:900px){.app{grid-template-columns:1fr}.side{display:none}.main{padding:14px}.grid{grid-template-columns:repeat(2,1fr)}.formgrid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.mobile{display:flex;position:sticky;bottom:0;background:white;border-top:1px solid var(--line);padding:8px;gap:6px;overflow:auto}.mobile button{border:0;background:#edf4f1;border-radius:9px;padding:9px 10px;white-space:nowrap}}
+.flowPreviewGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.flowPreviewItem{padding:10px 0;border-bottom:1px solid var(--line)}.flowPreviewItem:last-child{border-bottom:0}.flowArrow{font-weight:700;color:var(--g)}.slaRow{display:grid;grid-template-columns:1fr 130px;gap:10px;align-items:end;margin-bottom:8px}.mobile{display:none}
+@media(max-width:900px){.flowPreviewGrid{grid-template-columns:1fr}.app{grid-template-columns:1fr}.side{display:none}.main{padding:14px}.grid{grid-template-columns:repeat(2,1fr)}.formgrid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.mobile{display:flex;position:sticky;bottom:0;background:white;border-top:1px solid var(--line);padding:8px;gap:6px;overflow:auto}.mobile button{border:0;background:#edf4f1;border-radius:9px;padding:9px 10px;white-space:nowrap}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
@@ -429,22 +429,35 @@ function adminOpen(kind){
  } else if(kind==='flow'){
    const roles=[...new Set(adminData.users.filter(x=>x.active&&x.role).map(x=>x.role))];
    const roleOptions=roles.map(r=>'<option value="'+esc(r)+'">'+esc(r)+'</option>').join('');
+   const previewFlow=adminData.flows.filter(x=>x.active).map(x=>{
+     const range=(Number(x.min_amount||0)===0?'≤ '+(x.max_amount==null?'ไม่จำกัด':Number(x.max_amount).toLocaleString()):Number(x.min_amount).toLocaleString()+'–'+(x.max_amount==null?'ไม่จำกัด':Number(x.max_amount).toLocaleString()));
+     return '<div class="flowPreviewItem"><b>'+esc(range)+'</b> <span class="flowArrow">→</span> '+esc((x.steps||[]).join(' → '))+'</div>';
+   }).join('')||'<div style="color:var(--mut)">ยังไม่มี Approval Flow</div>';
+   const slaMap={};
+   adminData.flows.filter(x=>x.active).forEach(x=>Object.assign(slaMap,x.sla||{}));
+   const slaPreview=Object.entries(slaMap).map(([r,v])=>'<div class="flowPreviewItem"><b>'+esc(r)+':</b> '+esc(v)+' ชั่วโมง</div>').join('')||'<div style="color:var(--mut)">ยังไม่มี SLA</div>';
+
    adminPanel.innerHTML='<h2>Approval Flow</h2>'+
-   '<div class="formgrid">'+
-     '<div><label>ชื่อ Flow</label><input id="admFlowName" class="field" placeholder="เช่น ค่าใช้จ่าย 1,001 - 5,000"></div>'+
-     '<div><label>วงเงินเริ่มต้น</label><input id="admFlowMin" class="field" type="number" value="0" min="0"></div>'+
-     '<div><label>วงเงินสูงสุด</label><input id="admFlowMax" class="field" type="number" placeholder="เว้นว่าง = ไม่จำกัด" min="0"></div>'+
+   '<div class="flowPreviewGrid section">'+
+     '<div class="card"><h2>Flow</h2>'+previewFlow+'</div>'+
+     '<div class="card"><h2>SLA</h2>'+slaPreview+'</div>'+
    '</div>'+
-   '<div class="section"><label>ขั้นตอนอนุมัติ</label><div id="flowStepList"></div>'+
-   '<button class="btn secondary" type="button" onclick="addFlowStep()">+ เพิ่มขั้นตอนอนุมัติ</button></div>'+
-   '<div class="actions"><button class="btn primary" onclick="addFlow()">+ เพิ่ม Approval Flow</button></div>'+
-   '<div class="tablewrap section"><table><thead><tr><th>ชื่อ Flow</th><th>วงเงิน</th><th>ลำดับการอนุมัติ</th><th>สถานะ</th><th></th></tr></thead><tbody>'+
-   adminData.flows.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+Number(x.min_amount).toLocaleString()+' - '+(x.max_amount==null?'ไม่จำกัด':Number(x.max_amount).toLocaleString())+'</td><td>'+esc((x.steps||[]).join(' → '))+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="editFlow('+x.id+')">แก้ไข</button> <button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_flows\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_flows\','+x.id+',\'flow\')">ลบ</button></td></tr>').join('')+
+   '<div class="section card"><h2>เพิ่ม / แก้ไข Approval Flow</h2>'+
+     '<div class="formgrid">'+
+       '<div><label>ชื่อ Flow</label><input id="admFlowName" class="field" placeholder="เช่น ค่าใช้จ่าย 1,001 - 5,000"></div>'+
+       '<div><label>วงเงินเริ่มต้น</label><input id="admFlowMin" class="field" type="number" value="0" min="0"></div>'+
+       '<div><label>วงเงินสูงสุด</label><input id="admFlowMax" class="field" type="number" placeholder="เว้นว่าง = ไม่จำกัด" min="0"></div>'+
+     '</div>'+
+     '<div class="section"><label>ขั้นตอนอนุมัติ และ SLA</label><div id="flowStepList"></div>'+
+     '<button class="btn secondary" type="button" onclick="addFlowStep()">+ เพิ่มขั้นตอนอนุมัติ</button></div>'+
+     '<div class="actions"><button class="btn primary" onclick="addFlow()">+ เพิ่ม Approval Flow</button></div>'+
+   '</div>'+
+   '<div class="tablewrap section"><table><thead><tr><th>ชื่อ Flow</th><th>วงเงิน</th><th>ลำดับการอนุมัติ</th><th>SLA</th><th>สถานะ</th><th></th></tr></thead><tbody>'+
+   adminData.flows.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+Number(x.min_amount).toLocaleString()+' - '+(x.max_amount==null?'ไม่จำกัด':Number(x.max_amount).toLocaleString())+'</td><td>'+esc((x.steps||[]).join(' → '))+'</td><td>'+esc((x.steps||[]).map(r=>r+': '+((x.sla||{})[r]||'-')+' ชม.').join(' | '))+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="editFlow('+x.id+')">แก้ไข</button> <button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_flows\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_flows\','+x.id+',\'flow\')">ลบ</button></td></tr>').join('')+
    '</tbody></table></div>';
    window._flowRoleOptions=roleOptions;
    setTimeout(()=>addFlowStep(),0);
- }
-}
+ }}
 async function addFormType(){
  const name=admFormName.value.trim(),code=admFormCode.value.trim().toUpperCase();if(!name||!code)return alert('กรอกชื่อและรหัส');
  const {error}=await sb.from('kamu_approval_form_types').insert({name,code});if(error)return alert(error.message);
@@ -469,15 +482,14 @@ async function addUser(){
  const {error}=await sb.from('kamu_approval_users').insert({full_name,email,role:roleValue,branch_code:admUserBranch.value||null});if(error)return alert(error.message);
  await loadAdmin();adminOpen('user');
 }
-function addFlowStep(selected=''){
+function addFlowStep(selected='',slaHours=''){
  const list=document.getElementById('flowStepList');if(!list)return;
  const index=list.children.length+1;
  const row=document.createElement('div');
- row.className='formgrid';
- row.style.marginBottom='8px';
- row.innerHTML='<div><label>ขั้นตอนที่ '+index+'</label><select class="field flowStepRole" onchange="flowStepOtherChanged(this)"><option value="">-- เลือก Role --</option>'+window._flowRoleOptions+'<option value="อื่นๆ">อื่นๆ</option></select></div>'+
- '<div class="flowStepOtherWrap" style="display:none"><label>ระบุ Role / ตำแหน่ง</label><input class="field flowStepOther" placeholder="พิมพ์ Role"></div>'+
- '<div style="align-self:end"><button class="btn secondary" type="button" onclick="removeFlowStep(this)">ลบขั้นตอน</button></div>';
+ row.className='slaRow';
+ row.innerHTML='<div><label>ขั้นตอนที่ '+index+'</label><select class="field flowStepRole" onchange="flowStepOtherChanged(this)"><option value="">-- เลือก Role --</option>'+window._flowRoleOptions+'<option value="อื่นๆ">อื่นๆ</option></select><div class="flowStepOtherWrap" style="display:none;margin-top:8px"><input class="field flowStepOther" placeholder="พิมพ์ Role / ตำแหน่ง"></div></div>'+
+ '<div><label>SLA (ชั่วโมง)</label><input class="field flowStepSla" type="number" min="0" value="'+esc(slaHours||'')+'" placeholder="24"></div>'+
+ '<div style="grid-column:1/-1"><button class="btn secondary" type="button" onclick="removeFlowStep(this)">ลบขั้นตอน</button></div>';
  list.appendChild(row);
  if(selected){
    const sel=row.querySelector('.flowStepRole');
@@ -488,28 +500,30 @@ function addFlowStep(selected=''){
 function removeFlowStep(btn){
  const list=document.getElementById('flowStepList');if(!list)return;
  if(list.children.length<=1)return alert('ต้องมีอย่างน้อย 1 ขั้นตอนอนุมัติ');
- btn.closest('.formgrid').remove();
+ btn.closest('.slaRow').remove();
  [...list.children].forEach((r,i)=>{const l=r.querySelector('label');if(l)l.textContent='ขั้นตอนที่ '+(i+1)});
 }
 function flowStepOtherChanged(sel){
- const wrap=sel.closest('.formgrid').querySelector('.flowStepOtherWrap');
+ const wrap=sel.closest('.slaRow').querySelector('.flowStepOtherWrap');
  wrap.style.display=sel.value==='อื่นๆ'?'block':'none';
- if(sel.value!=='อื่นๆ')sel.closest('.formgrid').querySelector('.flowStepOther').value='';
+ if(sel.value!=='อื่นๆ')sel.closest('.slaRow').querySelector('.flowStepOther').value='';
 }
-function getFlowSteps(){
- return [...document.querySelectorAll('#flowStepList .formgrid')].map(row=>{
-   const sel=row.querySelector('.flowStepRole'),other=row.querySelector('.flowStepOther');
-   return sel.value==='อื่นๆ'?(other.value||'').trim():sel.value;
- }).filter(Boolean);
+function getFlowStepData(){
+ return [...document.querySelectorAll('#flowStepList .slaRow')].map(row=>{
+   const sel=row.querySelector('.flowStepRole'),other=row.querySelector('.flowStepOther'),sla=row.querySelector('.flowStepSla');
+   const role=sel.value==='อื่นๆ'?(other.value||'').trim():sel.value;
+   return {role,sla:(sla.value||'').trim()};
+ }).filter(x=>x.role);
 }
 async function addFlow(){
- const name=admFlowName.value.trim(),steps=getFlowSteps();
+ const name=admFlowName.value.trim(),items=getFlowStepData(),steps=items.map(x=>x.role);
  if(!name)return alert('กรอกชื่อ Flow');
  if(!steps.length)return alert('เลือกอย่างน้อย 1 ขั้นตอนอนุมัติ');
  const min=Number(admFlowMin.value||0);
  const max=admFlowMax.value.trim()===''?null:Number(admFlowMax.value);
  if(max!==null && max<min)return alert('วงเงินสูงสุดต้องไม่น้อยกว่าวงเงินเริ่มต้น');
- const {error}=await sb.from('kamu_approval_flows').insert({name,min_amount:min,max_amount:max,steps});if(error)return alert(error.message);
+ const sla={};items.forEach(x=>{if(x.sla!=='')sla[x.role]=Number(x.sla)});
+ const {error}=await sb.from('kamu_approval_flows').insert({name,min_amount:min,max_amount:max,steps,sla});if(error)return alert(error.message);
  await loadAdmin();adminOpen('flow');
 }
 async function toggleAdmin(table,id,active){
@@ -548,7 +562,7 @@ async function editFlow(id){
    admFlowMin.value=x.min_amount??0;
    admFlowMax.value=x.max_amount??'';
    flowStepList.innerHTML='';
-   (x.steps||[]).forEach(s=>addFlowStep(s));
+   (x.steps||[]).forEach(s=>addFlowStep(s,(x.sla||{})[s]??''));
    if(!(x.steps||[]).length)addFlowStep();
    const actions=adminPanel.querySelector('.actions');
    actions.innerHTML='<button class="btn primary" onclick="saveFlowEdit('+id+')">บันทึกการแก้ไข</button> <button class="btn secondary" onclick="adminOpen(\'flow\')">ยกเลิก</button>';
@@ -556,12 +570,13 @@ async function editFlow(id){
  },50);
 }
 async function saveFlowEdit(id){
- const name=admFlowName.value.trim(),steps=getFlowSteps();
+ const name=admFlowName.value.trim(),items=getFlowStepData(),steps=items.map(x=>x.role);
  if(!name||!steps.length)return alert('กรอกชื่อ Flow และเลือกขั้นตอนอนุมัติ');
  const min=Number(admFlowMin.value||0);
  const max=admFlowMax.value.trim()===''?null:Number(admFlowMax.value);
  if(max!==null && max<min)return alert('วงเงินสูงสุดต้องไม่น้อยกว่าวงเงินเริ่มต้น');
- const {error}=await sb.from('kamu_approval_flows').update({name,min_amount:min,max_amount:max,steps}).eq('id',id);
+ const sla={};items.forEach(x=>{if(x.sla!=='')sla[x.role]=Number(x.sla)});
+ const {error}=await sb.from('kamu_approval_flows').update({name,min_amount:min,max_amount:max,steps,sla}).eq('id',id);
  if(error)return alert(error.message);
  await loadAdmin();adminOpen('flow');
 }
