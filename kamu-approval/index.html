@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KAMU Online Approval</title>
+<style>
+:root{--g:#0f6b4f;--bg:#f4f7f5;--card:#fff;--tx:#173128;--mut:#6d7d76;--line:#dfe8e3}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--tx)}
+button,input,select,textarea{font:inherit}button{cursor:pointer}.app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+.side{background:#0b513d;color:#fff;padding:22px 15px;position:sticky;top:0;height:100vh}.brand{font-size:22px;font-weight:800}.sub{opacity:.75;font-size:12px;margin:4px 0 22px}
+.nav button{width:100%;border:0;background:transparent;color:#fff;text-align:left;padding:12px;border-radius:10px;margin:3px 0}.nav button:hover,.nav button.active{background:#ffffff22}
+.main{padding:22px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.top h1{margin:0;font-size:24px}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700}.primary{background:var(--g);color:white}.secondary{background:#e7f2ed;color:var(--g)}
+.card{background:white;border:1px solid var(--line);border-radius:16px;padding:18px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi b{font-size:28px}.kpi span{display:block;color:var(--mut);font-size:13px}.section{margin-top:14px}.section h2,.card h2{font-size:18px;margin:0 0 12px}
+table{width:100%;border-collapse:collapse}.tablewrap{overflow:auto}th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;font-size:14px}th{font-size:12px;color:var(--mut);background:#f9fbfa}
+.badge{padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700;display:inline-block}.pending{background:#fff3cd;color:#8a6500}.approved{background:#dcfce7;color:#166534}.returned{background:#fee2e2;color:#991b1b}.progress{background:#dbeafe;color:#1d4ed8}
+.view{display:none}.view.active{display:block}.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.full{grid-column:1/-1}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px}.field{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:white}textarea.field{min-height:90px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.note{background:#e8f4ef;border:1px solid #c8e4d8;border-radius:12px;padding:12px 14px;font-size:13px;margin-bottom:14px}
+.timeline{border-left:3px solid #d9e6df;padding-left:16px}.event{margin-bottom:14px}.event small{color:var(--mut)}.modal{position:fixed;inset:0;background:#0006;display:none;align-items:center;justify-content:center;padding:16px}.modal.show{display:flex}.dialog{background:white;border-radius:16px;padding:20px;max-width:700px;width:100%;max-height:90vh;overflow:auto}
+.mobile{display:none}
+@media(max-width:900px){.app{grid-template-columns:1fr}.side{display:none}.main{padding:14px}.grid{grid-template-columns:repeat(2,1fr)}.formgrid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.mobile{display:flex;position:sticky;bottom:0;background:white;border-top:1px solid var(--line);padding:8px;gap:6px;overflow:auto}.mobile button{border:0;background:#edf4f1;border-radius:9px;padding:9px 10px;white-space:nowrap}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="side">
+<div class="brand">KAMU APPROVAL</div><div class="sub">Online Document Approval</div>
+<div class="nav" id="nav">
+<button class="active" data-view="dashboard">🏠 Dashboard</button>
+<button data-view="create">➕ สร้างเอกสาร</button>
+<button data-view="documents">📄 เอกสารของฉัน</button>
+<button data-view="approval">✅ รอฉันอนุมัติ</button>
+<button data-view="admin">⚙️ Admin</button>
+</div>
+</aside>
+<main class="main">
+<div class="top"><div><h1>KAMU Online Approval</h1><div style="color:var(--mut);font-size:13px">Prototype ระบบอนุมัติเอกสารออนไลน์</div></div>
+<div><select id="role" class="field" style="width:auto"><option>Staff</option><option>Supervisor</option><option>Area Manager</option><option>Finance</option><option>Admin</option></select> <button class="btn primary" onclick="go('create')">+ Quick Create</button></div></div>
+<div class="note">เวอร์ชันทดลองนี้ใช้ข้อมูลจำลองและ Local Storage ใน Browser เพื่อทดลอง Flow โดยไม่มีค่า Server หรือ Database</div>
+
+<section id="dashboard" class="view active">
+<div class="grid">
+<div class="card kpi"><b id="kAll">0</b><span>เอกสารทั้งหมด</span></div>
+<div class="card kpi"><b id="kPending">0</b><span>รออนุมัติ</span></div>
+<div class="card kpi"><b id="kApproved">0</b><span>อนุมัติแล้ว</span></div>
+<div class="card kpi"><b id="kReturned">0</b><span>ตีกลับ</span></div>
+</div>
+<div class="section card"><h2>รายการล่าสุด</h2><div class="tablewrap"><table><thead><tr><th>เลขที่</th><th>ประเภท</th><th>สาขา</th><th>วงเงิน</th><th>สถานะ</th><th></th></tr></thead><tbody id="recent"></tbody></table></div></div>
+<div class="section grid">
+<div class="card"><h2>Flow ตัวอย่าง</h2><p>≤ 1,000 → Supervisor</p><p>1,001–5,000 → Supervisor → Area Manager</p><p>&gt; 5,000 → Supervisor → Area Manager → Operation Manager → Finance</p></div>
+<div class="card"><h2>SLA</h2><p>Supervisor: 24 ชั่วโมง</p><p>Area Manager: 24 ชั่วโมง</p><p>Finance: 2 วันทำการ</p></div>
+</div>
+</section>
+
+<section id="create" class="view">
+<div class="card"><h2>สร้างเอกสารใหม่</h2>
+<div class="formgrid">
+<div><label>ประเภทเอกสาร</label><select id="type" class="field"><option>ค่าใช้จ่าย</option><option>OT</option><option>จัดซื้อ</option><option>ซ่อมบำรุง</option><option>HR</option><option>Stock</option><option>General Request</option></select></div>
+<div><label>เลขที่เอกสาร</label><input id="no" class="field" readonly></div>
+<div><label>ผู้ขอ</label><input id="requester" class="field" value="Demo User"></div>
+<div><label>สาขา</label><select id="branch" class="field"><option>SILOM</option><option>SIAM</option><option>MEGA BANGNA</option><option>CENTRAL WORLD</option></select></div>
+<div><label>จำนวนเงิน / วงเงิน</label><input id="amount" class="field" type="number" value="0" min="0"></div>
+<div><label>วันที่</label><input id="date" class="field" type="date"></div>
+<div class="full"><label>รายละเอียด</label><textarea id="detail" class="field"></textarea></div>
+<div class="full"><label>ไฟล์แนบ (Prototype)</label><input id="file" class="field" type="file" multiple></div>
+</div>
+<div class="actions"><button class="btn secondary" onclick="preview()">Preview</button><button class="btn primary" onclick="submitReq()">ส่งอนุมัติ</button></div>
+</div>
+</section>
+
+<section id="documents" class="view">
+<div class="card"><h2>เอกสารของฉัน</h2><div class="tablewrap"><table><thead><tr><th>เลขที่</th><th>ประเภท</th><th>ผู้ขอ</th><th>สาขา</th><th>วงเงิน</th><th>สถานะ</th><th></th></tr></thead><tbody id="docs"></tbody></table></div></div>
+</section>
+
+<section id="approval" class="view">
+<div class="card"><h2>รายการรอฉันอนุมัติ</h2><div class="tablewrap"><table><thead><tr><th>เลขที่</th><th>ประเภท</th><th>ผู้ขอ</th><th>สาขา</th><th>วงเงิน</th><th>ขั้นตอน</th><th></th></tr></thead><tbody id="approvals"></tbody></table></div></div>
+</section>
+
+<section id="admin" class="view">
+<div class="grid">
+<div class="card"><h2>Form Types</h2><p>จัดการประเภทเอกสาร</p><button class="btn secondary">+ เพิ่มประเภท</button></div>
+<div class="card"><h2>Approval Flow</h2><p>ตั้งค่าเส้นทางอนุมัติ</p><button class="btn secondary">ตั้งค่า Flow</button></div>
+<div class="card"><h2>Users & Roles</h2><p>Staff / Supervisor / AM / Finance / Admin</p><button class="btn secondary">จัดการ User</button></div>
+<div class="card"><h2>Branches</h2><p>จัดการสาขาและผู้รับผิดชอบ</p><button class="btn secondary">จัดการสาขา</button></div>
+</div>
+<div class="section card"><h2>Activity Log</h2><div id="logs"></div></div>
+</section>
+</main>
+</div>
+
+<div class="mobile"><button onclick="go('dashboard')">Dashboard</button><button onclick="go('create')">สร้าง</button><button onclick="go('documents')">เอกสาร</button><button onclick="go('approval')">อนุมัติ</button><button onclick="go('admin')">Admin</button></div>
+
+<div id="modal" class="modal"><div class="dialog"><div id="modalBody"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">ปิด</button></div></div></div>
+
+<script>
+const KEY='kamuApprovalDemoV1', LOGKEY='kamuApprovalDemoLogs';
+let data=JSON.parse(localStorage.getItem(KEY)||'null')||[
+{id:'KAMU-EXP-2026-000101',type:'ค่าใช้จ่าย',requester:'Somchai',branch:'SILOM',amount:3250,status:'รออนุมัติ',stage:'Area Manager',detail:'ค่าอุปกรณ์หน้าร้าน',date:'2026-10-07',timeline:[['07/10/2026 09:15','Somchai','สร้างเอกสาร'],['07/10/2026 10:32','Supervisor','อนุมัติ']]},
+{id:'KAMU-OT-2026-000102',type:'OT',requester:'Naree',branch:'SIAM',amount:0,status:'อนุมัติแล้ว',stage:'Complete',detail:'ขอ OT ช่วงปิดร้าน',date:'2026-10-06',timeline:[['06/10/2026 17:00','Naree','สร้างเอกสาร'],['06/10/2026 18:00','Supervisor','อนุมัติ']]},
+{id:'KAMU-PO-2026-000103',type:'จัดซื้อ',requester:'Krit',branch:'MEGA BANGNA',amount:8500,status:'รออนุมัติ',stage:'Supervisor',detail:'ซื้ออุปกรณ์',date:'2026-10-08',timeline:[['08/10/2026 08:30','Krit','สร้างเอกสาร']]}
+];
+let logs=JSON.parse(localStorage.getItem(LOGKEY)||'[]');
+function save(){localStorage.setItem(KEY,JSON.stringify(data));localStorage.setItem(LOGKEY,JSON.stringify(logs));render()}
+function badge(s){let c=s==='อนุมัติแล้ว'?'approved':(s==='ตีกลับ'||s==='ปฏิเสธ')?'returned':s==='กำลังดำเนินการ'?'progress':'pending';return '<span class="badge '+c+'">'+s+'</span>'}
+function go(id){document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));if(id==='create')newNo();render()}
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.view));
+function newNo(){document.getElementById('no').value='KAMU-REQ-2026-'+String(104+data.length).padStart(6,'0')}
+document.getElementById('date').value=new Date().toISOString().slice(0,10);newNo();
+function flow(a){a=+a||0;if(a<=1000)return ['Supervisor'];if(a<=5000)return ['Supervisor','Area Manager'];return ['Supervisor','Area Manager','Operation Manager','Finance']}
+function preview(){
+ let a=+amount.value||0;
+ modalBody.innerHTML='<h2>Preview เอกสาร</h2><p><b>'+no.value+'</b></p><p>ประเภท: '+type.value+'</p><p>ผู้ขอ: '+requester.value+'</p><p>สาขา: '+branch.value+'</p><p>วงเงิน: '+a.toLocaleString()+' บาท</p><p>Flow: '+flow(a).join(' → ')+'</p><p>รายละเอียด: '+(detail.value||'-')+'</p>';modal.classList.add('show')
+}
+function closeModal(){modal.classList.remove('show')}
+function submitReq(){
+ let a=+amount.value||0, f=flow(a), now=new Date().toLocaleString('th-TH');
+ data.unshift({id:no.value,type:type.value,requester:requester.value||'Demo User',branch:branch.value,amount:a,status:'รออนุมัติ',stage:f[0],flow:f,detail:detail.value||'-',date:date.value,timeline:[[now,requester.value||'Demo User','สร้างเอกสารและส่งอนุมัติ']]});
+ logs.unshift(now+' — '+no.value+' ถูกสร้างและส่งอนุมัติ');save();detail.value='';amount.value=0;go('documents');alert('ส่งอนุมัติเรียบร้อย')
+}
+function viewReq(id){
+ let x=data.find(d=>d.id===id), events=(x.timeline||[]).map(e=>'<div class="event"><b>'+e[2]+'</b><small>'+e[0]+' · '+e[1]+'</small></div>').join('');
+ modalBody.innerHTML='<h2>'+x.id+'</h2><p>'+badge(x.status)+'</p><p><b>ประเภท:</b> '+x.type+' &nbsp; <b>สาขา:</b> '+x.branch+'</p><p><b>วงเงิน:</b> '+x.amount.toLocaleString()+' บาท</p><p><b>ขั้นตอนปัจจุบัน:</b> '+x.stage+'</p><p><b>รายละเอียด:</b> '+x.detail+'</p><h3>Timeline</h3><div class="timeline">'+events+'</div>';modal.classList.add('show')
+}
+function decide(id,action){
+ let x=data.find(d=>d.id===id), now=new Date().toLocaleString('th-TH'), role=role.value;
+ if(action==='approve'){
+   let f=x.flow||flow(x.amount), i=f.indexOf(x.stage); if(i<0)i=0;
+   if(i>=f.length-1){x.status='อนุมัติแล้ว';x.stage='Complete'}else{x.stage=f[i+1];x.status='รออนุมัติ'}
+   x.timeline.push([now,role,'อนุมัติ'])
+ }else if(action==='return'){x.status='ตีกลับ';x.stage='Requester';x.timeline.push([now,role,'ตีกลับแก้ไข'])}
+ else{x.status='ปฏิเสธ';x.stage='Rejected';x.timeline.push([now,role,'ปฏิเสธ'])}
+ logs.unshift(now+' — '+id+' — '+action+' โดย '+role);save()
+}
+function render(){
+ kAll.textContent=data.length;kPending.textContent=data.filter(x=>x.status==='รออนุมัติ').length;kApproved.textContent=data.filter(x=>x.status==='อนุมัติแล้ว').length;kReturned.textContent=data.filter(x=>x.status==='ตีกลับ').length;
+ recent.innerHTML=data.slice(0,6).map(x=>'<tr><td>'+x.id+'</td><td>'+x.type+'</td><td>'+x.branch+'</td><td>'+x.amount.toLocaleString()+'</td><td>'+badge(x.status)+'</td><td><button class="btn secondary" onclick="viewReq(\''+x.id+'\')">เปิด</button></td></tr>').join('');
+ docs.innerHTML=data.map(x=>'<tr><td>'+x.id+'</td><td>'+x.type+'</td><td>'+x.requester+'</td><td>'+x.branch+'</td><td>'+x.amount.toLocaleString()+'</td><td>'+badge(x.status)+'</td><td><button class="btn secondary" onclick="viewReq(\''+x.id+'\')">ดู</button></td></tr>').join('');
+ approvals.innerHTML=data.filter(x=>x.status==='รออนุมัติ').map(x=>'<tr><td>'+x.id+'</td><td>'+x.type+'</td><td>'+x.requester+'</td><td>'+x.branch+'</td><td>'+x.amount.toLocaleString()+'</td><td>'+x.stage+'</td><td><button class="btn primary" onclick="decide(\''+x.id+'\',\'approve\')">อนุมัติ</button> <button class="btn secondary" onclick="decide(\''+x.id+'\',\'return\')">ตีกลับ</button> <button class="btn secondary" onclick="decide(\''+x.id+'\',\'reject\')">ปฏิเสธ</button></td></tr>').join('');
+ logs.innerHTML=(logs.length?logs:['ยังไม่มี Activity Log']).map(x=>'<div style="padding:8px 0;border-bottom:1px solid var(--line)">'+x+'</div>').join('')
+}
+render();
+</script>
+</body>
+</html>
