@@ -79,7 +79,7 @@ label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px}.field{wid
 </section>
 
 <section id="approval" class="view">
-<div class="card"><h2>รายการรอฉันอนุมัติ</h2><div class="tablewrap"><table><thead><tr><th>เลขที่</th><th>ประเภท</th><th>ผู้ขอ</th><th>สาขา</th><th>วงเงิน</th><th>ขั้นตอน</th><th></th></tr></thead><tbody id="approvals"></tbody></table></div></div>
+<div class="card"><h2>รายการรอฉันอนุมัติ</h2><div class="tablewrap"><table><thead><tr><th>เลขที่</th><th>ประเภท</th><th>ผู้ขอ</th><th>สาขา</th><th>วงเงิน</th><th>ขั้นตอน</th><th>ไฟล์แนบ</th><th></th></tr></thead><tbody id="approvals"></tbody></table></div></div>
 </section>
 
 <section id="admin" class="view">
@@ -121,6 +121,7 @@ const SUPABASE_URL='https://hcswjuemjluozmyejhnu.supabase.co';
 const SUPABASE_KEY='sb_publishable_C4yHaRSzzgln3d9lplwIpg_QaWlG4ne';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let data=[], logs=[], signedAttachments=[], sigIndex=-1, drawing=false, sigCtx=null, remoteSignatureTarget=null;
+let attachmentCountByDoc={}, approvalAttachmentCache={};
 let adminData={formTypes:[],branches:[],users:[],flows:[]};
 let pendingUserUpload=[];
 const fileInput=document.getElementById('file');
@@ -156,9 +157,14 @@ function go(id){
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.view));
 
 async function loadData(){
- const {data:rows,error}=await sb.from('kamu_approval_documents').select('*').order('created_at',{ascending:false});
- if(error){console.error(error);alert('โหลดข้อมูล Online ไม่สำเร็จ: '+error.message);return}
- data=(rows||[]).map(x=>({...x,id:x.id,amount:Number(x.amount||0)}));
+ const [docsRes,attRes]=await Promise.all([
+   sb.from('kamu_approval_documents').select('*').order('created_at',{ascending:false}),
+   sb.from('kamu_approval_attachments').select('document_id')
+ ]);
+ if(docsRes.error){console.error(docsRes.error);alert('โหลดข้อมูล Online ไม่สำเร็จ: '+docsRes.error.message);return}
+ data=(docsRes.data||[]).map(x=>({...x,id:x.id,amount:Number(x.amount||0)}));
+ attachmentCountByDoc={};
+ (attRes.data||[]).forEach(a=>attachmentCountByDoc[a.document_id]=(attachmentCountByDoc[a.document_id]||0)+1);
  render();
 }
 function render(){
@@ -168,7 +174,11 @@ function render(){
  kReturned.textContent=data.filter(x=>x.status==='ตีกลับ').length;
  recent.innerHTML=data.slice(0,6).map(x=>'<tr><td>'+esc(x.document_no)+'</td><td>'+esc(x.type)+'</td><td>'+esc(x.branch)+'</td><td>'+x.amount.toLocaleString()+'</td><td>'+badge(x.status)+'</td><td><button class="btn secondary" onclick="viewReq(\''+x.id+'\')">เปิด</button></td></tr>').join('');
  docs.innerHTML=data.map(x=>'<tr><td>'+esc(x.document_no)+'</td><td>'+esc(x.type)+'</td><td>'+esc(x.requester)+'</td><td>'+esc(x.branch)+'</td><td>'+x.amount.toLocaleString()+'</td><td>'+badge(x.status)+'</td><td><button class="btn secondary" onclick="viewReq(\''+x.id+'\')">ดู</button></td></tr>').join('');
- approvals.innerHTML=data.filter(x=>x.status==='รออนุมัติ').map(x=>'<tr><td>'+esc(x.document_no)+'</td><td>'+esc(x.type)+'</td><td>'+esc(x.requester)+'</td><td>'+esc(x.branch)+'</td><td>'+x.amount.toLocaleString()+'</td><td>'+esc(x.stage)+'</td><td><button class="btn secondary" onclick="openApprovalDocument(\''+x.id+'\')">เปิดเอกสาร</button> <button class="btn primary" onclick="decide(\''+x.id+'\',\'approve\')">อนุมัติ</button> <button class="btn secondary" onclick="decide(\''+x.id+'\',\'return\')">ตีกลับ</button> <button class="btn secondary" onclick="decide(\''+x.id+'\',\'reject\')">ปฏิเสธ</button></td></tr>').join('');
+ approvals.innerHTML=data.filter(x=>x.status==='รออนุมัติ').map(x=>{
+   const ac=attachmentCountByDoc[x.id]||0;
+   const fileCell=ac?'<button class="btn secondary" title="มีไฟล์แนบ '+ac+' ไฟล์" onclick="openApprovalDocument(\''+x.id+'\')">📎 '+ac+'</button>':'-';
+   return '<tr><td>'+esc(x.document_no)+'</td><td>'+esc(x.type)+'</td><td>'+esc(x.requester)+'</td><td>'+esc(x.branch)+'</td><td>'+x.amount.toLocaleString()+'</td><td>'+esc(x.stage)+'</td><td>'+fileCell+'</td><td><button class="btn secondary" onclick="openApprovalDocument(\''+x.id+'\')">เปิดเอกสาร</button> <button class="btn primary" onclick="decide(\''+x.id+'\',\'approve\')">อนุมัติ</button> <button class="btn secondary" onclick="decide(\''+x.id+'\',\'return\')">ตีกลับ</button> <button class="btn secondary" onclick="decide(\''+x.id+'\',\'reject\')">ปฏิเสธ</button></td></tr>';
+ }).join('');
  logs.innerHTML=(logs.length?logs:['Activity Log Online จะแสดงจาก Timeline ของแต่ละเอกสาร']).map(x=>'<div style="padding:8px 0;border-bottom:1px solid var(--line)">'+esc(x)+'</div>').join('');
 }
 function preview(){
@@ -345,18 +355,45 @@ async function viewReq(id,approvalMode=false){
    sb.from('kamu_approval_attachment_signatures').select('*').eq('document_id',id).order('signed_at',{ascending:true})
  ]);
  let events=(tl||[]).map(e=>'<div class="event"><b>'+esc(e.action)+'</b><small>'+new Date(e.created_at).toLocaleString('th-TH')+' · '+esc(e.actor)+(e.note?' · '+esc(e.note):'')+'</small></div>').join('');
+ approvalAttachmentCache={};
  let files='';
  for(const a of (at||[])){
    const history=(sigs||[]).filter(s=>s.attachment_id===a.id);
    const {data:signed}=await sb.storage.from('kamu-approval-files').createSignedUrl(a.storage_path,3600);
+   approvalAttachmentCache[a.id]={
+     attachmentId:a.id,documentId:id,storagePath:a.storage_path,fileName:a.file_name,
+     signedUrl:signed?.signedUrl||'',defaultSigner:x.approver_name||'ผู้อนุมัติ',
+     signerRole:x.stage||'',signatureCount:history.length
+   };
    const hist=history.length?'<div style="font-size:12px;color:var(--mut);margin-top:5px">'+history.map(s=>'✍️ '+esc(s.signer)+(s.signer_role?' · '+esc(s.signer_role):'')+' · '+new Date(s.signed_at).toLocaleString('th-TH')).join('<br>')+'</div>':'';
-   const signBtn=approvalMode?'<button class="btn primary" onclick="openRemoteSignature(\''+a.id+'\',\''+id+'\',\''+String(a.storage_path).replace(/'/g,"\\'")+'\',\''+String(a.file_name).replace(/'/g,"\\'")+'\',\''+String(x.approver_name||'ผู้อนุมัติ').replace(/'/g,"\\'")+'\',\''+String(x.stage||'').replace(/'/g,"\\'")+'\','+history.length+')">ลงลายเซ็น</button>':'';
-   files+='<div style="padding:12px 0;border-bottom:1px solid var(--line)"><div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap"><div>📎 <b>'+esc(a.file_name)+'</b> '+(a.signed?'<span class="badge approved">มีลายเซ็น '+Math.max(history.length,1)+' คน</span>':'')+'</div><div>'+(signed?.signedUrl?'<a class="btn secondary" style="text-decoration:none" target="_blank" href="'+signed.signedUrl+'">เปิดไฟล์</a> ':'')+signBtn+'</div></div>'+hist+'</div>';
+   const openBtn=signed?.signedUrl?'<button class="btn secondary" onclick="showAttachmentPreview(\''+a.id+'\','+(approvalMode?'true':'false')+')">เปิดไฟล์</button> ':'';
+   const signBtn=approvalMode?'<button class="btn primary" onclick="signCachedAttachment(\''+a.id+'\')">ลงลายเซ็น</button>':'';
+   files+='<div style="padding:12px 0;border-bottom:1px solid var(--line)"><div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap"><div>📎 <b>'+esc(a.file_name)+'</b> '+(a.signed?'<span class="badge approved">มีลายเซ็น '+Math.max(history.length,1)+' คน</span>':'')+'</div><div>'+openBtn+signBtn+'</div></div>'+hist+'</div>';
  }
  const approvalActions=approvalMode?'<div class="actions"><button class="btn primary" onclick="closeModal();decide(\''+id+'\',\'approve\')">อนุมัติ</button><button class="btn secondary" onclick="closeModal();decide(\''+id+'\',\'return\')">ตีกลับ</button><button class="btn secondary" onclick="closeModal();decide(\''+id+'\',\'reject\')">ปฏิเสธ</button></div>':'';
  modalBody.innerHTML='<h2>'+esc(x.document_no)+'</h2><p>'+badge(x.status)+'</p><p><b>ประเภท:</b> '+esc(x.type)+' &nbsp; <b>สาขา:</b> '+esc(x.branch)+'</p><p><b>ผู้ขอ:</b> '+esc(x.requester)+'</p><p><b>ผู้อนุมัติ:</b> '+esc(x.approver_name||'-')+(x.approver_email?' ('+esc(x.approver_email)+')':'')+'</p><p><b>วงเงิน:</b> '+x.amount.toLocaleString()+' บาท</p><p><b>ขั้นตอนปัจจุบัน:</b> '+esc(x.stage)+'</p><p><b>รายละเอียด:</b> '+esc(x.detail||'-')+'</p><h3>ไฟล์แนบ</h3>'+(files||'<p>ไม่มีไฟล์แนบ</p>')+approvalActions+'<h3>Timeline</h3><div class="timeline">'+(events||'<p>ยังไม่มี Timeline</p>')+'</div>'
 }
 
+
+function signCachedAttachment(attachmentId){
+ const a=approvalAttachmentCache[attachmentId];if(!a)return;
+ openRemoteSignature(a.attachmentId,a.documentId,a.storagePath,a.fileName,a.defaultSigner,a.signerRole,a.signatureCount);
+}
+function showAttachmentPreview(attachmentId,approvalMode=true){
+ const a=approvalAttachmentCache[attachmentId],box=document.getElementById('approvalFilePreview');
+ if(!a||!box)return;
+ const lower=String(a.fileName||'').toLowerCase();
+ let viewer='';
+ if(lower.endsWith('.pdf')){
+   viewer='<iframe src="'+a.signedUrl+'" style="width:100%;height:68vh;border:1px solid var(--line);border-radius:12px;background:white"></iframe>';
+ }else if(/\.(png|jpe?g|webp|gif)$/i.test(lower)){
+   viewer='<div style="text-align:center"><img src="'+a.signedUrl+'" style="max-width:100%;max-height:68vh;border:1px solid var(--line);border-radius:12px"></div>';
+ }else{
+   viewer='<p>ไฟล์ชนิดนี้ไม่รองรับ Preview ในหน้าเว็บ <a target="_blank" href="'+a.signedUrl+'">เปิดไฟล์</a></p>';
+ }
+ box.innerHTML='<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><h3 style="margin:0">📎 '+esc(a.fileName)+'</h3>'+(approvalMode?'<button class="btn primary" onclick="signCachedAttachment(\''+attachmentId+'\')">ลงลายเซ็นบนไฟล์นี้</button>':'')+'</div><div style="margin-top:12px">'+viewer+'</div></div>';
+ box.scrollIntoView({behavior:'smooth',block:'start'});
+}
 async function decide(id,action){
  const x=data.find(d=>d.id===id);if(!x)return;
  const actor='ผู้อนุมัติ';let status=x.status,stage=x.stage,act='';
