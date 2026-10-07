@@ -169,7 +169,7 @@ function preview(){
  if(!type.value)return alert('กรุณาตั้งค่าและเลือกประเภทเอกสารจาก Admin');
  if(!requester.value)return alert('กรุณาตั้งค่าและเลือกผู้ขอจาก Admin');
  if(!approver.value)return alert('กรุณาเลือกชื่อผู้อนุมัติ');
- if(!approverEmail.value)return alert('ผู้อนุมัติยังไม่มี Email กรุณาตั้งค่าใน Admin → Users & Roles');
+ if(!approverEmail.value && !getFlowConfig(+amount.value||0)?.notification_email)return alert('ยังไม่มี Email ผู้อนุมัติ กรุณาตั้งค่าใน Approval Flow หรือ Users & Roles');
  if(!branch.value)return alert('กรุณาตั้งค่าและเลือกสาขาจาก Admin');
  let a=+amount.value||0;
  modalBody.innerHTML='<h2>Preview เอกสาร</h2><p><b>'+esc(no.value)+'</b></p><p>ประเภท: '+esc(type.value)+'</p><p>ผู้ขอ: '+esc(requester.value)+'</p><p>ผู้อนุมัติ: '+esc(approver.value)+' ('+esc(approverEmail.value)+')</p><p>สาขา: '+esc(branch.value)+'</p><p>วงเงิน: '+a.toLocaleString()+' บาท</p><p>Flow: '+flow(a).join(' → ')+'</p><p>รายละเอียด: '+esc(detail.value||'-')+'</p><p>ไฟล์แนบ: '+fileInput.files.length+' ไฟล์</p>';
@@ -298,7 +298,9 @@ async function submitReq(){
  const a=+amount.value||0,f=flow(a),btn=event?.target;
  if(btn){btn.disabled=true;btn.textContent='กำลังส่ง...'}
  try{
-   const payload={document_no:no.value,type:type.value,requester:requester.value,approver_name:approver.value,approver_email:approverEmail.value,branch:branch.value,amount:a,status:'รออนุมัติ',stage:f[0],detail:detail.value||'-',request_date:date.value,flow:f,email_notify_status:'PENDING'};
+   const flowCfg=getFlowConfig(a);
+   const notifyEmail=(flowCfg?.notification_email||approverEmail.value||'').trim();
+   const payload={document_no:no.value,type:type.value,requester:requester.value,approver_name:approver.value,approver_email:notifyEmail,branch:branch.value,amount:a,status:'รออนุมัติ',stage:f[0],detail:detail.value||'-',request_date:date.value,flow:f,email_notify_status:'PENDING'};
    const {data:doc,error}=await sb.from('kamu_approval_documents').insert(payload).select().single(); if(error)throw error;
    const {error:te}=await sb.from('kamu_approval_timeline').insert({document_id:doc.id,actor:payload.requester,action:'สร้างเอกสารและส่งอนุมัติ'}); if(te)throw te;
    const files=[...fileInput.files];
@@ -437,11 +439,11 @@ function adminOpen(kind){
      '<div><label>วงเงินเริ่มต้น</label><input id="admFlowMin" class="field" type="number" value="0" min="0"></div>'+
      '<div><label>วงเงินสูงสุด</label><input id="admFlowMax" class="field" type="number" placeholder="เว้นว่าง = ไม่จำกัด" min="0"></div>'+
      '<div><label>Role ผู้อนุมัติ</label><select id="admFlowRole" class="field" onchange="toggleFlowCustomRole()"><option value="">- เลือก Role -</option>'+roleOptions+'<option value="อื่นๆ">อื่นๆ</option></select><div id="admFlowCustomRoleWrap" style="display:none;margin-top:8px"><input id="admFlowCustomRole" class="field" placeholder="พิมพ์ Role / ตำแหน่ง"></div></div>'+
-     '<div><label>SLA (ชั่วโมง)</label><input id="admFlowSla" class="field" type="number" min="0" placeholder="24"></div>'+
+     '<div><label>Email</label><input id="admFlowEmail" class="field" type="email" placeholder="name@company.com"></div>'+
    '</div>'+
    '<div class="actions"><button class="btn primary" onclick="addSimpleFlow()">+ เพิ่ม Flow</button></div>'+
-   '<div class="tablewrap section"><table><thead><tr><th>ชื่อ Flow</th><th>วงเงิน</th><th>Role ผู้อนุมัติ</th><th>SLA</th><th>สถานะ</th><th></th></tr></thead><tbody>'+
-   adminData.flows.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+Number(x.min_amount).toLocaleString()+' - '+(x.max_amount==null?'ไม่จำกัด':Number(x.max_amount).toLocaleString())+'</td><td>'+esc((x.steps||[]).join(' → '))+'</td><td>'+esc((x.steps||[]).map(r=>((x.sla||{})[r]??'-')+' ชม.').join(' | '))+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="editSimpleFlow('+x.id+')">แก้ไข</button> <button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_flows\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_flows\','+x.id+',\'flow\')">ลบ</button></td></tr>').join('')+
+   '<div class="tablewrap section"><table><thead><tr><th>ชื่อ Flow</th><th>วงเงิน</th><th>Role ผู้อนุมัติ</th><th>Email</th><th>สถานะ</th><th></th></tr></thead><tbody>'+
+   adminData.flows.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+Number(x.min_amount).toLocaleString()+' - '+(x.max_amount==null?'ไม่จำกัด':Number(x.max_amount).toLocaleString())+'</td><td>'+esc((x.steps||[]).join(' → '))+'</td><td>'+esc(x.notification_email||'-')+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="editSimpleFlow('+x.id+')">แก้ไข</button> <button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_flows\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_flows\','+x.id+',\'flow\')">ลบ</button></td></tr>').join('')+
    '</tbody></table></div>';
    window._flowRoleOptions=roleOptions;
  }
@@ -485,8 +487,9 @@ async function addSimpleFlow(){
  const min=Number(admFlowMin.value||0);
  const max=admFlowMax.value.trim()===''?null:Number(admFlowMax.value);
  if(max!==null && max<min)return alert('วงเงินสูงสุดต้องไม่น้อยกว่าวงเงินเริ่มต้น');
- const sla={};if(admFlowSla.value!=='')sla[roleName]=Number(admFlowSla.value);
- const {error}=await sb.from('kamu_approval_flows').insert({name,min_amount:min,max_amount:max,steps:[roleName],sla});
+ const email=(admFlowEmail.value||'').trim();
+ if(!email)return alert('กรอก Email');
+ const {error}=await sb.from('kamu_approval_flows').insert({name,min_amount:min,max_amount:max,steps:[roleName],notification_email:email});
  if(error)return alert(error.message);
  await loadAdmin();adminOpen('flow');
 }
@@ -501,7 +504,7 @@ async function editSimpleFlow(id){
  }else{
    admFlowRole.value='อื่นๆ';toggleFlowCustomRole();admFlowCustomRole.value=roleName;
  }
- admFlowSla.value=(x.sla||{})[roleName]??'';
+ admFlowEmail.value=x.notification_email||'';
  const actions=adminPanel.querySelector('.actions');
  actions.innerHTML='<button class="btn primary" onclick="saveSimpleFlow('+id+')">บันทึกการแก้ไข</button> <button class="btn secondary" onclick="adminOpen(\'flow\')">ยกเลิก</button>';
  adminPanel.scrollIntoView({behavior:'smooth',block:'start'});
@@ -512,8 +515,9 @@ async function saveSimpleFlow(id){
  const min=Number(admFlowMin.value||0);
  const max=admFlowMax.value.trim()===''?null:Number(admFlowMax.value);
  if(max!==null && max<min)return alert('วงเงินสูงสุดต้องไม่น้อยกว่าวงเงินเริ่มต้น');
- const sla={};if(admFlowSla.value!=='')sla[roleName]=Number(admFlowSla.value);
- const {error}=await sb.from('kamu_approval_flows').update({name,min_amount:min,max_amount:max,steps:[roleName],sla}).eq('id',id);
+ const email=(admFlowEmail.value||'').trim();
+ if(!email)return alert('กรอก Email');
+ const {error}=await sb.from('kamu_approval_flows').update({name,min_amount:min,max_amount:max,steps:[roleName],notification_email:email}).eq('id',id);
  if(error)return alert(error.message);
  await loadAdmin();adminOpen('flow');
 }
@@ -545,9 +549,14 @@ async function editUser(id){
  const {error}=await sb.from('kamu_approval_users').update({full_name,email:email||null,role:roleName.trim(),branch_code:branchCode||null}).eq('id',id);if(error)return alert(error.message);
  await loadAdmin();adminOpen('user');
 }
+function getFlowConfig(a){
+ const n=Number(a||0);
+ return adminData.flows.filter(x=>x.active).find(x=>n>=Number(x.min_amount||0)&&(x.max_amount==null||n<=Number(x.max_amount)))||null;
+}
 function flow(a){
- const n=Number(a||0),cfg=adminData.flows.filter(x=>x.active).find(x=>n>=Number(x.min_amount||0)&&(x.max_amount==null||n<=Number(x.max_amount)));
+ const cfg=getFlowConfig(a);
  if(cfg&&Array.isArray(cfg.steps)&&cfg.steps.length)return cfg.steps;
+ const n=Number(a||0);
  if(n<=1000)return ['Supervisor'];if(n<=5000)return ['Supervisor','Area Manager'];return ['Supervisor','Area Manager','Operation Manager','Finance'];
 }
 sb.channel('kamu-approval-live')
