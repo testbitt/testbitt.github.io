@@ -141,8 +141,10 @@ function go(id){
  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
  document.getElementById(id).classList.add('active');
  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
- if(id==='create'){loadAdmin().then(()=>newNo());}
- if(id==='admin')loadAdmin();
+ if(id==='create')newNo();
+ if(id==='admin'){
+   if(!adminData.formTypes.length&&!adminData.branches.length&&!adminData.users.length&&!adminData.flows.length)loadAdmin();
+ }
  render();
 }
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.view));
@@ -443,6 +445,7 @@ function adminOpen(kind){
    '</tbody></table></div>';
    window._flowRoleOptions=roleOptions;
  }
+}
 async function addFormType(){
  const name=admFormName.value.trim(),code=admFormCode.value.trim().toUpperCase();if(!name||!code)return alert('กรอกชื่อและรหัส');
  const {error}=await sb.from('kamu_approval_form_types').insert({name,code});if(error)return alert(error.message);
@@ -551,7 +554,7 @@ sb.channel('kamu-approval-live')
  .on('postgres_changes',{event:'*',schema:'public',table:'kamu_approval_documents'},()=>loadData())
  .subscribe();
 
-loadAdmin().then(()=>loadData());
+Promise.all([loadAdmin(),loadData()]).catch(console.error);
 </script>
 </body>
 </html>
