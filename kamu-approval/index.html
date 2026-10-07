@@ -40,7 +40,7 @@ label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px}.field{wid
 </aside>
 <main class="main">
 <div class="top"><div><h1>KAMU Online Approval</h1><div style="color:var(--mut);font-size:13px">Prototype ระบบอนุมัติเอกสารออนไลน์</div></div>
-<div><select id="role" class="field" style="width:auto"><option>Staff</option><option>Supervisor</option><option>Area Manager</option><option>Finance</option><option>Admin</option></select> <button class="btn primary" onclick="go('create')">+ Quick Create</button></div></div>
+<div><button class="btn primary" onclick="go('create')">+ Quick Create</button></div></div>
 
 <section id="dashboard" class="view active">
 <div class="grid">
@@ -284,7 +284,7 @@ async function viewReq(id){
 
 async function decide(id,action){
  const x=data.find(d=>d.id===id);if(!x)return;
- const actor=role.value;let status=x.status,stage=x.stage,act='';
+ const actor='ผู้อนุมัติ';let status=x.status,stage=x.stage,act='';
  if(action==='approve'){
    const f=Array.isArray(x.flow)?x.flow:flow(x.amount),i=Math.max(0,f.indexOf(x.stage));
    if(i>=f.length-1){status='อนุมัติแล้ว';stage='Complete'}else{status='รออนุมัติ';stage=f[i+1]}
