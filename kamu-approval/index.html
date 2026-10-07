@@ -59,9 +59,12 @@ label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px}.field{wid
 <div><label>ประเภทเอกสาร</label><select id="type" class="field"><option value="">กำลังโหลดจาก Admin...</option></select></div>
 <div><label>เลขที่เอกสาร</label><input id="no" class="field" readonly></div>
 <div><label>ผู้ขอ</label><select id="requester" class="field"><option value="">กำลังโหลดจาก Admin...</option></select></div>
-<div><label>ชื่อผู้อนุมัติ</label><select id="approver" class="field"><option value="">กำลังโหลดจาก Admin...</option></select></div>
-<div><label>อีเมลผู้อนุมัติ</label><input id="approverEmail" class="field" readonly placeholder="เลือกผู้อนุมัติก่อน"></div>
+<div><label>Email ผู้ขอ</label><input id="requesterEmail" class="field" readonly></div>
+<div><label>แผนก</label><input id="requesterDepartment" class="field" readonly></div>
 <div><label>สาขา</label><select id="branch" class="field"><option value="">กำลังโหลดจาก Admin...</option></select></div>
+<div><label>Approval Flow</label><input id="selectedFlow" class="field" readonly placeholder="กรอกวงเงินเพื่อเลือก Flow"></div>
+<div><label>ชื่อผู้อนุมัติ</label><select id="approver" class="field"><option value="">กำลังโหลดจาก Admin...</option></select></div>
+<div><label>Email แจ้งเตือน</label><input id="approverEmail" class="field" readonly placeholder="อ่านจาก Approval Flow / Users & Roles"></div>
 <div><label>จำนวนเงิน / วงเงิน</label><input id="amount" class="field" type="number" value="0" min="0"></div>
 <div><label>วันที่</label><input id="date" class="field" type="date"></div>
 <div class="full"><label>รายละเอียด</label><textarea id="detail" class="field"></textarea></div>
@@ -137,6 +140,7 @@ document.getElementById('date').value=new Date().toISOString().slice(0,10);
 type.addEventListener('change',newNo);
 requester.addEventListener('change',onRequesterChange);
 approver.addEventListener('change',onApproverChange);
+amount.addEventListener('input',syncApprovalFromAdmin);
 newNo();
 
 function go(id){
@@ -174,7 +178,7 @@ function preview(){
  if(!approverEmail.value && !getFlowConfig(+amount.value||0)?.notification_email)return alert('ยังไม่มี Email ผู้อนุมัติ กรุณาตั้งค่าใน Approval Flow หรือ Users & Roles');
  if(!branch.value)return alert('กรุณาตั้งค่าและเลือกสาขาจาก Admin');
  let a=+amount.value||0;
- modalBody.innerHTML='<h2>Preview เอกสาร</h2><p><b>'+esc(no.value)+'</b></p><p>ประเภท: '+esc(type.value)+'</p><p>ผู้ขอ: '+esc(requester.value)+'</p><p>ผู้อนุมัติ: '+esc(approver.value)+' ('+esc(approverEmail.value)+')</p><p>สาขา: '+esc(branch.value)+'</p><p>วงเงิน: '+a.toLocaleString()+' บาท</p><p>Flow: '+flow(a).join(' → ')+'</p><p>รายละเอียด: '+esc(detail.value||'-')+'</p><p>ไฟล์แนบ: '+fileInput.files.length+' ไฟล์</p>';
+ modalBody.innerHTML='<h2>Preview เอกสาร</h2><p><b>'+esc(no.value)+'</b></p><p>ประเภท: '+esc(type.value)+'</p><p>ผู้ขอ: '+esc(requester.value)+'</p><p>Email ผู้ขอ: '+esc(requesterEmail.value||'-')+'</p><p>แผนก: '+esc(requesterDepartment.value||'-')+'</p><p>Approval Flow: '+esc(selectedFlow.value||'-')+'</p><p>ผู้อนุมัติ: '+esc(approver.value)+' ('+esc(approverEmail.value)+')</p><p>สาขา: '+esc(branch.value)+'</p><p>วงเงิน: '+a.toLocaleString()+' บาท</p><p>Flow: '+flow(a).join(' → ')+'</p><p>รายละเอียด: '+esc(detail.value||'-')+'</p><p>ไฟล์แนบ: '+fileInput.files.length+' ไฟล์</p>';
  modal.classList.add('show')
 }
 function closeModal(){modal.classList.remove('show')}
@@ -294,6 +298,8 @@ function safeFileName(s){return String(s).replace(/[^a-zA-Z0-9._-]+/g,'_')}
 async function submitReq(){
  if(!type.value)return alert('กรุณาตั้งค่าประเภทเอกสารใน Admin');
  if(!requester.value)return alert('กรุณาเพิ่มและเลือกผู้ขอใน Admin → Users & Roles');
+ if(!requesterEmail.value)return alert('ผู้ขอยังไม่มี Email ใน Admin → Users & Roles');
+ if(!requesterDepartment.value)return alert('ผู้ขอยังไม่มีแผนกใน Admin → Users & Roles');
  if(!approver.value)return alert('กรุณาเลือกชื่อผู้อนุมัติ');
  if(!approverEmail.value)return alert('ผู้อนุมัติยังไม่มี Email กรุณาตั้งค่าใน Admin → Users & Roles');
  if(!branch.value)return alert('กรุณาตั้งค่าสาขาใน Admin');
@@ -302,7 +308,7 @@ async function submitReq(){
  try{
    const flowCfg=getFlowConfig(a);
    const notifyEmail=(flowCfg?.notification_email||approverEmail.value||'').trim();
-   const payload={document_no:no.value,type:type.value,requester:requester.value,approver_name:approver.value,approver_email:notifyEmail,branch:branch.value,amount:a,status:'รออนุมัติ',stage:f[0],detail:detail.value||'-',request_date:date.value,flow:f,email_notify_status:'PENDING'};
+   const payload={document_no:no.value,type:type.value,requester:requester.value,requester_email:requesterEmail.value,requester_department:requesterDepartment.value,approver_name:approver.value,approver_email:notifyEmail,branch:branch.value,amount:a,status:'รออนุมัติ',stage:f[0],detail:detail.value||'-',request_date:date.value,flow:f,email_notify_status:'PENDING'};
    const {data:doc,error}=await sb.from('kamu_approval_documents').insert(payload).select().single(); if(error)throw error;
    const {error:te}=await sb.from('kamu_approval_timeline').insert({document_id:doc.id,actor:payload.requester,action:'สร้างเอกสารและส่งอนุมัติ'}); if(te)throw te;
    const files=[...fileInput.files];
@@ -399,30 +405,40 @@ function syncMasterDropdowns(){
  const activeUsers=adminData.users.filter(x=>x.active);
  const currentUser=requester.value;
  requester.innerHTML=activeUsers.length
-   ? '<option value="">-- เลือกผู้ขอ --</option>'+activeUsers.map(x=>'<option value="'+esc(x.full_name)+'" data-branch="'+esc(x.branch_code||'')+'" data-role="'+esc(x.role||'')+'">'+esc(x.full_name)+' — '+esc(x.role||'-')+'</option>').join('')
+   ? '<option value="">-- เลือกผู้ขอ --</option>'+activeUsers.map(x=>'<option value="'+esc(x.full_name)+'">'+esc(x.full_name)+(x.department?' — '+esc(x.department):'')+'</option>').join('')
    : '<option value="">ยังไม่มี User ใน Admin</option>';
  if(activeUsers.some(x=>x.full_name===currentUser))requester.value=currentUser;
-
- const approverRoles=['Supervisor','Area Manager','Operation Manager','Finance','Admin'];
- const approvers=activeUsers.filter(x=>approverRoles.includes(x.role));
- const currentApprover=approver.value;
- approver.innerHTML=approvers.length
-   ? '<option value="">-- เลือกผู้อนุมัติ --</option>'+approvers.map(x=>'<option value="'+esc(x.full_name)+'">'+esc(x.full_name)+' — '+esc(x.role||'-')+'</option>').join('')
-   : '<option value="">ยังไม่มีผู้อนุมัติใน Admin</option>';
- if(approvers.some(x=>x.full_name===currentApprover))approver.value=currentApprover;
  onRequesterChange();
- onApproverChange();
+ syncApprovalFromAdmin();
  newNo();
 }
 function onRequesterChange(){
  const user=adminData.users.find(x=>x.active&&x.full_name===requester.value);
- if(!user||!user.branch_code)return;
- const br=adminData.branches.find(x=>x.active&&x.branch_code===user.branch_code);
- if(br)branch.value=br.branch_name;
+ requesterEmail.value=user?.email||'';
+ requesterDepartment.value=user?.department||'';
+ if(user?.branch_code){
+   const br=adminData.branches.find(x=>x.active&&x.branch_code===user.branch_code);
+   if(br)branch.value=br.branch_name;
+ }
+}
+function syncApprovalFromAdmin(){
+ const cfg=getFlowConfig(+amount.value||0);
+ selectedFlow.value=cfg?.name||'';
+ const requiredRole=Array.isArray(cfg?.steps)&&cfg.steps.length?cfg.steps[0]:'';
+ const current=approver.value;
+ let approvers=adminData.users.filter(x=>x.active&&x.email);
+ if(requiredRole)approvers=approvers.filter(x=>x.role===requiredRole);
+ approver.innerHTML=approvers.length
+   ? '<option value="">-- เลือกผู้อนุมัติ --</option>'+approvers.map(x=>'<option value="'+esc(x.full_name)+'">'+esc(x.full_name)+' — '+esc(x.role||'-')+(x.department?' — '+esc(x.department):'')+'</option>').join('')
+   : '<option value="">ยังไม่มีผู้อนุมัติที่ตรงกับ Flow ใน Admin</option>';
+ if(approvers.some(x=>x.full_name===current))approver.value=current;
+ else if(approvers.length===1)approver.value=approvers[0].full_name;
+ onApproverChange();
 }
 function onApproverChange(){
  const u=adminData.users.find(x=>x.active&&x.full_name===approver.value);
- approverEmail.value=u?.email||'';
+ const cfg=getFlowConfig(+amount.value||0);
+ approverEmail.value=cfg?.notification_email||u?.email||'';
 }
 function adminOpen(kind){
  if(kind==='form'){
