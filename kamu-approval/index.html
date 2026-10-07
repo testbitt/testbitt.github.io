@@ -23,6 +23,7 @@ label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px}.field{wid
 .mobile{display:none}
 @media(max-width:900px){.app{grid-template-columns:1fr}.side{display:none}.main{padding:14px}.grid{grid-template-columns:repeat(2,1fr)}.formgrid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.mobile{display:flex;position:sticky;bottom:0;background:white;border-top:1px solid var(--line);padding:8px;gap:6px;overflow:auto}.mobile button{border:0;background:#edf4f1;border-radius:9px;padding:9px 10px;white-space:nowrap}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -65,7 +66,7 @@ label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px}.field{wid
 <div><label>จำนวนเงิน / วงเงิน</label><input id="amount" class="field" type="number" value="0" min="0"></div>
 <div><label>วันที่</label><input id="date" class="field" type="date"></div>
 <div class="full"><label>รายละเอียด</label><textarea id="detail" class="field"></textarea></div>
-<div class="full"><label>ไฟล์แนบ (Prototype)</label><input id="file" class="field" type="file" multiple></div>
+<div class="full"><label>ไฟล์แนบ</label><input id="file" class="field" type="file" multiple accept=".pdf,image/*"><div id="attachmentList" style="margin-top:10px"></div><div style="font-size:12px;color:var(--mut);margin-top:6px">รองรับ PDF และรูปภาพ • สามารถลงลายเซ็นบนไฟล์ก่อนส่งอนุมัติได้</div></div>
 </div>
 <div class="actions"><button class="btn secondary" onclick="preview()">Preview</button><button class="btn primary" onclick="submitReq()">ส่งอนุมัติ</button></div>
 </div>
@@ -95,6 +96,16 @@ label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px}.field{wid
 
 <div id="modal" class="modal"><div class="dialog"><div id="modalBody"></div><div class="actions"><button class="btn secondary" onclick="closeModal()">ปิด</button></div></div></div>
 
+<div id="sigModal" class="modal"><div class="dialog">
+<h2 style="margin-top:0">ลงลายเซ็นบนไฟล์แนบ</h2>
+<div id="sigFileName" style="color:var(--mut);font-size:13px;margin-bottom:10px"></div>
+<label>ชื่อผู้ลงนาม</label><input id="sigSigner" class="field" value="Demo User">
+<div style="margin-top:12px"><label>ลายเซ็น</label>
+<canvas id="sigCanvas" width="640" height="220" style="width:100%;height:220px;border:1px dashed #9fb9ad;border-radius:12px;background:white;touch-action:none"></canvas></div>
+<div class="actions"><button class="btn secondary" onclick="clearSignature()">ล้างลายเซ็น</button><button class="btn primary" onclick="applySignature()">ลงลายเซ็นบนไฟล์</button><button class="btn secondary" onclick="closeSignature()">ยกเลิก</button></div>
+<div style="font-size:12px;color:var(--mut);margin-top:10px">ลายเซ็นจะวางบริเวณมุมขวาล่างของหน้าสุดท้ายสำหรับ PDF หรือมุมขวาล่างของรูปภาพ พร้อมชื่อและวันเวลา</div>
+</div></div>
+
 <script>
 const KEY='kamuApprovalDemoV1', LOGKEY='kamuApprovalDemoLogs';
 let data=JSON.parse(localStorage.getItem(KEY)||'null')||[
@@ -103,6 +114,63 @@ let data=JSON.parse(localStorage.getItem(KEY)||'null')||[
 {id:'KAMU-PO-2026-000103',type:'จัดซื้อ',requester:'Krit',branch:'MEGA BANGNA',amount:8500,status:'รออนุมัติ',stage:'Supervisor',detail:'ซื้ออุปกรณ์',date:'2026-10-08',timeline:[['08/10/2026 08:30','Krit','สร้างเอกสาร']]}
 ];
 let logs=JSON.parse(localStorage.getItem(LOGKEY)||'[]');
+let signedAttachments=[], sigIndex=-1, drawing=false, sigCtx=null;
+const fileInput=document.getElementById('file');
+fileInput.addEventListener('change',renderAttachments);
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function renderAttachments(){
+ const files=[...fileInput.files];
+ attachmentList.innerHTML=files.length?files.map((f,i)=>{
+   const s=signedAttachments[i];
+   return '<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:9px 10px;border:1px solid var(--line);border-radius:10px;margin:6px 0"><div><b>'+esc(f.name)+'</b><div style="font-size:12px;color:var(--mut)">'+(s?'✅ ลงลายเซ็นแล้ว โดย '+esc(s.signer):'ยังไม่ได้ลงลายเซ็น')+'</div></div><div>'+(s?'<a class="btn secondary" style="text-decoration:none" href="'+s.url+'" download="'+esc(s.name)+'">ดาวน์โหลดไฟล์เซ็นแล้ว</a> ':'')+'<button class="btn '+(s?'secondary':'primary')+'" onclick="openSignature('+i+')">'+(s?'เซ็นใหม่':'ลงลายเซ็น')+'</button></div></div>'
+ }).join(''):'';
+}
+function openSignature(i){
+ const files=[...fileInput.files]; if(!files[i])return;
+ sigIndex=i; sigFileName.textContent=files[i].name; sigSigner.value=requester.value||'Demo User'; sigModal.classList.add('show');
+ setTimeout(initSigCanvas,50)
+}
+function closeSignature(){sigModal.classList.remove('show');drawing=false}
+function initSigCanvas(){
+ const cv=document.getElementById('sigCanvas'); sigCtx=cv.getContext('2d'); sigCtx.lineWidth=3; sigCtx.lineCap='round'; sigCtx.strokeStyle='#173128';
+ const pos=e=>{const r=cv.getBoundingClientRect(),p=e.touches?e.touches[0]:e;return [(p.clientX-r.left)*(cv.width/r.width),(p.clientY-r.top)*(cv.height/r.height)]};
+ const start=e=>{e.preventDefault();drawing=true;const [x,y]=pos(e);sigCtx.beginPath();sigCtx.moveTo(x,y)};
+ const move=e=>{if(!drawing)return;e.preventDefault();const [x,y]=pos(e);sigCtx.lineTo(x,y);sigCtx.stroke()};
+ const end=e=>{if(e)e.preventDefault();drawing=false};
+ cv.onmousedown=start;cv.onmousemove=move;window.onmouseup=end;cv.ontouchstart=start;cv.ontouchmove=move;cv.ontouchend=end
+}
+function clearSignature(){const cv=sigCanvas;cv.getContext('2d').clearRect(0,0,cv.width,cv.height)}
+async function applySignature(){
+ const files=[...fileInput.files], file=files[sigIndex]; if(!file)return;
+ const signer=(sigSigner.value||'ผู้ลงนาม').trim(), dt=new Date().toLocaleString('th-TH');
+ const sigPng=sigCanvas.toDataURL('image/png');
+ try{
+   let blob,name;
+   if(file.type==='application/pdf'||/\.pdf$/i.test(file.name)){
+     if(!window.PDFLib)throw new Error('PDF engine not loaded');
+     const bytes=await file.arrayBuffer(); const pdf=await PDFLib.PDFDocument.load(bytes);
+     const png=await pdf.embedPng(sigPng); const page=pdf.getPages()[pdf.getPageCount()-1];
+     const {width}=page.getSize(), sw=125, sh=png.height*(sw/png.width), x=Math.max(20,width-sw-25), y=30;
+     page.drawRectangle({x:x-8,y:y-18,width:sw+16,height:sh+42,color:PDFLib.rgb(1,1,1),opacity:.9});
+     page.drawImage(png,{x,y:y+18,width:sw,height:sh});
+     page.drawText('Signed: '+signer,{x,y:y+7,size:8,color:PDFLib.rgb(.1,.2,.16)});
+     page.drawText(dt,{x,y:y-4,size:7,color:PDFLib.rgb(.35,.4,.38)});
+     blob=new Blob([await pdf.save()],{type:'application/pdf'}); name=file.name.replace(/\.pdf$/i,'')+'_signed.pdf';
+   } else if(file.type.startsWith('image/')){
+     const img=new Image(), src=URL.createObjectURL(file); await new Promise((ok,er)=>{img.onload=ok;img.onerror=er;img.src=src});
+     const cv=document.createElement('canvas');cv.width=img.naturalWidth;cv.height=img.naturalHeight;const x=cv.getContext('2d');x.drawImage(img,0,0);
+     const sImg=new Image();await new Promise((ok,er)=>{sImg.onload=ok;sImg.onerror=er;sImg.src=sigPng});
+     const sw=Math.min(cv.width*.28,320), sh=sImg.height*(sw/sImg.width), px=cv.width-sw-30, py=cv.height-sh-75;
+     x.fillStyle='rgba(255,255,255,.9)';x.fillRect(px-12,py-12,sw+24,sh+74);x.drawImage(sImg,px,py,sw,sh);
+     x.fillStyle='#173128';x.font=Math.max(14,Math.round(cv.width*.012))+'px sans-serif';x.fillText('Signed: '+signer,px,py+sh+25);x.fillText(dt,px,py+sh+48);
+     blob=await new Promise(ok=>cv.toBlob(ok,file.type||'image/png',.95));name=file.name.replace(/(\.[^.]+)$/,'')+'_signed'+(file.name.match(/(\.[^.]+)$/)||['','.png'])[1];URL.revokeObjectURL(src);
+   }else{alert('รองรับเฉพาะ PDF และไฟล์รูปภาพ');return}
+   if(signedAttachments[sigIndex]?.url)URL.revokeObjectURL(signedAttachments[sigIndex].url);
+   signedAttachments[sigIndex]={url:URL.createObjectURL(blob),blob,name,signer,datetime:dt};
+   logs.unshift(dt+' — ลงลายเซ็นไฟล์ '+file.name+' โดย '+signer);
+   localStorage.setItem(LOGKEY,JSON.stringify(logs)); renderAttachments(); closeSignature(); alert('ลงลายเซ็นบนไฟล์เรียบร้อย')
+ }catch(err){console.error(err);alert('ไม่สามารถลงลายเซ็นบนไฟล์นี้ได้ กรุณาลองใหม่')}
+}
 function save(){localStorage.setItem(KEY,JSON.stringify(data));localStorage.setItem(LOGKEY,JSON.stringify(logs));render()}
 function badge(s){let c=s==='อนุมัติแล้ว'?'approved':(s==='ตีกลับ'||s==='ปฏิเสธ')?'returned':s==='กำลังดำเนินการ'?'progress':'pending';return '<span class="badge '+c+'">'+s+'</span>'}
 function go(id){document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));if(id==='create')newNo();render()}
@@ -118,7 +186,7 @@ function closeModal(){modal.classList.remove('show')}
 function submitReq(){
  let a=+amount.value||0, f=flow(a), now=new Date().toLocaleString('th-TH');
  data.unshift({id:no.value,type:type.value,requester:requester.value||'Demo User',branch:branch.value,amount:a,status:'รออนุมัติ',stage:f[0],flow:f,detail:detail.value||'-',date:date.value,timeline:[[now,requester.value||'Demo User','สร้างเอกสารและส่งอนุมัติ']]});
- logs.unshift(now+' — '+no.value+' ถูกสร้างและส่งอนุมัติ');save();detail.value='';amount.value=0;go('documents');alert('ส่งอนุมัติเรียบร้อย')
+ logs.unshift(now+' — '+no.value+' ถูกสร้างและส่งอนุมัติ'+(signedAttachments.length?' พร้อมไฟล์ลงลายเซ็น '+signedAttachments.filter(Boolean).length+' ไฟล์':''));save();detail.value='';amount.value=0;signedAttachments=[];fileInput.value='';renderAttachments();go('documents');alert('ส่งอนุมัติเรียบร้อย')
 }
 function viewReq(id){
  let x=data.find(d=>d.id===id), events=(x.timeline||[]).map(e=>'<div class="event"><b>'+e[2]+'</b><small>'+e[0]+' · '+e[1]+'</small></div>').join('');
