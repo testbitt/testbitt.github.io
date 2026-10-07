@@ -24,6 +24,7 @@ label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px}.field{wid
 @media(max-width:900px){.app{grid-template-columns:1fr}.side{display:none}.main{padding:14px}.grid{grid-template-columns:repeat(2,1fr)}.formgrid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.mobile{display:flex;position:sticky;bottom:0;background:white;border-top:1px solid var(--line);padding:8px;gap:6px;overflow:auto}.mobile button{border:0;background:#edf4f1;border-radius:9px;padding:9px 10px;white-space:nowrap}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 </head>
 <body>
 <div class="app">
@@ -107,17 +108,51 @@ label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px}.field{wid
 </div></div>
 
 <script>
-const KEY='kamuApprovalDemoV1', LOGKEY='kamuApprovalDemoLogs';
-let data=JSON.parse(localStorage.getItem(KEY)||'null')||[
-{id:'KAMU-EXP-2026-000101',type:'ค่าใช้จ่าย',requester:'Somchai',branch:'SILOM',amount:3250,status:'รออนุมัติ',stage:'Area Manager',detail:'ค่าอุปกรณ์หน้าร้าน',date:'2026-10-07',timeline:[['07/10/2026 09:15','Somchai','สร้างเอกสาร'],['07/10/2026 10:32','Supervisor','อนุมัติ']]},
-{id:'KAMU-OT-2026-000102',type:'OT',requester:'Naree',branch:'SIAM',amount:0,status:'อนุมัติแล้ว',stage:'Complete',detail:'ขอ OT ช่วงปิดร้าน',date:'2026-10-06',timeline:[['06/10/2026 17:00','Naree','สร้างเอกสาร'],['06/10/2026 18:00','Supervisor','อนุมัติ']]},
-{id:'KAMU-PO-2026-000103',type:'จัดซื้อ',requester:'Krit',branch:'MEGA BANGNA',amount:8500,status:'รออนุมัติ',stage:'Supervisor',detail:'ซื้ออุปกรณ์',date:'2026-10-08',timeline:[['08/10/2026 08:30','Krit','สร้างเอกสาร']]}
-];
-let logs=JSON.parse(localStorage.getItem(LOGKEY)||'[]');
-let signedAttachments=[], sigIndex=-1, drawing=false, sigCtx=null;
+const SUPABASE_URL='https://hcswjuemjluozmyejhnu.supabase.co';
+const SUPABASE_KEY='sb_publishable_C4yHaRSzzgln3d9lplwIpg_QaWlG4ne';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let data=[], logs=[], signedAttachments=[], sigIndex=-1, drawing=false, sigCtx=null;
 const fileInput=document.getElementById('file');
-fileInput.addEventListener('change',renderAttachments);
-function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function badge(s){let k=s==='อนุมัติแล้ว'?'approved':(s==='ตีกลับ'||s==='ปฏิเสธ')?'returned':s==='กำลังดำเนินการ'?'progress':'pending';return '<span class="badge '+k+'">'+esc(s)+'</span>'}
+function flow(a){a=+a||0;if(a<=1000)return ['Supervisor'];if(a<=5000)return ['Supervisor','Area Manager'];return ['Supervisor','Area Manager','Operation Manager','Finance']}
+function newNo(){document.getElementById('no').value='KAMU-REQ-'+new Date().getFullYear()+'-'+String(Date.now()).slice(-8)}
+document.getElementById('date').value=new Date().toISOString().slice(0,10);newNo();
+
+function go(id){
+ document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
+ if(id==='create')newNo();
+ render();
+}
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.view));
+
+async function loadData(){
+ const {data:rows,error}=await sb.from('kamu_approval_documents').select('*').order('created_at',{ascending:false});
+ if(error){console.error(error);alert('โหลดข้อมูล Online ไม่สำเร็จ: '+error.message);return}
+ data=(rows||[]).map(x=>({...x,id:x.id,amount:Number(x.amount||0)}));
+ render();
+}
+function render(){
+ kAll.textContent=data.length;
+ kPending.textContent=data.filter(x=>x.status==='รออนุมัติ').length;
+ kApproved.textContent=data.filter(x=>x.status==='อนุมัติแล้ว').length;
+ kReturned.textContent=data.filter(x=>x.status==='ตีกลับ').length;
+ recent.innerHTML=data.slice(0,6).map(x=>'<tr><td>'+esc(x.document_no)+'</td><td>'+esc(x.type)+'</td><td>'+esc(x.branch)+'</td><td>'+x.amount.toLocaleString()+'</td><td>'+badge(x.status)+'</td><td><button class="btn secondary" onclick="viewReq(\''+x.id+'\')">เปิด</button></td></tr>').join('');
+ docs.innerHTML=data.map(x=>'<tr><td>'+esc(x.document_no)+'</td><td>'+esc(x.type)+'</td><td>'+esc(x.requester)+'</td><td>'+esc(x.branch)+'</td><td>'+x.amount.toLocaleString()+'</td><td>'+badge(x.status)+'</td><td><button class="btn secondary" onclick="viewReq(\''+x.id+'\')">ดู</button></td></tr>').join('');
+ approvals.innerHTML=data.filter(x=>x.status==='รออนุมัติ').map(x=>'<tr><td>'+esc(x.document_no)+'</td><td>'+esc(x.type)+'</td><td>'+esc(x.requester)+'</td><td>'+esc(x.branch)+'</td><td>'+x.amount.toLocaleString()+'</td><td>'+esc(x.stage)+'</td><td><button class="btn primary" onclick="decide(\''+x.id+'\',\'approve\')">อนุมัติ</button> <button class="btn secondary" onclick="decide(\''+x.id+'\',\'return\')">ตีกลับ</button> <button class="btn secondary" onclick="decide(\''+x.id+'\',\'reject\')">ปฏิเสธ</button></td></tr>').join('');
+ logs.innerHTML=(logs.length?logs:['Activity Log Online จะแสดงจาก Timeline ของแต่ละเอกสาร']).map(x=>'<div style="padding:8px 0;border-bottom:1px solid var(--line)">'+esc(x)+'</div>').join('');
+}
+function preview(){
+ let a=+amount.value||0;
+ modalBody.innerHTML='<h2>Preview เอกสาร</h2><p><b>'+esc(no.value)+'</b></p><p>ประเภท: '+esc(type.value)+'</p><p>ผู้ขอ: '+esc(requester.value)+'</p><p>สาขา: '+esc(branch.value)+'</p><p>วงเงิน: '+a.toLocaleString()+' บาท</p><p>Flow: '+flow(a).join(' → ')+'</p><p>รายละเอียด: '+esc(detail.value||'-')+'</p><p>ไฟล์แนบ: '+fileInput.files.length+' ไฟล์</p>';
+ modal.classList.add('show')
+}
+function closeModal(){modal.classList.remove('show')}
+
+fileInput.addEventListener('change',()=>{signedAttachments=[];renderAttachments()});
 function renderAttachments(){
  const files=[...fileInput.files];
  attachmentList.innerHTML=files.length?files.map((f,i)=>{
@@ -127,89 +162,101 @@ function renderAttachments(){
 }
 function openSignature(i){
  const files=[...fileInput.files]; if(!files[i])return;
- sigIndex=i; sigFileName.textContent=files[i].name; sigSigner.value=requester.value||'Demo User'; sigModal.classList.add('show');
- setTimeout(initSigCanvas,50)
+ sigIndex=i;sigFileName.textContent=files[i].name;sigSigner.value=requester.value||'Demo User';sigModal.classList.add('show');setTimeout(initSigCanvas,50)
 }
 function closeSignature(){sigModal.classList.remove('show');drawing=false}
 function initSigCanvas(){
- const cv=document.getElementById('sigCanvas'); sigCtx=cv.getContext('2d'); sigCtx.lineWidth=3; sigCtx.lineCap='round'; sigCtx.strokeStyle='#173128';
- const pos=e=>{const r=cv.getBoundingClientRect(),p=e.touches?e.touches[0]:e;return [(p.clientX-r.left)*(cv.width/r.width),(p.clientY-r.top)*(cv.height/r.height)]};
- const start=e=>{e.preventDefault();drawing=true;const [x,y]=pos(e);sigCtx.beginPath();sigCtx.moveTo(x,y)};
- const move=e=>{if(!drawing)return;e.preventDefault();const [x,y]=pos(e);sigCtx.lineTo(x,y);sigCtx.stroke()};
+ const cv=document.getElementById('sigCanvas');sigCtx=cv.getContext('2d');sigCtx.lineWidth=3;sigCtx.lineCap='round';sigCtx.strokeStyle='#173128';
+ const pos=e=>{const r=cv.getBoundingClientRect(),p=e.touches?e.touches[0]:e;return[(p.clientX-r.left)*(cv.width/r.width),(p.clientY-r.top)*(cv.height/r.height)]};
+ const start=e=>{e.preventDefault();drawing=true;const[x,y]=pos(e);sigCtx.beginPath();sigCtx.moveTo(x,y)};
+ const move=e=>{if(!drawing)return;e.preventDefault();const[x,y]=pos(e);sigCtx.lineTo(x,y);sigCtx.stroke()};
  const end=e=>{if(e)e.preventDefault();drawing=false};
  cv.onmousedown=start;cv.onmousemove=move;window.onmouseup=end;cv.ontouchstart=start;cv.ontouchmove=move;cv.ontouchend=end
 }
-function clearSignature(){const cv=sigCanvas;cv.getContext('2d').clearRect(0,0,cv.width,cv.height)}
+function clearSignature(){sigCanvas.getContext('2d').clearRect(0,0,sigCanvas.width,sigCanvas.height)}
 async function applySignature(){
- const files=[...fileInput.files], file=files[sigIndex]; if(!file)return;
- const signer=(sigSigner.value||'ผู้ลงนาม').trim(), dt=new Date().toLocaleString('th-TH');
- const sigPng=sigCanvas.toDataURL('image/png');
+ const files=[...fileInput.files],file=files[sigIndex];if(!file)return;
+ const signer=(sigSigner.value||'ผู้ลงนาม').trim(),dt=new Date().toLocaleString('th-TH'),sigPng=sigCanvas.toDataURL('image/png');
  try{
    let blob,name;
    if(file.type==='application/pdf'||/\.pdf$/i.test(file.name)){
      if(!window.PDFLib)throw new Error('PDF engine not loaded');
-     const bytes=await file.arrayBuffer(); const pdf=await PDFLib.PDFDocument.load(bytes);
-     const png=await pdf.embedPng(sigPng); const page=pdf.getPages()[pdf.getPageCount()-1];
-     const {width}=page.getSize(), sw=125, sh=png.height*(sw/png.width), x=Math.max(20,width-sw-25), y=30;
+     const bytes=await file.arrayBuffer(),pdf=await PDFLib.PDFDocument.load(bytes),png=await pdf.embedPng(sigPng),page=pdf.getPages()[pdf.getPageCount()-1];
+     const {width}=page.getSize(),sw=125,sh=png.height*(sw/png.width),x=Math.max(20,width-sw-25),y=30;
      page.drawRectangle({x:x-8,y:y-18,width:sw+16,height:sh+42,color:PDFLib.rgb(1,1,1),opacity:.9});
      page.drawImage(png,{x,y:y+18,width:sw,height:sh});
      page.drawText('Signed: '+signer,{x,y:y+7,size:8,color:PDFLib.rgb(.1,.2,.16)});
      page.drawText(dt,{x,y:y-4,size:7,color:PDFLib.rgb(.35,.4,.38)});
-     blob=new Blob([await pdf.save()],{type:'application/pdf'}); name=file.name.replace(/\.pdf$/i,'')+'_signed.pdf';
-   } else if(file.type.startsWith('image/')){
-     const img=new Image(), src=URL.createObjectURL(file); await new Promise((ok,er)=>{img.onload=ok;img.onerror=er;img.src=src});
+     blob=new Blob([await pdf.save()],{type:'application/pdf'});name=file.name.replace(/\.pdf$/i,'')+'_signed.pdf';
+   }else if(file.type.startsWith('image/')){
+     const img=new Image(),src=URL.createObjectURL(file);await new Promise((ok,er)=>{img.onload=ok;img.onerror=er;img.src=src});
      const cv=document.createElement('canvas');cv.width=img.naturalWidth;cv.height=img.naturalHeight;const x=cv.getContext('2d');x.drawImage(img,0,0);
      const sImg=new Image();await new Promise((ok,er)=>{sImg.onload=ok;sImg.onerror=er;sImg.src=sigPng});
-     const sw=Math.min(cv.width*.28,320), sh=sImg.height*(sw/sImg.width), px=cv.width-sw-30, py=cv.height-sh-75;
+     const sw=Math.min(cv.width*.28,320),sh=sImg.height*(sw/sImg.width),px=cv.width-sw-30,py=cv.height-sh-75;
      x.fillStyle='rgba(255,255,255,.9)';x.fillRect(px-12,py-12,sw+24,sh+74);x.drawImage(sImg,px,py,sw,sh);
      x.fillStyle='#173128';x.font=Math.max(14,Math.round(cv.width*.012))+'px sans-serif';x.fillText('Signed: '+signer,px,py+sh+25);x.fillText(dt,px,py+sh+48);
      blob=await new Promise(ok=>cv.toBlob(ok,file.type||'image/png',.95));name=file.name.replace(/(\.[^.]+)$/,'')+'_signed'+(file.name.match(/(\.[^.]+)$/)||['','.png'])[1];URL.revokeObjectURL(src);
    }else{alert('รองรับเฉพาะ PDF และไฟล์รูปภาพ');return}
    if(signedAttachments[sigIndex]?.url)URL.revokeObjectURL(signedAttachments[sigIndex].url);
-   signedAttachments[sigIndex]={url:URL.createObjectURL(blob),blob,name,signer,datetime:dt};
-   logs.unshift(dt+' — ลงลายเซ็นไฟล์ '+file.name+' โดย '+signer);
-   localStorage.setItem(LOGKEY,JSON.stringify(logs)); renderAttachments(); closeSignature(); alert('ลงลายเซ็นบนไฟล์เรียบร้อย')
- }catch(err){console.error(err);alert('ไม่สามารถลงลายเซ็นบนไฟล์นี้ได้ กรุณาลองใหม่')}
+   signedAttachments[sigIndex]={url:URL.createObjectURL(blob),blob,name,signer,signed_at:new Date().toISOString()};
+   renderAttachments();closeSignature();alert('ลงลายเซ็นบนไฟล์เรียบร้อย')
+ }catch(err){console.error(err);alert('ไม่สามารถลงลายเซ็นบนไฟล์นี้ได้: '+err.message)}
 }
-function save(){localStorage.setItem(KEY,JSON.stringify(data));localStorage.setItem(LOGKEY,JSON.stringify(logs));render()}
-function badge(s){let c=s==='อนุมัติแล้ว'?'approved':(s==='ตีกลับ'||s==='ปฏิเสธ')?'returned':s==='กำลังดำเนินการ'?'progress':'pending';return '<span class="badge '+c+'">'+s+'</span>'}
-function go(id){document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));if(id==='create')newNo();render()}
-document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.view));
-function newNo(){document.getElementById('no').value='KAMU-REQ-2026-'+String(104+data.length).padStart(6,'0')}
-document.getElementById('date').value=new Date().toISOString().slice(0,10);newNo();
-function flow(a){a=+a||0;if(a<=1000)return ['Supervisor'];if(a<=5000)return ['Supervisor','Area Manager'];return ['Supervisor','Area Manager','Operation Manager','Finance']}
-function preview(){
- let a=+amount.value||0;
- modalBody.innerHTML='<h2>Preview เอกสาร</h2><p><b>'+no.value+'</b></p><p>ประเภท: '+type.value+'</p><p>ผู้ขอ: '+requester.value+'</p><p>สาขา: '+branch.value+'</p><p>วงเงิน: '+a.toLocaleString()+' บาท</p><p>Flow: '+flow(a).join(' → ')+'</p><p>รายละเอียด: '+(detail.value||'-')+'</p>';modal.classList.add('show')
+function safeFileName(s){return String(s).replace(/[^a-zA-Z0-9._-]+/g,'_')}
+
+async function submitReq(){
+ const a=+amount.value||0,f=flow(a),btn=event?.target;
+ if(btn){btn.disabled=true;btn.textContent='กำลังส่ง...'}
+ try{
+   const payload={document_no:no.value,type:type.value,requester:requester.value||'Demo User',branch:branch.value,amount:a,status:'รออนุมัติ',stage:f[0],detail:detail.value||'-',request_date:date.value,flow:f};
+   const {data:doc,error}=await sb.from('kamu_approval_documents').insert(payload).select().single(); if(error)throw error;
+   const {error:te}=await sb.from('kamu_approval_timeline').insert({document_id:doc.id,actor:payload.requester,action:'สร้างเอกสารและส่งอนุมัติ'}); if(te)throw te;
+   const files=[...fileInput.files];
+   for(let i=0;i<files.length;i++){
+     const sig=signedAttachments[i],upFile=sig?.blob||files[i],name=sig?.name||files[i].name,path=doc.id+'/'+Date.now()+'_'+i+'_'+safeFileName(name);
+     const {error:ue}=await sb.storage.from('kamu-approval-files').upload(path,upFile,{contentType:upFile.type||files[i].type,upsert:false}); if(ue)throw ue;
+     const {error:ae}=await sb.from('kamu_approval_attachments').insert({document_id:doc.id,file_name:name,storage_path:path,signed:!!sig,signer:sig?.signer||null,signed_at:sig?.signed_at||null}); if(ae)throw ae;
+   }
+   detail.value='';amount.value=0;signedAttachments=[];fileInput.value='';renderAttachments();newNo();await loadData();go('documents');alert('ส่งเอกสาร Online เรียบร้อย')
+ }catch(err){console.error(err);alert('ส่งเอกสารไม่สำเร็จ: '+err.message)}
+ finally{if(btn){btn.disabled=false;btn.textContent='ส่งอนุมัติ'}}
 }
-function closeModal(){modal.classList.remove('show')}
-function submitReq(){
- let a=+amount.value||0, f=flow(a), now=new Date().toLocaleString('th-TH');
- data.unshift({id:no.value,type:type.value,requester:requester.value||'Demo User',branch:branch.value,amount:a,status:'รออนุมัติ',stage:f[0],flow:f,detail:detail.value||'-',date:date.value,timeline:[[now,requester.value||'Demo User','สร้างเอกสารและส่งอนุมัติ']]});
- logs.unshift(now+' — '+no.value+' ถูกสร้างและส่งอนุมัติ'+(signedAttachments.length?' พร้อมไฟล์ลงลายเซ็น '+signedAttachments.filter(Boolean).length+' ไฟล์':''));save();detail.value='';amount.value=0;signedAttachments=[];fileInput.value='';renderAttachments();go('documents');alert('ส่งอนุมัติเรียบร้อย')
+
+async function viewReq(id){
+ const x=data.find(d=>d.id===id);if(!x)return;
+ modalBody.innerHTML='<h2>'+esc(x.document_no)+'</h2><p>กำลังโหลดรายละเอียด...</p>';modal.classList.add('show');
+ const [{data:tl},{data:at}]=await Promise.all([
+   sb.from('kamu_approval_timeline').select('*').eq('document_id',id).order('created_at',{ascending:true}),
+   sb.from('kamu_approval_attachments').select('*').eq('document_id',id).order('created_at',{ascending:true})
+ ]);
+ let events=(tl||[]).map(e=>'<div class="event"><b>'+esc(e.action)+'</b><small>'+new Date(e.created_at).toLocaleString('th-TH')+' · '+esc(e.actor)+(e.note?' · '+esc(e.note):'')+'</small></div>').join('');
+ let files='';
+ for(const a of (at||[])){
+   const {data:signed}=await sb.storage.from('kamu-approval-files').createSignedUrl(a.storage_path,3600);
+   files+='<div style="padding:8px 0;border-bottom:1px solid var(--line)">📎 <b>'+esc(a.file_name)+'</b> '+(a.signed?'<span class="badge approved">ลงลายเซ็นแล้ว</span>':'')+(signed?.signedUrl?' <a target="_blank" href="'+signed.signedUrl+'">เปิดไฟล์</a>':'')+'</div>';
+ }
+ modalBody.innerHTML='<h2>'+esc(x.document_no)+'</h2><p>'+badge(x.status)+'</p><p><b>ประเภท:</b> '+esc(x.type)+' &nbsp; <b>สาขา:</b> '+esc(x.branch)+'</p><p><b>วงเงิน:</b> '+x.amount.toLocaleString()+' บาท</p><p><b>ขั้นตอนปัจจุบัน:</b> '+esc(x.stage)+'</p><p><b>รายละเอียด:</b> '+esc(x.detail||'-')+'</p><h3>ไฟล์แนบ</h3>'+(files||'<p>ไม่มีไฟล์แนบ</p>')+'<h3>Timeline</h3><div class="timeline">'+(events||'<p>ยังไม่มี Timeline</p>')+'</div>'
 }
-function viewReq(id){
- let x=data.find(d=>d.id===id), events=(x.timeline||[]).map(e=>'<div class="event"><b>'+e[2]+'</b><small>'+e[0]+' · '+e[1]+'</small></div>').join('');
- modalBody.innerHTML='<h2>'+x.id+'</h2><p>'+badge(x.status)+'</p><p><b>ประเภท:</b> '+x.type+' &nbsp; <b>สาขา:</b> '+x.branch+'</p><p><b>วงเงิน:</b> '+x.amount.toLocaleString()+' บาท</p><p><b>ขั้นตอนปัจจุบัน:</b> '+x.stage+'</p><p><b>รายละเอียด:</b> '+x.detail+'</p><h3>Timeline</h3><div class="timeline">'+events+'</div>';modal.classList.add('show')
-}
-function decide(id,action){
- let x=data.find(d=>d.id===id), now=new Date().toLocaleString('th-TH'), role=role.value;
+
+async function decide(id,action){
+ const x=data.find(d=>d.id===id);if(!x)return;
+ const actor=role.value;let status=x.status,stage=x.stage,act='';
  if(action==='approve'){
-   let f=x.flow||flow(x.amount), i=f.indexOf(x.stage); if(i<0)i=0;
-   if(i>=f.length-1){x.status='อนุมัติแล้ว';x.stage='Complete'}else{x.stage=f[i+1];x.status='รออนุมัติ'}
-   x.timeline.push([now,role,'อนุมัติ'])
- }else if(action==='return'){x.status='ตีกลับ';x.stage='Requester';x.timeline.push([now,role,'ตีกลับแก้ไข'])}
- else{x.status='ปฏิเสธ';x.stage='Rejected';x.timeline.push([now,role,'ปฏิเสธ'])}
- logs.unshift(now+' — '+id+' — '+action+' โดย '+role);save()
+   const f=Array.isArray(x.flow)?x.flow:flow(x.amount),i=Math.max(0,f.indexOf(x.stage));
+   if(i>=f.length-1){status='อนุมัติแล้ว';stage='Complete'}else{status='รออนุมัติ';stage=f[i+1]}
+   act='อนุมัติ';
+ }else if(action==='return'){status='ตีกลับ';stage='Requester';act='ตีกลับแก้ไข'}
+ else{status='ปฏิเสธ';stage='Rejected';act='ปฏิเสธ'}
+ const {error}=await sb.from('kamu_approval_documents').update({status,stage,updated_at:new Date().toISOString()}).eq('id',id);if(error){alert(error.message);return}
+ await sb.from('kamu_approval_timeline').insert({document_id:id,actor,action:act});
+ await loadData();
 }
-function render(){
- kAll.textContent=data.length;kPending.textContent=data.filter(x=>x.status==='รออนุมัติ').length;kApproved.textContent=data.filter(x=>x.status==='อนุมัติแล้ว').length;kReturned.textContent=data.filter(x=>x.status==='ตีกลับ').length;
- recent.innerHTML=data.slice(0,6).map(x=>'<tr><td>'+x.id+'</td><td>'+x.type+'</td><td>'+x.branch+'</td><td>'+x.amount.toLocaleString()+'</td><td>'+badge(x.status)+'</td><td><button class="btn secondary" onclick="viewReq(\''+x.id+'\')">เปิด</button></td></tr>').join('');
- docs.innerHTML=data.map(x=>'<tr><td>'+x.id+'</td><td>'+x.type+'</td><td>'+x.requester+'</td><td>'+x.branch+'</td><td>'+x.amount.toLocaleString()+'</td><td>'+badge(x.status)+'</td><td><button class="btn secondary" onclick="viewReq(\''+x.id+'\')">ดู</button></td></tr>').join('');
- approvals.innerHTML=data.filter(x=>x.status==='รออนุมัติ').map(x=>'<tr><td>'+x.id+'</td><td>'+x.type+'</td><td>'+x.requester+'</td><td>'+x.branch+'</td><td>'+x.amount.toLocaleString()+'</td><td>'+x.stage+'</td><td><button class="btn primary" onclick="decide(\''+x.id+'\',\'approve\')">อนุมัติ</button> <button class="btn secondary" onclick="decide(\''+x.id+'\',\'return\')">ตีกลับ</button> <button class="btn secondary" onclick="decide(\''+x.id+'\',\'reject\')">ปฏิเสธ</button></td></tr>').join('');
- logs.innerHTML=(logs.length?logs:['ยังไม่มี Activity Log']).map(x=>'<div style="padding:8px 0;border-bottom:1px solid var(--line)">'+x+'</div>').join('')
-}
-render();
+
+sb.channel('kamu-approval-live')
+ .on('postgres_changes',{event:'*',schema:'public',table:'kamu_approval_documents'},()=>loadData())
+ .subscribe();
+
+loadData();
 </script>
 </body>
 </html>
