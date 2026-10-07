@@ -86,6 +86,7 @@ label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px}.field{wid
 <div class="card"><h2>Approval Flow</h2><p><span id="countFlows">0</span> Flow</p><button class="btn primary" onclick="adminOpen('flow')">จัดการ Approval Flow</button></div>
 <div class="card"><h2>Users & Roles</h2><p><span id="countUsers">0</span> ผู้ใช้งาน</p><button class="btn primary" onclick="adminOpen('user')">จัดการ User</button></div>
 <div class="card"><h2>Branches</h2><p><span id="countBranches">0</span> สาขา</p><button class="btn primary" onclick="adminOpen('branch')">จัดการสาขา</button></div>
+<div class="card"><h2>Upload Users</h2><p>นำเข้ารายชื่อ / Email / แผนก</p><button class="btn primary" onclick="adminOpen('upload')">Upload Excel / CSV</button></div>
 </div>
 
 <div id="adminPanel" class="section card">
@@ -118,6 +119,7 @@ const SUPABASE_KEY='sb_publishable_C4yHaRSzzgln3d9lplwIpg_QaWlG4ne';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let data=[], logs=[], signedAttachments=[], sigIndex=-1, drawing=false, sigCtx=null, remoteSignatureTarget=null;
 let adminData={formTypes:[],branches:[],users:[],flows:[]};
+let pendingUserUpload=[];
 const fileInput=document.getElementById('file');
 
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
@@ -429,7 +431,16 @@ function adminOpen(kind){
    adminPanel.innerHTML='<h2>สาขา</h2><div class="formgrid"><div><label>รหัสสาขา</label><input id="admBranchCode" class="field"></div><div><label>ชื่อสาขา</label><input id="admBranchName" class="field"></div><div><label>Supervisor</label><input id="admBranchSup" class="field"></div><div><label>Area Manager</label><input id="admBranchAM" class="field"></div></div><div class="actions"><button class="btn primary" onclick="addBranch()">+ เพิ่มสาขา</button></div><div class="tablewrap section"><table><thead><tr><th>รหัส</th><th>สาขา</th><th>Supervisor</th><th>AM</th><th>สถานะ</th><th></th></tr></thead><tbody>'+adminData.branches.map(x=>'<tr><td>'+esc(x.branch_code)+'</td><td>'+esc(x.branch_name)+'</td><td>'+esc(x.supervisor||'-')+'</td><td>'+esc(x.area_manager||'-')+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="editBranch('+x.id+')">แก้ไข</button> <button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_branches\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_branches\','+x.id+',\'branch\')">ลบ</button></td></tr>').join('')+'</tbody></table></div>';
  } else if(kind==='user'){
    const branches=adminData.branches.map(x=>'<option value="'+esc(x.branch_code)+'">'+esc(x.branch_name)+'</option>').join('');
-   adminPanel.innerHTML='<h2>Users & Roles</h2><div class="formgrid"><div><label>ชื่อผู้ใช้งาน</label><input id="admUserName" class="field"></div><div><label>Email</label><input id="admUserEmail" class="field" type="email" placeholder="name@company.com"></div><div><label>Role</label><select id="admUserRole" class="field" onchange="toggleCustomRole()"><option>Staff</option><option>Team Lead</option><option>Supervisor</option><option>Area Manager</option><option>Operation Manager</option><option>Finance</option><option>Admin</option><option>อื่นๆ</option></select><div id="admCustomRoleWrap" style="display:none;margin-top:8px"><label>ระบุ Role / ตำแหน่งอื่นๆ</label><input id="admCustomRole" class="field" placeholder="พิมพ์ชื่อ Role"></div></div><div><label>สาขา</label><select id="admUserBranch" class="field"><option value="">- ไม่ระบุ -</option>'+branches+'</select></div></div><div class="actions"><button class="btn primary" onclick="addUser()">+ เพิ่ม User</button></div><div class="tablewrap section"><table><thead><tr><th>ชื่อ</th><th>Email</th><th>Role</th><th>สาขา</th><th>สถานะ</th><th></th></tr></thead><tbody>'+adminData.users.map(x=>'<tr><td>'+esc(x.full_name)+'</td><td>'+esc(x.email||'-')+'</td><td>'+esc(x.role)+'</td><td>'+esc(x.branch_code||'-')+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="editUser('+x.id+')">แก้ไข</button> <button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_users\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_users\','+x.id+',\'user\')">ลบ</button></td></tr>').join('')+'</tbody></table></div>';
+   adminPanel.innerHTML='<h2>Users & Roles</h2><div class="formgrid"><div><label>ชื่อผู้ใช้งาน</label><input id="admUserName" class="field"></div><div><label>Email</label><input id="admUserEmail" class="field" type="email" placeholder="name@company.com"></div><div><label>แผนก</label><input id="admUserDepartment" class="field" placeholder="เช่น Operation / Finance / HR"></div><div><label>Role</label><select id="admUserRole" class="field" onchange="toggleCustomRole()"><option>Staff</option><option>Team Lead</option><option>Supervisor</option><option>Area Manager</option><option>Operation Manager</option><option>Finance</option><option>Admin</option><option>อื่นๆ</option></select><div id="admCustomRoleWrap" style="display:none;margin-top:8px"><label>ระบุ Role / ตำแหน่งอื่นๆ</label><input id="admCustomRole" class="field" placeholder="พิมพ์ชื่อ Role"></div></div><div><label>สาขา</label><select id="admUserBranch" class="field"><option value="">- ไม่ระบุ -</option>'+branches+'</select></div></div><div class="actions"><button class="btn primary" onclick="addUser()">+ เพิ่ม User</button></div><div class="tablewrap section"><table><thead><tr><th>ชื่อ</th><th>Email</th><th>แผนก</th><th>Role</th><th>สาขา</th><th>สถานะ</th><th></th></tr></thead><tbody>'+adminData.users.map(x=>'<tr><td>'+esc(x.full_name)+'</td><td>'+esc(x.email||'-')+'</td><td>'+esc(x.department||'-')+'</td><td>'+esc(x.role)+'</td><td>'+esc(x.branch_code||'-')+'</td><td>'+(x.active?'ใช้งาน':'ปิด')+'</td><td><button class="btn secondary" onclick="editUser('+x.id+')">แก้ไข</button> <button class="btn secondary" onclick="toggleAdmin(\'kamu_approval_users\','+x.id+','+(!x.active)+')">'+(x.active?'ปิด':'เปิด')+'</button> <button class="btn secondary" onclick="deleteAdmin(\'kamu_approval_users\','+x.id+',\'user\')">ลบ</button></td></tr>').join('')+'</tbody></table></div>';
+ } else if(kind==='upload'){
+   adminPanel.innerHTML='<h2>Upload Users</h2>'+
+   '<p style="color:var(--mut)">รองรับ Excel (.xlsx/.xls) และ CSV • คอลัมน์ที่ต้องมี: ชื่อผู้ใช้งาน, Email, แผนก</p>'+
+   '<div class="formgrid">'+
+     '<div class="full"><label>เลือกไฟล์</label><input id="adminUploadFile" class="field" type="file" accept=".xlsx,.xls,.csv,text/csv" onchange="previewUserUpload(this.files[0])"></div>'+
+   '</div>'+
+   '<div class="actions"><button class="btn secondary" onclick="downloadUserTemplate()">ดาวน์โหลด Template CSV</button><button id="importUsersBtn" class="btn primary" onclick="importUserUpload()" disabled>นำเข้าข้อมูล</button></div>'+
+   '<div id="uploadSummary" class="section"></div>'+
+   '<div id="uploadPreview" class="tablewrap section"></div>';
  } else if(kind==='flow'){
    const roles=[...new Set(adminData.users.filter(x=>x.active&&x.role).map(x=>x.role))];
    const roleOptions=roles.map(r=>'<option value="'+esc(r)+'">'+esc(r)+'</option>').join('');
@@ -465,11 +476,11 @@ function toggleCustomRole(){
  if(admUserRole.value!=='อื่นๆ' && document.getElementById('admCustomRole'))admCustomRole.value='';
 }
 async function addUser(){
- const full_name=admUserName.value.trim(),email=admUserEmail.value.trim();if(!full_name)return alert('กรอกชื่อผู้ใช้งาน');
+ const full_name=admUserName.value.trim(),email=admUserEmail.value.trim(),department=(admUserDepartment.value||'').trim();if(!full_name)return alert('กรอกชื่อผู้ใช้งาน');
  if(!email)return alert('กรอก Email ผู้ใช้งาน');
  const roleValue=admUserRole.value==='อื่นๆ'?(admCustomRole.value||'').trim():admUserRole.value;
  if(!roleValue)return alert('กรุณาระบุ Role / ตำแหน่งอื่นๆ');
- const {error}=await sb.from('kamu_approval_users').insert({full_name,email,role:roleValue,branch_code:admUserBranch.value||null});if(error)return alert(error.message);
+ const {error}=await sb.from('kamu_approval_users').insert({full_name,email,department:department||null,role:roleValue,branch_code:admUserBranch.value||null});if(error)return alert(error.message);
  await loadAdmin();adminOpen('user');
 }
 function toggleFlowCustomRole(){
@@ -521,6 +532,122 @@ async function saveSimpleFlow(id){
  if(error)return alert(error.message);
  await loadAdmin();adminOpen('flow');
 }
+
+function normalizeHeader(v){
+ return String(v||'').trim().toLowerCase().replace(/[\s._-]+/g,'');
+}
+function mapUploadRow(row){
+ const out={};
+ for(const [k,v] of Object.entries(row||{})){
+   const h=normalizeHeader(k);
+   if(['ชื่อผู้ใช้งาน','ชื่อ','name','fullname','fullชื่อ','employee','พนักงาน'].includes(h))out.full_name=String(v??'').trim();
+   else if(['email','อีเมล','mail','emailaddress'].includes(h))out.email=String(v??'').trim().toLowerCase();
+   else if(['แผนก','department','dept','ฝ่าย'].includes(h))out.department=String(v??'').trim();
+   else if(['role','ตำแหน่ง','position'].includes(h))out.role=String(v??'').trim();
+   else if(['สาขา','branch','branchcode'].includes(h))out.branch_code=String(v??'').trim();
+ }
+ return out;
+}
+function parseCsvText(text){
+ const rows=[];let row=[],cell='',quoted=false;
+ for(let i=0;i<text.length;i++){
+   const ch=text[i],next=text[i+1];
+   if(ch==='"'){
+     if(quoted&&next==='"'){cell+='"';i++}else quoted=!quoted;
+   }else if(ch===','&&!quoted){row.push(cell);cell=''}
+   else if((ch==='\n'||ch==='\r')&&!quoted){
+     if(ch==='\r'&&next==='\n')i++;
+     row.push(cell);cell='';
+     if(row.some(v=>String(v).trim()!==''))rows.push(row);
+     row=[];
+   }else cell+=ch;
+ }
+ if(cell!==''||row.length){row.push(cell);if(row.some(v=>String(v).trim()!==''))rows.push(row)}
+ if(!rows.length)return [];
+ const headers=rows[0].map(v=>String(v).replace(/^\uFEFF/,'').trim());
+ return rows.slice(1).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??''])));
+}
+function loadXlsxLib(){
+ if(window.XLSX)return Promise.resolve();
+ return new Promise((resolve,reject)=>{
+   const s=document.createElement('script');
+   s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+   s.onload=resolve;s.onerror=()=>reject(new Error('โหลดตัวอ่าน Excel ไม่สำเร็จ'));
+   document.head.appendChild(s);
+ });
+}
+async function previewUserUpload(file){
+ pendingUserUpload=[];
+ const btn=document.getElementById('importUsersBtn'),sum=document.getElementById('uploadSummary'),prev=document.getElementById('uploadPreview');
+ if(btn)btn.disabled=true;
+ if(!file){if(sum)sum.innerHTML='';if(prev)prev.innerHTML='';return}
+ try{
+   let raw=[];
+   if(/\.csv$/i.test(file.name)||file.type==='text/csv'){
+     raw=parseCsvText(await file.text());
+   }else{
+     await loadXlsxLib();
+     const buf=await file.arrayBuffer(),wb=XLSX.read(buf,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]];
+     raw=XLSX.utils.sheet_to_json(ws,{defval:''});
+   }
+   pendingUserUpload=raw.map(mapUploadRow).filter(x=>x.full_name||x.email||x.department);
+   const valid=pendingUserUpload.filter(x=>x.full_name&&x.email&&x.department);
+   const invalid=pendingUserUpload.length-valid.length;
+   if(sum)sum.innerHTML='<b>พบ '+pendingUserUpload.length.toLocaleString()+' รายการ</b> • พร้อมนำเข้า '+valid.length.toLocaleString()+' • ข้อมูลไม่ครบ '+invalid.toLocaleString();
+   if(prev)prev.innerHTML='<table><thead><tr><th>#</th><th>ชื่อผู้ใช้งาน</th><th>Email</th><th>แผนก</th><th>สถานะ</th></tr></thead><tbody>'+
+     pendingUserUpload.slice(0,100).map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.full_name||'-')+'</td><td>'+esc(x.email||'-')+'</td><td>'+esc(x.department||'-')+'</td><td>'+(x.full_name&&x.email&&x.department?'<span class="badge approved">พร้อม</span>':'<span class="badge returned">ข้อมูลไม่ครบ</span>')+'</td></tr>').join('')+
+     '</tbody></table>'+(pendingUserUpload.length>100?'<p style="color:var(--mut)">แสดงตัวอย่าง 100 รายการแรก</p>':'');
+   if(btn)btn.disabled=valid.length===0;
+ }catch(err){
+   console.error(err);
+   if(sum)sum.innerHTML='<span style="color:#a33">อ่านไฟล์ไม่สำเร็จ: '+esc(err.message||err)+'</span>';
+   if(prev)prev.innerHTML='';
+ }
+}
+function downloadUserTemplate(){
+ const csv='ชื่อผู้ใช้งาน,Email,แผนก\nตัวอย่าง ผู้ใช้งาน,name@company.com,Operation\n';
+ const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='KAMU_Approval_User_Import_Template.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+async function importUserUpload(){
+ const rows=pendingUserUpload.filter(x=>x.full_name&&x.email&&x.department);
+ if(!rows.length)return alert('ไม่มีข้อมูลที่พร้อมนำเข้า');
+ const btn=document.getElementById('importUsersBtn');if(btn){btn.disabled=true;btn.textContent='กำลังนำเข้า...'}
+ try{
+   const {data:existing,error:ee}=await sb.from('kamu_approval_users').select('id,full_name,email,department,role,branch_code,active');
+   if(ee)throw ee;
+   const map=new Map((existing||[]).filter(x=>x.email).map(x=>[String(x.email).trim().toLowerCase(),x]));
+   const payload=rows.map(r=>{
+     const old=map.get(r.email);
+     return {
+       full_name:r.full_name,
+       email:r.email,
+       department:r.department,
+       role:r.role||old?.role||'Staff',
+       branch_code:r.branch_code||old?.branch_code||null,
+       active:old?.active??true
+     };
+   });
+   let done=0;
+   for(let i=0;i<payload.length;i+=200){
+     const chunk=payload.slice(i,i+200);
+     const {error}=await sb.from('kamu_approval_users').upsert(chunk,{onConflict:'email'});
+     if(error)throw error;
+     done+=chunk.length;
+     if(document.getElementById('uploadSummary'))uploadSummary.innerHTML='<b>กำลังนำเข้า '+done.toLocaleString()+' / '+payload.length.toLocaleString()+' รายการ</b>';
+   }
+   await loadAdmin();
+   if(document.getElementById('uploadSummary'))uploadSummary.innerHTML='<span class="badge approved">นำเข้าสำเร็จ '+payload.length.toLocaleString()+' รายการ</span>';
+   pendingUserUpload=[];
+   if(document.getElementById('uploadPreview'))uploadPreview.innerHTML='';
+   const input=document.getElementById('adminUploadFile');if(input)input.value='';
+   alert('นำเข้ารายชื่อ Email และแผนกเรียบร้อย '+payload.length.toLocaleString()+' รายการ');
+ }catch(err){
+   console.error(err);alert('นำเข้าไม่สำเร็จ: '+(err.message||err));
+ }finally{
+   if(btn){btn.disabled=true;btn.textContent='นำเข้าข้อมูล'}
+ }
+}
 async function toggleAdmin(table,id,active){
  const {error}=await sb.from(table).update({active}).eq('id',id);if(error)return alert(error.message);
  await loadAdmin();
@@ -543,10 +670,11 @@ async function editUser(id){
  const x=adminData.users.find(v=>v.id===id);if(!x)return;
  const full_name=prompt('ชื่อผู้ใช้งาน',x.full_name);if(full_name===null)return;
  const email=prompt('Email',x.email||'');if(email===null)return;
+ const department=prompt('แผนก',x.department||'');if(department===null)return;
  const roleName=prompt('Role / ตำแหน่ง',x.role);if(roleName===null)return;
  if(!roleName.trim())return alert('Role ห้ามว่าง');
  const branchCode=prompt('รหัสสาขา (เว้นว่างได้)',x.branch_code||'');if(branchCode===null)return;
- const {error}=await sb.from('kamu_approval_users').update({full_name,email:email||null,role:roleName.trim(),branch_code:branchCode||null}).eq('id',id);if(error)return alert(error.message);
+ const {error}=await sb.from('kamu_approval_users').update({full_name,email:email||null,department:department||null,role:roleName.trim(),branch_code:branchCode||null}).eq('id',id);if(error)return alert(error.message);
  await loadAdmin();adminOpen('user');
 }
 function getFlowConfig(a){
