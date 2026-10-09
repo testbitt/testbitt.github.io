@@ -86,6 +86,37 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 .cards{grid-template-columns:1fr}.attachment-grid{grid-template-columns:1fr}.brand{font-size:20px}.story{padding:26px 20px}.story h1{margin-bottom:22px}.story-copy p{font-size:16px;line-height:1.72;margin-bottom:18px}.story-logo img{width:min(210px,70vw)}.sheet-body{grid-template-columns:95px 1fr}
 }
 
+/* User table text fit: keep normal table labels/data on one line */
+.view .sheet table{
+  width:100%;
+  table-layout:fixed;
+}
+.view .sheet th,
+.view .sheet td{
+  white-space:nowrap!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+  text-overflow:clip!important;
+  overflow:hidden!important;
+  line-height:1.25!important;
+  vertical-align:middle!important;
+}
+/* Long-form note cells keep readable multiline content */
+.view .sheet td[rowspan],
+.view .sheet .note,
+.view .sheet .user-long-text{
+  white-space:normal!important;
+  overflow:visible!important;
+  overflow-wrap:anywhere!important;
+}
+/* Compact mobile baseline before JS fine-tuning */
+@media(max-width:700px){
+  .view .sheet th,.view .sheet td{font-size:11px;padding:5px 5px}
+}
+@media(max-width:480px){
+  .view .sheet th,.view .sheet td{font-size:10px;padding:4px 4px}
+}
+
 /* Japanese Modern Motion */
 @keyframes yotheFadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 @keyframes yotheFadeIn{from{opacity:0}to{opacity:1}}
@@ -983,8 +1014,8 @@ async function loadView(view){
     if(el)el.innerHTML='<div class="state">'+esc(e.message)+'</div>'
   }
 }
-function renderProduction(rows){const g={};rows.forEach(r=>(g[r.recipe_name||"ไม่ระบุชื่อ"]??=[]).push(r));document.getElementById("productionList").innerHTML=sortGroupedEntries("production",Object.entries(g)).map(([name,items])=>{items=sortDetailRows(items);const img=items.find(x=>x.image_url)?.image_url||"";const noteValues=[...new Set(items.map(x=>String(x.notes||"").trim()).filter(Boolean))];const mergedNote=noteValues.join("\n\n");return '<article class="sheet"><div class="sheet-title">'+esc(name)+'</div>'+(img?'<div class="photo" style="border-right:0;border-bottom:1px solid #d1d5db;min-height:180px"><img src="'+esc(img)+'" alt="'+esc(name)+'"></div>':"")+'<div class="note" style="background:#f3f4f6;color:#111827">Servings: '+esc(items.find(x=>String(x.servings||"").trim())?.servings||"-")+'</div><table><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th><th>หมายเหตุ</th></tr></thead><tbody>'+items.map((x,i)=>'<tr><td>'+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td>'+(i===0?'<td rowspan="'+items.length+'" style="vertical-align:top">'+esc(mergedNote).replace(/\n/g,"<br>")+'</td>':'')+'</tr>').join("")+'</tbody></table></article>'}).join("")||'<div class="state">ยังไม่มีข้อมูล</div>'}
-function renderDrinks(rows,metas){const mm=Object.fromEntries(metas.map(x=>[x.recipe_id,x])),g={};rows.forEach(r=>(g[r.recipe_id]??=[]).push(r));document.getElementById("drinkList").innerHTML=sortGroupedEntries("drinks",Object.entries(g)).map(([id,items])=>{items=sortDetailRows(items);const first=items[0]||{},m=mm[id]||{},tops=items.filter(x=>String(x.component_type||"").toLowerCase()==="topping").map(x=>x.sort_order||9999),ft=tops.length?Math.min(...tops):null;return '<article class="sheet"><div class="sheet-title">'+esc(first.menu_name||id)+'</div><div class="sheet-body"><div class="photo">'+(m.image_url?'<img src="'+esc(m.image_url)+'" alt="'+esc(first.menu_name||id)+'">':'<div class="empty">ยังไม่มีรูป</div>')+'</div><div><table><thead><tr><th>วัตถุดิบ</th><th>'+esc(m.size_label||"17 oz.(IB)")+'</th><th>หน่วย</th><th>หมายเหตุ</th></tr></thead><tbody>'+items.map(x=>'<tr><td>'+(ft!==null&&x.sort_order===ft?'<span class="topping">Topping</span><br>':'')+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td><td>'+esc(x.notes||"").replace(/\n/g,"<br>")+'</td></tr>').join("")+'</tbody></table>'+(m.note?'<div class="note">'+esc(m.note).replace(/\n/g,"<br>")+'</div>':'')+'</div></div></article>'}).join("")||'<div class="state">ยังไม่มีข้อมูล</div>'}
+function renderProduction(rows){const g={};rows.forEach(r=>(g[r.recipe_name||"ไม่ระบุชื่อ"]??=[]).push(r));document.getElementById("productionList").innerHTML=sortGroupedEntries("production",Object.entries(g)).map(([name,items])=>{items=sortDetailRows(items);const img=items.find(x=>x.image_url)?.image_url||"";const noteValues=[...new Set(items.map(x=>String(x.notes||"").trim()).filter(Boolean))];const mergedNote=noteValues.join("\n\n");return '<article class="sheet"><div class="sheet-title">'+esc(name)+'</div>'+(img?'<div class="photo" style="border-right:0;border-bottom:1px solid #d1d5db;min-height:180px"><img src="'+esc(img)+'" alt="'+esc(name)+'"></div>':"")+'<div class="note" style="background:#f3f4f6;color:#111827">Servings: '+esc(items.find(x=>String(x.servings||"").trim())?.servings||"-")+'</div><table><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th><th>หมายเหตุ</th></tr></thead><tbody>'+items.map((x,i)=>'<tr><td>'+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td>'+(i===0?'<td rowspan="'+items.length+'" style="vertical-align:top">'+esc(mergedNote).replace(/\n/g,"<br>")+'</td>':'')+'</tr>').join("")+'</tbody></table></article>'}).join("")||'<div class="state">ยังไม่มีข้อมูล</div>';scheduleUserTableFit()}
+function renderDrinks(rows,metas){const mm=Object.fromEntries(metas.map(x=>[x.recipe_id,x])),g={};rows.forEach(r=>(g[r.recipe_id]??=[]).push(r));document.getElementById("drinkList").innerHTML=sortGroupedEntries("drinks",Object.entries(g)).map(([id,items])=>{items=sortDetailRows(items);const first=items[0]||{},m=mm[id]||{},tops=items.filter(x=>String(x.component_type||"").toLowerCase()==="topping").map(x=>x.sort_order||9999),ft=tops.length?Math.min(...tops):null;return '<article class="sheet"><div class="sheet-title">'+esc(first.menu_name||id)+'</div><div class="sheet-body"><div class="photo">'+(m.image_url?'<img src="'+esc(m.image_url)+'" alt="'+esc(first.menu_name||id)+'">':'<div class="empty">ยังไม่มีรูป</div>')+'</div><div><table><thead><tr><th>วัตถุดิบ</th><th>'+esc(m.size_label||"17 oz.(IB)")+'</th><th>หน่วย</th><th>หมายเหตุ</th></tr></thead><tbody>'+items.map(x=>'<tr><td>'+(ft!==null&&x.sort_order===ft?'<span class="topping">Topping</span><br>':'')+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td><td>'+esc(x.notes||"").replace(/\n/g,"<br>")+'</td></tr>').join("")+'</tbody></table>'+(m.note?'<div class="note">'+esc(m.note).replace(/\n/g,"<br>")+'</div>':'')+'</div></div></article>'}).join("")||'<div class="state">ยังไม่มีข้อมูล</div>';scheduleUserTableFit()}
 function renderToppings(rows){const g={};rows.forEach(r=>{const k=(r.category||"Topping")+" • "+(r.subcategory||"ทั่วไป");(g[k]??=[]).push(r)});document.getElementById("toppingList").innerHTML=sortGroupedEntries("toppings",Object.entries(g)).map(([name,items])=>'<article class="sheet"><div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th>รูป</th><th>รายการ</th><th>จำนวน</th><th>หน่วย</th><th>ราคา</th><th>หมายเหตุ</th></tr></thead><tbody>'+sortDetailRows(items).map(r=>'<tr><td style="width:74px">'+(r.image_url?'<img src="'+esc(r.image_url)+'" style="width:58px;height:58px;object-fit:contain">':"-")+'</td><td>'+esc(r.item_name||r.name||"")+'</td><td class="num">'+esc(r.quantity??"-")+'</td><td class="num">'+esc(r.unit||"-")+'</td><td class="num">'+(r.price_baht!=null?esc(r.price_baht)+" บาท":"-")+'</td><td>'+esc(r.notes||"").replace(/\n/g,"<br>")+'</td></tr>').join("")+'</tbody></table></article>').join("")||'<div class="state">ยังไม่มีข้อมูล</div>'}
 function renderExpiry(rows){
   const order=savedGroupOrder("expiry"),pos=new Map(order.map((k,i)=>[String(k),i]));
@@ -993,10 +1024,10 @@ function renderExpiry(rows){
     const ai=pos.has(ak)?pos.get(ak):999999,bi=pos.has(bk)?pos.get(bk):999999;
     return ai-bi||(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||(Number(a.id)||0)-(Number(b.id)||0);
   });
-  document.getElementById("expiryList").innerHTML=rows.length?'<div class="sheet"><div class="sheet-title">ตารางวันหมดอายุ</div><table><thead><tr><th>รูป</th><th>รายการ</th><th>หมวด</th><th>การจัดเก็บ</th><th>ยังไม่เปิด</th><th>หลังเปิด</th><th>หน่วย</th><th>หมายเหตุ</th></tr></thead><tbody>'+rows.map(r=>'<tr><td style="width:74px">'+(r.image_url?'<img src="'+esc(r.image_url)+'" style="width:58px;height:58px;object-fit:contain">':"-")+'</td><td>'+esc(r.item_name||"")+'</td><td>'+esc(r.category||"")+'</td><td>'+esc(r.storage_condition||"")+'</td><td>'+esc(r.shelf_life_unopened||"-")+'</td><td>'+esc(r.shelf_life_opened||"-")+'</td><td>'+esc(r.unit||"")+'</td><td>'+esc(r.notes||"").replace(/\n/g,"<br>")+'</td></tr>').join("")+'</tbody></table></div>':'<div class="state">ยังไม่มีข้อมูล</div>'}
+  document.getElementById("expiryList").innerHTML=rows.length?'<div class="sheet"><div class="sheet-title">ตารางวันหมดอายุ</div><table><thead><tr><th>รูป</th><th>รายการ</th><th>หมวด</th><th>การจัดเก็บ</th><th>ยังไม่เปิด</th><th>หลังเปิด</th><th>หน่วย</th><th>หมายเหตุ</th></tr></thead><tbody>'+rows.map(r=>'<tr><td style="width:74px">'+(r.image_url?'<img src="'+esc(r.image_url)+'" style="width:58px;height:58px;object-fit:contain">':"-")+'</td><td>'+esc(r.item_name||"")+'</td><td>'+esc(r.category||"")+'</td><td>'+esc(r.storage_condition||"")+'</td><td>'+esc(r.shelf_life_unopened||"-")+'</td><td>'+esc(r.shelf_life_opened||"-")+'</td><td>'+esc(r.unit||"")+'</td><td>'+esc(r.notes||"").replace(/\n/g,"<br>")+'</td></tr>').join("")+'</tbody></table></div>':'<div class="state">ยังไม่มีข้อมูล</div>';scheduleUserTableFit()}
 function renderUniforms(rows){
   const g={};rows.forEach(r=>{(g[r.category||"เครื่องแต่งกาย"]??=[]).push(r)});
-  document.getElementById("uniformList").innerHTML=sortGroupedEntries("uniforms",Object.entries(g)).map(([name,items])=>'<article class="sheet"><div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th>รูป</th><th>รายการ</th><th>ขนาด</th><th>รายละเอียด</th><th>หมายเหตุ</th></tr></thead><tbody>'+sortDetailRows(items).map(r=>'<tr><td style="width:84px">'+(r.image_url?'<img src="'+esc(r.image_url)+'" style="width:68px;height:68px;object-fit:contain">':'-')+'</td><td>'+esc(r.item_name||"")+'</td><td>'+esc(r.size_info||"-")+'</td><td>'+esc(r.description||r.usage_notes||"")+'</td><td>'+esc(r.notes||"").replace(/\n/g,"<br>")+'</td></tr>').join("")+'</tbody></table></article>').join("");
+  document.getElementById("uniformList").innerHTML=sortGroupedEntries("uniforms",Object.entries(g)).map(([name,items])=>'<article class="sheet"><div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th>รูป</th><th>รายการ</th><th>ขนาด</th><th>รายละเอียด</th><th>หมายเหตุ</th></tr></thead><tbody>'+sortDetailRows(items).map(r=>'<tr><td style="width:84px">'+(r.image_url?'<img src="'+esc(r.image_url)+'" style="width:68px;height:68px;object-fit:contain">':'-')+'</td><td>'+esc(r.item_name||"")+'</td><td>'+esc(r.size_info||"-")+'</td><td>'+esc(r.description||r.usage_notes||"")+'</td><td>'+esc(r.notes||"").replace(/\n/g,"<br>")+'</td></tr>').join("")+'</tbody></table></article>').join("");scheduleUserTableFit();
 }
 async function loadAllLessons(){
   const el=document.getElementById("courseList");
@@ -1042,6 +1073,30 @@ function renderCourses(){
     '</article>'
   ).join("")||'<div class="state">ไม่พบบทเรียน</div>';
 }
+function fitUserTableText(root=document){
+  const cells=[...root.querySelectorAll(".view.active .sheet th,.view.active .sheet td")];
+  cells.forEach(el=>{
+    if(el.matches("td[rowspan],.note,.user-long-text"))return;
+    el.style.removeProperty("font-size");
+    el.style.setProperty("white-space","nowrap","important");
+    const base=parseFloat(getComputedStyle(el).fontSize)||12.5;
+    const available=Math.max(1,el.clientWidth-6);
+    const needed=Math.max(1,el.scrollWidth);
+    if(needed<=available+1)return;
+    let size=Math.max(7,Math.min(base,base*(available/needed)*.96));
+    el.style.setProperty("font-size",size+"px","important");
+    // One more correction after layout settles.
+    if(el.scrollWidth>available+1){
+      size=Math.max(6.5,size*(available/Math.max(1,el.scrollWidth))*.97);
+      el.style.setProperty("font-size",size+"px","important");
+    }
+  });
+}
+function scheduleUserTableFit(){
+  requestAnimationFrame(()=>requestAnimationFrame(()=>fitUserTableText(document)));
+}
+window.addEventListener("resize",()=>{clearTimeout(window.__yotheFitTimer);window.__yotheFitTimer=setTimeout(scheduleUserTableFit,120)});
+
 document.getElementById("enterWebsiteBtn").onclick=openLogin;
 document.getElementById("loginScreen").addEventListener("click",e=>{if(e.target===document.getElementById("loginScreen"))closeLogin()});
 document.getElementById("loginForm").addEventListener("submit",async e=>{
