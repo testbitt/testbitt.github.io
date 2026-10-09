@@ -647,6 +647,62 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
   display:block!important;
 }
 
+/* Review Layout text-fit: apply to every Admin review card */
+.a4-preview .a4-page .recipe-table,
+.a4-preview .a4-page table{
+  width:100%!important;
+  max-width:100%!important;
+  table-layout:fixed!important;
+  border-collapse:collapse!important;
+}
+.a4-preview .a4-page .recipe-table th,
+.a4-preview .a4-page table th{
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+  text-align:center!important;
+  vertical-align:middle!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+.a4-preview .a4-page .recipe-table td,
+.a4-preview .a4-page table td{
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:anywhere!important;
+  vertical-align:middle!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+.a4-preview .a4-page .recipe-title,
+.a4-preview .a4-page .recipe-note,
+.a4-preview .a4-page .review-note-block,
+.a4-preview .a4-page .review-note-text,
+.a4-preview .a4-page .edit-row-name{
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:anywhere!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  height:auto!important;
+  max-height:none!important;
+}
+.a4-preview .a4-page .recipe-sheet{
+  overflow:hidden!important;
+}
+.a4-preview .a4-page .edit-content,
+.a4-preview .a4-page .recipe-body,
+.a4-preview .a4-page .recipe-body>div:last-child{
+  min-width:0!important;
+  overflow:visible!important;
+}
+
 /* Review note block */
 .review-note-block{
   margin-top:auto;
@@ -1566,19 +1622,87 @@ function resetReviewCard(card){
 }
 function fitReviewCard(card,cellW,cellH){
   resetReviewCard(card);
-  const r=card.getBoundingClientRect();
-  let naturalW=Math.max(card.scrollWidth,r.width,1);
-  let naturalH=Math.max(card.scrollHeight,r.height,1);
-  card.querySelectorAll(".edit-layout,.edit-sidebar,.edit-content,.recipe-body,.recipe-table,.recipe-note,.layout-photo,.recipe-photo,tr,td,th").forEach(el=>{
-    naturalW=Math.max(naturalW,el.scrollWidth||0);
-  });
-  let scale=Math.min(1,(cellW-2)/naturalW,(cellH-2)/naturalH);
-  if(!Number.isFinite(scale)||scale<=0)scale=1;
-  scale=Math.max(.12,scale*.985);
-  card.style.transform="scale("+scale+")";
+  card.style.transform="none";
   card.style.transformOrigin="top left";
-  card.style.width=(100/scale)+"%";
-  card.dataset.fitScale=scale.toFixed(4);
+  card.style.width="100%";
+  card.style.maxWidth="100%";
+  card.style.height=cellH+"px";
+  card.style.minHeight=cellH+"px";
+  card.style.maxHeight=cellH+"px";
+  card.style.overflow="hidden";
+
+  const title=card.querySelector(".recipe-title");
+  const note=card.querySelector(".recipe-note");
+  const reviewNotes=[...card.querySelectorAll(".review-note-block,.review-note-text")];
+  const cells=[...card.querySelectorAll(".recipe-table th,.recipe-table td, table th, table td")];
+  const sideTexts=[...card.querySelectorAll(".edit-sidebar,.edit-row-name,.btn")];
+  const imgs=[...card.querySelectorAll(".layout-photo img,.recipe-photo img,.table-thumb")];
+
+  // Restore defaults before measuring this card.
+  [...cells,...sideTexts,...reviewNotes].forEach(el=>{
+    el.style.removeProperty("font-size");
+    el.style.removeProperty("line-height");
+    el.style.removeProperty("padding");
+    el.style.removeProperty("letter-spacing");
+  });
+  if(title){title.style.removeProperty("font-size");title.style.removeProperty("line-height");title.style.removeProperty("padding")}
+  if(note){note.style.removeProperty("font-size");note.style.removeProperty("line-height");note.style.removeProperty("padding")}
+  imgs.forEach(img=>img.style.removeProperty("max-height"));
+
+  const applyRatio=(ratio)=>{
+    const tdFont=Math.max(7.2,14*ratio);
+    const tdPy=Math.max(2.5,9*ratio);
+    const tdPx=Math.max(3.5,10*ratio);
+    cells.forEach(el=>{
+      el.style.setProperty("font-size",tdFont+"px","important");
+      el.style.setProperty("line-height",String(Math.max(1.12,1.5*ratio)),"important");
+      el.style.setProperty("padding",tdPy+"px "+tdPx+"px","important");
+      el.style.setProperty("white-space","normal","important");
+      el.style.setProperty("word-break","normal","important");
+      el.style.setProperty("overflow-wrap",el.tagName==="TH"?"normal":"anywhere","important");
+      el.style.setProperty("overflow","visible","important");
+    });
+    sideTexts.forEach(el=>{
+      el.style.setProperty("font-size",Math.max(7,12*ratio)+"px","important");
+      el.style.setProperty("line-height",String(Math.max(1.12,1.35*ratio)),"important");
+    });
+    reviewNotes.forEach(el=>{
+      el.style.setProperty("font-size",Math.max(7.2,12*ratio)+"px","important");
+      el.style.setProperty("line-height",String(Math.max(1.15,1.45*ratio)),"important");
+      el.style.setProperty("padding",Math.max(3,9*ratio)+"px "+Math.max(4,11*ratio)+"px","important");
+    });
+    if(title){
+      title.style.setProperty("font-size",Math.max(11,20*ratio)+"px","important");
+      title.style.setProperty("line-height",String(Math.max(1.15,1.35*ratio)),"important");
+      title.style.setProperty("padding",Math.max(5,12*ratio)+"px "+Math.max(7,14*ratio)+"px","important");
+    }
+    if(note){
+      note.style.setProperty("font-size",Math.max(7.5,13.5*ratio)+"px","important");
+      note.style.setProperty("line-height",String(Math.max(1.15,1.5*ratio)),"important");
+      note.style.setProperty("padding",Math.max(4,10*ratio)+"px "+Math.max(5,12*ratio)+"px","important");
+    }
+    imgs.forEach(img=>img.style.setProperty("max-height",Math.max(55,200*ratio)+"px","important"));
+  };
+
+  // Prefer readable full-size text, then compress spacing/font only as needed.
+  let ratio=1;
+  for(let pass=0;pass<7;pass++){
+    const naturalH=Math.max(card.scrollHeight,1);
+    const naturalW=Math.max(card.scrollWidth,1);
+    const need=Math.min(1,(cellH-2)/naturalH,(cellW-2)/naturalW);
+    if(need>=.995)break;
+    ratio=Math.max(.45,ratio*need*.985);
+    applyRatio(ratio);
+  }
+
+  // Final safety: keep all text visible inside the review cell.
+  for(let guard=0;guard<4 && (card.scrollHeight>cellH+2||card.scrollWidth>cellW+2);guard++){
+    ratio=Math.max(.36,ratio*.90);
+    applyRatio(ratio);
+  }
+
+  card.dataset.fitScale=ratio.toFixed(4);
+  card.dataset.fitOk=(card.scrollHeight<=cellH+2&&card.scrollWidth<=cellW+2)?"1":"0";
 }
 function fitReviewPage(page){
   const content=page.querySelector(".page-content");if(!content)return;
@@ -1624,7 +1748,7 @@ function fitReviewPage(page){
   const cellH=(rect.height-gap*(shape.rows-1))/shape.rows;
 
   cards.forEach(card=>{
-    card.style.alignSelf="start";
+    card.style.alignSelf="stretch";
     card.style.justifySelf="stretch";
     fitReviewCard(card,cellW,cellH);
   });
