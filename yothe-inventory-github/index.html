@@ -103,9 +103,21 @@ const num=x=>Number(String(x??'').replace(/,/g,''))||0;
 function table(rows,columns){if(!rows.length)return '<p class="muted">ยังไม่มีข้อมูล</p>';const keys=columns||Object.keys(rows[0]).slice(0,15);return '<table><thead><tr>'+keys.map(k=>'<th>'+esc(k)+'</th>').join('')+'</tr></thead><tbody>'+rows.slice(0,1000).map(r=>'<tr>'+keys.map(k=>'<td>'+esc(r[k])+'</td>').join('')+'</tr>').join('')+'</tbody></table>'}
 function dashboard(){$('metrics').innerHTML=kinds.map(k=>'<div class="card"><small>'+k.toUpperCase()+'</small><div class="metric">'+state[k].length.toLocaleString()+'</div><small>รายการ</small></div>').join('');$('dataOverview').innerHTML=kinds.map(k=>'<p>'+k.toUpperCase()+': '+state[k].length+' รายการ</p>').join('')}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main section').forEach(s=>s.classList.toggle('hidden',s.id!==b.dataset.page));render()});
-document.querySelectorAll('input[type=file]').forEach(input=>input.addEventListener('change',async()=>{try{let f=input.files[0];if(!f)return;if(!window.XLSX)throw Error('โหลด Excel reader ไม่สำเร็จ');const book=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});const grid=XLSX.utils.sheet_to_json(book.Sheets[book.SheetNames[0]],{header:1,defval:''});let i=grid.findIndex(r=>r.filter(v=>String(v).trim()).length>=3 && r.some(v=>/code|item|qty|quantity|rec|wip|stock|date|branch/i.test(String(v))));if(i<0)i=0;const columns=grid[i].map((x,j)=>String(x||'Column_'+j));const data=grid.slice(i+1).filter(r=>r.some(x=>String(x).trim())).map(r=>Object.fromEntries(columns.map((c,j)=>[c,r[j] instanceof Date?r[j].toISOString().slice(0,10):r[j]])));state[input.dataset.kind]=data;persist(input.dataset.kind);$('feedback').textContent='นำเข้า '+f.name+' สำเร็จ '+data.length+' รายการ • กำลัง Auto Save เป็นข้อมูลส่วนตัวของบัญชีนี้';$('preview').innerHTML=table(data);render()}catch(e){$('feedback').textContent='Upload ไม่สำเร็จ: '+e.message}}));
+document.querySelectorAll('input[type=file]').forEach(input=>input.addEventListener('change',async()=>{try{let f=input.files[0];if(!f)return;if(!window.XLSX)throw Error('โหลด Excel reader ไม่สำเร็จ');const book=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});const grid=XLSX.utils.sheet_to_json(book.Sheets[book.SheetNames[0]],{header:1,defval:''});let i=grid.findIndex(r=>r.filter(v=>String(v).trim()).length>=3 && r.some(v=>/code|item|qty|quantity|rec|wip|stock|date|branch/i.test(String(v))));if(i<0)i=0;const columns=grid[i].map((x,j)=>String(x||'Column_'+j));const data=grid.slice(i+1).filter(r=>r.some(x=>String(x).trim())).map(r=>Object.fromEntries(columns.map((c,j)=>[c,r[j] instanceof Date?r[j].toISOString().slice(0,10):r[j]])));state[input.dataset.kind]=data;persist(input.dataset.kind);if(input.dataset.kind==='stockmovement')syncStockAuditDate();$('feedback').textContent='นำเข้า '+f.name+' สำเร็จ '+data.length+' รายการ • กำลัง Auto Save เป็นข้อมูลส่วนตัวของบัญชีนี้';$('preview').innerHTML=table(data);render()}catch(e){$('feedback').textContent='Upload ไม่สำเร็จ: '+e.message}}));
 function rowBranch(r){return String(get(r,['Branch','Branch Name','Shop','Shop Name','ShopCode','Shop Code','WarehouseName','Warehouse Name','WarehouseCode','Warehouse Code','สาขา'])||'').trim()}
 function rowDate(r){const v=get(r,['Date','Sale Date','Business Date','Delivery Date','DeliveryDate','Date Period','DatePeriod','วันที่']);return v?String(v).slice(0,10):''}
+function stockMovementDates(){
+  return [...new Set((state.stockmovement||[]).map(rowDate).filter(Boolean))].sort();
+}
+function effectiveStockDate(){
+  const dates=stockMovementDates(),selected=$('stockdate')?.value||'';
+  return dates.includes(selected)?selected:(dates.length?dates[dates.length-1]:'');
+}
+function syncStockAuditDate(){
+  const dates=stockMovementDates(),input=$('stockdate');
+  if(!input||!dates.length)return;
+  if(!dates.includes(input.value))input.value=dates[dates.length-1];
+}
 function usage(branch='',date=''){
   const bom=state.bom,sale=state.itemsale,output=new Map(),ds=new Set();
   const filteredSale=sale.filter(r=>{
@@ -133,12 +145,12 @@ function usage(branch='',date=''){
 }
 function stockMovementSummary(branch='',date=''){
   const out=new Map();
-  const filtered=(state.stockmovement||[]).filter(r=>{
-    const rb=rowBranch(r),rd=rowDate(r);
-    const branchOk=!branch||!rb||rb===branch;
-    const dateOk=!date||!rd||rd===date;
-    return branchOk&&dateOk;
-  });
+  const all=(state.stockmovement||[]);
+  const targetDate=(date&&all.some(r=>rowDate(r)===date))?date:effectiveStockDate();
+  // User uploads are already isolated by account in Cloud.
+  // Do not require the branch text inside the Excel file to match the profile branch,
+  // because Warehouse/Shop labels can differ even though the rows belong to this User.
+  const filtered=all.filter(r=>!targetDate||!rowDate(r)||rowDate(r)===targetDate);
   for(const r of filtered){
     const code=String(get(r,['RM Code','RMCode','ItemCode','Item Code','MaterialCode','Code','รหัสวัตถุดิบ'])||'').trim();
     if(!code)continue;
@@ -187,7 +199,7 @@ async function saveUsageSourceGlobal(){
   render();renderUsageSourceControl();
 }
 function auditRows(){
-  const branch=$('branch').value.trim(),date=$('stockdate').value;
+  const branch=$('branch').value.trim(),date=effectiveStockDate();
   const movement=stockMovementSummary(branch,date);
   const usedRows=selectedUsage(branch,date);
   const usageMap=new Map(usedRows.map(r=>[String(r.code),r]));
@@ -216,7 +228,7 @@ function auditRows(){
 function renderAudit(){
   const rows=auditRows(),head=['RM','Description','Unit','B/F','GR','T.In','T.Out','WIP Out','Damage','Waste','Usage Source','Usage','Calc Theory','Report Theory','Actual Stock','Actual Count'];
   $('auditTable').querySelector('thead').innerHTML='<tr>'+head.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr>';
-  $('auditTable').querySelector('tbody').innerHTML=rows.map(r=>'<tr>'+
+  $('auditTable').querySelector('tbody').innerHTML=rows.length?rows.map(r=>'<tr>'+
     '<td>'+esc(r.code)+'</td><td>'+esc(r.desc)+'</td><td>'+esc(r.unit)+'</td>'+
     ['bf','gr','tin','tout','wipout','damage','waste'].map(k=>'<td class="num">'+num(r[k]).toFixed(2).replace(/\.00$/,'')+'</td>').join('')+
     '<td><span class="audit-source">'+esc(r.source)+'</span></td>'+
@@ -224,7 +236,7 @@ function renderAudit(){
     '<td class="num">'+num(r.calcTheory).toFixed(2).replace(/\.00$/,'')+'</td>'+
     '<td class="num">'+num(r.reportTheory).toFixed(2).replace(/\.00$/,'')+'</td>'+
     '<td class="num">'+num(r.actualStock).toFixed(2).replace(/\.00$/,'')+'</td>'+
-    '<td><input class="audit-count" type="number" step="any" data-code="'+esc(r.code)+'" value="'+esc(r.actualCount)+'"></td></tr>').join('');
+    '<td><input class="audit-count" type="number" step="any" data-code="'+esc(r.code)+'" value="'+esc(r.actualCount)+'"></td></tr>').join(''):'<tr><td colspan="16" style="padding:22px;text-align:center;color:#8a2a31;background:#fff7f7!important">ไม่พบรายการ Stock Movement ของ User นี้ กรุณา Upload Stock Movement ใหม่</td></tr>';
   document.querySelectorAll('.audit-count').forEach(inp=>inp.onchange=()=>{const branch=$('branch').value.trim(),date=$('stockdate').value;const code=inp.dataset.code;state.counts=state.counts.filter(c=>String(c.code)!==String(code));if(inp.value!=='')state.counts.push({code,qty:num(inp.value),branch,date});persist('counts')});
 }
 function render(){
@@ -291,6 +303,7 @@ async function loadCloud(){
     const branchInput=document.getElementById('branch');
     if(branchInput && !branchInput.value)branchInput.value=onlineUser.branch;
   }
+  syncStockAuditDate();
   render();
   renderUsageSourceControl();
 }
