@@ -64,12 +64,103 @@ function table(rows,columns){if(!rows.length)return '<p class="muted">ยัง�
 function dashboard(){$('metrics').innerHTML=kinds.map(k=>'<div class="card"><small>'+k.toUpperCase()+'</small><div class="metric">'+state[k].length.toLocaleString()+'</div><small>รายการ</small></div>').join('');$('dataOverview').innerHTML=kinds.map(k=>'<p>'+k.toUpperCase()+': '+state[k].length+' รายการ</p>').join('')}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main section').forEach(s=>s.classList.toggle('hidden',s.id!==b.dataset.page));render()});
 document.querySelectorAll('input[type=file]').forEach(input=>input.addEventListener('change',async()=>{try{let f=input.files[0];if(!f)return;if(!window.XLSX)throw Error('โหลด Excel reader ไม่สำเร็จ');const book=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});const grid=XLSX.utils.sheet_to_json(book.Sheets[book.SheetNames[0]],{header:1,defval:''});let i=grid.findIndex(r=>r.filter(v=>String(v).trim()).length>=3 && r.some(v=>/code|item|qty|quantity|rec|wip|stock|date|branch/i.test(String(v))));if(i<0)i=0;const columns=grid[i].map((x,j)=>String(x||'Column_'+j));const data=grid.slice(i+1).filter(r=>r.some(x=>String(x).trim())).map(r=>Object.fromEntries(columns.map((c,j)=>[c,r[j] instanceof Date?r[j].toISOString().slice(0,10):r[j]])));state[input.dataset.kind]=data;persist(input.dataset.kind);$('feedback').textContent='นำเข้า '+f.name+' สำเร็จ '+data.length+' รายการ (บันทึกเฉพาะเครื่องนี้)';$('preview').innerHTML=table(data);render()}catch(e){$('feedback').textContent='Upload ไม่สำเร็จ: '+e.message}}));
-function usage(){const bom=state.bom,sale=state.itemsale,output=new Map();const ds=new Set();for(const r of sale){const d=get(r,['Date','Sale Date','Business Date','วันที่']);if(d)ds.add(String(d).slice(0,10))}const days=Math.max(1,ds.size);for(const r of sale){const recipe=get(r,['RecCode','RecipeCode','ItemCode','Item Code','ProductCode','รหัสสินค้า']);const sold=num(get(r,['Qty','Quantity','Sale Qty','SaleQty','จำนวน','QuantitySold']));if(!recipe||!sold)continue;for(const b of bom){if(String(get(b,['RecCode','RecipeCode'])).trim()!==String(recipe).trim())continue;const rm=get(b,['ItemCode','RMCode','MaterialCode']);if(!rm)continue;const amount=sold*num(get(b,['Quantity','Qty']));const key=String(rm),p=output.get(key)||{code:key,desc:String(get(b,['ItemDes1','Description','ItemName'])),unit:String(get(b,['UnitDes1','Unit'])),total:0};p.total+=amount;output.set(key,p)}}return [...output.values()].map(x=>({...x,days,perDay:x.total/days}))}
-function render(){dashboard();const rows=usage();$('usageTable').innerHTML=table(rows.map(r=>({'รหัสวัตถุดิบ':r.code,'ชื่อ':r.desc,'ยอดใช้รวม':r.total.toFixed(2),'จำนวนวันที่ขาย':r.days,'ใช้/วัน':r.perDay.toFixed(2),'หน่วย':r.unit})));const codes=new Map();for(const b of state.bom){const code=get(b,['ItemCode','RMCode','MaterialCode']);if(code)codes.set(String(code),{code:String(code),desc:String(get(b,['ItemDes1','Description'])),unit:String(get(b,['UnitDes1','Unit']))})}for(const r of rows)codes.set(r.code,r);const all=[...codes.values()];$('stockTable').innerHTML=all.length?'<table><thead><tr><th>รหัสวัตถุดิบ</th><th>รายละเอียด</th><th>หน่วย</th><th>จำนวนตรวจนับ</th></tr></thead><tbody>'+all.map(x=>'<tr><td>'+esc(x.code)+'</td><td>'+esc(x.desc)+'</td><td>'+esc(x.unit)+'</td><td><input type="number" min="0" step="any" data-code="'+esc(x.code)+'" value="'+esc(state.counts.find(c=>c.code===x.code)?.qty??'')+'"></td></tr>').join('')+'</tbody></table>':'<p class="muted">กรุณา Upload BOM ก่อน</p>'}
+function rowBranch(r){return String(get(r,['Branch','Branch Name','Shop','Shop Name','ShopCode','Shop Code','WarehouseName','Warehouse Name','WarehouseCode','Warehouse Code','สาขา'])||'').trim()}
+function rowDate(r){const v=get(r,['Date','Sale Date','Business Date','Delivery Date','DeliveryDate','Date Period','DatePeriod','วันที่']);return v?String(v).slice(0,10):''}
+function usage(branch='',date=''){
+  const bom=state.bom,sale=state.itemsale,output=new Map(),ds=new Set();
+  const filteredSale=sale.filter(r=>{
+    const rb=rowBranch(r),rd=rowDate(r);
+    const branchOk=!branch||!rb||rb===branch;
+    const dateOk=!date||!rd||rd===date;
+    return branchOk&&dateOk;
+  });
+  for(const r of filteredSale){const d=rowDate(r);if(d)ds.add(d)}
+  const days=Math.max(1,ds.size);
+  for(const r of filteredSale){
+    const recipe=get(r,['RecCode','RecipeCode','ItemCode','Item Code','ProductCode','รหัสสินค้า']);
+    const sold=num(get(r,['Qty','Quantity','Sale Qty','SaleQty','จำนวน','QuantitySold','Total Qty','TotalQty']));
+    if(!recipe||!sold)continue;
+    for(const b of bom){
+      if(String(get(b,['RecCode','RecipeCode'])).trim()!==String(recipe).trim())continue;
+      const rm=get(b,['ItemCode','RMCode','MaterialCode']);
+      if(!rm)continue;
+      const amount=sold*num(get(b,['Quantity','Qty']));
+      const key=String(rm),p=output.get(key)||{code:key,desc:String(get(b,['ItemDes1','Description','ItemName'])),unit:String(get(b,['UnitDes1','Unit'])),total:0};
+      p.total+=amount;output.set(key,p);
+    }
+  }
+  return [...output.values()].map(x=>({...x,days,perDay:x.total/days}));
+}
+function stockMovementSummary(branch='',date=''){
+  const out=new Map();
+  const filtered=(state.stockmovement||[]).filter(r=>{
+    const rb=rowBranch(r),rd=rowDate(r);
+    const branchOk=!branch||!rb||rb===branch;
+    const dateOk=!date||!rd||rd===date;
+    return branchOk&&dateOk;
+  });
+  for(const r of filtered){
+    const code=String(get(r,['RM Code','RMCode','ItemCode','Item Code','MaterialCode','Code','รหัสวัตถุดิบ'])||'').trim();
+    if(!code)continue;
+    const desc=String(get(r,['RM Description','RMDescription','Description','ItemName','Item Name','รายละเอียด'])||'');
+    const unit=String(get(r,['Stock Unit Name','StockUnitName','Stock Unit','StockUnit','Unit','UnitName','หน่วย'])||'');
+    let stock=get(r,['Actual Stock','ActualStock','Stock Qty','StockQty','Stock','Closing Stock','ClosingStock','Balance','ยอดคงเหลือ']);
+    if(stock===''||stock==null){
+      stock=get(r,['Theory Stock','TheoryStock']);
+    }
+    if(stock===''||stock==null){
+      const bf=num(get(r,['B/F','BF']));
+      const gr=num(get(r,['GR']));
+      const tin=num(get(r,['T.In','TIn','Transfer In','TransferIn']));
+      const wipin=num(get(r,['WIP In','WIPIn']));
+      const adjin=num(get(r,['Adj.In','AdjIn']));
+      const rtv=num(get(r,['RTV']));
+      const tout=num(get(r,['T.Out','TOut','Transfer Out','TransferOut']));
+      const wipout=num(get(r,['WIP Out','WIPOut']));
+      const damage=num(get(r,['Damage']));
+      const adjout=num(get(r,['Adj.Out','AdjOut']));
+      stock=bf+gr+tin+wipin+adjin-rtv-tout-wipout-damage-adjout;
+    }else stock=num(stock);
+    const p=out.get(code)||{code,desc,unit,stock:0};
+    p.stock+=num(stock);
+    if(!p.desc&&desc)p.desc=desc;if(!p.unit&&unit)p.unit=unit;
+    out.set(code,p);
+  }
+  return out;
+}
+function render(){
+  dashboard();
+  const branch=$('branch').value.trim();
+  const date=$('stockdate').value;
+  const rows=usage(branch,date);
+  $('usageTable').innerHTML=table(rows.map(r=>({'รหัสวัตถุดิบ':r.code,'ชื่อ':r.desc,'ยอดใช้รวม':r.total.toFixed(2),'จำนวนวันที่ขาย':r.days,'ใช้/วัน':r.perDay.toFixed(2),'หน่วย':r.unit})));
+
+  const movement=stockMovementSummary(branch,date);
+  const usageMap=new Map(rows.map(r=>[String(r.code),r]));
+  const codes=new Map();
+
+  for(const [code,s] of movement)codes.set(code,{code,desc:s.desc,unit:s.unit});
+  for(const b of state.bom){
+    const code=get(b,['ItemCode','RMCode','MaterialCode']);
+    if(code&&!codes.has(String(code)))codes.set(String(code),{code:String(code),desc:String(get(b,['ItemDes1','Description'])),unit:String(get(b,['UnitDes1','Unit']))});
+  }
+  for(const r of rows)if(!codes.has(r.code))codes.set(r.code,r);
+
+  const all=[...codes.values()];
+  $('stockTable').innerHTML=all.length?'<table><thead><tr><th>รหัสวัตถุดิบ</th><th>รายละเอียด</th><th>หน่วย</th><th>StockMovement</th><th>Use ในระบบ</th><th>คงเหลือคำนวณ</th><th>จำนวนตรวจนับ</th></tr></thead><tbody>'+
+    all.map(x=>{
+      const sm=movement.get(String(x.code));
+      const u=usageMap.get(String(x.code));
+      const stock=sm?num(sm.stock):0;
+      const used=u?num(u.total):0;
+      const remain=stock-used;
+      return '<tr><td>'+esc(x.code)+'</td><td>'+esc(x.desc||sm?.desc||'')+'</td><td>'+esc(x.unit||sm?.unit||'')+'</td><td class="num">'+stock.toFixed(2)+'</td><td class="num">'+used.toFixed(2)+'</td><td class="num"><b>'+remain.toFixed(2)+'</b></td><td><input type="number" min="0" step="any" data-code="'+esc(x.code)+'" value="'+esc(state.counts.find(c=>c.code===x.code)?.qty??'')+'"></td></tr>';
+    }).join('')+'</tbody></table>':'<p class="muted">กรุณา Upload Stock Movement / BOM ก่อน</p>';
+}
 $('saveStock').onclick=()=>{const branch=$('branch').value,date=$('stockdate').value;state.counts=[...document.querySelectorAll('#stockTable [data-code]')].filter(x=>x.value!=='').map(x=>({code:x.dataset.code,qty:num(x.value),branch,date}));persist('counts');$('feedback').textContent='บันทึกการตรวจนับในเครื่องนี้แล้ว '+state.counts.length+' รายการ'};
 function csvExport(name,rows){if(!rows.length){$('feedback').textContent='ไม่มีข้อมูลสำหรับ Export';return}const keys=Object.keys(rows[0]);const csv='\ufeff'+[keys,...rows.map(r=>keys.map(k=>r[k]))].map(r=>r.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 $('exportStock').onclick=()=>csvExport('Yothe_Stock_Count.csv',state.counts);
-$('calculate').onclick=()=>{const target=new Date($('targetDate').value+'T00:00:00'),today=new Date();const horizon=Math.max(0,Number.isFinite(target.getTime())?Math.ceil((target-today)/864e5):0)+Math.max(0,num($('safety').value));const rows=usage().map(x=>{const onhand=state.counts.find(c=>c.code===x.code)?.qty??0;return {'รหัสวัตถุดิบ':x.code,'ชื่อ':x.desc,'หน่วย':x.unit,'ใช้ต่อวัน':x.perDay.toFixed(2),'จำนวนวัน':horizon,'สต็อกล่าสุด':onhand,'แนะนำสั่ง':Math.ceil(Math.max(0,x.perDay*horizon-onhand))}});window.plan=rows;$('planTable').innerHTML=table(rows);if(!rows.length)$('feedback').textContent='ต้องมี ItemSales และ BOM ที่จับคู่รหัสได้ก่อน';};$('exportPlan').onclick=()=>csvExport('Yothe_Purchase_Plan.csv',window.plan||[]);
+$('calculate').onclick=()=>{const target=new Date($('targetDate').value+'T00:00:00'),today=new Date();const horizon=Math.max(0,Number.isFinite(target.getTime())?Math.ceil((target-today)/864e5):0)+Math.max(0,num($('safety').value));const branch=$('branch').value.trim(),date=$('stockdate').value,movement=stockMovementSummary(branch,date);const rows=usage(branch,date).map(x=>{const stock=num(movement.get(String(x.code))?.stock||0),remaining=stock-num(x.total);return {'รหัสวัตถุดิบ':x.code,'ชื่อ':x.desc,'หน่วย':x.unit,'ใช้ต่อวัน':x.perDay.toFixed(2),'จำนวนวัน':horizon,'StockMovement':stock.toFixed(2),'Use':num(x.total).toFixed(2),'คงเหลือคำนวณ':remaining.toFixed(2),'แนะนำสั่ง':Math.ceil(Math.max(0,x.perDay*horizon-remaining))}});window.plan=rows;$('planTable').innerHTML=table(rows);if(!rows.length)$('feedback').textContent='ต้องมี ItemSales, BOM และ Stock Movement ที่จับคู่รหัสได้ก่อน';};$('exportPlan').onclick=()=>csvExport('Yothe_Purchase_Plan.csv',window.plan||[]);
 $('stockdate').value=new Date().toISOString().slice(0,10);$('targetDate').value=new Date(Date.now()+7*864e5).toISOString().slice(0,10);render();
 </script><style>
 #yothe-auth{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#fff5f4,#fff 55%,#ffe8e5);display:grid;place-items:center;padding:18px}
@@ -94,6 +185,7 @@ persist=function(k){cloudSave(k).catch(e=>{document.getElementById('feedback').t
 async function listUsers(){try{const q=(await cloud('users')).users;document.getElementById('userList').innerHTML=q.map(u=>'<div style="padding:5px;border-bottom:1px solid #eee">'+u.username+' | '+u.role+' | '+u.branch+' | '+(u.active?'ใช้งาน':'ปิด')+'</div>').join('')}catch(e){document.getElementById('userList').textContent=e.message}}
 document.getElementById('createOnlineUser').onclick=async()=>{try{const username=document.getElementById('newUsername').value.trim(),password=document.getElementById('newPassword').value,branch=document.getElementById('newBranch').value.trim(),role=document.getElementById('newRole').value;await cloud('users','POST',{username,password,branch,role});await listUsers();document.getElementById('feedback').textContent='สร้างผู้ใช้สำเร็จ'}catch(e){document.getElementById('feedback').textContent=e.message}};
 document.querySelector('header').insertAdjacentHTML('beforeend','<div id="cloud-user"></div><button id="cloud-logout" class="secondary">ออกจากระบบ</button>');document.getElementById('cloud-logout').onclick=()=>{sessionStorage.removeItem('yothe_online_token');location.reload()};
+$('branch').addEventListener('input',render);$('stockdate').addEventListener('change',render);
 (async()=>{for(const k of ['bom','wip','itemsale','stockmovement','counts'])state[k]=[];render();if(onlineToken){try{const r=await cloud('me');onlineUser=r.user;await loadCloud();loginBox.hidden=true;document.querySelector('.notice').innerHTML='🟢 <strong>Cloud Database:</strong> เชื่อมต่อออนไลน์สำเร็จ';document.getElementById('cloud-user').textContent=onlineUser.username+' · '+onlineUser.role;if(onlineUser.role!=='admin')document.querySelectorAll('input[data-kind="bom"],input[data-kind="wip"]').forEach(x=>x.disabled=true);else{document.getElementById('adminTools').style.display='block';await listUsers()}}catch(e){onlineToken='';sessionStorage.removeItem('yothe_online_token')}}})();
 </script><style>
 .adminTabs{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.adminTabs button{border:1px solid #ead0d0;border-radius:10px;background:#fff;padding:11px 15px;cursor:pointer}.adminTabs button.active{background:#c62230;color:#fff}.adminPane{padding:12px 0}.adminPane[hidden]{display:none!important}.adminUserRow{display:grid;grid-template-columns:minmax(100px,1fr) 100px minmax(90px,1fr) 90px 150px;gap:8px;align-items:center;margin:8px 0;padding:9px;background:#fff8f8;border-radius:10px}.adminUserRow input,.adminUserRow select{width:100%}@media(max-width:800px){.adminUserRow{grid-template-columns:1fr 1fr}}
