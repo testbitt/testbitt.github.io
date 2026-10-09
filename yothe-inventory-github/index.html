@@ -121,7 +121,7 @@ td{border-bottom:1px solid #f5e0e4!important}
 const kinds=['bom','wip','itemsale','stockmovement'];let usageSource='itemsale';const state={};for(const k of [...kinds,'counts']){try{state[k]=JSON.parse(localStorage.getItem('yothe_demo_'+k)||'null')||[]}catch{state[k]=[]}}
 const $=id=>document.getElementById(id),esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function persist(k){localStorage.setItem('yothe_demo_'+k,JSON.stringify(state[k]))}
-const get=(row,names)=>{let ks=Object.keys(row||{});let exact=ks.find(k=>names.some(n=>k.toLowerCase().replace(/[^a-z0-9ก-๙]/g,'')===n.toLowerCase().replace(/[^a-z0-9ก-๙]/g,'')));return row[exact]??''};
+const get=(row,names)=>{let ks=Object.keys(row||{});let exact=ks.find(k=>names.some(n=>k.toLowerCase().replace(/[^a-z0-9ก-๙]/g,'')===n.toLowerCase().replace(/[^a-z0-9ก-๙]/g,'')));return exact===undefined?'':(row?.[exact]??'')};
 const num=x=>Number(String(x??'').replace(/,/g,''))||0;
 function table(rows,columns){if(!rows.length)return '<p class="muted">ยังไม่มีข้อมูล</p>';const keys=columns||Object.keys(rows[0]).slice(0,15);return '<table><thead><tr>'+keys.map(k=>'<th>'+esc(k)+'</th>').join('')+'</tr></thead><tbody>'+rows.slice(0,1000).map(r=>'<tr>'+keys.map(k=>'<td>'+esc(r[k])+'</td>').join('')+'</tr>').join('')+'</tbody></table>'}
 function dashboard(){$('metrics').innerHTML=kinds.map(k=>'<div class="card"><small>'+k.toUpperCase()+'</small><div class="metric">'+state[k].length.toLocaleString()+'</div><small>รายการ</small></div>').join('');$('dataOverview').innerHTML=kinds.map(k=>'<p>'+k.toUpperCase()+': '+state[k].length+' รายการ</p>').join('')}
@@ -169,7 +169,7 @@ function usage(branch='',date=''){
 function stockMovementSummary(branch='',date=''){
   const out=new Map();
   const all=(state.stockmovement||[]);
-  const targetDate=(date&&all.some(r=>rowDate(r)===date))?date:effectiveStockDate();
+  const targetDate=date||effectiveStockDate();
   // User uploads are already isolated by account in Cloud.
   // Do not require the branch text inside the Excel file to match the profile branch,
   // because Warehouse/Shop labels can differ even though the rows belong to this User.
@@ -269,9 +269,9 @@ function render(){
   $('usageTable').innerHTML='<p class="muted"><b>Usage Source:</b> '+usageSourceLabel()+'</p>'+table(rows.map(r=>({'รหัสวัตถุดิบ':r.code,'ชื่อ':r.desc,'ยอดใช้รวม':r.total.toFixed(2),'จำนวนวันที่ขาย':r.days,'ใช้/วัน':r.perDay.toFixed(2),'หน่วย':r.unit})));
   renderAudit();
 }
-$('saveStock').onclick=async()=>{const branch=$('branch').value.trim(),date=$('stockdate').value;document.querySelectorAll('.audit-count').forEach(x=>{state.counts=state.counts.filter(c=>!(String(c.code)===String(x.dataset.code)&&String(c.branch||'')===String(branch||'')&&String(c.date||'')===String(date||'')));if(x.value!=='')state.counts.push({code:x.dataset.code,qty:num(x.value),branch,date})});persist('counts');$('feedback').textContent='บันทึกผลตรวจนับเป็นประวัติแล้ว '+state.counts.length+' รายการ'};
-$('clearStockCount').onclick=()=>{state.counts=[];persist('counts');renderAudit();$('feedback').textContent='ล้าง Count ของบัญชีนี้แล้ว'};
-$('useReportStock').onclick=()=>{const rows=auditRows();state.counts=rows.map(r=>({code:r.code,qty:r.actualStock,branch:$('branch').value.trim(),date:$('stockdate').value}));persist('counts');renderAudit();$('feedback').textContent='นำ Report Actual Stock มาใช้เป็น Count แล้ว'};
+$('saveStock').onclick=async()=>{const branch=$('branch').value.trim(),date=effectiveStockDate();document.querySelectorAll('.audit-count').forEach(x=>{state.counts=state.counts.filter(c=>!(String(c.code)===String(x.dataset.code)&&String(c.branch||'')===String(branch||'')&&String(c.date||'')===String(date||'')));if(x.value!=='')state.counts.push({code:x.dataset.code,qty:num(x.value),branch,date})});persist('counts');$('feedback').textContent='บันทึกผลตรวจนับเป็นประวัติแล้ว '+state.counts.length+' รายการ'};
+$('clearStockCount').onclick=async()=>{if(!confirm('ต้องการล้างผลตรวจนับทั้งหมดของบัญชีนี้ใช่หรือไม่?'))return;const old=state.counts;state.counts=[];try{await cloudSave('counts');renderAudit();$('feedback').textContent='ล้าง Count ของบัญชีนี้แล้ว'}catch(e){state.counts=old;$('feedback').textContent='ล้างไม่สำเร็จ: '+e.message}};
+$('useReportStock').onclick=async()=>{const rows=auditRows(),branch=$('branch').value.trim(),date=effectiveStockDate();const old=state.counts;const keys=new Set(rows.map(r=>String(r.code)));state.counts=[...old.filter(c=>!(keys.has(String(c.code))&&String(c.branch||'')===branch&&String(c.date||'')===date)),...rows.map(r=>({code:r.code,qty:r.actualStock,branch,date}))];try{await cloudSave('counts');renderAudit();$('feedback').textContent='นำ Report Actual Stock มาใช้เป็น Count แล้ว'}catch(e){state.counts=old;$('feedback').textContent='บันทึกไม่สำเร็จ: '+e.message}};
 $('countTemplate').onclick=()=>csvExport('Yothe_Stock_Count_Template.csv',auditRows().map(r=>[r.code,r.desc,r.unit,'']),['RM','Description','Unit','Actual Count']);
 $('importCount').onclick=()=>$('importCountFile').click();
 $('importCountFile').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const wb=XLSX.read(await f.arrayBuffer(),{type:'array'}),data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});const branch=$('branch').value.trim(),date=$('stockdate').value;for(const r of data){const code=String(get(r,['RM','RM Code','RMCode','Code'])||'').trim(),qty=get(r,['Actual Count','Count','Qty','Quantity']);if(!code||qty==='')continue;state.counts=state.counts.filter(c=>String(c.code)!==code);state.counts.push({code,qty:num(qty),branch,date})}persist('counts');renderAudit();$('feedback').textContent='Import ผลตรวจนับสำเร็จ'}catch(err){$('feedback').textContent='Import ไม่สำเร็จ: '+err.message}};
