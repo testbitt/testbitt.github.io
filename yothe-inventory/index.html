@@ -47,17 +47,22 @@ button,input,select{font:inherit}.app{min-height:100vh}.top{height:70px;backgrou
 <section id="dashboard" class="page active">
  <div class="head"><div><h2>Dashboard / Summary</h2><div class="sub">ภาพรวมสถานะ Inventory ของ YOTHE</div></div></div>
  <div class="grid kpis">
-  <div class="card kpi"><span>RM ทั้งหมด</span><b id="kpiRM">0</b></div><div class="card kpi"><span>Usage Source กำหนดแล้ว</span><b id="kpiSource">0</b></div>
-  <div class="card kpi"><span>Short</span><b>0</b></div><div class="card kpi"><span>Over</span><b>0</b></div>
-  <div class="card kpi"><span>Need Conversion</span><b>0</b></div><div class="card kpi"><span>Variance Cost</span><b>฿0</b></div>
+  <div class="card kpi"><span>RM ทั้งหมด</span><b id="kpiRM">0</b></div>
+  <div class="card kpi"><span>Item Sale Qty</span><b id="kpiItemQty">0</b></div>
+  <div class="card kpi"><span>Net Sales</span><b id="kpiNetSales">฿0</b></div>
+  <div class="card kpi"><span>BOM Product</span><b id="kpiBomProducts">0</b></div>
+  <div class="card kpi"><span>WIP</span><b id="kpiWip">0</b></div>
+  <div class="card kpi"><span>Unit Conversion</span><b id="kpiConversion">0</b></div>
  </div>
- <div class="section-title" style="margin-top:18px">Cup Usage</div>
- <div class="grid three"><div class="card">BOM Usage<div class="empty">0 — รอข้อมูล BOM</div></div><div class="card">Stock Movement<div class="empty">0 — รอ Stock Movement</div></div><div class="card">Item Sale<div class="empty">0 — รอ Item Sale</div></div></div>
- <div class="card" style="margin-top:14px"><div class="section-title">Summary</div><div class="empty"><strong>ยังไม่มีข้อมูลสำหรับสรุป</strong>Summary by Cup Type • Branch • Average / Day • Total • Item Sale Day Count</div></div>
+ <div class="grid two" style="margin-top:14px">
+  <div class="card"><div class="section-title">Data Import Status</div><div id="dashboardDataStatus" class="empty">ยังไม่มีข้อมูล Upload</div></div>
+  <div class="card"><div class="section-title">Stock Summary</div><div id="dashboardStockSummary" class="empty">รอ Stock Movement</div></div>
+ </div>
+ <div class="card" style="margin-top:14px"><div class="section-title">Top Item Sales</div><div id="dashboardTopItems" class="empty">รอ Item Sale</div></div>
 </section>
 
 <section id="upload" class="page">
- <div class="head"><div><h2>Upload Database</h2><div class="sub">สร้างระบบไว้ก่อน และนำไฟล์จริงเข้าภายหลัง</div></div><button class="btn" onclick="downloadTemplate()">Download Required Columns Template</button></div>
+ <div class="head"><div><h2>Upload Database</h2><div class="sub">นำเข้าข้อมูลจริงและใช้คำนวณ Dashboard ทันที</div></div><button class="btn" onclick="downloadTemplate()">Download Required Columns Template</button></div>
  <div class="notice">ระบบนี้ยังไม่ Hard-code Product Code / RM Code / BOM ใด ๆ จาก KAMU โดย Mapping จะสร้างจากไฟล์ Yothe' จริงเท่านั้น</div>
  <div class="grid uploads" style="margin-top:14px" id="uploads"></div><div id="uploadPreview" style="margin-top:16px"></div>
 </section>
@@ -134,6 +139,99 @@ window.addEventListener('error',function(e){
 });
 
 const DB_NAME='yothe-inventory-db', DB_STORE='datasets'; window.yotheData=window.yotheData||{};
+const DATASET_NAMES=['Stock Movement','Item Sale','BOM / Bomb','Unit Conversion','WIP'];
+function num(v){const n=Number(v);return Number.isFinite(n)?n:0}
+function findHeaderRow(sheet,required){
+ const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:null,raw:true});
+ for(let i=0;i<Math.min(rows.length,40);i++){
+  const vals=(rows[i]||[]).map(v=>String(v??'').trim());
+  if(required.every(x=>vals.includes(x)))return i;
+ }
+ return -1;
+}
+function sheetRowsFromHeader(sheet,headerRow){
+ return XLSX.utils.sheet_to_json(sheet,{range:headerRow,defval:null,raw:true});
+}
+function fmtMoney(n){return '฿'+num(n).toLocaleString('th-TH',{maximumFractionDigits:0})}
+function datasetRows(p){
+ if(!p||!p.sheets)return [];
+ return Object.values(p.sheets).flatMap(x=>Array.isArray(x)?x:[]);
+}
+function updateDashboard(){
+ const stock=window.yotheData['yothe-upload-0'];
+ const item=window.yotheData['yothe-upload-1'];
+ const bom=window.yotheData['yothe-upload-2'];
+ const conv=window.yotheData['yothe-upload-3'];
+ const wipSeparate=window.yotheData['yothe-upload-4'];
+
+ const stockRows=datasetRows(stock);
+ const itemRows=datasetRows(item);
+ const recipe=(bom?.sheets?.Recipe)||[];
+ const bombWip=(bom?.sheets?.WIP)||[];
+ const sepWip=datasetRows(wipSeparate);
+ const wipRows=sepWip.length?sepWip:bombWip;
+ const convRows=datasetRows(conv);
+
+ const rmSet=new Set(stockRows.map(r=>r['RM Code']??r.RMCode).filter(Boolean).map(String));
+ if(!rmSet.size){
+  recipe.forEach(r=>{const x=r.ItemCode??r['Item Code'];if(x)rmSet.add(String(x))});
+  wipRows.forEach(r=>{const x=r['RM Item Code']??r.RMCode;if(x)rmSet.add(String(x))});
+ }
+ const itemQty=itemRows.reduce((a,r)=>a+num(r['Total Qty']),0);
+ const netSales=itemRows.reduce((a,r)=>a+num(r['Net Sales']??r['Total Sales']),0);
+ const bomProducts=new Set(recipe.map(r=>r.RecCode??r['Rec Code']).filter(Boolean));
+ const wips=new Set(wipRows.map(r=>r.WipCode??r['WIP Code']).filter(Boolean));
+
+ const setText=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+ setText('kpiRM',rmSet.size.toLocaleString());
+ setText('kpiItemQty',itemQty.toLocaleString('th-TH',{maximumFractionDigits:0}));
+ setText('kpiNetSales',fmtMoney(netSales));
+ setText('kpiBomProducts',bomProducts.size.toLocaleString());
+ setText('kpiWip',wips.size.toLocaleString());
+ setText('kpiConversion',convRows.length.toLocaleString());
+
+ const status=document.getElementById('dashboardDataStatus');
+ if(status){
+  const states=[
+   ['Stock Movement',stockRows.length],['Item Sale',itemRows.length],['BOM',recipe.length],
+   ['WIP',wipRows.length],['Unit Conversion',convRows.length]
+  ];
+  status.className='';
+  status.innerHTML='<div class="tablewrap"><table class="tbl"><thead><tr><th>Data</th><th>Rows</th><th>Status</th></tr></thead><tbody>'+
+   states.map(x=>'<tr><td>'+esc(x[0])+'</td><td>'+x[1].toLocaleString()+'</td><td><span class="tag '+(x[1]?'ok':'warn')+'">'+(x[1]?'พร้อมใช้':'ยังไม่มี')+'</span></td></tr>').join('')+
+   '</tbody></table></div>';
+ }
+ const stockBox=document.getElementById('dashboardStockSummary');
+ if(stockBox){
+  if(stockRows.length){
+   const branches=new Set(stockRows.map(r=>r['Warehouse Code']).filter(Boolean));
+   const actual=stockRows.reduce((a,r)=>a+num(r['Actual Stock']),0);
+   const diff=stockRows.reduce((a,r)=>a+num(r['Diff']),0);
+   const cost=stockRows.reduce((a,r)=>a+num(r['Inventory Cost']),0);
+   stockBox.className='';
+   stockBox.innerHTML='<div class="grid three"><div><div class="muted">Branch</div><b>'+branches.size+'</b></div><div><div class="muted">Actual Stock</div><b>'+actual.toLocaleString('th-TH',{maximumFractionDigits:2})+'</b></div><div><div class="muted">Inventory Cost</div><b>'+fmtMoney(cost)+'</b></div></div><div class="muted" style="margin-top:10px">Diff รวม: '+diff.toLocaleString('th-TH',{maximumFractionDigits:2})+'</div>';
+  }else{stockBox.className='empty';stockBox.textContent='รอ Stock Movement'}
+ }
+ const top=document.getElementById('dashboardTopItems');
+ if(top){
+  if(itemRows.length){
+   const agg=new Map();
+   itemRows.forEach(r=>{
+    const code=String(r['Item Code']??'');
+    if(!code)return;
+    const cur=agg.get(code)||{code,name:r.Description1??r.Description2??'',qty:0,sales:0};
+    cur.qty+=num(r['Total Qty']);cur.sales+=num(r['Net Sales']??r['Total Sales']);agg.set(code,cur);
+   });
+   const rows=[...agg.values()].sort((a,b)=>b.sales-a.sales).slice(0,10);
+   top.className='';
+   top.innerHTML='<div class="tablewrap"><table class="tbl"><thead><tr><th>Item Code</th><th>Item</th><th>Qty</th><th>Net Sales</th></tr></thead><tbody>'+
+    rows.map(r=>'<tr><td>'+esc(r.code)+'</td><td>'+esc(r.name)+'</td><td>'+r.qty.toLocaleString('th-TH',{maximumFractionDigits:0})+'</td><td>'+fmtMoney(r.sales)+'</td></tr>').join('')+
+    '</tbody></table></div>';
+  }else{top.className='empty';top.textContent='รอ Item Sale'}
+ }
+ refreshCountFormData();
+}
+
 function openDB(){
  return new Promise((resolve,reject)=>{
   const req=indexedDB.open(DB_NAME,1);
@@ -278,11 +376,11 @@ function applyDatasetToUI(i,p){
  const bom=window.yotheData['yothe-upload-2'];
  const conv=window.yotheData['yothe-upload-3'];
  renderBomMapping(bom,conv);
- refreshCountFormData();
+ updateDashboard();
 }
 async function restoreUploadedData(){
  const data=[];
- for(let i=0;i<4;i++){
+ for(let i=0;i<5;i++){
   let p=await loadDataset('yothe-upload-'+i);
   if(p){
    // migrate old localStorage data into IndexedDB
@@ -307,10 +405,11 @@ async function restoreUploadedData(){
  renderBomMapping(bom,conv);
 }
 const uploadTypes=[
- ['Stock Movement','.xlsx,.xls,.xlsm','รองรับ Append จากข้อมูลล่าสุดในขั้นเชื่อม Data'],
- ['Item Sale','.xlsx,.xls,.xlsm','ข้อมูลจะแยกตาม User อัตโนมัติ'],
- ['BOM / Bomb','.xlsx,.xls,.xlsm','รองรับ Version / Modified Date / WIP'],
- ['Unit Conversion','.xlsx,.xls,.xlsm','Master กลางตามสิทธิ์']
+ ['Stock Movement','.xlsx,.xls,.xlsm','ใช้ RM / Stock / Cost / Diff ใน Dashboard และ Audit'],
+ ['Item Sale','.xlsx,.xls,.xlsm','ใช้ Qty / Net Sales / Item ใน Dashboard'],
+ ['BOM / Bomb','.xlsx,.xls,.xlsm','ใช้ Recipe สำหรับ Usage / Mapping'],
+ ['Unit Conversion','.xlsx,.xls,.xlsm','ใช้แปลงหน่วย RM'],
+ ['WIP','.xlsx,.xls,.xlsm','ใช้สูตร WIP แยกจาก BOM']
 ];
 function initUploads(){
  const box=document.getElementById('uploads');
@@ -367,6 +466,7 @@ function getAvailableRM(){
  const stock=window.yotheData['yothe-upload-0'];
  const bom=window.yotheData['yothe-upload-2'];
  const conv=window.yotheData['yothe-upload-3'];
+ const wipSeparate=window.yotheData['yothe-upload-4'];
  const map=new Map();
  const add=(x)=>{
   const code=pick(x,['RMCode','RM Code','RM Item Code','Raw Material Code','ItemCode','Item Code','Code']);
@@ -437,7 +537,7 @@ function downloadTemplate(){
 document.addEventListener('DOMContentLoaded',async()=>{
  try{
   initUploads();
-  await restoreUploadedData();
+  await restoreUploadedData();updateDashboard();
   const src=localStorage.getItem('yothe-global-source');
   if(src&&document.getElementById('globalSource'))document.getElementById('globalSource').value=src;
  }catch(e){
