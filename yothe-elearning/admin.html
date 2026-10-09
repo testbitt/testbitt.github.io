@@ -646,6 +646,28 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
   text-align:center!important;
   display:block!important;
 }
+
+/* Review note block */
+.review-note-block{
+  margin-top:auto;
+  border-top:1px solid #e5e7eb;
+  background:#fff8dc;
+  color:#7f1d1d;
+  padding:9px 11px;
+  line-height:1.45;
+  overflow-wrap:anywhere;
+}
+.review-note-title{
+  font-weight:950;
+  margin:0 0 3px;
+  color:#b91c1c;
+}
+.review-note-text{
+  font-weight:700;
+  white-space:pre-wrap;
+}
+.a4-page.dense-review .review-note-block{padding:5px 7px;font-size:10px}
+.a4-page.dense-review .review-note-title{margin-bottom:2px}
 </style>
 </head>
 <body>
@@ -839,7 +861,7 @@ const DATASETS={
   courses:{label:"บทเรียนอื่น ๆ",fields:[
     ["slug","Slug","text"],["category","หมวดหมู่","text"],["title","ชื่อบทเรียน","text"],["description","รายละเอียด","textarea"],
     ["thumbnail_url","รูปภาพ","imageurl"],["estimated_minutes","ระยะเวลา (นาที)","number"],["difficulty","ระดับ","text"],
-    ["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
+    ["notes","หมายเหตุ","textarea"],["is_published","เผยแพร่","boolean"],["sort_order","ลำดับ","number"]
   ]},
   delivery_schedule:{label:"รอบการสั่งสินค้า",fields:[
     ["supplier_name","ชื่อ Supplier","text"],["image_url","รูปภาพ","imageurl"],["theme_color","สีประจำ Supplier","text"],
@@ -1832,11 +1854,19 @@ function renderDeliveryScheduleSheets(){
       '<button class="btn danger" onclick="deleteRow('+r.id+')">ลบ</button></aside>'+
       '<div class="edit-content">'+(r.image_url?'<div class="layout-photo"><img src="'+esc(r.image_url)+'" alt="'+esc(r.supplier_name||"Supplier")+'"></div>':'')+'<table class="recipe-table"><thead><tr><th>วัน</th><th>เวลาสั่ง</th><th>รอบส่งสินค้า</th><th>เวลาส่ง</th></tr></thead><tbody>'+
       days.map(([k,d])=>'<tr><td><strong>'+d+'</strong></td><td>'+esc(r[k+"_order_time"]||"-")+'</td><td>'+esc(r[k+"_delivery_round"]||"-")+'</td><td>'+esc(r[k+"_delivery_time"]||"-")+'</td></tr>').join("")+
-      '</tbody></table>'+(r.notes?'<div class="recipe-note">'+esc(r.notes)+'</div>':'')+'</div></div></article>'
+      '</tbody></table>'+reviewNoteHtml(r.notes)+'</div></div></article>'
     ).join("")+
     '</div></section>'
   ).join("")+'</div>';
   scheduleReviewFit();
+}
+function reviewNoteHtml(value){
+  const text=String(value??"").trim();
+  return text?'<div class="review-note-block"><div class="review-note-title">หมายเหตุ</div><div class="review-note-text">'+esc(text)+'</div></div>':"";
+}
+function reviewGroupNote(items=[]){
+  const row=items.find(x=>String(x?.notes??"").trim());
+  return row?.notes||"";
 }
 function renderProductionSheets(){
   const groups={};rows.forEach(r=>{(groups[r.recipe_name||"ไม่ระบุชื่อ"]??=[]).push(r)});
@@ -1854,6 +1884,7 @@ function renderProductionSheets(){
       <div class="recipe-note" style="background:#f3f4f6;color:#111827">Servings: ${esc(items.find(x=>String(x.servings||"").trim())?.servings||"-")}</div>
       <table class="recipe-table"><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th></tr></thead>
       <tbody>${items.map(r=>`<tr><td>${esc(r.ingredient||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td></tr>`).join("")}</tbody></table>
+      ${reviewNoteHtml(reviewGroupNote(items))}
     </div></div></article>`});
 }
 window.addProductionRow=name=>{const first=rows.find(x=>x.recipe_name===name)||{};openEditor({record_id:"PROD-"+Date.now(),source_page:first.source_page||null,category:first.category||"",recipe_name:name,ingredient:"",quantity:null,unit:"g",is_published:true})};
@@ -1871,6 +1902,7 @@ function renderToppingSheets(){
     </aside><div class="edit-content">
       <table class="recipe-table"><thead><tr><th>รูป</th><th>รายการ</th><th>จำนวน</th><th>หน่วย</th><th>ราคา</th></tr></thead>
       <tbody>${items.map(r=>`<tr><td>${r.image_url?'<img class="table-thumb" src="'+esc(r.image_url)+'" alt="'+esc(r.item_name||r.name||"")+'">':'-'}</td><td>${esc(r.item_name||r.name||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td><td>${r.price_baht!=null?esc(r.price_baht)+" บาท":"-"}</td></tr>`).join("")}</tbody></table>
+      ${reviewNoteHtml(reviewGroupNote(items))}
     </div></div></article>`});
 }
 function renderExpirySheets(){
@@ -1887,6 +1919,7 @@ function renderExpirySheets(){
     </aside><div class="edit-content">
       <table class="recipe-table"><thead><tr><th>รูป</th><th>รายการ</th><th>การจัดเก็บ</th><th>ยังไม่เปิด</th><th>หลังเปิด</th></tr></thead>
       <tbody>${items.map(r=>`<tr><td>${r.image_url?'<img class="table-thumb" src="'+esc(r.image_url)+'" alt="'+esc(r.item_name||"")+'">':'-'}</td><td>${esc(r.item_name||"")}</td><td>${esc(r.storage_condition||"")}</td><td>${esc(r.shelf_life_unopened||"-")}</td><td>${esc(r.shelf_life_opened||"-")}</td></tr>`).join("")}</tbody></table>
+      ${reviewNoteHtml(reviewGroupNote(items))}
     </div></div></article>`});
 }
 function renderUniformSheets(){
@@ -1903,6 +1936,7 @@ function renderUniformSheets(){
     </aside><div class="edit-content">
       <table class="recipe-table"><thead><tr><th>รูป</th><th>รายการ</th><th>ขนาด</th><th>รายละเอียด</th></tr></thead>
       <tbody>${items.map(r=>`<tr><td>${r.image_url?'<img class="table-thumb" src="'+esc(r.image_url)+'" alt="'+esc(r.item_name||"")+'">':'-'}</td><td>${esc(r.item_name||"")}</td><td>${esc(r.size_info||"-")}</td><td>${esc(r.description||r.usage_notes||"")}</td></tr>`).join("")}</tbody></table>
+      ${reviewNoteHtml(reviewGroupNote(items))}
     </div></div></article>`});
 }
 
@@ -1926,6 +1960,7 @@ function renderCourseSheets(){
           <tr><th>ระยะเวลา</th><td>${r.estimated_minutes?esc(r.estimated_minutes)+" นาที":"-"}</td></tr>
           <tr><th>ระดับ</th><td>${esc(r.difficulty||"-")}</td></tr>
         </tbody></table>
+        ${reviewNoteHtml(r.notes)}
       </div></div>
     </article>`).join("")+'</div></section>').join("")+'</div>';
   initLayoutCardDrag();scheduleReviewFit();
@@ -1961,7 +1996,7 @@ function renderDrinkSheets(){
           <div class="recipe-photo">${img?'<img src="'+esc(img)+'" alt="'+esc(first.menu_name||recipeId)+'">':'<div class="empty-photo">ยังไม่มีรูป</div>'}</div>
           <div><table class="recipe-table"><thead><tr><th>วัตถุดิบ</th><th>${esc(size)}</th><th>หน่วย</th></tr></thead>
           <tbody>${items.map(r=>`<tr class="${String(r.component_type||"").toLowerCase()==="topping"?"topping-row":""}"><td>${firstTop!==null&&r.sort_order===firstTop?'<strong>Topping</strong><br>':""}${esc(r.ingredient||"")}</td><td>${esc(r.quantity??"-")}</td><td>${esc(r.unit||"-")}</td></tr>`).join("")}</tbody></table>
-          ${note?'<div class="recipe-note">'+esc(note)+'</div>':""}</div>
+          ${reviewNoteHtml(note)}</div>
         </div>
       </div></div>
     </article>`;
