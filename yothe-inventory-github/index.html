@@ -235,7 +235,7 @@ function auditRows(){
       const u=usageMap.get(String(m.code));
       const usageQty=u?num(u.total):0;
       const calcTheory=num(m.bf)+num(m.gr)+num(m.tin)-num(m.tout)-num(m.wipout)-num(m.damage)-num(m.waste)-usageQty;
-      const count=state.counts.find(c=>String(c.code)===String(m.code));
+      const count=state.counts.find(c=>String(c.code)===String(m.code)&&String(c.branch||'')===String(branch||'')&&String(c.date||'')===String(date||''));
       return {
         code:String(m.code),
         desc:m.desc||'',
@@ -260,7 +260,7 @@ function renderAudit(){
     '<td class="num">'+num(r.reportTheory).toFixed(2).replace(/\.00$/,'')+'</td>'+
     '<td class="num">'+num(r.actualStock).toFixed(2).replace(/\.00$/,'')+'</td>'+
     '<td><input class="audit-count" type="number" step="any" data-code="'+esc(r.code)+'" value="'+esc(r.actualCount)+'"></td></tr>').join(''):'<tr><td colspan="16" style="padding:22px;text-align:center;color:#8a2a31;background:#fff7f7!important">ไม่พบรายการ Stock Movement ของ User นี้ กรุณา Upload Stock Movement ใหม่</td></tr>';
-  document.querySelectorAll('.audit-count').forEach(inp=>inp.onchange=()=>{const branch=$('branch').value.trim(),date=$('stockdate').value;const code=inp.dataset.code;state.counts=state.counts.filter(c=>String(c.code)!==String(code));if(inp.value!=='')state.counts.push({code,qty:num(inp.value),branch,date});persist('counts')});
+  document.querySelectorAll('.audit-count').forEach(inp=>inp.onchange=()=>{const branch=$('branch').value.trim(),date=$('stockdate').value;const code=inp.dataset.code;state.counts=state.counts.filter(c=>!(String(c.code)===String(code)&&String(c.branch||'')===String(branch||'')&&String(c.date||'')===String(date||'')));if(inp.value!=='')state.counts.push({code,qty:num(inp.value),branch,date});persist('counts')});
 }
 function render(){
   dashboard();
@@ -269,7 +269,7 @@ function render(){
   $('usageTable').innerHTML='<p class="muted"><b>Usage Source:</b> '+usageSourceLabel()+'</p>'+table(rows.map(r=>({'รหัสวัตถุดิบ':r.code,'ชื่อ':r.desc,'ยอดใช้รวม':r.total.toFixed(2),'จำนวนวันที่ขาย':r.days,'ใช้/วัน':r.perDay.toFixed(2),'หน่วย':r.unit})));
   renderAudit();
 }
-$('saveStock').onclick=async()=>{const branch=$('branch').value.trim(),date=$('stockdate').value;document.querySelectorAll('.audit-count').forEach(x=>{state.counts=state.counts.filter(c=>String(c.code)!==String(x.dataset.code));if(x.value!=='')state.counts.push({code:x.dataset.code,qty:num(x.value),branch,date})});persist('counts');$('feedback').textContent='บันทึกผลตรวจนับเป็นประวัติแล้ว '+state.counts.length+' รายการ'};
+$('saveStock').onclick=async()=>{const branch=$('branch').value.trim(),date=$('stockdate').value;document.querySelectorAll('.audit-count').forEach(x=>{state.counts=state.counts.filter(c=>!(String(c.code)===String(x.dataset.code)&&String(c.branch||'')===String(branch||'')&&String(c.date||'')===String(date||'')));if(x.value!=='')state.counts.push({code:x.dataset.code,qty:num(x.value),branch,date})});persist('counts');$('feedback').textContent='บันทึกผลตรวจนับเป็นประวัติแล้ว '+state.counts.length+' รายการ'};
 $('clearStockCount').onclick=()=>{state.counts=[];persist('counts');renderAudit();$('feedback').textContent='ล้าง Count ของบัญชีนี้แล้ว'};
 $('useReportStock').onclick=()=>{const rows=auditRows();state.counts=rows.map(r=>({code:r.code,qty:r.actualStock,branch:$('branch').value.trim(),date:$('stockdate').value}));persist('counts');renderAudit();$('feedback').textContent='นำ Report Actual Stock มาใช้เป็น Count แล้ว'};
 $('countTemplate').onclick=()=>csvExport('Yothe_Stock_Count_Template.csv',auditRows().map(r=>[r.code,r.desc,r.unit,'']),['RM','Description','Unit','Actual Count']);
