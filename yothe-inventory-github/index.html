@@ -51,14 +51,14 @@ td,.tablebox{background:#fff!important}
 .audit-title h2{margin:0!important;color:#183b2b!important;font-size:22px}.audit-title .muted{color:#5f7f6c}
 .audit-actions{display:flex;gap:8px;flex-wrap:wrap}.audit-actions button{border-radius:13px!important;padding:9px 13px!important;font-weight:800!important}
 .audit-actions .green{background:#238a55!important;color:#fff!important;border:1px solid #238a55!important;box-shadow:0 3px 8px rgba(35,138,85,.2)!important}
-#auditTableWrap{border:1px solid #cfe6d7;border-radius:15px;overflow:auto;background:#fff}
+#auditTableWrap{border:1px solid #e8b6ba;border-radius:15px;overflow:auto;background:#fff}
 #auditTable{min-width:1450px;border-collapse:separate;border-spacing:0}
-#auditTable th{position:sticky;top:0;z-index:2;background:#e9f7ee!important;color:#24543c!important;border-bottom:1px solid #cfe6d7;padding:9px 10px;text-align:center;white-space:nowrap}
-#auditTable td{padding:9px 10px;border-bottom:1px solid #e3efe7;background:#fff!important;white-space:nowrap}
+#auditTable th{position:sticky;top:0;z-index:2;background:#c91f2a!important;color:#fff!important;border-bottom:1px solid #a91520;padding:9px 10px;text-align:center;white-space:nowrap}
+#auditTable td{padding:9px 10px;border-bottom:1px solid #f0d6d8;background:#fff!important;white-space:nowrap}
 #auditTable td:first-child,#auditTable td:nth-child(2),#auditTable td:nth-child(3){text-align:left}
 #auditTable .num{text-align:right;font-variant-numeric:tabular-nums}
-#auditTable .usage-col{background:#eefaf2!important;color:#147645;font-weight:800}
-.audit-source{display:inline-flex;padding:4px 9px;border-radius:999px;background:#edf8f1;color:#176d43;font-weight:900;font-size:11px}
+#auditTable .usage-col{background:#fff1f2!important;color:#b91c26;font-weight:900}
+.audit-source{display:inline-flex;padding:4px 9px;border-radius:999px;background:#fde8ea;color:#b91c26;font-weight:900;font-size:11px}
 .audit-count{width:95px;min-width:85px;padding:7px 8px!important;border:1px solid #b9d9c4!important;border-radius:10px!important;text-align:right}
 #auditHistory{margin-top:12px}
 @media(max-width:800px){.audit-actions{width:100%}.audit-actions button{flex:1 1 140px}#auditCard{padding:12px!important}.audit-title h2{font-size:19px}}
@@ -72,7 +72,7 @@ td,.tablebox{background:#fff!important}
   <div class="card"><div class="row"><div><label>ชื่อสาขา</label><input id="branch" placeholder="ชื่อสาขา"></div><div><label>วันที่ตรวจนับ</label><input id="stockdate" type="date"></div></div></div>
   <div class="card" id="auditCard">
     <div class="audit-head">
-      <div class="audit-title"><div class="audit-icon">🧮</div><div><h2>Inventory Audit</h2><div class="muted">Actual Count บันทึกอัตโนมัติตาม User + สาขา + RM</div></div></div>
+      <div class="audit-title"><div class="audit-icon">🧮</div><div><h2>Inventory Audit</h2><div class="muted">แสดงรายการจาก Stock Movement ที่ User ปัจจุบัน Upload • Actual Count บันทึกอัตโนมัติตาม User + สาขา + RM</div></div></div>
       <div class="audit-actions">
         <input id="importCountFile" type="file" accept=".xlsx,.xls,.csv" hidden>
         <button class="secondary" id="importCount">⬆️ Import ผลตรวจนับ</button>
@@ -191,20 +191,27 @@ function auditRows(){
   const movement=stockMovementSummary(branch,date);
   const usedRows=selectedUsage(branch,date);
   const usageMap=new Map(usedRows.map(r=>[String(r.code),r]));
-  const codes=new Map();
-  for(const [code,s] of movement)codes.set(code,{code,desc:s.desc,unit:s.unit});
-  for(const b of state.bom){
-    const code=get(b,['ItemCode','RMCode','MaterialCode']);
-    if(code&&!codes.has(String(code)))codes.set(String(code),{code:String(code),desc:String(get(b,['ItemDes1','Description'])),unit:String(get(b,['UnitDes1','Unit']))});
-  }
-  for(const r of usedRows)if(!codes.has(String(r.code)))codes.set(String(r.code),r);
-  return [...codes.values()].sort((a,b)=>String(a.code).localeCompare(String(b.code))).map(x=>{
-    const m=movement.get(String(x.code))||{bf:0,gr:0,tin:0,tout:0,wipout:0,damage:0,waste:0,reportTheory:0,actualStock:0};
-    const u=usageMap.get(String(x.code));const usageQty=u?num(u.total):0;
-    const calcTheory=num(m.bf)+num(m.gr)+num(m.tin)-num(m.tout)-num(m.wipout)-num(m.damage)-num(m.waste)-usageQty;
-    const count=state.counts.find(c=>String(c.code)===String(x.code));
-    return {code:String(x.code),desc:x.desc||m.desc||'',unit:x.unit||m.unit||'',bf:num(m.bf),gr:num(m.gr),tin:num(m.tin),tout:num(m.tout),wipout:num(m.wipout),damage:num(m.damage),waste:num(m.waste),source:usageSourceLabel(),usage:usageQty,calcTheory,reportTheory:num(m.reportTheory),actualStock:num(m.actualStock),actualCount:count?.qty??''};
-  });
+
+  // Inventory Audit shows only RM records that exist in the Stock Movement
+  // uploaded by the currently logged-in User.
+  return [...movement.values()]
+    .sort((a,b)=>String(a.code).localeCompare(String(b.code)))
+    .map(m=>{
+      const u=usageMap.get(String(m.code));
+      const usageQty=u?num(u.total):0;
+      const calcTheory=num(m.bf)+num(m.gr)+num(m.tin)-num(m.tout)-num(m.wipout)-num(m.damage)-num(m.waste)-usageQty;
+      const count=state.counts.find(c=>String(c.code)===String(m.code));
+      return {
+        code:String(m.code),
+        desc:m.desc||'',
+        unit:m.unit||'',
+        bf:num(m.bf),gr:num(m.gr),tin:num(m.tin),tout:num(m.tout),
+        wipout:num(m.wipout),damage:num(m.damage),waste:num(m.waste),
+        source:usageSourceLabel(),usage:usageQty,calcTheory,
+        reportTheory:num(m.reportTheory),actualStock:num(m.actualStock),
+        actualCount:count?.qty??''
+      };
+    });
 }
 function renderAudit(){
   const rows=auditRows(),head=['RM','Description','Unit','B/F','GR','T.In','T.Out','WIP Out','Damage','Waste','Usage Source','Usage','Calc Theory','Report Theory','Actual Stock','Actual Count'];
