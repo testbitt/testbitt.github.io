@@ -124,4 +124,25 @@ document.addEventListener('DOMContentLoaded',onlyAdmin);setTimeout(onlyAdmin,0);
 #registerForm .muted{margin-top:7px}
 </style><script>
 (()=>{const box=document.querySelector('#yothe-auth .loginbox');if(!box)return;const register=document.createElement('div');register.id='registerForm';register.innerHTML='<h3>สมัครสมาชิกครั้งแรก</h3><label>ชื่อผู้ใช้ (ภาษาอังกฤษ/ตัวเลข)</label><input id="regUsername" autocomplete="username" placeholder="ตั้งชื่อผู้ใช้ 3-40 ตัว"><label>รหัสผ่านอย่างน้อย 4 ตัว</label><input id="regPassword" type="password" autocomplete="new-password" minlength="4"><label>ยืนยันรหัสผ่าน</label><input id="regConfirm" type="password" autocomplete="new-password" minlength="4"><label>ชื่อสาขา</label><input id="regBranch" placeholder="กรอกชื่อสาขาของคุณ"><button class="primary" id="submitRegister">สร้างบัญชี User</button><button class="secondary" id="cancelRegister">กลับไป Login</button><p class="muted">บัญชีสมัครใหม่จะได้รับสิทธิ์ User ไม่ใช่ Admin</p>';box.append(register);const toggle=document.createElement('button');toggle.className='secondary';toggle.id='toggleRegister';toggle.textContent='สมัครสมาชิกครั้งแรก';box.insertBefore(toggle,register);toggle.onclick=()=>{register.classList.add('open');toggle.style.display='none'};document.getElementById('cancelRegister').onclick=()=>{register.classList.remove('open');toggle.style.display=''};document.getElementById('submitRegister').onclick=async()=>{const username=document.getElementById('regUsername').value.trim(),password=document.getElementById('regPassword').value,confirm=document.getElementById('regConfirm').value,branch=document.getElementById('regBranch').value.trim(),error=document.getElementById('auth-error');error.textContent='';if(password!==confirm){error.textContent='ยืนยันรหัสผ่านไม่ตรงกัน';return}const button=document.getElementById('submitRegister');button.disabled=true;try{const response=await fetch('https://yothe-inventory-register.vercel.app/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password,branch})});const body=await response.json();if(!response.ok)throw new Error(body.error||'สมัครสมาชิกไม่สำเร็จ');document.getElementById('online-username').value=username;document.getElementById('online-password').value=password;register.classList.remove('open');toggle.style.display='';error.style.color='#0b773f';error.textContent='สมัครสมาชิกสำเร็จ กรุณากดเข้าสู่ระบบ'}catch(e){error.style.color='#c11926';error.textContent=e.message}finally{button.disabled=false}}})();
+</script><script id="yothe-admin-role-gate">
+(function(){
+const nav=document.querySelector('#nav [data-page="admin"]');
+const adminPage=document.getElementById('admin');
+const adminTools=document.getElementById('adminTools');
+const login=document.getElementById('online-login');
+function access(openAdmin){
+  const admin=typeof onlineUser!=='undefined' && onlineUser && onlineUser.role==='admin';
+  if(nav)nav.style.display=admin?'':'none';
+  if(adminTools)adminTools.style.display=admin?'block':'none';
+  document.querySelectorAll('input[data-kind="bom"],input[data-kind="wip"]').forEach(el=>{el.disabled=!admin;el.closest('.card')?.classList.toggle('hidden',!admin)});
+  if(admin&&openAdmin){nav?.click(); if(typeof listUsers==='function')Promise.resolve(listUsers()).catch(console.warn)}
+  if(!admin&&!adminPage.classList.contains('hidden'))document.querySelector('#nav [data-page="dashboard"]')?.click();
+}
+const original=login?.onclick;
+if(login&&original)login.onclick=async()=>{await original();if(document.getElementById('yothe-auth').hidden)access(true)};
+const auth=document.getElementById('yothe-auth');
+if(auth){new MutationObserver(()=>{if(auth.hidden)access(true)}).observe(auth,{attributes:true,attributeFilter:['hidden']})}
+if(nav)nav.addEventListener('click',()=>{if(onlineUser?.role!=='admin'){document.querySelector('#nav [data-page="dashboard"]')?.click();return}adminTools.style.display='block'});
+access(false);
+})();
 </script></body></html>
