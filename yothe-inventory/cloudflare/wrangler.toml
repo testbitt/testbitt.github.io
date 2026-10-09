@@ -1,0 +1,12 @@
+name = "yothe-inventory-api"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+[vars]
+ALLOWED_ORIGIN = "https://testbitt.github.io"
+[[d1_databases]]
+binding = "DB"
+database_name = "yothe-inventory"
+database_id = "REPLACE_WITH_ACTUAL_D1_DATABASE_ID"
+# REQUIRED: wrangler secret put SESSION_SECRET
+# REQUIRED: wrangler secret put ADMIN_SETUP_PIN
