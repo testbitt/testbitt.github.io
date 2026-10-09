@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yothe' Inventory Stock Checker</title>
+<style>
+:root{font-family:system-ui,"Segoe UI",sans-serif;color:#281a1d;background:#fff7f8}
+*{box-sizing:border-box}body{margin:0}header{background:#a71332;color:white;padding:26px 22px}
+main{max-width:1000px;margin:26px auto;padding:0 16px}.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.card{background:white;border:1px solid #ecd6da;border-radius:16px;padding:20px;margin-bottom:16px}
+small{color:#745f64}h1{margin:0 0 6px}h2{margin-top:0}label{display:block;margin:12px 0 8px;font-weight:600}
+input,select,button{font:inherit;padding:11px;border-radius:9px;border:1px solid #d7b4bd;max-width:100%}
+button{background:#a71332;border:0;color:white;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}
+.warn{border-left:4px solid #c08111;padding:12px;background:#fff8e9;border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #eee;padding:9px;text-align:left}
+.scroll{overflow:auto;max-height:420px}
+</style></head>
+<body><header><h1>Yothe' Inventory Stock Checker</h1><div>ระบบตรวจนับสินค้า • เตรียมการเชื่อมต่อ Cloud Database</div></header>
+<main><div class="card warn"><b>สถานะ: ยังไม่เปิดใช้งาน Production</b><p>หน้าเว็บนี้สำหรับตรวจรูปแบบไฟล์นำเข้าเท่านั้น ยังไม่มีฐานข้อมูล Yothe' ที่เชื่อมแล้ว จึงยังไม่มี Login, Auto Save หรือ Inventory Audit จริง และจะไม่มีการส่งข้อมูลเข้าระบบอื่น</p></div>
+<div class="row"><section class="card"><h2>ตรวจไฟล์ Excel</h2><label for="kind">ประเภทข้อมูล</label><select id="kind"><option>BOM</option><option>WIP</option><option>Item Sales</option><option>Stock Movement</option></select>
+<label for="file">เลือกไฟล์ Excel หรือ CSV</label><input id="file" type="file" accept=".xlsx,.xls,.csv" /><p><button id="check">อ่านและตรวจหัวตาราง</button></p><small>ไฟล์ถูกอ่านในเบราว์เซอร์ของเครื่องนี้เท่านั้น ไม่มีการบันทึกขึ้นคลาวด์</small></section>
+<section class="card"><h2>ความพร้อมของระบบ</h2><p>✔ หน้าเว็บ GitHub Pages</p><p>◌ Supabase แยกจาก KAMU: ยังไม่ได้สร้าง</p><p>◌ Admin / User: ยังไม่เปิดใช้</p><p>◌ Cloud Upload: ยังไม่เปิดใช้</p><p>◌ Inventory Audit: ยังไม่เปิดใช้</p></section></div>
+<div class="card"><h2>ผลการตรวจไฟล์</h2><p id="result">ยังไม่ได้เลือกไฟล์</p><div class="scroll" id="preview"></div></div></main>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+const q=id=>document.getElementById(id);const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+q("check").onclick=async()=>{const f=q("file").files[0];if(!f)return q("result").textContent="กรุณาเลือกไฟล์";
+try{if(!window.XLSX)throw Error("ไม่สามารถโหลด Excel Parser");const wb=XLSX.read(await f.arrayBuffer(),{type:"array"}),ws=wb.Sheets[wb.SheetNames[0]],raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});const kind=q("kind").value;const off={"BOM":0,"WIP":0,"Item Sales":13,"Stock Movement":11}[kind];const head=raw[off]||[];q("result").textContent="พบ "+wb.SheetNames.length+" Sheet • หัวตารางแถว "+(off+1)+" • ข้อมูลประมาณ "+Math.max(0,raw.length-off-1)+" แถว";
+const rows=[head,...raw.slice(off+1,off+7)];q("preview").innerHTML="<table>"+rows.map((r,i)=>"<tr>"+r.map(x=>i===0?"<th>"+esc(x)+"</th>":"<td>"+esc(x)+"</td>").join("")+"</tr>").join("")+"</table>";
+}catch(e){q("result").textContent="ตรวจไฟล์ไม่สำเร็จ: "+e.message;q("preview").textContent=""}};
+</script></body></html>
