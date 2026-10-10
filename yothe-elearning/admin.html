@@ -2393,12 +2393,35 @@ async function parseExcelFile(file){
 }
 function coerceRows(ds,arr){
   const types=Object.fromEntries(DATASETS[ds].fields.map(([k,,t])=>[k,t]));
-  return arr.map(r=>{const o={};for(const [k,v0] of Object.entries(r)){if(!(k in types))continue;let v=v0;
-    if(types[k]==="number")v=v===""?null:Number(v);
-    else if(types[k]==="boolean")v=String(v).toLowerCase()==="true"||String(v)==="1"||String(v).toLowerCase()==="yes";
-    else if(types[k]==="json"&&typeof v==="string"){try{v=JSON.parse(v)}catch{v={text:v}}}
-    o[k]=v;
-  }return o});
+  const aliases={
+    production_ratio:{
+      "id":"sort_order","no.":"sort_order","no":"sort_order",
+      "code":"code",
+      "detail raw material":"detail_raw_material",
+      "unit":"unit",
+      "ขนาดบรรจุ":"pack_size",
+      "ปริมาณที่ใช้ต่อ 1 สูตร":"usage_per_recipe",
+      "จำนวนที่ผลิตได้ (สูตร)":"recipes_yield"
+    }
+  };
+  return arr.map((r,rowIndex)=>{
+    const o={};
+    for(const [rawKey,v0] of Object.entries(r)){
+      const norm=String(rawKey||"").trim();
+      const mapped=(aliases[ds]||{})[norm.toLowerCase()]||(aliases[ds]||{})[norm]||norm;
+      if(!(mapped in types))continue;
+      let v=v0;
+      if(types[mapped]==="number")v=v===""?null:Number(v);
+      else if(types[mapped]==="boolean")v=String(v).toLowerCase()==="true"||String(v)==="1"||String(v).toLowerCase()==="yes";
+      else if(types[mapped]==="json"&&typeof v==="string"){try{v=JSON.parse(v)}catch{v={text:v}}}
+      o[mapped]=v;
+    }
+    if(ds==="production_ratio"){
+      if(o.sort_order==null)o.sort_order=rowIndex+1;
+      if(o.code||o.detail_raw_material)o.is_published=true;
+    }
+    return o;
+  }).filter(o=>Object.keys(o).some(k=>k!=="sort_order"&&k!=="is_published"));
 }
 let uploadDataBusy=false;
 async function autoUploadData(){
