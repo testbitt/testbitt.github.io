@@ -796,10 +796,10 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
           <div class="field"><label>รูปแบบการนำเข้า</label>
             <div class="input" style="background:#fff7f7;color:#b91c1c;font-weight:800">เขียนทับข้อมูลเดิมทั้งหมด + Auto Save ไปยัง Server</div>
           </div>
-          <div class="field"><label>ไฟล์ CSV / JSON / รูปภาพ / PDF</label><input id="uploadFile" class="input" type="file" multiple accept=".csv,.json,text/csv,application/json,image/jpeg,image/png,image/webp,.pdf,application/pdf"></div>
+          <div class="field"><label>ไฟล์ Excel / CSV / JSON / รูปภาพ / PDF</label><input id="uploadFile" class="input" type="file" multiple accept=".xlsx,.xls,.csv,.json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/json,image/jpeg,image/png,image/webp,.pdf,application/pdf"></div>
           <button id="uploadBtn" class="btn primary">Upload และบันทึก</button>
           <div id="uploadMsg" class="msg"></div>
-          <p class="help">CSV/JSON = เลือกไฟล์แล้ว Auto Save ทันที และแทนที่ข้อมูลเดิมทั้งหมดของหมวดนั้น • หากเลือกหลายไฟล์ระบบจะรวมข้อมูลทุกไฟล์ก่อน Save ทับครั้งเดียว • รูปภาพ/PDF = Auto Upload เป็นไฟล์แนบของเมนูปัจจุบัน • ทุกการ Upload บันทึกลง Server อัตโนมัติ</p>
+          <p class="help">Excel/CSV/JSON = เลือกไฟล์แล้ว Auto Save ทันที และแทนที่ข้อมูลเดิมทั้งหมดของหมวดนั้น • Excel จะอ่านทุก Sheet ที่มีข้อมูล • หากเลือกหลายไฟล์ระบบจะรวมข้อมูลทุกไฟล์ก่อน Save ทับครั้งเดียว • รูปภาพ/PDF = Auto Upload เป็นไฟล์แนบของเมนูปัจจุบัน • ทุกการ Upload บันทึกลง Server อัตโนมัติ</p>
         </div>
       </section>
 
@@ -855,6 +855,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
   </section>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 const API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-admin";
 const FILE_UPLOAD_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-file-upload";
@@ -2377,6 +2378,19 @@ function parseCSV(text){
   const headers=out[0].map(x=>x.trim());
   return out.slice(1).map(r=>Object.fromEntries(headers.map((h,i)=>[h,(r[i]??"").trim()])));
 }
+async function parseExcelFile(file){
+  if(typeof XLSX==="undefined")throw new Error("ไม่สามารถโหลดตัวอ่าน Excel ได้ กรุณารีเฟรชหน้าแล้วลองใหม่");
+  const buf=await file.arrayBuffer();
+  const wb=XLSX.read(buf,{type:"array",cellDates:false,raw:false});
+  const rows=[];
+  for(const sheetName of wb.SheetNames||[]){
+    const ws=wb.Sheets[sheetName];
+    if(!ws)continue;
+    const data=XLSX.utils.sheet_to_json(ws,{defval:"",raw:false});
+    if(Array.isArray(data)&&data.length)rows.push(...data);
+  }
+  return rows;
+}
 function coerceRows(ds,arr){
   const types=Object.fromEntries(DATASETS[ds].fields.map(([k,,t])=>[k,t]));
   return arr.map(r=>{const o={};for(const [k,v0] of Object.entries(r)){if(!(k in types))continue;let v=v0;
@@ -2403,16 +2417,23 @@ async function autoUploadData(){
 
     for(const file of files){
       const name=file.name.toLowerCase();
-      const isJson=name.endsWith(".json"),isCsv=name.endsWith(".csv");
-      if(isJson||isCsv){
+      const isJson=name.endsWith(".json"),
+            isCsv=name.endsWith(".csv"),
+            isExcel=name.endsWith(".xlsx")||name.endsWith(".xls");
+      if(isJson||isCsv||isExcel){
         msg.textContent="กำลังอ่านข้อมูล "+file.name+"...";msg.className="msg saving";
-        const text=await file.text();let data;
-        if(isJson){
-          data=JSON.parse(text);
-          if(!Array.isArray(data))data=data.rows||[];
-        }else data=parseCSV(text);
+        let data;
+        if(isExcel){
+          data=await parseExcelFile(file);
+        }else{
+          const text=await file.text();
+          if(isJson){
+            data=JSON.parse(text);
+            if(!Array.isArray(data))data=data.rows||[];
+          }else data=parseCSV(text);
+        }
         data=coerceRows(ds,data);
-        if(!data.length)throw new Error("ไม่พบข้อมูลในไฟล์ "+file.name);
+        if(!data.length)throw new Error("ไม่พบข้อมูลที่ตรงกับหัวตารางของ "+(DATASETS[ds]?.label||ds)+" ในไฟล์ "+file.name);
         tableRows.push(...data);
       }else{
         const okType=["image/jpeg","image/png","image/webp","application/pdf"].includes(file.type);
@@ -2424,7 +2445,7 @@ async function autoUploadData(){
 
     let tableCount=0,fileCount=0;
 
-    // One replace call only: all selected CSV/JSON files are merged, then atomically replace old category data.
+    // One replace call only: all selected Excel/CSV/JSON files are merged, then atomically replace old category data.
     if(tableRows.length){
       msg.textContent="กำลัง Auto Save และแทนที่ข้อมูลเดิม "+tableRows.length+" รายการ...";msg.className="msg saving";
       const res=await api({action:"bulk_import",dataset:ds,mode:"replace",rows:tableRows});
