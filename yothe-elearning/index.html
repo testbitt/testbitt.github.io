@@ -515,6 +515,20 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
   .production-meta{grid-template-columns:1fr}
   .production-meta .note+ .note{border-left:0;border-top:1px solid #d1d5db}
 }
+
+/* Production ratio */
+.ratio-table-wrap{max-width:100%;overflow:hidden}
+.ratio-sheet{max-width:100%;overflow:hidden}
+.ratio-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ratio-table{width:100%;min-width:920px;border-collapse:collapse;table-layout:auto}
+.ratio-table th,.ratio-table td{padding:10px 12px;border:1px solid #e5e7eb;vertical-align:middle;white-space:normal;word-break:break-word}
+.ratio-table th{text-align:center!important;font-weight:900}
+.ratio-table td:nth-child(3){min-width:280px}
+.ratio-table .num{text-align:center}
+@media(max-width:760px){
+  .ratio-table{min-width:860px}
+  .ratio-table th,.ratio-table td{padding:8px;font-size:13px}
+}
 </style>
 </head>
 <body>
@@ -537,6 +551,7 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
     <button data-view="home" class="active">Home</button>
     <button class="auth-only hidden-auth" data-view="uniforms">เครื่องแต่งกาย</button>
     <button class="auth-only hidden-auth" data-view="production">สูตรการผลิต</button>
+    <button class="auth-only hidden-auth" data-view="production-ratio">อัตราส่วนการผลิต</button>
     <button class="auth-only hidden-auth" data-view="drinks">สูตรชง</button>
     <button class="auth-only hidden-auth" data-view="expiry">วันหมดอายุ</button>
     <button class="auth-only hidden-auth" data-view="toppings">Topping</button>
@@ -559,6 +574,10 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
   </section>
 
   <section id="view-production" class="view"><div class="section-head"><div><h2>สูตรการผลิต</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="productionList" class="grid"></div><div id="attachments-production" class="attachments"></div></section>
+  <section id="view-production-ratio" class="view">
+    <div class="section-head"><div><h2>อัตราส่วนการผลิต</h2><p>อัตราส่วนวัตถุดิบและจำนวนสูตรที่ผลิตได้</p></div></div>
+    <div id="productionRatioList" class="ratio-table-wrap"></div>
+  </section>
   <section id="view-drinks" class="view"><div class="section-head"><div><h2>สูตรชงเครื่องดื่ม</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="drinkList" class="grid"></div><div id="attachments-drinks" class="attachments"></div></section>
   <section id="view-expiry" class="view"><div class="section-head"><div><h2>วันหมดอายุ</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="expiryList"></div><div id="attachments-expiry" class="attachments"></div></section>
   <section id="view-toppings" class="view"><div class="section-head"><div><h2>Topping</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="toppingList" class="grid"></div><div id="attachments-toppings" class="attachments"></div></section>
@@ -1022,6 +1041,7 @@ async function loadView(view){
   try{
     if(view==="home"){if(token)await loadAttachments("home");else{const el=document.getElementById("attachments-home");if(el)el.innerHTML=""}return}
     if(view==="production"){const r=await api("production");renderProduction(r);await loadAttachments("production");return}
+    if(view==="production-ratio"){renderProductionRatio(await api("production_ratio"));return}
     if(view==="drinks"){const [r,m]=await Promise.all([api("drinks"),api("drink_meta")]);renderDrinks(r,m);await loadAttachments("drinks");return}
     if(view==="toppings"){renderToppings(await api("toppings"));await loadAttachments("toppings");return}
     if(view==="expiry"){renderExpiry(await api("expiry"));await loadAttachments("expiry");return}
@@ -1033,6 +1053,15 @@ async function loadView(view){
     const el=document.querySelector("#view-"+view+" [id$='List']");
     if(el)el.innerHTML='<div class="state">'+esc(e.message)+'</div>'
   }
+}
+function formatRatioNumber(v){
+  if(v===null||v===undefined||v==="")return "-";
+  const n=Number(v);if(!Number.isFinite(n))return esc(v);
+  return n.toLocaleString("th-TH",{maximumFractionDigits:2});
+}
+function renderProductionRatio(rows){
+  const el=document.getElementById("productionRatioList");if(!el)return;
+  el.innerHTML=rows.length?'<div class="sheet ratio-sheet"><div class="sheet-title">อัตราส่วนการผลิต</div><div class="ratio-scroll"><table class="ratio-table"><thead><tr><th>NO.</th><th>Code</th><th>Detail Raw Material</th><th>Unit</th><th>ขนาดบรรจุ</th><th>ปริมาณที่ใช้ต่อ 1 สูตร</th><th>จำนวนที่ผลิตได้ (สูตร)</th></tr></thead><tbody>'+rows.map((r,i)=>'<tr><td class="num">'+esc(r.sort_order||i+1)+'</td><td><strong>'+esc(r.code||"")+'</strong></td><td>'+esc(r.detail_raw_material||"")+'</td><td class="num">'+esc(r.unit||"")+'</td><td class="num">'+formatRatioNumber(r.pack_size)+'</td><td class="num">'+formatRatioNumber(r.usage_per_recipe)+'</td><td class="num"><strong>'+formatRatioNumber(r.recipes_yield)+'</strong></td></tr>').join("")+'</tbody></table></div></div>':'<div class="state">ยังไม่มีข้อมูล</div>';
 }
 function renderProduction(rows){const g={};rows.forEach(r=>(g[r.recipe_name||"ไม่ระบุชื่อ"]??=[]).push(r));document.getElementById("productionList").innerHTML=sortGroupedEntries("production",Object.entries(g)).map(([name,items])=>{items=sortDetailRows(items);const img=items.find(x=>x.image_url)?.image_url||"";const noteValues=[...new Set(items.map(x=>String(x.notes||"").trim()).filter(Boolean))];const mergedNote=noteValues.join("\n\n");return '<article class="sheet"><div class="sheet-title">'+esc(name)+'</div>'+(img?'<div class="photo" style="border-right:0;border-bottom:1px solid #d1d5db;min-height:180px"><img src="'+esc(img)+'" alt="'+esc(name)+'"></div>':"")+'<div class="production-meta"><div class="note" style="background:#f3f4f6;color:#111827">Servings: '+esc(items.find(x=>String(x.servings||"").trim())?.servings||"-")+'</div><div class="note net-quantity-note" style="background:#fff7ed;color:#9a3412">Net Quantity: '+esc(items.find(x=>String(x.net_quantity??"").trim())?.net_quantity||"-")+'</div><div class="note net-unit-note" style="background:#f0fdf4;color:#166534">Net Unit: '+esc(items.find(x=>String(x.net_unit||"").trim())?.net_unit||"-")+'</div></div><table><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th><th>หมายเหตุ</th></tr></thead><tbody>'+items.map((x,i)=>'<tr><td>'+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td>'+(i===0?'<td rowspan="'+items.length+'" style="vertical-align:top">'+esc(mergedNote).replace(/\n/g,"<br>")+'</td>':'')+'</tr>').join("")+'</tbody></table></article>'}).join("")||'<div class="state">ยังไม่มีข้อมูล</div>';scheduleUserTableFit()}
 function renderDrinks(rows,metas){const mm=Object.fromEntries(metas.map(x=>[x.recipe_id,x])),g={};rows.forEach(r=>(g[r.recipe_id]??=[]).push(r));document.getElementById("drinkList").innerHTML=sortGroupedEntries("drinks",Object.entries(g)).map(([id,items])=>{items=sortDetailRows(items);const first=items[0]||{},m=mm[id]||{},tops=items.filter(x=>String(x.component_type||"").toLowerCase()==="topping").map(x=>x.sort_order||9999),ft=tops.length?Math.min(...tops):null;return '<article class="sheet"><div class="sheet-title">'+esc(first.menu_name||id)+'</div><div class="sheet-body"><div class="photo">'+(m.image_url?'<img src="'+esc(m.image_url)+'" alt="'+esc(first.menu_name||id)+'">':'<div class="empty">ยังไม่มีรูป</div>')+'</div><div><table><thead><tr><th>วัตถุดิบ</th><th>'+esc(m.size_label||"17 oz.(IB)")+'</th><th>หน่วย</th><th>หมายเหตุ</th></tr></thead><tbody>'+items.map(x=>'<tr><td>'+(ft!==null&&x.sort_order===ft?'<span class="topping">Topping</span><br>':'')+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td><td>'+esc(x.notes||"").replace(/\n/g,"<br>")+'</td></tr>').join("")+'</tbody></table>'+(m.note?'<div class="note">'+esc(m.note).replace(/\n/g,"<br>")+'</div>':'')+'</div></div></article>'}).join("")||'<div class="state">ยังไม่มีข้อมูล</div>';scheduleUserTableFit()}
