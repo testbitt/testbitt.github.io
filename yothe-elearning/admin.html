@@ -724,6 +724,14 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 }
 .a4-page.dense-review .review-note-block{padding:5px 7px;font-size:10px}
 .a4-page.dense-review .review-note-title{margin-bottom:2px}
+
+/* Production ratio review */
+.ratio-review-card .edit-sidebar{min-width:120px}
+.ratio-review-card .layout-photo{min-height:110px}
+.ratio-review-card .layout-photo img{max-height:150px;object-fit:contain}
+.ratio-review-table th{width:46%;text-align:left!important}
+.ratio-review-table td{text-align:left}
+.ratio-review-table td.num{text-align:center!important;font-weight:800}
 </style>
 </head>
 <body>
@@ -1827,6 +1835,7 @@ function renderTable(){
   if(!rows.length){wrap.innerHTML='<div style="padding:24px" class="muted">ยังไม่มีข้อมูล</div>';return}
   if(dataset==="drinks"){renderDrinkSheets();return}
   if(dataset==="production"){renderProductionSheets();return}
+  if(dataset==="production_ratio"){renderProductionRatioSheets();return}
   if(dataset==="toppings"){renderToppingSheets();return}
   if(dataset==="expiry"){renderExpirySheets();return}
   if(dataset==="uniforms"){renderUniformSheets();return}
@@ -1998,6 +2007,39 @@ function reviewNoteHtml(value){
 function reviewGroupNote(items=[]){
   const row=items.find(x=>String(x?.notes??"").trim());
   return row?.notes||"";
+}
+function formatReviewInteger(v){
+  if(v===null||v===undefined||v==="")return "-";
+  const n=Number(v);
+  return Number.isFinite(n)?n.toLocaleString("th-TH",{maximumFractionDigits:0,minimumFractionDigits:0}):esc(v);
+}
+function renderProductionRatioSheets(){
+  const items=[...rows].sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||(Number(a.id)||0)-(Number(b.id)||0));
+  const pages=chunk(items,displayPrefs.items_per_page);
+  const wrap=document.getElementById("tableWrap");
+  wrap.innerHTML='<div class="a4-preview">'+pages.map((page,pi)=>
+    '<section class="'+pageClass(page.length)+'"><div class="page-title">อัตราส่วนการผลิต • หน้า '+(pi+1)+' / '+pages.length+'</div><div class="page-content recipe-admin-grid">'+
+    page.map(r=>'<article class="recipe-sheet ratio-review-card" data-group-key="'+esc(String(r.id))+'">'+
+      '<div class="recipe-title">'+esc(r.detail_raw_material||r.code||"อัตราส่วนการผลิต")+'</div>'+
+      '<div class="edit-layout"><aside class="edit-sidebar">'+
+        '<div class="edit-sidebar-title">จัดการรายการ</div>'+
+        '<button class="btn small secondary" onclick="pickGroupImage(\'production_ratio\','+r.id+',\'image_url\')">ใส่/เปลี่ยนรูป</button>'+
+        '<button class="btn small secondary" onclick="editRow('+r.id+')">แก้ไขข้อมูล</button>'+
+        '<button class="btn small danger" onclick="deleteRow('+r.id+')">ลบ</button>'+
+      '</aside><div class="edit-content">'+
+        '<div class="layout-photo">'+(r.image_url?'<img src="'+esc(r.image_url)+'" alt="'+esc(r.detail_raw_material||r.code||"")+'">':'<div class="empty-photo">ยังไม่มีรูปตัวอย่าง</div>')+'</div>'+
+        '<table class="recipe-table ratio-review-table"><tbody>'+
+          '<tr><th>Code</th><td>'+esc(r.code||"-")+'</td></tr>'+
+          '<tr><th>Detail Raw Material</th><td>'+esc(r.detail_raw_material||"-")+'</td></tr>'+
+          '<tr><th>Unit</th><td>'+esc(r.unit||"-")+'</td></tr>'+
+          '<tr><th>ขนาดบรรจุ</th><td class="num">'+formatReviewInteger(r.pack_size)+'</td></tr>'+
+          '<tr><th>ปริมาณที่ใช้ต่อ 1 สูตร</th><td class="num">'+formatReviewInteger(r.usage_per_recipe)+'</td></tr>'+
+          '<tr><th>จำนวนที่ผลิตได้ (สูตร)</th><td class="num"><strong>'+formatReviewInteger(r.recipes_yield)+'</strong></td></tr>'+
+        '</tbody></table>'+
+      '</div></div></article>'
+    ).join("")+'</div></section>'
+  ).join("")+'</div>';
+  scheduleReviewFit();
 }
 function renderProductionSheets(){
   const groups={};rows.forEach(r=>{(groups[r.recipe_name||"ไม่ระบุชื่อ"]??=[]).push(r)});
