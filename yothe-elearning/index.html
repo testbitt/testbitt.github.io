@@ -1054,11 +1054,11 @@ async function loadView(view){
     if(el)el.innerHTML='<div class="state">'+esc(e.message)+'</div>'
   }
 }
-function formatRatioOneDecimal(v){const n=Number(v);return Number.isFinite(n)?n.toFixed(1):"-"}
+function formatRatioOneDecimal(v){const n=Number(v);return Number.isFinite(n)?n.toLocaleString("th-TH",{maximumFractionDigits:0,minimumFractionDigits:0}):"-"}
 function formatRatioNumber(v){
   if(v===null||v===undefined||v==="")return "-";
   const n=Number(v);if(!Number.isFinite(n))return esc(v);
-  return n.toLocaleString("th-TH",{maximumFractionDigits:2});
+  return n.toLocaleString("th-TH",{maximumFractionDigits:0,minimumFractionDigits:0});
 }
 function renderProductionRatio(rows){
   const el=document.getElementById("productionRatioList");if(!el)return;
