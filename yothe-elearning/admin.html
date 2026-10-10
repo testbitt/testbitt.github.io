@@ -751,6 +751,7 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 
     <div class="tabs" id="tabs">
       <button class="tab active" draggable="true" data-dataset="production">สูตรการผลิต</button>
+      <button class="tab" data-dataset="production_ratio">อัตราส่วนการผลิต</button>
       <button class="tab" draggable="true" data-dataset="drinks">สูตรชงเครื่องดื่ม</button>
       <button class="tab" draggable="true" data-dataset="expiry">วันหมดอายุ</button>
       <button class="tab" draggable="true" data-dataset="toppings">Topping</button>
@@ -893,6 +894,11 @@ const DATASETS={
     ["soak_time_min","เวลาแช่ (นาที)","number"],["section_yield_quantity","Section Yield","number"],["section_yield_unit","Yield Unit","text"],
     ["notes","หมายเหตุ","textarea"],["image_url","รูปภาพ","imageurl"],["sort_order","ลำดับ","number"],["is_published","เผยแพร่","boolean"]
   ]},
+  production_ratio:{label:"อัตราส่วนการผลิต",fields:[
+    ["code","Code","text"],["detail_raw_material","Detail Raw Material","text"],["unit","Unit","text"],
+    ["pack_size","ขนาดบรรจุ","number"],["usage_per_recipe","ปริมาณที่ใช้ต่อ 1 สูตร","number"],
+    ["recipes_yield","จำนวนที่ผลิตได้ (สูตร)","number"],["sort_order","ลำดับ","number"],["is_published","เผยแพร่","boolean"]
+  ]},
   drinks:{label:"สูตรชงเครื่องดื่ม",fields:[
     ["record_id","Record ID","text"],["recipe_id","Recipe ID","text"],["source_file","Source File","text"],["source_page","หน้า","number"],
     ["brand","Brand","text"],["menu_group","Menu Group","text"],["menu_name","ชื่อเมนู","text"],["component_type","Component","text"],
@@ -956,7 +962,7 @@ const DATASETS={
 };
 let adminPin=sessionStorage.getItem("yothe_admin_pin")||"";
 const requestedEdit=new URLSearchParams(location.search).get("edit");
-let dataset=["production","drinks","expiry","toppings","uniforms","courses","delivery_schedule","image_popups","settings","users","menus"].includes(requestedEdit)?requestedEdit:"production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["uniforms","production","drinks","expiry","toppings"], customMenus=[], menuEditingId=null;
+let dataset=["production","production_ratio","drinks","expiry","toppings","uniforms","courses","delivery_schedule","image_popups","settings","users","menus"].includes(requestedEdit)?requestedEdit:"production", rows=[], editingId=null, drinkMeta={}, autoSaveTimer=null, autoSaveBusy=false, autoSaveQueued=false, menuOrder=["uniforms","production","drinks","expiry","toppings"], customMenus=[], menuEditingId=null;
 
 async function api(payload){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,pin:adminPin})});
