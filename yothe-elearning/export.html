@@ -483,6 +483,18 @@ th{min-height:29px;height:auto}
   overflow:hidden!important;
 }
 
+
+/* Production ratio + dynamic menu export */
+.sheet-ratio th:nth-child(1){width:14%}
+.sheet-ratio th:nth-child(2){width:34%}
+.sheet-ratio th:nth-child(3){width:12%}
+.sheet-ratio th:nth-child(4){width:14%}
+.sheet-ratio th:nth-child(5){width:14%}
+.sheet-ratio th:nth-child(6){width:12%}
+.sheet-custom .custom-file-preview{min-height:150px;display:grid;place-items:center;border-bottom:1px solid #d1d5db;background:#fff}
+.sheet-custom .custom-file-preview img{width:100%;max-height:260px;object-fit:contain;display:block}
+.sheet-custom .custom-file-icon{font-size:44px;line-height:1}
+.sheet-custom .custom-file-meta{padding:10px 12px;text-align:center;font-weight:800;overflow-wrap:anywhere}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -492,7 +504,7 @@ th{min-height:29px;height:auto}
 <main class="wrap">
 <section class="panel">
   <div class="controls export-controls">
-    <div class="field"><label>หัวข้อ</label><select id="dataset" class="input"><option value="production">สูตรการผลิต</option><option value="drinks">สูตรชงเครื่องดื่ม</option><option value="expiry">วันหมดอายุ</option><option value="toppings">Topping</option><option value="uniforms">เครื่องแต่งกาย</option><option value="courses">บทเรียนอื่น ๆ</option><option value="delivery_schedule">รอบการสั่งสินค้า</option></select></div>
+    <div class="field"><label>หัวข้อ</label><select id="dataset" class="input"><option value="production">สูตรการผลิต</option><option value="production_ratio">อัตราส่วนการผลิต</option><option value="drinks">สูตรชงเครื่องดื่ม</option><option value="expiry">วันหมดอายุ</option><option value="toppings">Topping</option><option value="uniforms">เครื่องแต่งกาย</option><option value="courses">บทเรียนอื่น ๆ</option><option value="delivery_schedule">รอบการสั่งสินค้า</option></select></div>
     <div class="field"><label>ขนาดกระดาษ</label><select id="orientation" class="input"><option value="portrait">A4 แนวตั้ง • 2 คอลัมน์</option><option value="landscape">A4 แนวนอน • 3 คอลัมน์</option></select></div>
     <div class="field"><label>จำนวนรายการต่อหน้า</label><select id="itemsPerPage" class="input"></select></div>
     <div class="field"><label>Theme (50 แบบ)</label><select id="themeSelect" class="input"></select></div>
@@ -507,7 +519,7 @@ th{min-height:29px;height:auto}
 </main>
 <script>
 const ADMIN_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-admin";
-let pin=sessionStorage.getItem("yothe_admin_pin")||"",drinkMeta={};
+let pin=sessionStorage.getItem("yothe_admin_pin")||"",drinkMeta={},customMenus=[];
 const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
 const COLOR_NAMES=[
 "Yothé Red","Rose","Berry","Bright Red","Coral Red","Orange","Burnt Orange","Amber","Golden Brown","Yellow",
@@ -560,6 +572,26 @@ function initExportControls(){
   document.getElementById("themeSelect").innerHTML=THEME_NAMES.map((n,i)=>'<option value="'+(i+1)+'">Theme '+String(i+1).padStart(2,"0")+' • '+n+'</option>').join("");
   document.getElementById("colorSelect").innerHTML=COLORS.map((x,i)=>'<option value="'+(i+1)+'">สี '+String(i+1).padStart(2,"0")+' • '+COLOR_NAMES[i]+' • '+x+'</option>').join("");
 }
+async function syncDynamicExportMenus(){
+  const sel=document.getElementById("dataset");
+  [...sel.querySelectorAll("option[data-custom-export]")].forEach(o=>o.remove());
+  try{
+    const res=await api({action:"list",dataset:"settings"});
+    const row=(res.data||[]).find(x=>x.key==="custom_menus");
+    customMenus=Array.isArray(row?.value)?row.value:[];
+    customMenus.filter(m=>m&&m.active!==false&&m.section&&m.label).forEach(m=>{
+      const opt=document.createElement("option");
+      opt.value="custom:"+m.section;
+      opt.textContent=m.label;
+      opt.dataset.customExport="1";
+      sel.appendChild(opt);
+    });
+  }catch(e){
+    console.warn("โหลดเมนู Export อัตโนมัติไม่สำเร็จ",e);
+    customMenus=[];
+  }
+}
+
 async function saveExportPrefs(){
   const ds=document.getElementById("dataset").value;
   displayPrefs={
@@ -603,6 +635,9 @@ async function load(){
     if(ds==="drinks"){
       const [a,b]=await Promise.all([api({action:"list",dataset:"drinks"}),api({action:"list",dataset:"drink_meta"})]);
       rows=a.data||[];drinkMeta=Object.fromEntries((b.data||[]).map(x=>[x.recipe_id,x]));
+    }else if(ds.startsWith("custom:")){
+      const section=ds.slice(7);
+      rows=(await api({action:"list_attachments",section})).data||[];
     }else rows=(await api({action:"list",dataset:ds})).data||[];
     await render(ds,rows);
     msg.textContent="พร้อม Export • "+rows.length+" รายการ • "+document.querySelectorAll("#pages .page").length+" หน้า A4";
@@ -1052,6 +1087,38 @@ function deliveryScheduleSheet(row){
     (String(row.notes||"").trim()?'<div class="note">'+esc(row.notes)+'</div>':'');
   return a;
 }
+
+function productionRatioSheet(row){
+  const a=document.createElement("article");a.className="sheet sheet-ratio";
+  const title=row.detail_raw_material||row.code||"อัตราส่วนการผลิต";
+  a.innerHTML='<div class="sheet-title">'+esc(title)+'</div>'+
+    (row.image_url?'<div class="photo" style="border-right:0;border-bottom:1px solid #d1d5db;min-height:100px"><img src="'+esc(row.image_url)+'" crossorigin="anonymous" alt="'+esc(title)+'"></div>':'')+
+    '<table><thead><tr><th>Code</th><th>วัตถุดิบ</th><th>Unit</th><th>ขนาดบรรจุ</th><th>ใช้ต่อ 1 สูตร</th><th>ผลิตได้</th></tr></thead><tbody><tr>'+
+      '<td>'+esc(row.code||"-")+'</td>'+
+      '<td>'+esc(row.detail_raw_material||"-")+'</td>'+
+      '<td>'+esc(row.unit||"-")+'</td>'+
+      '<td class="num">'+esc(row.pack_size??"-")+'</td>'+
+      '<td class="num">'+esc(row.usage_per_recipe??"-")+'</td>'+
+      '<td class="num">'+esc(row.recipes_yield??"-")+'</td>'+
+    '</tr></tbody></table>';
+  return a;
+}
+function customMenuFileSheet(file,menu){
+  const a=document.createElement("article");a.className="sheet sheet-custom";
+  const title=file.title||file.file_name||menu.label||"ไฟล์";
+  const mime=String(file.mime_type||"");
+  const name=String(file.file_name||"").toLowerCase();
+  const isImage=mime.startsWith("image/");
+  const isPdf=mime==="application/pdf"||name.endsWith(".pdf");
+  const isPpt=mime.includes("powerpoint")||name.endsWith(".ppt")||name.endsWith(".pptx");
+  const icon=isPdf?"📄":isPpt?"📊":"📎";
+  a.innerHTML='<div class="sheet-title">'+esc(title)+'</div>'+
+    (isImage&&file.url
+      ?'<div class="custom-file-preview"><img src="'+esc(file.url)+'" crossorigin="anonymous" alt="'+esc(title)+'"></div>'
+      :'<div class="custom-file-preview"><div class="custom-file-icon">'+icon+'</div></div>')+
+    '<div class="custom-file-meta">'+esc(menu.label||"เมนู")+(file.file_name&&file.file_name!==title?'<br><span style="font-weight:500">'+esc(file.file_name)+'</span>':'')+'</div>';
+  return a;
+}
 function courseSheet(row){
   const a=document.createElement("article");a.className="sheet sheet-courses";
   a.innerHTML='<div class="sheet-title">'+esc(row.title||"บทเรียน")+'</div>'+(row.thumbnail_url?'<div class="photo" style="border-right:0;border-bottom:1px solid #d1d5db;min-height:120px"><img src="'+esc(row.thumbnail_url)+'" crossorigin="anonymous" alt="'+esc(row.title||"")+'"></div>':'<div class="photo" style="border-right:0;border-bottom:1px solid #d1d5db;min-height:80px"><div class="empty">ยังไม่มีรูปตัวอย่าง</div></div>')+'<table><tbody><tr><th>หมวดหมู่</th><td>'+esc(row.category||"-")+'</td></tr><tr><th>รายละเอียด</th><td>'+esc(row.description||"-")+'</td></tr><tr><th>ระยะเวลา</th><td>'+esc(row.estimated_minutes||"-")+(row.estimated_minutes?" นาที":"")+'</td></tr><tr><th>ระดับ</th><td>'+esc(row.difficulty||"-")+'</td></tr></tbody></table>';
@@ -1061,10 +1128,22 @@ async function render(ds,rows){
   let entries,title,builder;
   if(ds==="drinks"){const g=groupBy(rows,r=>r.recipe_id||"NO-ID");entries=sortEntriesByLayoutOrder(Object.entries(g));title="สูตรชงเครื่องดื่ม";builder=([id,items])=>drinkSheet(id,items)}
   else if(ds==="production"){const g=groupBy(rows,r=>r.recipe_name||"ไม่ระบุชื่อ");entries=sortEntriesByLayoutOrder(Object.entries(g));title="สูตรการผลิต";builder=([name,items])=>productionSheet(name,[...items].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)))}
+  else if(ds==="production_ratio"){
+    entries=rows.filter(r=>r.is_published!==false).slice().sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)).map(r=>[String(r.id||r.code||Math.random()),r]);
+    title="อัตราส่วนการผลิต";
+    builder=([,row])=>productionRatioSheet(row);
+  }
   else if(ds==="expiry"){const g=groupBy(rows,r=>r.category||"วันหมดอายุ");entries=sortEntriesByLayoutOrder(Object.entries(g));title="วันหมดอายุ";builder=([name,items])=>expirySheet(name,items)}
   else if(ds==="toppings"){const g=groupBy(rows,r=>(r.category||"Topping")+" • "+(r.subcategory||"ทั่วไป"));entries=sortEntriesByLayoutOrder(Object.entries(g));title="Topping";builder=([name,items])=>toppingSheet(name,[...items].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)))}
   else if(ds==="uniforms"){const g=groupBy(rows,r=>r.category||"เครื่องแต่งกาย");entries=sortEntriesByLayoutOrder(Object.entries(g));title="เครื่องแต่งกาย";builder=([name,items])=>uniformSheet(name,[...items].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)))}
   else if(ds==="courses"){entries=sortEntriesByLayoutOrder(rows.slice().sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)).map(r=>[String(r.id),r]));title="บทเรียนอื่น ๆ";builder=([,row])=>courseSheet(row)}
+  else if(ds.startsWith("custom:")){
+    const section=ds.slice(7);
+    const menu=customMenus.find(m=>m.section===section)||{label:"เมนู"};
+    entries=rows.slice().sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)||(Number(a.id)||0)-(Number(b.id)||0)).map(r=>[String(r.id),r]);
+    title=menu.label||"เมนู";
+    builder=([,file])=>customMenuFileSheet(file,menu);
+  }
   else if(ds==="delivery_schedule"){
     const days=["mon","tue","wed","thu","fri","sat","sun"];
     const filtered=rows.filter(r=>
@@ -1177,7 +1256,10 @@ initExportControls();
 document.getElementById("dataset").onchange=load;
 ["orientation","itemsPerPage","themeSelect","colorSelect"].forEach(id=>document.getElementById(id).addEventListener("change",saveExportPrefs));
 let exportResizeTimer=null;window.addEventListener("resize",()=>{if(exportBusy)return;clearTimeout(exportResizeTimer);exportResizeTimer=setTimeout(()=>fitAllExportPages(),220)});
-load();
+(async()=>{
+  await syncDynamicExportMenus();
+  await load();
+})();
 </script>
 </body>
 </html>
