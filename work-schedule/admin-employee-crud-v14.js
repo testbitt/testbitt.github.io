@@ -80,7 +80,7 @@
   branchCard.innerHTML=`
     <div class="section-head">
       <div><h2>ฐานข้อมูลสาขา</h2><p>แก้ไขรหัสสาขาและชื่อสาขาส่วนกลาง ข้อมูลพนักงานและตารางเดิมจะอัปเดตตามอัตโนมัติ</p></div>
-      <span class="admin-api350">Cloud · ksp-api V7</span>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="btn primary" id="addBranchBtn350">+ เพิ่มสาขา</button><span class="admin-api350">Cloud · ksp-api V8</span></div>
     </div>
     <div class="scroll"><table class="data branch-table350" id="branchTable350"></table></div>`;
   employeeAdmin.insertBefore(branchCard,employeeSection);
@@ -109,7 +109,7 @@
   branchModal.id='branchCrudModal350';branchModal.className='crud-modal350';
   branchModal.innerHTML=`
     <div class="crud-box350" style="width:min(540px,100%)">
-      <div class="crud-head350"><h3>แก้ไขข้อมูลสาขา</h3><button type="button" class="btn ghost" id="branchModalClose350">ปิด</button></div>
+      <div class="crud-head350"><h3 id="branchModalTitle350">แก้ไขข้อมูลสาขา</h3><button type="button" class="btn ghost" id="branchModalClose350">ปิด</button></div>
       <form id="branchCrudForm350">
         <div class="crud-grid350">
           <label>รหัสสาขา<input id="crudEditBranchCode350" required maxlength="30" autocomplete="off"><span class="field-note350">แก้ไขได้ ระบบจะย้ายข้อมูลพนักงาน ตารางงาน และ Version History ไปยังรหัสใหม่</span></label>
@@ -155,9 +155,9 @@
     (db.employees||[]).filter(e=>e.active!==false).forEach(e=>counts.set(String(e.branch_code),(counts.get(String(e.branch_code))||0)+1));
     q('#branchTable350').innerHTML=`<thead><tr><th>รหัสสาขา</th><th>ชื่อสาขา</th><th>พนักงาน</th><th>จัดการ</th></tr></thead><tbody>${rows.map(b=>`<tr>
       <td class="branch-code350">${esc350(b.code)}</td><td class="branch-name350">${esc350(b.name||b.code)}</td><td>${Number(counts.get(String(b.code))||0).toLocaleString()} คน</td>
-      <td><button type="button" class="btn secondary editBranch350" data-code="${esc350(b.code)}">แก้ไขสาขา</button></td>
+      <td><div class="emp-actions350"><button type="button" class="btn secondary editBranch350" data-code="${esc350(b.code)}">แก้ไข</button><button type="button" class="btn ghost deleteBranch350" data-code="${esc350(b.code)}">ลบ</button></div></td>
     </tr>`).join('')}</tbody>`;
-    q('#branchTable350').querySelectorAll('.editBranch350').forEach(btn=>btn.onclick=()=>openBranch350((db.branches||[]).find(b=>String(b.code)===btn.dataset.code)));
+    q('#branchTable350').querySelectorAll('.editBranch350').forEach(btn=>btn.onclick=()=>openBranch350((db.branches||[]).find(b=>String(b.code)===btn.dataset.code)));q('#branchTable350').querySelectorAll('.deleteBranch350').forEach(btn=>btn.onclick=()=>deleteBranch350(btn.dataset.code));
   }
 
   function openEmployee350(employee=null){
@@ -171,8 +171,8 @@
   }
   function closeEmployee350(){employeeModal.classList.remove('show');editingEmployee350=null;q('#employeeCrudForm350').reset();fields350.code.readOnly=false}
 
-  function openBranch350(branch){
-    if(!branch)return;editingBranch350=branch;q('#crudEditBranchCode350').value=branch.code||'';q('#crudBranchName350').value=branch.name||branch.code||'';
+  function openBranch350(branch=null){
+    editingBranch350=branch||null;q('#branchModalTitle350').textContent=branch?'แก้ไขข้อมูลสาขา':'เพิ่มสาขา';q('#crudEditBranchCode350').value=branch?.code||'';q('#crudBranchName350').value=branch?.name||branch?.code||'';
     branchModal.classList.add('show');setTimeout(()=>q('#crudEditBranchCode350').focus(),0);
   }
   function closeBranch350(){branchModal.classList.remove('show');editingBranch350=null;q('#branchCrudForm350').reset()}
@@ -198,16 +198,25 @@
   }
 
   q('#branchCrudForm350').onsubmit=async event=>{
-    event.preventDefault();if(!editingBranch350)return;
+    event.preventDefault();
     if(!adminPin350)return toast('กรุณาออกจาก Admin แล้วเข้าสู่ระบบใหม่ เพื่อยืนยันสิทธิ์','error');
-    const oldCode=String(editingBranch350.code||'').trim().toUpperCase();const newCode=q('#crudEditBranchCode350').value.trim().toUpperCase();const name=q('#crudBranchName350').value.trim();if(!newCode||!name)return toast('กรุณากรอกรหัสสาขาและชื่อสาขา','error');if(newCode!==oldCode&&(db.branches||[]).some(b=>String(b.code).toUpperCase()===newCode))return toast('รหัสสาขานี้มีอยู่แล้ว กรุณาใช้รหัสอื่น','error');
+    const isEdit=!!editingBranch350;const oldCode=isEdit?String(editingBranch350.code||'').trim().toUpperCase():'';const newCode=q('#crudEditBranchCode350').value.trim().toUpperCase();const name=q('#crudBranchName350').value.trim();if(!newCode||!name)return toast('กรุณากรอกรหัสสาขาและชื่อสาขา','error');if((!isEdit||newCode!==oldCode)&&(db.branches||[]).some(b=>String(b.code).toUpperCase()===newCode))return toast('รหัสสาขานี้มีอยู่แล้ว กรุณาใช้รหัสอื่น','error');
     const button=q('#branchSave350');button.disabled=true;button.textContent='กำลังบันทึก...';setSync350('กำลังบันทึกข้อมูลสาขา...');
-    try{const result=await api350('adminBranchUpdate',{old_branch_code:oldCode,new_branch_code:newCode,branch_name:name});await refreshCloud350();if(typeof renderHistoryCloud==='function')renderHistoryCloud();closeBranch350();toast(result?.renamed?'แก้ไขรหัสสาขาและชื่อสาขาทุกจุดแล้ว':'แก้ไขชื่อสาขาทุกจุดแล้ว');setSync350('ออนไลน์ · Sync แล้ว')}
+    try{const result=isEdit?await api350('adminBranchUpdate',{old_branch_code:oldCode,new_branch_code:newCode,branch_name:name}):await api350('adminBranchCreate',{branch_code:newCode,branch_name:name});await refreshCloud350();if(typeof renderHistoryCloud==='function')renderHistoryCloud();closeBranch350();toast(isEdit?(result?.renamed?'แก้ไขรหัสสาขาและชื่อสาขาทุกจุดแล้ว':'แก้ไขชื่อสาขาทุกจุดแล้ว'):'เพิ่มสาขาออนไลน์แล้ว');setSync350('ออนไลน์ · Sync แล้ว')}
     catch(error){const msg=error?.message==='BRANCH_CODE_EXISTS'?'รหัสสาขานี้มีอยู่แล้ว กรุณาใช้รหัสอื่น':(error?.message||String(error));setSync350('บันทึกข้อมูลสาขาไม่สำเร็จ',true);toast('บันทึกไม่สำเร็จ: '+msg,'error')}
     finally{button.disabled=false;button.textContent='บันทึกข้อมูลสาขา'}
   };
 
-  addBtn.onclick=()=>openEmployee350();branchFilter.onchange=renderEmployees350;
+  async function deleteBranch350(code){
+    const branch=(db.branches||[]).find(b=>String(b.code)===String(code));if(!branch)return;
+    const empCount=(db.employees||[]).filter(e=>e.active!==false&&String(e.branch_code)===String(code)).length;
+    if(empCount>0)return toast('ยังลบสาขาไม่ได้ เพราะมีพนักงาน '+empCount+' คน กรุณาย้ายหรือลบพนักงานออกจากสาขานี้ก่อน','error');
+    if(!confirm('ยืนยันลบสาขา '+branch.code+' — '+(branch.name||branch.code)+' ?\nประวัติตารางงานเดิมจะยังคงอยู่'))return;
+    try{setSync350('กำลังลบสาขา...');const result=await api350('adminBranchDelete',{branch_code:branch.code});await refreshCloud350();if(typeof renderHistoryCloud==='function')renderHistoryCloud();toast(result?.schedule_count?'ลบสาขาออกจากรายการปัจจุบันแล้ว · เก็บประวัติตาราง '+result.schedule_count+' ชุดไว้':'ลบสาขาแล้ว');setSync350('ออนไลน์ · Sync แล้ว')}
+    catch(error){const msg=error?.message==='BRANCH_HAS_EMPLOYEES'?'ยังมีพนักงานอยู่ในสาขานี้ กรุณาย้ายพนักงานก่อน':(error?.message||String(error));setSync350('ลบสาขาไม่สำเร็จ',true);toast('ลบไม่สำเร็จ: '+msg,'error')}
+  }
+
+  addBtn.onclick=()=>openEmployee350();q('#addBranchBtn350').onclick=()=>openBranch350();branchFilter.onchange=renderEmployees350;
   q('#empModalClose350').onclick=closeEmployee350;q('#empModalCancel350').onclick=closeEmployee350;
   q('#branchModalClose350').onclick=closeBranch350;q('#branchModalCancel350').onclick=closeBranch350;
   employeeModal.addEventListener('click',e=>{if(e.target===employeeModal)closeEmployee350()});branchModal.addEventListener('click',e=>{if(e.target===branchModal)closeBranch350()});
@@ -220,5 +229,5 @@
   if(typeof previousOpenAdmin==='function')window.openAdmin=function(){const result=previousOpenAdmin.apply(this,arguments);if(q('#admin-employees.active'))window.renderEmployees();return result};
 
   fillBranchControls350();renderEmployees350();renderBranches350();
-  const footer=q('.side footer');if(footer)footer.textContent='Version 3.6.3 · Branch Code Fix';
+  const footer=q('.side footer');if(footer)footer.textContent='Version 3.7 · Branch CRUD';
 })();
