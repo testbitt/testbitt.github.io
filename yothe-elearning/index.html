@@ -718,6 +718,128 @@ main{
   .sound-toggle .sound-label{display:inline!important;font-size:11px!important}
   main{padding:18px 12px 50px!important}
 }
+
+/* Professional theme polish - preserve Yothe colors */
+:root{
+  --pro-border:rgba(122,96,78,.16);
+  --pro-shadow:0 12px 32px rgba(67,53,37,.08);
+  --pro-shadow-hover:0 18px 38px rgba(67,53,37,.12);
+}
+body{
+  letter-spacing:.001em;
+}
+.topbar{
+  background:rgba(255,253,248,.985)!important;
+  border-right:1px solid var(--pro-border)!important;
+  box-shadow:8px 0 28px rgba(67,53,37,.07)!important;
+}
+.nav{
+  gap:12px!important;
+  padding:18px 14px!important;
+}
+.nav .brand{
+  border-bottom:1px solid var(--pro-border)!important;
+  padding:6px 8px 16px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.navbar-logo-custom{
+  max-height:84px!important;
+  filter:none!important;
+}
+.navlinks{
+  gap:6px!important;
+  padding:4px 0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.navlinks button,.navlinks a{
+  min-height:42px;
+  padding:10px 12px!important;
+  border-radius:10px!important;
+  font-weight:800!important;
+  transition:background .16s ease,color .16s ease,transform .16s ease,box-shadow .16s ease!important;
+}
+.navlinks button:hover,.navlinks a:hover{
+  transform:translateX(3px)!important;
+  background:var(--red-soft)!important;
+  color:var(--red)!important;
+}
+.navlinks button.active{
+  background:var(--red)!important;
+  color:#fff!important;
+  box-shadow:0 8px 18px rgba(180,38,34,.16)!important;
+  transform:none!important;
+}
+.navlinks button:before,.navlinks a:before,
+.navlinks button:after,.navlinks a:after{
+  display:none!important;
+}
+.sound-toggle{
+  min-height:40px!important;
+  border-radius:10px!important;
+  box-shadow:none!important;
+}
+.userbox{
+  padding-top:12px!important;
+  border-top:1px solid var(--pro-border);
+}
+.userbox .btn{
+  border-radius:10px!important;
+}
+main{
+  padding-top:34px!important;
+}
+.story,.sheet,.card,.attachment-card,.delivery-wrap,.ratio-table-wrap,.drink-map-group{
+  border-color:var(--pro-border)!important;
+  box-shadow:var(--pro-shadow)!important;
+}
+.story{
+  border-radius:18px!important;
+}
+.sheet,.card,.attachment-card{
+  border-radius:14px!important;
+}
+.sheet:hover,.card:hover,.attachment-card:hover{
+  transform:translateY(-2px)!important;
+  box-shadow:var(--pro-shadow-hover)!important;
+}
+.section-head{
+  padding-bottom:8px;
+  border-bottom:1px solid var(--pro-border);
+}
+.section-head h2{
+  font-weight:900;
+  letter-spacing:-.01em;
+}
+.section-head h2:after{
+  height:2px!important;
+  width:48px!important;
+}
+.sheet-title{
+  padding:12px 14px!important;
+  font-size:16px!important;
+  letter-spacing:.01em!important;
+}
+th{
+  font-weight:800!important;
+}
+.btn,.enter-btn,.viewer-nav,.viewer-close{
+  transition:transform .15s ease,box-shadow .15s ease,background .15s ease!important;
+}
+.btn:hover,.enter-btn:hover,.viewer-nav:hover,.viewer-close:hover{
+  transform:translateY(-1px);
+}
+.view.active{
+  animation:yotheFadeIn .2s ease both!important;
+}
+.story,.sheet,.card,.attachment-card,.home-entry{
+  animation:yotheFadeUp .28s ease both!important;
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
 </style>
 </head>
 <body>
