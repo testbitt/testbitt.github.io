@@ -788,6 +788,17 @@ button,.btn,.tab{touch-action:manipulation}
  .delivery-week,.menu-builder-table,.recipe-table{max-width:100%;overflow-x:auto}
 }
 
+
+/* Editor menu position: move former left-side controls above the preview. */
+.edit-layout{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto minmax(0,1fr);gap:12px;width:100%;min-width:0}
+.edit-sidebar{grid-column:1;grid-row:1;display:flex;flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:10px;border-right:0!important;border-bottom:2px solid #e9cab9;background:#fff7ed;border-radius:17px;padding:12px;min-width:0;width:100%}
+.edit-sidebar-title{width:100%;flex-basis:100%;margin:0}
+.edit-sidebar>.btn{width:auto;min-height:40px}
+.edit-sidebar .edit-row-list{display:flex;flex-direction:row;flex-wrap:wrap;gap:8px;width:100%;margin-top:4px}
+.edit-sidebar .edit-row-item{flex:1 1 190px;max-width:100%;min-width:0}
+.edit-content{grid-column:1;grid-row:2;min-width:0;width:100%}
+@media(max-width:600px){.edit-sidebar{padding:10px;gap:7px}.edit-sidebar>.btn{flex:1 1 145px}.edit-sidebar .edit-row-item{flex:1 1 100%}}
+
 </style>
 </head>
 <body>
