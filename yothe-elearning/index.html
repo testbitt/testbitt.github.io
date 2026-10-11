@@ -610,12 +610,17 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
   .drink-map-items{grid-template-columns:repeat(2,minmax(0,1fr))}
   .drink-map-card{grid-template-rows:95px auto}
 }
+
+/* Brand image-only safety */
+.brand{font-size:0!important}
+.brand span{display:none!important}
+.brand img{font-size:0;color:transparent}
 </style>
 </head>
 <body>
 <section id="loginScreen" class="login-screen hidden">
   <form id="loginForm" class="login-card">
-    <div class="login-brand"><img src="assets/yothe-header-logo.svg" alt="Yothé" style="width:min(320px,82vw);height:auto;object-fit:contain;display:block"></div>
+    <div class="login-brand"><img src="assets/yothe-header-logo.svg" alt="" aria-hidden="true" style="width:min(320px,82vw);height:auto;object-fit:contain;display:block"></div>
     <h1>E-Learning</h1>
     <p>กรุณา Login เพื่อเข้าใช้งาน</p>
     <div class="field"><label>User</label><input id="loginUser" class="input" autocomplete="username" required></div>
@@ -627,7 +632,7 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 
 <div id="appRoot">
 <header class="topbar"><div class="nav">
-  <button class="brand navbar-brand-image" data-view="home" style="border:0;background:none;padding:0"><img class="navbar-logo-custom" src="assets/yothe-header-logo.svg" alt="Yothé"></button>
+  <button class="brand navbar-brand-image" data-view="home" style="border:0;background:none;padding:0"><img class="navbar-logo-custom" src="assets/yothe-header-logo.svg" alt="" aria-hidden="true"></button>
   <nav id="navLinks" class="navlinks">
     <button data-view="home" class="active">Home</button>
     <button class="auth-only hidden-auth" data-view="uniforms">เครื่องแต่งกาย</button>
@@ -648,7 +653,7 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
   <section id="view-home" class="view active">
     <div class="story">
       <article><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><h1 id="storyTitle">BRAND STORY</h1></div><div id="storyBody" class="story-copy">กำลังโหลด...</div><div id="attachments-home" class="attachments"></div></article>
-      <aside class="story-logo"><img src="assets/yothe-cat.svg" alt="Yothé Cat"></aside>
+      <aside class="story-logo"><img src="assets/yothe-cat.svg" alt="" aria-hidden="true"></aside>
     </div>
     <div id="homeEntry" class="home-entry">
       <button id="enterWebsiteBtn" class="enter-btn">Click เพื่อเข้าสู่ Website</button>
@@ -691,7 +696,7 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 
 <section id="welcomePop" class="welcome-pop hidden">
   <div class="welcome-card">
-    <img src="assets/yothe-cat.svg" alt="Yothé Cat">
+    <img src="assets/yothe-cat.svg" alt="" aria-hidden="true">
     <h2>ยินดีต้อนรับ</h2>
     <p id="welcomeName"></p>
     <button id="welcomeOkBtn" class="btn primary">เข้าสู่บทเรียน</button>
