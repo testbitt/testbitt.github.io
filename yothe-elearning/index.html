@@ -529,6 +529,87 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
   .ratio-table{min-width:860px}
   .ratio-table th,.ratio-table td{padding:8px;font-size:13px}
 }
+
+/* Drink formula map */
+.drink-map-wrap{display:grid;gap:18px}
+.drink-map-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:18px;
+  align-items:start;
+}
+.drink-map-group{
+  background:#fff;
+  border:1px solid #eadedb;
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 8px 28px rgba(77,25,18,.07);
+  min-width:0;
+}
+.drink-map-group-head{
+  padding:16px 14px;
+  text-align:center;
+  font-size:20px;
+  font-weight:900;
+  color:#fff;
+  background:var(--red);
+}
+.drink-map-group-sub{
+  padding:8px 12px;
+  text-align:center;
+  font-size:12px;
+  font-weight:800;
+  color:#7f1d1d;
+  background:#fff7f5;
+  border-bottom:1px solid #f0ded9;
+}
+.drink-map-items{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  padding:12px;
+}
+.drink-map-card{
+  display:grid;
+  grid-template-rows:110px auto;
+  background:#fff;
+  border:1px solid #eee2df;
+  border-radius:14px;
+  overflow:hidden;
+  cursor:pointer;
+  min-width:0;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+.drink-map-card:hover{
+  transform:translateY(-3px);
+  border-color:#e7aaa3;
+  box-shadow:0 8px 18px rgba(77,25,18,.10);
+}
+.drink-map-image{
+  display:grid;
+  place-items:center;
+  background:#faf7f6;
+  overflow:hidden;
+}
+.drink-map-image img{width:100%;height:100%;object-fit:contain}
+.drink-map-image .drink-map-noimg{font-size:28px;opacity:.45}
+.drink-map-name{
+  padding:9px 8px;
+  text-align:center;
+  font-weight:900;
+  font-size:13px;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+.drink-map-empty{padding:24px;text-align:center;color:#9ca3af;font-weight:800}
+@media(max-width:980px){
+  .drink-map-grid{grid-template-columns:1fr}
+  .drink-map-items{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:640px){
+  .drink-map-items{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .drink-map-card{grid-template-rows:95px auto}
+}
 </style>
 </head>
 <body>
@@ -553,6 +634,7 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
     <button class="auth-only hidden-auth" data-view="production">สูตรการผลิต</button>
     <button class="auth-only hidden-auth" data-view="production-ratio">อัตราส่วนการผลิต</button>
     <button class="auth-only hidden-auth" data-view="drinks">สูตรชง</button>
+    <button class="auth-only hidden-auth" data-view="drink-map">แผนผังสูตรเครื่องดื่ม</button>
     <button class="auth-only hidden-auth" data-view="expiry">วันหมดอายุ</button>
     <button class="auth-only hidden-auth" data-view="toppings">Topping</button>
     <button class="auth-only hidden-auth" data-view="courses">บทเรียนอื่น ๆ</button>
@@ -578,7 +660,7 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
     <div class="section-head"><div><h2>อัตราส่วนการผลิต</h2><p>อัตราส่วนวัตถุดิบและจำนวนสูตรที่ผลิตได้</p></div></div>
     <div id="productionRatioList" class="ratio-table-wrap"></div>
   </section>
-  <section id="view-drinks" class="view"><div class="section-head"><div><h2>สูตรชงเครื่องดื่ม</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="drinkList" class="grid"></div><div id="attachments-drinks" class="attachments"></div></section>
+  <section id="view-drinks" class="view"><div class="section-head"><div><h2>สูตรชงเครื่องดื่ม</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="drinkList" class="grid"></div><div id="attachments-drinks" class="attachments"></div></section>\n  <section id="view-drink-map" class="view"><div class="section-head"><div><h2>แผนผังสูตรเครื่องดื่ม</h2><p>จัดกลุ่มอัตโนมัติจากวัตถุดิบลำดับที่ 1–2 ของสูตรชงเครื่องดื่ม</p></div></div><div id="drinkMapList" class="drink-map-wrap"></div></section>
   <section id="view-expiry" class="view"><div class="section-head"><div><h2>วันหมดอายุ</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="expiryList"></div><div id="attachments-expiry" class="attachments"></div></section>
   <section id="view-toppings" class="view"><div class="section-head"><div><h2>Topping</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="toppingList" class="grid"></div><div id="attachments-toppings" class="attachments"></div></section>
   <section id="view-uniforms" class="view"><div class="section-head"><div><h2>เครื่องแต่งกาย</h2></div></div><div id="uniformList" class="grid"></div><div id="attachments-uniforms" class="attachments"></div></section>
@@ -1013,11 +1095,17 @@ function renderMenuOrder(order){
     home=nav.querySelector('[data-view="home"]'),
     uniforms=nav.querySelector('[data-view="uniforms"]'),
     coursesBtn=nav.querySelector('[data-view="courses"]'),
+    drinkMapBtn=nav.querySelector('[data-view="drink-map"]'),
     admin=nav.querySelector('a[href="admin.html"]');
   const rest=order.filter(x=>["production","drinks","expiry","toppings"].includes(x));
   nav.insertBefore(home,nav.firstChild);
   if(uniforms) nav.insertBefore(uniforms,home.nextSibling);
-  rest.forEach(k=>{const el=nav.querySelector('[data-view="'+k+'"]');if(el)nav.insertBefore(el,coursesBtn)});
+  rest.forEach(k=>{
+    const el=nav.querySelector('[data-view="'+k+'"]');
+    if(el)nav.insertBefore(el,coursesBtn);
+    if(k==="drinks"&&drinkMapBtn)nav.insertBefore(drinkMapBtn,coursesBtn);
+  });
+  if(drinkMapBtn&&!rest.includes("drinks"))nav.insertBefore(drinkMapBtn,coursesBtn);
   syncCustomMenuPosition();
   syncCourseLessonMenuPosition();
   nav.appendChild(coursesBtn);
@@ -1043,6 +1131,7 @@ async function loadView(view){
     if(view==="production"){const r=await api("production");renderProduction(r);await loadAttachments("production");return}
     if(view==="production-ratio"){renderProductionRatio(await api("production_ratio"));return}
     if(view==="drinks"){const [r,m]=await Promise.all([api("drinks"),api("drink_meta")]);renderDrinks(r,m);await loadAttachments("drinks");return}
+    if(view==="drink-map"){const [r,m]=await Promise.all([api("drinks"),api("drink_meta")]);renderDrinkMap(r,m);return}
     if(view==="toppings"){renderToppings(await api("toppings"));await loadAttachments("toppings");return}
     if(view==="expiry"){renderExpiry(await api("expiry"));await loadAttachments("expiry");return}
     if(view==="uniforms"){renderUniforms(await api("uniforms"));await loadAttachments("uniforms");return}
@@ -1065,6 +1154,61 @@ function renderProductionRatio(rows){
   el.innerHTML=rows.length?'<div class="sheet ratio-sheet"><div class="sheet-title">อัตราส่วนการผลิต</div><div class="ratio-scroll"><table class="ratio-table"><thead><tr><th>NO.</th><th>รูป</th><th>Code</th><th>Detail Raw Material</th><th>Unit</th><th>ขนาดบรรจุ</th><th>ปริมาณที่ใช้ต่อ 1 สูตร</th><th>จำนวนที่ผลิตได้ (สูตร)</th></tr></thead><tbody>'+rows.map((r,i)=>'<tr><td class="num">'+esc(r.sort_order||i+1)+'</td><td class="num">'+(r.image_url?'<img src="'+esc(r.image_url)+'" alt="" style="width:58px;height:58px;object-fit:contain;border-radius:8px">':'-')+'</td><td><strong>'+esc(r.code||"")+'</strong></td><td>'+esc(r.detail_raw_material||"")+'</td><td class="num">'+esc(r.unit||"")+'</td><td class="num">'+formatRatioNumber(r.pack_size)+'</td><td class="num">'+formatRatioNumber(r.usage_per_recipe)+'</td><td class="num"><strong>'+formatRatioOneDecimal(r.recipes_yield)+'</strong></td></tr>').join("")+'</tbody></table></div></div>':'<div class="state">ยังไม่มีข้อมูล</div>';
 }
 function renderProduction(rows){const g={};rows.forEach(r=>(g[r.recipe_name||"ไม่ระบุชื่อ"]??=[]).push(r));document.getElementById("productionList").innerHTML=sortGroupedEntries("production",Object.entries(g)).map(([name,items])=>{items=sortDetailRows(items);const img=items.find(x=>x.image_url)?.image_url||"";const noteValues=[...new Set(items.map(x=>String(x.notes||"").trim()).filter(Boolean))];const mergedNote=noteValues.join("\n\n");return '<article class="sheet"><div class="sheet-title">'+esc(name)+'</div>'+(img?'<div class="photo" style="border-right:0;border-bottom:1px solid #d1d5db;min-height:180px"><img src="'+esc(img)+'" alt="'+esc(name)+'"></div>':"")+'<div class="production-meta"><div class="note" style="background:#f3f4f6;color:#111827">Servings: '+esc(items.find(x=>String(x.servings||"").trim())?.servings||"-")+'</div><div class="note net-quantity-note" style="background:#fff7ed;color:#9a3412">Net Quantity: '+esc(items.find(x=>String(x.net_quantity??"").trim())?.net_quantity||"-")+'</div><div class="note net-unit-note" style="background:#f0fdf4;color:#166534">Net Unit: '+esc(items.find(x=>String(x.net_unit||"").trim())?.net_unit||"-")+'</div></div><table><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th><th>หมายเหตุ</th></tr></thead><tbody>'+items.map((x,i)=>'<tr><td>'+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td>'+(i===0?'<td rowspan="'+items.length+'" style="vertical-align:top">'+esc(mergedNote).replace(/\n/g,"<br>")+'</td>':'')+'</tr>').join("")+'</tbody></table></article>'}).join("")||'<div class="state">ยังไม่มีข้อมูล</div>';scheduleUserTableFit()}
+function classifyDrinkRecipe(items){
+  const ingredients=sortDetailRows(items)
+    .filter(x=>String(x.component_type||"").toLowerCase()==="ingredient");
+  const first=String(ingredients[0]?.ingredient||"").trim().toLowerCase();
+  const second=String(ingredients[1]?.ingredient||"").trim().toLowerCase();
+  if(first!=="yogurt")return null;
+  if(second.includes("camellia"))return "camellia";
+  if(second.includes("jasmine"))return "jasmine";
+  return "original";
+}
+function renderDrinkMap(rows,metas){
+  const el=document.getElementById("drinkMapList");if(!el)return;
+  const mm=Object.fromEntries((metas||[]).map(x=>[x.recipe_id,x]));
+  const byRecipe={};
+  (rows||[]).forEach(r=>(byRecipe[r.recipe_id]??=[]).push(r));
+  const groups={original:[],camellia:[],jasmine:[]};
+  Object.entries(byRecipe).forEach(([recipeId,items])=>{
+    const group=classifyDrinkRecipe(items);
+    if(!group)return;
+    const first=sortDetailRows(items)[0]||{};
+    groups[group].push({
+      recipe_id:recipeId,
+      menu_name:first.menu_name||recipeId,
+      image_url:mm[recipeId]?.image_url||""
+    });
+  });
+  Object.values(groups).forEach(arr=>arr.sort((a,b)=>String(a.menu_name).localeCompare(String(b.menu_name),"th")));
+  const defs=[
+    ["original","Original Yogurt","Yogurt + วัตถุดิบลำดับ 2 แบบ Original"],
+    ["camellia","Camellia Yogurt","Yogurt + Camellia tea"],
+    ["jasmine","Jasmine Yogurt","Yogurt + Jasmine tea"]
+  ];
+  el.innerHTML='<div class="drink-map-grid">'+defs.map(([key,title,sub])=>{
+    const items=groups[key];
+    return '<section class="drink-map-group"><div class="drink-map-group-head">'+esc(title)+'</div><div class="drink-map-group-sub">'+esc(sub)+'</div>'+
+      (items.length?'<div class="drink-map-items">'+items.map(x=>
+        '<button type="button" class="drink-map-card" data-drink-recipe="'+esc(x.recipe_id)+'">'+
+          '<div class="drink-map-image">'+(x.image_url?'<img src="'+esc(x.image_url)+'" alt="'+esc(x.menu_name)+'">':'<div class="drink-map-noimg">🥤</div>')+'</div>'+
+          '<div class="drink-map-name">'+esc(x.menu_name)+'</div>'+
+        '</button>'
+      ).join("")+'</div>':'<div class="drink-map-empty">ยังไม่มีเมนูในกลุ่มนี้</div>')+
+    '</section>'
+  }).join("")+'</div>';
+  el.querySelectorAll("[data-drink-recipe]").forEach(btn=>btn.addEventListener("click",()=>{
+    const rid=btn.dataset.drinkRecipe;
+    showView("drinks");
+    setTimeout(()=>{
+      const sheets=[...document.querySelectorAll("#drinkList .sheet")];
+      const rowsFor=byRecipe[rid]||[];
+      const name=rowsFor[0]?.menu_name||"";
+      const target=sheets.find(s=>s.querySelector(".sheet-title")?.textContent.trim()===name);
+      target?.scrollIntoView({behavior:"smooth",block:"start"});
+    },180);
+  }));
+}
 function renderDrinks(rows,metas){const mm=Object.fromEntries(metas.map(x=>[x.recipe_id,x])),g={};rows.forEach(r=>(g[r.recipe_id]??=[]).push(r));document.getElementById("drinkList").innerHTML=sortGroupedEntries("drinks",Object.entries(g)).map(([id,items])=>{items=sortDetailRows(items);const first=items[0]||{},m=mm[id]||{},tops=items.filter(x=>String(x.component_type||"").toLowerCase()==="topping").map(x=>x.sort_order||9999),ft=tops.length?Math.min(...tops):null;return '<article class="sheet"><div class="sheet-title">'+esc(first.menu_name||id)+'</div><div class="sheet-body"><div class="photo">'+(m.image_url?'<img src="'+esc(m.image_url)+'" alt="'+esc(first.menu_name||id)+'">':'<div class="empty">ยังไม่มีรูป</div>')+'</div><div><table><thead><tr><th>วัตถุดิบ</th><th>'+esc(m.size_label||"17 oz.(IB)")+'</th><th>หน่วย</th><th>หมายเหตุ</th></tr></thead><tbody>'+items.map(x=>'<tr><td>'+(ft!==null&&x.sort_order===ft?'<span class="topping">Topping</span><br>':'')+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td><td>'+esc(x.notes||"").replace(/\n/g,"<br>")+'</td></tr>').join("")+'</tbody></table>'+(m.note?'<div class="note">'+esc(m.note).replace(/\n/g,"<br>")+'</div>':'')+'</div></div></article>'}).join("")||'<div class="state">ยังไม่มีข้อมูล</div>';scheduleUserTableFit()}
 function renderToppings(rows){const g={};rows.forEach(r=>{const k=(r.category||"Topping")+" • "+(r.subcategory||"ทั่วไป");(g[k]??=[]).push(r)});document.getElementById("toppingList").innerHTML=sortGroupedEntries("toppings",Object.entries(g)).map(([name,items])=>'<article class="sheet"><div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th>รูป</th><th>รายการ</th><th>จำนวน</th><th>หน่วย</th><th>ราคา</th><th>หมายเหตุ</th></tr></thead><tbody>'+sortDetailRows(items).map(r=>'<tr><td style="width:74px">'+(r.image_url?'<img src="'+esc(r.image_url)+'" style="width:58px;height:58px;object-fit:contain">':"-")+'</td><td>'+esc(r.item_name||r.name||"")+'</td><td class="num">'+esc(r.quantity??"-")+'</td><td class="num">'+esc(r.unit||"-")+'</td><td class="num">'+(r.price_baht!=null?esc(r.price_baht)+" บาท":"-")+'</td><td>'+esc(r.notes||"").replace(/\n/g,"<br>")+'</td></tr>').join("")+'</tbody></table></article>').join("")||'<div class="state">ยังไม่มีข้อมูล</div>'}
 function renderExpiry(rows){
