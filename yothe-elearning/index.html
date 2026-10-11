@@ -1331,6 +1331,29 @@ body .view.active .section-head{animation:yotheNewEntry .36s ease-out both}
 @media(hover:hover) and (pointer:fine){body .view.active .attachment-card,body .view.active .card{transition:transform .22s ease,box-shadow .22s ease}body .view.active .attachment-card:hover,body .view.active .card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(74,58,39,.12)}}
 @media(prefers-reduced-motion:reduce){body .story-logo img,body .story::before,body .story::after,body .home-entry .enter-btn,body .home-entry .enter-btn::after,body .view.active .section-head{animation:none!important}body .navlinks button,body .navlinks a,body .navbar-brand-image img,body .home-entry .enter-btn,body .view.active .card,body .view.active .attachment-card{transition:none!important}}
 
+
+/* Yothé Clay World — soft sculpted / handmade visual system */
+:root{--red:#c93638;--red-soft:#ffe1dd;--ink:#49312d;--muted:#866b62;--line:#eccfc0;--bg:#fff1e2;--paper:#fffaf2;--radius:26px;--shadow:0 9px 0 #edc8b6,0 17px 30px rgba(114,67,55,.13)}
+body{background:radial-gradient(circle at 12% 12%,#fff9e8 0 12%,transparent 32%),radial-gradient(circle at 94% 38%,#f9d8d0 0,transparent 30%),linear-gradient(145deg,#fff1e2,#ffe9df 60%,#fff5e9);color:var(--ink)}
+.topbar{background:rgba(255,245,230,.96);border-bottom:3px solid #e7b9a5;box-shadow:0 5px 0 #f8d5c4,0 9px 17px rgba(110,69,47,.12)}
+.story,.sheet,.card,.attachment-card,.login-card,.welcome-card{border:2px solid #f0cdbb;border-radius:30px;background:linear-gradient(150deg,#fffef8,#fff4e7);box-shadow:0 8px 0 #e9c1ae,0 18px 32px rgba(110,64,46,.12)}
+.story{background:radial-gradient(circle at 93% 6%,rgba(255,213,179,.55),transparent 37%),linear-gradient(150deg,#fffdf8,#fff2e4);border-radius:38px}
+.story h1,.section-head h2{color:#b93434;text-shadow:0 3px 0 #ffe0cf;letter-spacing:-.025em}
+.story::before{width:9px!important;background:linear-gradient(#f9af8e,#d5524a,#f2bfa6)!important;border-radius:14px}
+.navlinks button,.navlinks a{border-radius:18px;border:2px solid transparent}
+.navlinks button:hover,.navlinks button.active{background:linear-gradient(165deg,#ec7469,#c93638);border-color:#b93536;color:white;box-shadow:inset 0 2px 3px rgba(255,255,255,.38),0 4px 0 #a82e32,0 7px 14px rgba(138,49,49,.15)}
+.btn,.enter-btn,.attachment-open,.viewer-nav{border-radius:19px!important;transition:transform .2s ease,box-shadow .2s ease,filter .2s ease}
+.btn.primary,.home-entry .enter-btn{background:linear-gradient(165deg,#ec796b,#c93638);border:2px solid #bd3b3a;border-radius:23px!important;box-shadow:inset 0 3px 3px rgba(255,255,255,.32),0 7px 0 #a62d30,0 13px 19px rgba(122,39,38,.18);color:#fff;text-shadow:0 1px 1px rgba(90,0,0,.2)}
+.btn.secondary{background:linear-gradient(#fffef9,#ffeddf);border:2px solid #e7bca9;box-shadow:0 4px 0 #edd0be;color:#b93434}
+.btn:active,.home-entry .enter-btn:active{transform:translateY(4px)!important;box-shadow:0 2px 0 #a62d30!important}
+.input,input,select,textarea{accent-color:#c93638}
+.input{border:2px solid #e9c5b2;border-radius:17px;background:#fffaf4;box-shadow:inset 0 2px 5px rgba(125,70,48,.06)}
+.story-logo img{filter:drop-shadow(0 11px 3px rgba(154,102,83,.18))}
+.sheet,.card,.attachment-card{overflow-wrap:anywhere}
+@media(hover:hover) and (pointer:fine){.card:hover,.attachment-card:hover,.sheet:hover{filter:saturate(1.05);box-shadow:0 11px 0 #e8bca7,0 22px 36px rgba(110,64,46,.16)}}
+@media(max-width:600px){.story{border-radius:26px;padding:22px}.story,.sheet,.card,.attachment-card{box-shadow:0 5px 0 #e9c1ae,0 11px 20px rgba(110,64,46,.10)}}
+@media(prefers-reduced-motion:reduce){.story-logo img,.story::after{animation:none!important}}
+
 </style>
 </head>
 <body>
