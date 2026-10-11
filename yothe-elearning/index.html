@@ -615,6 +615,109 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
 .brand{font-size:0!important}
 .brand span{display:none!important}
 .brand img{font-size:0;color:transparent}
+
+/* Left sidebar navigation */
+:root{--sidebar-w:248px}
+#appRoot{min-height:100vh}
+.topbar{
+  position:fixed!important;
+  left:0!important;
+  top:0!important;
+  bottom:0!important;
+  width:var(--sidebar-w)!important;
+  height:100vh!important;
+  z-index:80!important;
+  border-right:1px solid var(--line)!important;
+  border-bottom:0!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  background:rgba(255,253,248,.98)!important;
+}
+.nav{
+  width:100%!important;
+  max-width:none!important;
+  min-height:100%!important;
+  margin:0!important;
+  padding:18px 14px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:flex-start!important;
+  gap:14px!important;
+}
+.nav .brand{
+  width:100%!important;
+  justify-content:center!important;
+  padding:4px 6px 14px!important;
+  border-bottom:1px solid var(--line)!important;
+}
+.navbar-logo-custom{
+  display:block!important;
+  width:min(205px,100%)!important;
+  max-height:92px!important;
+  object-fit:contain!important;
+}
+.navlinks{
+  width:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:6px!important;
+  overflow:visible!important;
+  padding:0!important;
+}
+.navlinks button,.navlinks a{
+  width:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  text-align:left!important;
+  padding:11px 13px!important;
+  border-radius:12px!important;
+  white-space:normal!important;
+  text-decoration:none!important;
+}
+.navlinks button:hover,.navlinks button.active,.navlinks a:hover{
+  background:var(--red)!important;
+  color:#fff!important;
+}
+.sound-toggle{
+  width:100%!important;
+  justify-content:center!important;
+  color:var(--red)!important;
+  background:#fff!important;
+  border:1px solid #f0c5c0!important;
+}
+.userbox{
+  width:100%!important;
+  margin-top:auto!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:8px!important;
+  white-space:normal!important;
+  text-align:center!important;
+}
+.userbox .btn{width:100%!important}
+main{
+  max-width:none!important;
+  margin-left:var(--sidebar-w)!important;
+  padding:30px 28px 70px!important;
+}
+.story-logo{top:30px!important}
+@media(max-width:900px){
+  :root{--sidebar-w:210px}
+  main{padding:24px 18px 60px!important}
+}
+@media(max-width:680px){
+  :root{--sidebar-w:176px}
+  .topbar{width:var(--sidebar-w)!important}
+  .nav{padding:12px 9px!important;gap:10px!important}
+  .navbar-logo-custom{width:min(150px,100%)!important;max-height:72px!important}
+  .navlinks button,.navlinks a{font-size:12px!important;padding:9px 8px!important}
+  .sound-toggle{padding:8px!important}
+  .sound-toggle .sound-label{display:inline!important;font-size:11px!important}
+  main{padding:18px 12px 50px!important}
+}
 </style>
 </head>
 <body>
@@ -665,7 +768,8 @@ table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1
     <div class="section-head"><div><h2>อัตราส่วนการผลิต</h2><p>อัตราส่วนวัตถุดิบและจำนวนสูตรที่ผลิตได้</p></div></div>
     <div id="productionRatioList" class="ratio-table-wrap"></div>
   </section>
-  <section id="view-drinks" class="view"><div class="section-head"><div><h2>สูตรชงเครื่องดื่ม</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="drinkList" class="grid"></div><div id="attachments-drinks" class="attachments"></div></section>\n  <section id="view-drink-map" class="view"><div class="section-head"><div><h2>แผนผังสูตรเครื่องดื่ม</h2><p>จัดกลุ่มอัตโนมัติจากวัตถุดิบลำดับที่ 1–2 ของสูตรชงเครื่องดื่ม</p></div></div><div id="drinkMapList" class="drink-map-wrap"></div></section>
+  <section id="view-drinks" class="view"><div class="section-head"><div><h2>สูตรชงเครื่องดื่ม</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="drinkList" class="grid"></div><div id="attachments-drinks" class="attachments"></div></section>
+  <section id="view-drink-map" class="view"><div class="section-head"><div><h2>แผนผังสูตรเครื่องดื่ม</h2><p>จัดกลุ่มอัตโนมัติจากวัตถุดิบลำดับที่ 1–2 ของสูตรชงเครื่องดื่ม</p></div></div><div id="drinkMapList" class="drink-map-wrap"></div></section>
   <section id="view-expiry" class="view"><div class="section-head"><div><h2>วันหมดอายุ</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="expiryList"></div><div id="attachments-expiry" class="attachments"></div></section>
   <section id="view-toppings" class="view"><div class="section-head"><div><h2>Topping</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="toppingList" class="grid"></div><div id="attachments-toppings" class="attachments"></div></section>
   <section id="view-uniforms" class="view"><div class="section-head"><div><h2>เครื่องแต่งกาย</h2></div></div><div id="uniformList" class="grid"></div><div id="attachments-uniforms" class="attachments"></div></section>
