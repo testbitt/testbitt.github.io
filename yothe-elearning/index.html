@@ -840,6 +840,179 @@ th{
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* Yothé motion & color refresh */
+:root{
+  --yothe-pink:#ffe7ea;
+  --yothe-cream:#fffaf4;
+  --yothe-gold:#f7c96f;
+  --yothe-green:#7fb685;
+  --yothe-shadow:0 14px 34px rgba(125,35,40,.12);
+}
+body{
+  background:
+    radial-gradient(circle at 10% 10%,rgba(255,214,220,.46),transparent 26%),
+    radial-gradient(circle at 90% 16%,rgba(247,201,111,.20),transparent 24%),
+    linear-gradient(180deg,#fffaf7 0%,#fff 46%,#fff9f5 100%);
+}
+.topbar{
+  position:sticky;
+  top:0;
+  z-index:80;
+  backdrop-filter:blur(12px);
+  box-shadow:0 8px 26px rgba(70,25,25,.10);
+}
+.brand{
+  transition:transform .24s ease,filter .24s ease;
+}
+.brand:hover{
+  transform:translateY(-2px) scale(1.025);
+  filter:drop-shadow(0 5px 8px rgba(130,25,30,.18));
+}
+.brand-cat{
+  animation:yotheCatFloat 3.4s ease-in-out infinite;
+  transform-origin:50% 85%;
+}
+.brand-wordmark{
+  transition:transform .25s ease;
+}
+.brand:hover .brand-wordmark{transform:translateX(3px)}
+.navlinks button,.navlinks a{
+  position:relative;
+  overflow:hidden;
+  transition:transform .2s ease,box-shadow .2s ease,background .2s ease,color .2s ease;
+}
+.navlinks button:hover,.navlinks a:hover{
+  transform:translateY(-2px);
+  box-shadow:0 7px 16px rgba(150,35,40,.14);
+}
+.navlinks button::after,.navlinks a::after{
+  content:"";
+  position:absolute;
+  left:14%;right:14%;bottom:4px;height:2px;
+  border-radius:999px;
+  background:currentColor;
+  transform:scaleX(0);
+  transform-origin:center;
+  transition:transform .22s ease;
+  opacity:.65;
+}
+.navlinks button:hover::after,.navlinks a:hover::after{transform:scaleX(1)}
+.view.active{
+  animation:yothePageIn .38s cubic-bezier(.2,.8,.2,1) both;
+}
+.story article,.story-logo,.recipe-card,.card,.delivery-supplier-card,.attachment-card{
+  transition:transform .24s ease,box-shadow .24s ease,border-color .24s ease;
+}
+.story article:hover,.story-logo:hover,.recipe-card:hover,.card:hover,.delivery-supplier-card:hover,.attachment-card:hover{
+  transform:translateY(-4px);
+  box-shadow:var(--yothe-shadow);
+}
+.story{
+  position:relative;
+}
+.story::before,.story::after{
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  border-radius:50%;
+  z-index:0;
+  opacity:.34;
+}
+.story::before{
+  width:120px;height:120px;
+  right:4%;top:2%;
+  background:radial-gradient(circle,#ffd0d8 0 36%,transparent 38%);
+  animation:yotheDrift 7s ease-in-out infinite;
+}
+.story::after{
+  width:76px;height:76px;
+  left:2%;bottom:4%;
+  background:radial-gradient(circle,#f7c96f 0 32%,transparent 35%);
+  animation:yotheDrift 6s ease-in-out infinite reverse;
+}
+.story>*{position:relative;z-index:1}
+.enter-btn,.btn.primary,.viewer-nav,.viewer-close{
+  position:relative;
+  overflow:hidden;
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.enter-btn:hover,.btn.primary:hover,.viewer-nav:hover,.viewer-close:hover{
+  transform:translateY(-2px) scale(1.015);
+  box-shadow:0 10px 24px rgba(150,30,35,.20);
+}
+.enter-btn::before,.btn.primary::before{
+  content:"";
+  position:absolute;
+  inset:-120% -40%;
+  background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.55) 50%,transparent 62%);
+  transform:translateX(-55%);
+  animation:yotheShine 3.8s ease-in-out infinite;
+  pointer-events:none;
+}
+.section-head h2,.delivery-head h2{
+  position:relative;
+  display:inline-block;
+}
+.section-head h2::after,.delivery-head h2::after{
+  content:"";
+  position:absolute;
+  left:0;bottom:-5px;
+  width:42%;height:4px;
+  border-radius:999px;
+  background:linear-gradient(90deg,var(--red),var(--yothe-gold));
+  animation:yotheUnderline 2.8s ease-in-out infinite;
+}
+.popup-marker{
+  box-shadow:0 5px 16px rgba(150,25,30,.28),0 0 0 0 rgba(210,55,60,.28)!important;
+  animation:yotheMarkerPulse 2s ease-in-out infinite;
+}
+.sound-toggle{
+  transition:transform .2s ease,background .2s ease,box-shadow .2s ease;
+}
+.sound-toggle:hover{
+  transform:translateY(-2px) rotate(-2deg);
+  box-shadow:0 7px 16px rgba(80,20,20,.16);
+}
+@keyframes yotheCatFloat{
+  0%,100%{transform:translateY(0) rotate(0)}
+  35%{transform:translateY(-3px) rotate(-2deg)}
+  70%{transform:translateY(1px) rotate(2deg)}
+}
+@keyframes yothePageIn{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes yotheDrift{
+  0%,100%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(12px,-8px) scale(1.08)}
+}
+@keyframes yotheShine{
+  0%,55%{transform:translateX(-70%) rotate(5deg)}
+  75%,100%{transform:translateX(70%) rotate(5deg)}
+}
+@keyframes yotheUnderline{
+  0%,100%{width:36%;opacity:.75}
+  50%{width:64%;opacity:1}
+}
+@keyframes yotheMarkerPulse{
+  0%,100%{box-shadow:0 5px 16px rgba(150,25,30,.28),0 0 0 0 rgba(210,55,60,.28)}
+  50%{box-shadow:0 7px 18px rgba(150,25,30,.32),0 0 0 8px rgba(210,55,60,0)}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    scroll-behavior:auto!important;
+  }
+}
+@media(max-width:760px){
+  .story::before{width:74px;height:74px}
+  .story::after{width:48px;height:48px}
+  .story article:hover,.story-logo:hover,.recipe-card:hover,.card:hover,.delivery-supplier-card:hover,.attachment-card:hover{
+    transform:none;
+  }
+}
 </style>
 </head>
 <body>
