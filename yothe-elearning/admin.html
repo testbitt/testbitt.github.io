@@ -740,6 +740,20 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .tab[data-custom-admin-menu="1"].active{
   border-style:solid;
 }
+
+/* Yothé Clay World admin — cohesive, readable sculpted surfaces */
+:root{--red:#c93638;--red2:#a92e35;--soft:#ffe8df;--ink:#432f2d;--muted:#806a63;--line:#e9cab9;--bg:#fff0e5;--white:#fffaf3;--theme-radius:23px;--theme-shadow:0 6px 0 #ebc6b4,0 14px 24px rgba(106,61,43,.1)}
+body{background:radial-gradient(circle at 90% 0,#ffe0d7,transparent 34%),linear-gradient(135deg,#fff5e8,#ffebe1)}
+.top{background:#fff7eb;border-bottom:3px solid #ecc7b6;box-shadow:0 4px 0 #f7dcd0}
+.panel{background:linear-gradient(155deg,#fffefa,#fff5e9);border:2px solid #eed0bf;box-shadow:var(--theme-shadow)}
+.btn{border-radius:16px;transition:transform .18s ease,box-shadow .18s ease}
+.btn.primary,.primary{background:linear-gradient(155deg,#e97569,#c93638);box-shadow:0 4px 0 #a93234}
+.btn:active{transform:translateY(2px)}
+.input,input,select,textarea{accent-color:#c93638}
+.input{border-radius:14px;border:2px solid #ebcaba;background:#fffdf8}
+.tab{border-radius:15px}
+@media(prefers-reduced-motion:reduce){.btn{transition:none!important}}
+
 </style>
 </head>
 <body>
