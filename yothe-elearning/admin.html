@@ -1217,6 +1217,7 @@ async function loadCustomMenus(){
   }catch{customMenus=[]}
   syncCustomAttachmentOptions();
   syncCustomAdminTabs();
+  syncPopupSourceSections();
   return customMenus;
 }
 function syncCustomAttachmentOptions(){
@@ -1232,6 +1233,7 @@ async function saveCustomMenus(){
   await api({action:"save",dataset:"settings",row:{key:"custom_menus",value:customMenus}});
   syncCustomAttachmentOptions();
   syncCustomAdminTabs();
+  syncPopupSourceSections();
 }
 function renderMenuBuilder(){
   const wrap=document.getElementById("tableWrap"),hint=document.getElementById("datasetHint");
@@ -1291,6 +1293,8 @@ const POPUP_STYLES=["เด้งนุ่ม","ดุ๊กดิ๊ก","ซ�
 let popupAttachments=[],popupRows=[],popupAttachmentId=null,popupSelectedId=null;
 
 async function loadPopupManager(){
+  // Refresh menu settings each time Popup Manager opens, including menus created in this session or another admin tab.
+  await loadCustomMenus();
   const hint=document.getElementById("datasetHint"),wrap=document.getElementById("tableWrap");
   hint.textContent="จัดการ Popup • กำลังโหลด...";
   wrap.innerHTML='<div style="padding:20px" class="muted">กำลังโหลด...</div>';
@@ -1457,8 +1461,12 @@ function syncPopupSourceSections(){
     ["home","Home / BRAND STORY"],["production","สูตรการผลิต"],["drinks","สูตรชงเครื่องดื่ม"],
     ["expiry","วันหมดอายุ"],["toppings","Topping"],["uniforms","เครื่องแต่งกาย"],["courses","บทเรียนอื่น ๆ"]
   ];
-  const custom=(customMenus||[]).map(m=>[m.section,m.label||m.section]);
-  sel.innerHTML=[...base,...custom].map(([v,l])=>'<option value="'+esc(v)+'">'+esc(l)+'</option>').join("");
+  const current=sel.value;
+  const custom=(customMenus||[]).filter(m=>m && m.section && m.active!==false).map(m=>[m.section,m.label||m.section]);
+  const seen=new Set();
+  const options=[...base,...custom].filter(([v])=>{if(seen.has(v))return false;seen.add(v);return true});
+  sel.innerHTML=options.map(([v,l])=>'<option value="'+esc(v)+'">'+esc(l)+'</option>').join("");
+  if(options.some(([v])=>v===current))sel.value=current;
 }
 window.uploadPopupSourceImage=async()=>{
   const file=document.getElementById("popupSourceFile")?.files?.[0];
