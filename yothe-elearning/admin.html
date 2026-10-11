@@ -732,6 +732,14 @@ label{font-size:13px;font-weight:700;letter-spacing:.05px}.input,select,textarea
 .ratio-review-table th{width:46%;text-align:left!important}
 .ratio-review-table td{text-align:left}
 .ratio-review-table td.num{text-align:center!important;font-weight:800}
+
+/* Dynamic custom Admin tabs */
+.tab[data-custom-admin-menu="1"]{
+  border-style:dashed;
+}
+.tab[data-custom-admin-menu="1"].active{
+  border-style:solid;
+}
 </style>
 </head>
 <body>
@@ -989,6 +997,7 @@ function currentAttachmentSection(){
   if(dataset==="settings") return "home";
   if(dataset==="users"||dataset==="menus") return document.getElementById("attachmentSection")?.value||"home";
   if(dataset==="courses") return "courses";
+  if(isCustomMenuDataset(dataset)) return dataset;
   return ["uniforms","production","drinks","expiry","toppings"].includes(dataset)?dataset:(document.getElementById("attachmentSection")?.value||"home");
 }
 function syncAttachmentSection(){
@@ -1146,10 +1155,11 @@ function initMenuDrag(){
 }
 function syncAdminPageChrome(){
   const hideForUsers=dataset==="users";
-  const hideReview=dataset==="users"||dataset==="settings"||dataset==="menus"||dataset==="image_popups";
+  const custom=isCustomMenuDataset(dataset);
+  const hideReview=dataset==="users"||dataset==="settings"||dataset==="menus"||dataset==="image_popups"||custom;
   document.getElementById("reviewLayoutPanel")?.classList.toggle("hidden",hideReview);
 
-  document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers||dataset==="menus"||dataset==="image_popups");
+  document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers||dataset==="menus"||dataset==="image_popups"||custom);
   document.getElementById("attachmentPanel")?.classList.toggle("hidden",hideForUsers||dataset==="delivery_schedule"||dataset==="image_popups");
 }
 document.getElementById("tabs").addEventListener("click",e=>{
@@ -1157,12 +1167,48 @@ document.getElementById("tabs").addEventListener("click",e=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
   dataset=b.dataset.dataset;if(DATASETS[dataset])document.getElementById("uploadDataset").value=dataset;hideEditor();syncAdminPageChrome();syncAttachmentSection();
   if(dataset==="menus"){loadCustomMenus().then(renderMenuBuilder);return}
+  if(isCustomMenuDataset(dataset)){renderCustomAdminMenu();return}
   loadDisplayPrefs().then(loadData);
 });
 document.getElementById("refreshBtn").onclick=loadData;
 document.getElementById("addBtn").onclick=()=>dataset==="image_popups"?addPopupItem():dataset==="users"?document.getElementById("userUsername")?.focus():dataset==="drinks"?openEditor({record_id:"DRK-"+Date.now(),recipe_id:"RECIPE-"+Date.now(),component_type:"Ingredient",sort_order:1,is_published:true}):openEditor(null);
 document.getElementById("cancelEdit").onclick=hideEditor;
 
+
+function getCustomMenuBySection(section=dataset){
+  return customMenus.find(m=>String(m.section)===String(section))||null;
+}
+function isCustomMenuDataset(ds=dataset){
+  return !!getCustomMenuBySection(ds);
+}
+function syncCustomAdminTabs(){
+  const tabs=document.getElementById("tabs");if(!tabs)return;
+  tabs.querySelectorAll('.tab[data-custom-admin-menu="1"]').forEach(el=>el.remove());
+  const anchor=tabs.querySelector('[data-dataset="menus"]');
+  customMenus.filter(m=>m.active!==false).forEach(m=>{
+    const btn=document.createElement("button");
+    btn.className="tab";
+    btn.type="button";
+    btn.dataset.dataset=m.section;
+    btn.dataset.customAdminMenu="1";
+    btn.textContent=m.label||"เมนูใหม่";
+    if(String(dataset)===String(m.section))btn.classList.add("active");
+    tabs.insertBefore(btn,anchor);
+  });
+  const hint=tabs.querySelector(".drag-hint");if(hint)tabs.appendChild(hint);
+}
+function renderCustomAdminMenu(){
+  const m=getCustomMenuBySection();
+  const wrap=document.getElementById("tableWrap"),hint=document.getElementById("datasetHint");
+  if(!m){wrap.innerHTML='<div class="muted" style="padding:20px">ไม่พบเมนูนี้</div>';return}
+  wrap.className="";
+  hint.textContent=(m.label||"เมนูใหม่")+" • จัดการผ่านไฟล์แนบของเมนูนี้";
+  wrap.innerHTML='<div class="panel" style="box-shadow:none;border:0;padding:0">'+
+    '<h2 style="margin:0 0 8px">'+esc(m.label||"เมนูใหม่")+'</h2>'+
+    (m.description?'<p class="muted" style="margin:0 0 12px">'+esc(m.description)+'</p>':'')+
+    '<div class="help">ใช้ส่วน “Upload ไฟล์แนบ” ด้านบนเพื่อเพิ่มรูป / PDF / PowerPoint ให้เมนูนี้ ระบบจะเลือกหมวดนี้ให้อัตโนมัติ</div>'+
+  '</div>';
+}
 async function loadCustomMenus(){
   try{
     const res=await api({action:"list",dataset:"settings"});
@@ -1170,6 +1216,7 @@ async function loadCustomMenus(){
     customMenus=Array.isArray(row?.value)?row.value:[];
   }catch{customMenus=[]}
   syncCustomAttachmentOptions();
+  syncCustomAdminTabs();
   return customMenus;
 }
 function syncCustomAttachmentOptions(){
@@ -1184,6 +1231,7 @@ function syncCustomAttachmentOptions(){
 async function saveCustomMenus(){
   await api({action:"save",dataset:"settings",row:{key:"custom_menus",value:customMenus}});
   syncCustomAttachmentOptions();
+  syncCustomAdminTabs();
 }
 function renderMenuBuilder(){
   const wrap=document.getElementById("tableWrap"),hint=document.getElementById("datasetHint");
@@ -1481,6 +1529,7 @@ window.uploadPopupImage=async(id,input)=>{
 };
 async function loadData(){
   if(dataset==="menus"){await loadCustomMenus();renderMenuBuilder();return}
+  if(isCustomMenuDataset(dataset)){renderCustomAdminMenu();return}
   if(dataset==="image_popups"){await loadPopupManager();return}
   await loadGroupOrder();
   const hint=document.getElementById("datasetHint"), wrap=document.getElementById("tableWrap");
