@@ -1308,6 +1308,29 @@ tr:nth-child(even) td{
   .home-entry .enter-btn{min-width:min(290px,90vw)!important}
   .sheet,.card,.attachment-card{border-radius:16px!important}
 }
+
+/* Yothé playful UI enhancements: compositor-friendly motion. */
+@keyframes yotheGentleBob{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-8px) rotate(1.5deg)}}
+@keyframes yotheSoftPulse{0%,100%{box-shadow:0 8px 24px rgba(201,48,44,.14)}50%{box-shadow:0 13px 29px rgba(201,48,44,.27)}}
+@keyframes yotheSparkle{0%,100%{opacity:.2;transform:translateY(0)}50%{opacity:.75;transform:translateY(-9px)}}
+@keyframes yotheNewEntry{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes yotheLightSweep{0%,75%{transform:translateX(-170%) skewX(-23deg)}100%{transform:translateX(270%) skewX(-23deg)}}
+body .story{position:relative;isolation:isolate}
+body .story::before,body .story::after{content:"✦";position:absolute;pointer-events:none;color:#d3a052;animation:yotheSparkle 5s ease-in-out infinite}
+body .story::before{top:12%;right:29%;font-size:21px}
+body .story::after{bottom:12%;right:8%;font-size:15px;animation-delay:-2.5s}
+body .story-logo img{animation:yotheGentleBob 5s ease-in-out infinite;transform-origin:50% 75%}
+body .home-entry .enter-btn{position:relative;isolation:isolate;overflow:hidden;animation:yotheSoftPulse 3.8s ease-in-out infinite;transition:transform .23s ease}
+body .home-entry .enter-btn::after{content:"";position:absolute;inset:0;width:44%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);pointer-events:none;animation:yotheLightSweep 5s ease-in-out infinite}
+body .home-entry .enter-btn:hover{transform:translateY(-3px) scale(1.025)}
+body .navlinks button,body .navlinks a{transition:transform .2s ease,box-shadow .2s ease}
+body .navlinks button:hover,body .navlinks a:hover{transform:translateY(-2px)}
+body .navbar-brand-image img{transition:transform .3s ease}
+body .navbar-brand-image:hover img{transform:rotate(-3deg) scale(1.04)}
+body .view.active .section-head{animation:yotheNewEntry .36s ease-out both}
+@media(hover:hover) and (pointer:fine){body .view.active .attachment-card,body .view.active .card{transition:transform .22s ease,box-shadow .22s ease}body .view.active .attachment-card:hover,body .view.active .card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(74,58,39,.12)}}
+@media(prefers-reduced-motion:reduce){body .story-logo img,body .story::before,body .story::after,body .home-entry .enter-btn,body .home-entry .enter-btn::after,body .view.active .section-head{animation:none!important}body .navlinks button,body .navlinks a,body .navbar-brand-image img,body .home-entry .enter-btn,body .view.active .card,body .view.active .attachment-card{transition:none!important}}
+
 </style>
 </head>
 <body>
