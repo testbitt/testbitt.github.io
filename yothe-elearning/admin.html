@@ -754,6 +754,40 @@ body{background:radial-gradient(circle at 90% 0,#ffe0d7,transparent 34%),linear-
 .tab{border-radius:15px}
 @media(prefers-reduced-motion:reduce){.btn{transition:none!important}}
 
+
+/* Admin touch/tablet responsive enhancements */
+html,body{max-width:100%;overflow-x:hidden}
+.wrap,.panel,#tableWrap,.popup-manager-shell,.popup-manager,.popup-preview-wrap{min-width:0}
+img,video{max-width:100%}
+button,.btn,.tab{touch-action:manipulation}
+@media(max-width:1024px){
+ .topin{height:auto;min-height:66px;padding:10px 14px;flex-wrap:wrap}
+ .wrap{max-width:100%;padding:18px 14px 50px}
+ .tabs{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+ .tab{min-height:43px}
+ .popup-manager{grid-template-columns:minmax(0,1fr)!important}
+ .popup-preview-wrap{position:static!important}
+ .popup-toolbar-main{grid-template-columns:minmax(0,1fr) auto}
+ .popup-source-upload{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:600px){
+ .topin{gap:8px}.brand{font-size:16px}.brand img.brand-wordmark{max-width:110px}
+ .wrap{padding:12px 9px 36px}
+ .panel{padding:13px;border-radius:18px}
+ .head,.row{flex-wrap:wrap}
+ .btn{min-height:44px}
+ .input,select,input,textarea{max-width:100%;font-size:16px}
+ .popup-toolbar-main,.popup-source-upload,.popup-controls,.popup-card-grid{grid-template-columns:minmax(0,1fr)!important}
+ .popup-toolbar-main .btn,.popup-source-upload .btn{width:100%}
+ .popup-toolbar .field{min-width:0;width:100%}
+ .popup-preview-stage{max-width:100%;touch-action:pan-y}
+ .popup-preview-stage img{max-width:100%;height:auto}
+ .popup-card-thumb{max-width:100%}
+ .popup-card-actions{display:flex;flex-wrap:wrap}
+ .popup-admin-modal-card,.popup-public-preview-inner{max-width:calc(100vw - 20px);max-height:calc(100dvh - 20px);overflow:auto}
+ .delivery-week,.menu-builder-table,.recipe-table{max-width:100%;overflow-x:auto}
+}
+
 </style>
 </head>
 <body>
