@@ -1354,6 +1354,15 @@ body{background:radial-gradient(circle at 12% 12%,#fff9e8 0 12%,transparent 32%)
 @media(max-width:600px){.story{border-radius:26px;padding:22px}.story,.sheet,.card,.attachment-card{box-shadow:0 5px 0 #e9c1ae,0 11px 20px rgba(110,64,46,.10)}}
 @media(prefers-reduced-motion:reduce){.story-logo img,.story::after{animation:none!important}}
 
+
+/* Clay World V2: unmistakable soft-modelled depth across page sections */
+.yothe-clay-world .story{border:4px solid #f1c5b0;background:radial-gradient(circle at 87% 12%,#ffdbbf 0,transparent 33%),linear-gradient(160deg,#fffcf1,#ffe8d9);box-shadow:inset 0 5px 8px rgba(255,255,255,.95),0 12px 0 #e6af96,0 21px 35px rgba(126,73,53,.2)}
+.yothe-clay-world .sheet,.yothe-clay-world .card,.yothe-clay-world .attachment-card{border:3px solid #ebbea6;background:linear-gradient(150deg,#fffdf6,#ffead8);box-shadow:inset 0 4px 5px rgba(255,255,255,.92),0 7px 0 #dfa98f,0 15px 24px rgba(123,68,49,.13)}
+.yothe-clay-world .topbar{background:linear-gradient(180deg,#fff7ec,#ffe7d7);border-bottom:4px solid #e0b09c;box-shadow:0 6px 0 rgba(227,177,157,.35),0 12px 18px rgba(125,69,47,.11)}
+.yothe-clay-world .section-head h2{display:inline-block;padding:10px 20px;border-radius:24px;background:linear-gradient(#fffaf3,#ffdfce);box-shadow:0 5px 0 #e8b49d;border:2px solid #ebc5ae}
+.yothe-clay-world .navlinks button,.yothe-clay-world .navlinks a{border-radius:20px;background:#fff3e8;border:2px solid #efcbb8;box-shadow:0 3px 0 #dfb59f}
+.yothe-clay-world .navlinks button.active,.yothe-clay-world .navlinks button:hover{background:linear-gradient(#e87d6f,#c93638);border-color:#b83738;box-shadow:inset 0 3px 2px rgba(255,255,255,.3),0 4px 0 #a73435;color:#fff}
+
 </style>
 </head>
 <body>
@@ -1543,7 +1552,7 @@ async function api(action,extra={}){
   cache[key]=r.data||[];
   return cache[key];
 }
-function applyTheme(pref={}){const ci=Math.max(1,Math.min(50,Number(pref.color_index)||1)),ti=Math.max(1,Math.min(50,Number(pref.theme_index)||1)),color=COLORS[ci-1];document.documentElement.style.setProperty("--red",color);document.documentElement.style.setProperty("--red-soft",color+"18");document.documentElement.style.setProperty("--radius",[2,6,10,14,18,22,26,30,34,38][(ti-1)%10]+"px");document.documentElement.style.setProperty("--gap",[8,10,12,14,16,18,20,22,24,26][(ti*3)%10]+"px")}
+function applyTheme(pref={}){ /* Clay World is the fixed public visual identity; keep saved layout spacing only. */ const ti=Math.max(1,Math.min(50,Number(pref.theme_index)||1)); document.documentElement.style.setProperty("--red","#c93638");document.documentElement.style.setProperty("--red-soft","#ffe1dd");document.documentElement.style.setProperty("--radius","28px");document.documentElement.style.setProperty("--gap",[12,14,16,18,20][(ti-1)%5]+"px");document.documentElement.classList.add("yothe-clay-world") }
 
 function fileTypeInfo(mime="",name=""){
   const n=String(name).toLowerCase();
