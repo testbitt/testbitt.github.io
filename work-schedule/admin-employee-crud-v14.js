@@ -112,7 +112,7 @@
       <div class="crud-head350"><h3 id="branchModalTitle350">แก้ไขข้อมูลสาขา</h3><button type="button" class="btn ghost" id="branchModalClose350">ปิด</button></div>
       <form id="branchCrudForm350">
         <div class="crud-grid350">
-          <label>รหัสสาขา<input id="crudEditBranchCode350" required maxlength="30" autocomplete="off"><span class="field-note350">แก้ไขได้ ระบบจะย้ายข้อมูลพนักงาน ตารางงาน และ Version History ไปยังรหัสใหม่</span></label>
+          <label>รหัสสาขา<input id="crudEditBranchCode350" required maxlength="30" autocomplete="off"></label>
           <label>ชื่อสาขา<input id="crudBranchName350" required></label>
         </div>
         <div class="crud-foot350"><button type="button" class="btn ghost" id="branchModalCancel350">ยกเลิก</button><button type="submit" class="btn primary" id="branchSave350">บันทึกข้อมูลสาขา</button></div>
@@ -229,5 +229,5 @@
   if(typeof previousOpenAdmin==='function')window.openAdmin=function(){const result=previousOpenAdmin.apply(this,arguments);if(q('#admin-employees.active'))window.renderEmployees();return result};
 
   fillBranchControls350();renderEmployees350();renderBranches350();
-  const footer=q('.side footer');if(footer)footer.textContent='Version 3.7 · Branch CRUD';
+  const footer=q('.side footer');if(footer)footer.textContent='Version 3.7.1 · Branch CRUD';
 })();
