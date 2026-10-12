@@ -1626,6 +1626,17 @@ body.yothe-index-mode #view-index .story,body.yothe-index-mode #view-index .stor
 .elearning-text{white-space:normal;line-height:1.8;overflow-wrap:anywhere}.elearning-document{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px;border:1px solid #e3e6e9;border-radius:10px;flex-wrap:wrap}.elearning-document a{background:#bf2233;color:#fff;border-radius:8px;padding:8px 14px}
 @media(max-width:850px){.elearning-catalog{grid-template-columns:1fr}.elearning-courses{position:static}.elearning-lesson,.elearning-intro{padding:13px}}
 
+
+.home-content-blocks{display:grid;gap:20px;max-width:100%}
+.home-content-title{margin:0;color:#bc2032}
+.home-content-text,.home-content-image,.home-content-document{padding:24px;background:#fff;border:1px solid #e4e7eb;border-radius:14px;min-width:0;overflow-wrap:anywhere}
+.home-content-text{line-height:1.9;font-size:16px}
+.home-content-image{margin:0;text-align:center}.home-content-image img{display:block;max-width:100%;height:auto;max-height:780px;object-fit:contain;margin:auto}
+.home-content-image figcaption{margin-top:8px;color:#68717e}
+.home-content-document a{color:#bd2434;font-weight:800}
+.home-content-empty{padding:20px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;color:#657080}
+@media(max-width:600px){.home-content-text,.home-content-image,.home-content-document{padding:14px}}
+
 </style>
 </head>
 <body>
@@ -1672,7 +1683,7 @@ body.yothe-index-mode #view-index .story,body.yothe-index-mode #view-index .stor
     </div>
   </section>
 
-  <section id="view-home" class="view"><div class="section-head"><div><h2>Home</h2><p>Yothé E-Learning • เลือกหลักสูตรจากเมนูเพื่อเริ่มเรียนรู้</p></div></div><div class="home-learning-intro"><h3>ยินดีต้อนรับสู่ Yothé E-Learning</h3><p>ศูนย์รวมบทเรียน สูตรการผลิต คู่มือ และมาตรฐานการทำงาน</p><button type="button" class="btn primary" id="learningHomeButton" onclick="showView('e-learning')">เข้าสู่ E-Learning</button></div></section>
+  <section id="view-home" class="view"><div class="section-head"><div><h2>Home</h2></div></div><div id="homeContentBlocks" class="home-content-blocks"></div></section>
 
   <section id="view-e-learning" class="view"><div class="section-head"><div><h2>E-Learning</h2><p>หลักสูตรและบทเรียน Yothé</p></div></div><div id="elearningCatalog" class="elearning-catalog"></div></section>
   <section id="view-production" class="view"><div class="section-head"><div><h2>สูตรการผลิต</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="productionList" class="grid"></div><div id="attachments-production" class="attachments"></div></section>
@@ -2217,6 +2228,19 @@ function renderElearningCatalog(){
  root.querySelectorAll("[data-elearn-topic]").forEach(b=>b.addEventListener("click",()=>{learningOpenTopic=b.dataset.elearnTopic;renderElearningCatalog()}));
 }
 
+
+function renderHomePageContent(){
+ const target=document.getElementById("homeContentBlocks");if(!target)return;
+ const content=settingsMap.home_page_content||{};
+ const blocks=Array.isArray(content.blocks)?content.blocks:[];
+ const E=esc;
+ target.innerHTML=(content.title?'<h3 class="home-content-title">'+E(content.title)+'</h3>':'')+
+ blocks.map(b=>b.type==="text"?'<div class="home-content-text">'+E(b.text||"").replace(/\n/g,"<br>")+'</div>':
+ b.type==="image"&&/^https:\/\//i.test(b.url||"")?'<figure class="home-content-image"><img src="'+E(b.url)+'" alt="'+E(b.caption||"รูปภาพ")+'" loading="lazy">'+(b.caption?'<figcaption>'+E(b.caption)+'</figcaption>':'')+'</figure>':
+ b.type==="file"&&/^https:\/\//i.test(b.url||"")?'<div class="home-content-document"><a href="'+E(b.url)+'" target="_blank" rel="noopener noreferrer">'+E(b.caption||"เปิดเอกสาร")+'</a></div>':"").join("");
+ if(!blocks.length){target.innerHTML='<div class="home-content-empty">ยังไม่มีเนื้อหา Home • ผู้ดูแลสามารถเพิ่มได้ที่ Admin → จัดการ Layout หน้า Home</div>'}
+}
+
 function showView(view){
   if(!token&&view!=="index"){showView("index");return}
   document.body.classList.toggle("yothe-index-mode",view==="index");
@@ -2233,7 +2257,7 @@ function showView(view){
 }
 async function loadView(view){
   try{
-    if(view==="home"){if(token)await loadAttachments("home");else{const el=document.getElementById("attachments-home");if(el)el.innerHTML=""}return}
+    if(view==="home"){renderHomePageContent();return}
     if(view==="production"){const r=await api("production");renderProduction(r);await loadAttachments("production");return}
     if(view==="production-ratio"){renderProductionRatio(await api("production_ratio"));return}
     if(view==="drinks"){const [r,m]=await Promise.all([api("drinks"),api("drink_meta")]);renderDrinks(r,m);await loadAttachments("drinks");return}
