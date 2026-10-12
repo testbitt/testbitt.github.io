@@ -1412,9 +1412,15 @@ window.uploadIndexPicture=async i=>{
   const response=await fetch(FILE_UPLOAD_API,{method:"POST",headers:{"x-admin-pin":adminPin},body:fd});
   const data=await response.json();
   if(!response.ok)throw Error(typeof data.error==="string"?data.error:"Upload ไม่สำเร็จ");
-  const url=data.url||data.data?.url;
-  if(!url)throw Error("ไม่พบ URL ของรูปที่อัปโหลด");
-  indexPageDraft.blocks[i].url=url;renderIndexEditor();
+  const uploaded=data.data||{};
+  if(!uploaded.storage_path)throw Error("อัปโหลดแล้วแต่ไม่พบตำแหน่งจัดเก็บไฟล์");
+  const list=await api({action:"list_attachments",section:"home"});
+  const attachment=(list.data||[]).find(a=>String(a.id)===String(uploaded.id)||a.storage_path===uploaded.storage_path);
+  if(!attachment?.url)throw Error("อัปโหลดสำเร็จ แต่สร้างลิงก์ตัวอย่างรูปไม่สำเร็จ กรุณาลองอีกครั้ง");
+  indexPageDraft.blocks[i].storage_path=uploaded.storage_path;
+  indexPageDraft.blocks[i].url=attachment.url;
+  renderIndexEditor();
+  document.getElementById("indexEditorMsg").textContent="อัปโหลดสำเร็จ • กดบันทึกหน้า Index เพื่อเผยแพร่รูป";
  }catch(err){alert(err.message)}
 };
 window.saveIndexPage=async()=>{
