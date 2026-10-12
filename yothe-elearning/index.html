@@ -1859,8 +1859,8 @@ function fileTypeInfo(mime="",name=""){
 async function loadAttachments(section){
   // Attachments are retained in storage for Admin and Popup references,
   // but the legacy "ไฟล์ประกอบบทเรียน" galleries are hidden on the public site.
-  const el=document.getElementById("attachments-"+section);
-  if(el)el.replaceChildren();
+  const galleryRoot=document.getElementById("attachments-"+section);
+  if(galleryRoot)galleryRoot.replaceChildren();
   attachmentSets[section]=[];
   return;
 
