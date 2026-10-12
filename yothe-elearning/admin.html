@@ -905,12 +905,13 @@ h1,h2,h3{letter-spacing:-.015em}
       <button class="tab" draggable="true" data-dataset="expiry">วันหมดอายุ</button>
       <button class="tab" draggable="true" data-dataset="toppings">Topping</button>
       <button class="tab" draggable="true" data-dataset="uniforms">เครื่องแต่งกาย</button>
-      <button class="tab" data-dataset="courses">บทเรียนอื่น ๆ</button>
+      
       <button class="tab" data-dataset="delivery_schedule">รอบการสั่งสินค้า</button>
       <button class="tab" data-dataset="image_popups">จัดการ Popup</button>
       <button class="tab" data-dataset="menus">จัดการเมนู</button>
       <button class="tab" data-dataset="home_menu_layout">จัดการเมนู Home</button>
       <button class="tab" data-dataset="index_page">จัดการหน้า Index</button>
+      <button class="tab" data-dataset="home_page">จัดการ Layout หน้า Home</button>
       <button class="tab" data-dataset="learning_manager">จัดการหลักสูตร E-Learning</button>
       <button class="tab" data-dataset="users">จัดการ User</button>
       
@@ -1230,7 +1231,7 @@ async function uploadAttachments(){
     await loadAttachments();
   }catch(err){msg.textContent="Upload ไม่สำเร็จ: "+err.message;msg.className="msg error"}
 }
-function showAdmin(){document.getElementById("loginPanel").classList.add("hidden");document.getElementById("adminPanel").classList.remove("hidden");syncAdminPageChrome();document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.dataset===dataset));initUploadDataset();initLayoutControls();Promise.all([loadDisplayPrefs(),loadMenuOrder(),loadCustomMenus()]).then(()=>{syncAttachmentSection();loadData()})}
+function showAdmin(){document.getElementById("loginPanel").classList.add("hidden");document.getElementById("adminPanel").classList.remove("hidden");syncAdminPageChrome();document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.dataset===dataset));initUploadDataset();initLayoutControls();Promise.all([loadDisplayPrefs(),loadMenuOrder(),loadCustomMenus()]).then(()=>{syncAttachmentSection();applyAdminTabOrder();loadData()})}
 function logout(){sessionStorage.removeItem("yothe_admin_pin");adminPin="";location.reload()}
 async function validateStored(){if(!adminPin)return;try{await api({action:"validate"});showAdmin()}catch{logout()}}
 
@@ -1259,6 +1260,50 @@ async function loadMenuOrder(){
   if(menuOrder.length!==5)menuOrder=["uniforms","production","drinks","expiry","toppings"];
   renderAdminMenuOrder();initMenuDrag();
 }
+
+function initAdminTabReorder(){
+ const tabs=document.getElementById("tabs");
+ const hint=tabs?.querySelector(".drag-hint");
+ if(!tabs||!hint)return;
+ hint.textContent="จัดลำดับเมนู Admin: เลือกเมนูแล้วกด ↑ ↓ • Auto Save";
+ const controls=document.createElement("div");
+ controls.className="row admin-tab-sort";controls.style.cssText="width:100%;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0";
+ controls.innerHTML='<select id="adminTabSortSelect" class="input" style="max-width:280px" aria-label="เลือกเมนูเพื่อจัดลำดับ"></select><button class="btn secondary" id="adminTabUp" type="button">↑ เลื่อนขึ้น</button><button class="btn secondary" id="adminTabDown" type="button">↓ เลื่อนลง</button><span id="adminTabSortStatus" class="muted"></span>';
+ tabs.parentNode.insertBefore(controls,tabs);
+ const refresh=()=>{
+  const sel=controls.querySelector("select"),current=sel.value;
+  sel.innerHTML=[...tabs.querySelectorAll(".tab")].map(b=>'<option value="'+b.dataset.dataset+'">'+esc(b.textContent)+'</option>').join("");
+  if([...sel.options].some(o=>o.value===current))sel.value=current;
+ };
+ refresh();
+ async function saveOrder(){
+  const order=[...tabs.querySelectorAll(".tab")].map(b=>b.dataset.dataset);
+  const status=document.getElementById("adminTabSortStatus");status.textContent="กำลังบันทึก...";
+  try{await api({action:"save",dataset:"settings",row:{key:"admin_tab_order",value:order}});status.textContent="บันทึกลำดับแล้ว"}
+  catch(e){status.textContent="บันทึกไม่สำเร็จ: "+e.message}
+ }
+ for(const [id,d] of [["adminTabUp",-1],["adminTabDown",1]]){
+  document.getElementById(id).onclick=()=>{
+   const current=controls.querySelector("select").value,buttons=[...tabs.querySelectorAll(".tab")],i=buttons.findIndex(b=>b.dataset.dataset===current),j=i+d;
+   if(i<0||j<0||j>=buttons.length)return;
+   if(d===-1)tabs.insertBefore(buttons[i],buttons[j]);else tabs.insertBefore(buttons[j],buttons[i]);
+   refresh();controls.querySelector("select").value=current;saveOrder();
+  };
+ }
+}
+async function applyAdminTabOrder(){
+ try{
+  const res=await api({action:"list",dataset:"settings"});
+  const saved=(res.data||[]).find(x=>x.key==="admin_tab_order")?.value;
+  const tabs=document.getElementById("tabs"),hint=tabs.querySelector(".drag-hint");
+  if(Array.isArray(saved)){
+   for(const key of saved){const b=[...tabs.querySelectorAll(".tab")].find(el=>el.dataset.dataset===key);if(b)tabs.insertBefore(b,hint)}
+  }
+  document.querySelectorAll(".admin-tab-sort").forEach(x=>x.remove());
+  initAdminTabReorder();
+ }catch(e){initAdminTabReorder()}
+}
+
 function renderAdminMenuOrder(){
   const tabs=document.getElementById("tabs"), settings=tabs.querySelector('[data-dataset="settings"]'),hint=tabs.querySelector(".drag-hint");
   const ordered=["uniforms",...menuOrder.filter(k=>k!=="uniforms")];ordered.forEach(k=>{const el=tabs.querySelector('[data-dataset="'+k+'"]');if(el)tabs.insertBefore(el,settings)});
@@ -1292,10 +1337,10 @@ function initMenuDrag(){
 function syncAdminPageChrome(){
   const hideForUsers=dataset==="users";
   const custom=isCustomMenuDataset(dataset);
-  const hideReview=dataset==="users"||dataset==="settings"||dataset==="menus"||dataset==="home_menu_layout"||dataset==="index_page"||dataset==="learning_manager"||dataset==="image_popups"||custom;
+  const hideReview=dataset==="users"||dataset==="settings"||dataset==="menus"||dataset==="home_menu_layout"||dataset==="index_page"||dataset==="home_page"||dataset==="learning_manager"||dataset==="image_popups"||custom;
   document.getElementById("reviewLayoutPanel")?.classList.toggle("hidden",hideReview);
 
-  document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers||dataset==="menus"||dataset==="home_menu_layout"||dataset==="index_page"||dataset==="learning_manager"||dataset==="image_popups"||custom);
+  document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers||dataset==="menus"||dataset==="home_menu_layout"||dataset==="index_page"||dataset==="home_page"||dataset==="learning_manager"||dataset==="image_popups"||custom);
   document.getElementById("attachmentPanel")?.classList.toggle("hidden",hideForUsers||dataset==="delivery_schedule"||dataset==="image_popups"||dataset==="home_menu_layout"||dataset==="index_page"||dataset==="learning_manager");
 }
 document.getElementById("tabs").addEventListener("click",e=>{
@@ -1303,6 +1348,7 @@ document.getElementById("tabs").addEventListener("click",e=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
   dataset=b.dataset.dataset;if(DATASETS[dataset])document.getElementById("uploadDataset").value=dataset;hideEditor();syncAdminPageChrome();syncAttachmentSection();
   if(dataset==="learning_manager"){loadLearningManager();return}
+  if(dataset==="home_page"){loadHomePageEditor();return}
   if(dataset==="index_page"){loadIndexEditor();return}
   if(dataset==="home_menu_layout"){loadHomeMenuLayout();return}
   if(dataset==="menus"){loadCustomMenus().then(renderMenuBuilder);return}
@@ -1533,6 +1579,63 @@ window.saveIndexPage=async()=>{
  try{msg.textContent="กำลังบันทึก...";await api({action:"save",dataset:"settings",row:{key:"index_content",value:indexPageDraft}});msg.textContent="บันทึกสำเร็จแล้ว • หน้า Index จะเปลี่ยนเมื่อโหลดใหม่";msg.className="msg ok"}
  catch(err){msg.textContent="บันทึกไม่สำเร็จ: "+err.message;msg.className="msg error"}
 };
+
+let homePageDraft={title:"Home",blocks:[]};
+async function loadHomePageEditor(){
+ const hint=document.getElementById("datasetHint"),wrap=document.getElementById("tableWrap");
+ hint.textContent="จัดการหน้า Home • กำลังโหลด...";
+ try{
+  const res=await api({action:"list",dataset:"settings"});
+  const data=res.data||[];
+  const configured=data.find(x=>x.key==="home_page_content")?.value;
+  const legacy={};
+  homePageDraft=configured&&Array.isArray(configured.blocks)?structuredClone(configured):{title:legacy.title||"Home",blocks:(Array.isArray(legacy.paragraphs)?legacy.paragraphs:(legacy.body?[legacy.body]:[])).map(text=>({type:"text",text}))};
+  renderHomePageEditor();
+ }catch(err){wrap.textContent="โหลดหน้า Home ไม่สำเร็จ: "+err.message}
+}
+function renderHomePageEditor(){
+ const wrap=document.getElementById("tableWrap");
+ document.getElementById("datasetHint").textContent="จัดการหน้า Home • ข้อความและรูปภาพ";
+ wrap.className="";
+ wrap.innerHTML='<div class="panel home-editor"><h2>จัดการหน้า Home</h2><p class="muted">หน้าแรกก่อน Login • เพิ่มข้อความหรือรูปภาพ แทรกตำแหน่ง และเปลี่ยนลำดับการแสดงผลได้</p>'+
+ '<div class="field"><label>หัวข้อหน้า Home</label><input id="homePageTitle" class="input" value="'+esc(homePageDraft.title||"")+'"></div>'+
+ '<div id="homeBlocks">'+homePageDraft.blocks.map((b,i)=>'<div class="home-edit-block"><div class="home-edit-block-header"><strong>รายการ '+(i+1)+' • '+(b.type==="image"?"รูปภาพ":"ข้อความ")+'</strong><div class="row"><button type="button" class="btn secondary" onclick="moveHomePageBlock('+i+',-1)">↑</button><button type="button" class="btn secondary" onclick="moveHomePageBlock('+i+',1)">↓</button><button type="button" class="btn secondary" onclick="removeHomePageBlock('+i+')">ลบ</button></div></div>'+
+ (b.type==="image"?'<div class="field"><label>URL รูปภาพ</label><input class="input" data-index-field="url" data-index="'+i+'" value="'+esc(b.url||"")+'"></div><div class="field"><label>คำอธิบายภาพ</label><input class="input" data-index-field="caption" data-index="'+i+'" value="'+esc(b.caption||"")+'"></div><div class="row"><input type="file" accept="image/png,image/jpeg,image/webp" id="homeImageFile-'+i+'"><button class="btn secondary" type="button" onclick="uploadHomePagePicture('+i+')">Upload รูป</button></div>'+(b.url?'<img style="max-width:180px;max-height:120px;object-fit:contain" src="'+esc(b.url)+'" alt="">':''):'<textarea rows="3" class="input" data-index-field="text" data-index="'+i+'">'+esc(b.text||"")+'</textarea>')+'</div>').join("")+'</div>'+
+ '<div class="row"><button type="button" class="btn secondary" onclick="addHomePageBlock(\'text\')">+ เพิ่มข้อความ</button><button type="button" class="btn secondary" onclick="addHomePageBlock(\'image\')">+ เพิ่มรูปภาพ</button></div>'+
+ '<div class="row"><button class="btn primary" type="button" onclick="saveHomePage()">บันทึกหน้า Home</button><a class="btn secondary" target="_blank" rel="noopener" href="./">ดูหน้า Home</a></div><div id="homeEditorMsg" class="msg" role="status"></div></div>';
+ wrap.querySelector("#homePageTitle").addEventListener("input",e=>homePageDraft.title=e.target.value);
+ wrap.querySelectorAll("[data-index-field]").forEach(el=>el.addEventListener("input",e=>{homePageDraft.blocks[Number(e.target.dataset.index)][e.target.dataset.indexField]=e.target.value}));
+}
+window.addHomePageBlock=type=>{homePageDraft.blocks.push(type==="image"?{type:"image",url:"",caption:""}:{type:"text",text:""});renderHomePageEditor()};
+window.removeHomePageBlock=i=>{homePageDraft.blocks.splice(i,1);renderHomePageEditor()};
+window.moveHomePageBlock=(i,d)=>{const j=i+d;if(j<0||j>=homePageDraft.blocks.length)return;[homePageDraft.blocks[i],homePageDraft.blocks[j]]=[homePageDraft.blocks[j],homePageDraft.blocks[i]];renderHomePageEditor()};
+window.uploadHomePagePicture=async i=>{
+ const file=document.getElementById("homeImageFile-"+i)?.files?.[0];if(!file)return;
+ if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>20*1024*1024){alert("รองรับ JPG PNG WEBP ขนาดไม่เกิน 20 MB");return}
+ const msg=document.getElementById("homeEditorMsg");
+ try{
+  msg.textContent="กำลัง Upload รูป...";
+  const fd=new FormData();fd.append("section","home");fd.append("title",file.name);fd.append("file",file);
+  const response=await fetch(FILE_UPLOAD_API,{method:"POST",headers:{"x-admin-pin":adminPin},body:fd});
+  const data=await response.json();
+  if(!response.ok)throw Error(typeof data.error==="string"?data.error:"Upload ไม่สำเร็จ");
+  const uploaded=data.data||{};
+  if(!uploaded.storage_path)throw Error("อัปโหลดแล้วแต่ไม่พบตำแหน่งจัดเก็บไฟล์");
+  const list=await api({action:"list_attachments",section:"home"});
+  const attachment=(list.data||[]).find(a=>String(a.id)===String(uploaded.id)||a.storage_path===uploaded.storage_path);
+  if(!attachment?.url)throw Error("อัปโหลดสำเร็จ แต่สร้างลิงก์ตัวอย่างรูปไม่สำเร็จ กรุณาลองอีกครั้ง");
+  homePageDraft.blocks[i].storage_path=uploaded.storage_path;
+  homePageDraft.blocks[i].url=attachment.url;
+  renderHomePageEditor();
+  document.getElementById("homeEditorMsg").textContent="อัปโหลดสำเร็จ • กดบันทึกหน้า Home เพื่อเผยแพร่รูป";
+ }catch(err){alert(err.message)}
+};
+window.saveHomePage=async()=>{
+ const msg=document.getElementById("homeEditorMsg");
+ try{msg.textContent="กำลังบันทึก...";await api({action:"save",dataset:"settings",row:{key:"home_page_content",value:homePageDraft}});msg.textContent="บันทึกสำเร็จแล้ว • หน้า Home จะเปลี่ยนเมื่อโหลดใหม่";msg.className="msg ok"}
+ catch(err){msg.textContent="บันทึกไม่สำเร็จ: "+err.message;msg.className="msg error"}
+};
+
 
 const HOME_MENU_ITEMS=[
  ["home","Home"],["e-learning","E-Learning"],["uniforms","เครื่องแต่งกาย"],["production","สูตรการผลิต"],
@@ -1879,6 +1982,7 @@ window.uploadPopupImage=async(id,input)=>{
 };
 async function loadData(){
   if(dataset==="learning_manager"){await loadLearningManager();return}
+  if(dataset==="home_page"){await loadHomePageEditor();return}
   if(dataset==="index_page"){await loadIndexEditor();return}
   if(dataset==="home_menu_layout"){await loadHomeMenuLayout();return}
   if(dataset==="menus"){await loadCustomMenus();renderMenuBuilder();return}
