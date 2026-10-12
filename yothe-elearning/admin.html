@@ -932,8 +932,7 @@ h1,h2,h3{letter-spacing:-.015em}
       <button class="tab" draggable="true" data-dataset="drinks">สูตรชงเครื่องดื่ม</button>
       <button class="tab" draggable="true" data-dataset="expiry">วันหมดอายุ</button>
       <button class="tab" draggable="true" data-dataset="toppings">Topping</button>
-      <button class="tab" draggable="true" data-dataset="uniforms">เครื่องแต่งกาย</button>
-      
+
       <button class="tab" data-dataset="delivery_schedule">รอบการสั่งสินค้า</button>
       <button class="tab" data-dataset="image_popups">จัดการ Popup</button>
       <button class="tab" data-dataset="menus">จัดการเมนู</button>
@@ -998,7 +997,7 @@ h1,h2,h3{letter-spacing:-.015em}
               <option value="drinks">สูตรชงเครื่องดื่ม</option>
               <option value="expiry">วันหมดอายุ</option>
               <option value="toppings">Topping</option>
-              <option value="uniforms">เครื่องแต่งกาย</option>
+
               <option value="courses">บทเรียนอื่น ๆ</option>
             </select>
           </div>
@@ -1812,7 +1811,7 @@ window.saveHomePage=async()=>{
 
 
 const HOME_MENU_ITEMS=[
- ["home","Home"],["e-learning","E-Learning"],["uniforms","เครื่องแต่งกาย"],["production","สูตรการผลิต"],
+ ["home","Home"],["e-learning","E-Learning"],["production","สูตรการผลิต"],
  ["production-ratio","Pack Size"],["drinks","สูตรชง"],["drink-map","แผนผังสูตรเครื่องดื่ม"],
  ["expiry","วันหมดอายุ"],["toppings","Topping"],["delivery-schedule","รอบการส่งสินค้า"]
 ];
@@ -2078,7 +2077,7 @@ function syncPopupSourceSections(){
   const sel=document.getElementById("popupSourceSection");if(!sel)return;
   const base=[
     ["home","Home / BRAND STORY"],["production","สูตรการผลิต"],["drinks","สูตรชงเครื่องดื่ม"],
-    ["expiry","วันหมดอายุ"],["toppings","Topping"],["uniforms","เครื่องแต่งกาย"],["courses","บทเรียนอื่น ๆ"]
+    ["expiry","วันหมดอายุ"],["toppings","Topping"],["courses","บทเรียนอื่น ๆ"]
   ];
   const current=sel.value;
   const custom=(customMenus||[]).filter(m=>m && m.section && m.active!==false).map(m=>[m.section,m.label||m.section]);
