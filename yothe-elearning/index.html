@@ -1687,6 +1687,17 @@ body.yothe-index-mode #indexSoundToggleBtn{display:none!important}
  #view-home .home-story-single-slide>.home-content-image{padding:4px!important}
 }
 .learning-media-pager{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid #e6e8ee;padding-top:13px}.learning-media-pager button{background:#c92132;color:#fff;border:0;border-radius:10px;padding:10px 17px;font-weight:750;cursor:pointer}.learning-media-pager button:disabled{opacity:.35;cursor:default}.learning-media-pager span{color:#68717e;font-weight:700;font-size:13px}
+
+/* Story reading layout: compact white/red typography without clipping */
+#view-home .home-story-single-slide{aspect-ratio:auto!important;min-height:min(52vw,700px)!important;height:auto!important;grid-auto-rows:auto!important;align-content:start!important;overflow:visible!important;gap:12px!important;padding:clamp(13px,2vw,27px)!important}
+#view-home .home-story-single-slide>.home-content-title{font-size:clamp(17px,1.8vw,27px)!important;overflow:visible!important}
+#view-home .home-story-single-slide>.home-content-text,#view-home .home-story-single-slide>.home-content-image,#view-home .home-story-single-slide>.home-content-document{overflow:visible!important;min-height:auto!important;padding:clamp(8px,1vw,14px)!important}
+#view-home .home-story-single-slide .home-content-text{font-size:clamp(12px,1vw,15px)!important;line-height:1.6!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important}
+#view-home .home-story-single-slide .home-story-hero{font-size:clamp(17px,1.8vw,26px)!important;line-height:1.4!important}
+#view-home .home-story-single-slide .home-story-quote{font-size:clamp(15px,1.5vw,22px)!important;line-height:1.5!important}
+#view-home .home-story-single-slide .home-content-image img{width:auto!important;max-width:100%!important;height:auto!important;max-height:450px!important;object-fit:contain!important}
+@media(max-width:650px){#view-home .home-story-single-slide{grid-template-columns:minmax(0,1fr)!important;min-height:0!important}#view-home .home-story-single-slide>.home-story-half{grid-column:1/-1!important}#view-home .home-story-single-slide .home-content-text{font-size:13px!important}#view-home .home-story-single-slide .home-story-hero{font-size:19px!important}}
+
 </style>
 <script>try{if(sessionStorage.getItem("yothe_session_token"))document.documentElement.classList.add("yothe-restoring")}catch(e){}</script>
 <style>html.yothe-restoring #appRoot{visibility:hidden!important}html.yothe-restoring body{background:#f5f6f8}</style>
