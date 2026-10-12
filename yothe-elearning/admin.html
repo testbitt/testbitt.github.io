@@ -871,6 +871,7 @@ h1,h2,h3{letter-spacing:-.015em}
 .home-layout-actions{display:flex;gap:5px}.home-layout-actions .btn{min-width:44px;padding:5px 9px}
 @media(max-width:600px){.home-layout-editor{padding:14px}.home-layout-row{gap:7px;padding:8px}.home-layout-actions .btn{min-width:40px}}
 
+.index-editor{max-width:1060px;margin:auto;display:grid;gap:17px}.index-edit-block{padding:16px;border:1px solid #e3e7ed;border-radius:12px;background:#fff}.index-edit-block-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}.index-editor .row{flex-wrap:wrap}.index-edit-block .input{width:100%}@media(max-width:600px){.index-editor{padding:14px}.index-edit-block{padding:10px}}
 </style>
 </head>
 <body>
@@ -908,6 +909,7 @@ h1,h2,h3{letter-spacing:-.015em}
       <button class="tab" data-dataset="image_popups">จัดการ Popup</button>
       <button class="tab" data-dataset="menus">จัดการเมนู</button>
       <button class="tab" data-dataset="home_menu_layout">จัดการเมนู Home</button>
+      <button class="tab" data-dataset="index_page">จัดการหน้า Index</button>
       <button class="tab" data-dataset="users">จัดการ User</button>
       <button class="tab" data-dataset="settings">Brand Story / Settings</button>
       <div class="drag-hint">กดเมาส์ซ้ายค้างที่เมนู แล้วลากเพื่อสลับตำแหน่ง • Auto Save ไปยัง Server</div>
@@ -1288,16 +1290,17 @@ function initMenuDrag(){
 function syncAdminPageChrome(){
   const hideForUsers=dataset==="users";
   const custom=isCustomMenuDataset(dataset);
-  const hideReview=dataset==="users"||dataset==="settings"||dataset==="menus"||dataset==="home_menu_layout"||dataset==="image_popups"||custom;
+  const hideReview=dataset==="users"||dataset==="settings"||dataset==="menus"||dataset==="home_menu_layout"||dataset==="index_page"||dataset==="image_popups"||custom;
   document.getElementById("reviewLayoutPanel")?.classList.toggle("hidden",hideReview);
 
-  document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers||dataset==="menus"||dataset==="home_menu_layout"||dataset==="image_popups"||custom);
-  document.getElementById("attachmentPanel")?.classList.toggle("hidden",hideForUsers||dataset==="delivery_schedule"||dataset==="image_popups"||dataset==="home_menu_layout");
+  document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers||dataset==="menus"||dataset==="home_menu_layout"||dataset==="index_page"||dataset==="image_popups"||custom);
+  document.getElementById("attachmentPanel")?.classList.toggle("hidden",hideForUsers||dataset==="delivery_schedule"||dataset==="image_popups"||dataset==="home_menu_layout"||dataset==="index_page");
 }
 document.getElementById("tabs").addEventListener("click",e=>{
   const b=e.target.closest(".tab"); if(!b)return;
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
   dataset=b.dataset.dataset;if(DATASETS[dataset])document.getElementById("uploadDataset").value=dataset;hideEditor();syncAdminPageChrome();syncAttachmentSection();
+  if(dataset==="index_page"){loadIndexEditor();return}
   if(dataset==="home_menu_layout"){loadHomeMenuLayout();return}
   if(dataset==="menus"){loadCustomMenus().then(renderMenuBuilder);return}
   if(isCustomMenuDataset(dataset)){renderCustomAdminMenu();return}
@@ -1369,8 +1372,59 @@ async function saveCustomMenus(){
   syncPopupSourceSections();
 }
 
+
+let indexPageDraft={title:"BRAND STORY",blocks:[]};
+async function loadIndexEditor(){
+ const hint=document.getElementById("datasetHint"),wrap=document.getElementById("tableWrap");
+ hint.textContent="จัดการหน้า Index • กำลังโหลด...";
+ try{
+  const res=await api({action:"list",dataset:"settings"});
+  const data=res.data||[];
+  const configured=data.find(x=>x.key==="index_content")?.value;
+  const legacy=data.find(x=>x.key==="brand_story")?.value||{};
+  indexPageDraft=configured&&Array.isArray(configured.blocks)?structuredClone(configured):{title:legacy.title||"BRAND STORY",blocks:(Array.isArray(legacy.paragraphs)?legacy.paragraphs:(legacy.body?[legacy.body]:[])).map(text=>({type:"text",text}))};
+  renderIndexEditor();
+ }catch(err){wrap.textContent="โหลดหน้า Index ไม่สำเร็จ: "+err.message}
+}
+function renderIndexEditor(){
+ const wrap=document.getElementById("tableWrap");
+ document.getElementById("datasetHint").textContent="จัดการหน้า Index • ข้อความและรูปภาพ";
+ wrap.className="";
+ wrap.innerHTML='<div class="panel index-editor"><h2>จัดการหน้า Index</h2><p class="muted">หน้าแรกก่อน Login • เพิ่มข้อความหรือรูปภาพ แทรกตำแหน่ง และเปลี่ยนลำดับการแสดงผลได้</p>'+
+ '<div class="field"><label>หัวข้อหน้า Index</label><input id="indexPageTitle" class="input" value="'+esc(indexPageDraft.title||"")+'"></div>'+
+ '<div id="indexBlocks">'+indexPageDraft.blocks.map((b,i)=>'<div class="index-edit-block"><div class="index-edit-block-header"><strong>รายการ '+(i+1)+' • '+(b.type==="image"?"รูปภาพ":"ข้อความ")+'</strong><div class="row"><button type="button" class="btn secondary" onclick="moveIndexBlock('+i+',-1)">↑</button><button type="button" class="btn secondary" onclick="moveIndexBlock('+i+',1)">↓</button><button type="button" class="btn secondary" onclick="removeIndexBlock('+i+')">ลบ</button></div></div>'+
+ (b.type==="image"?'<div class="field"><label>URL รูปภาพ</label><input class="input" data-index-field="url" data-index="'+i+'" value="'+esc(b.url||"")+'"></div><div class="field"><label>คำอธิบายภาพ</label><input class="input" data-index-field="caption" data-index="'+i+'" value="'+esc(b.caption||"")+'"></div><div class="row"><input type="file" accept="image/png,image/jpeg,image/webp" id="indexImageFile-'+i+'"><button class="btn secondary" type="button" onclick="uploadIndexPicture('+i+')">Upload รูป</button></div>'+(b.url?'<img style="max-width:180px;max-height:120px;object-fit:contain" src="'+esc(b.url)+'" alt="">':''):'<textarea rows="3" class="input" data-index-field="text" data-index="'+i+'">'+esc(b.text||"")+'</textarea>')+'</div>').join("")+'</div>'+
+ '<div class="row"><button type="button" class="btn secondary" onclick="addIndexBlock(\'text\')">+ เพิ่มข้อความ</button><button type="button" class="btn secondary" onclick="addIndexBlock(\'image\')">+ เพิ่มรูปภาพ</button></div>'+
+ '<div class="row"><button class="btn primary" type="button" onclick="saveIndexPage()">บันทึกหน้า Index</button><a class="btn secondary" target="_blank" rel="noopener" href="./">ดูหน้า Index</a></div><div id="indexEditorMsg" class="msg" role="status"></div></div>';
+ wrap.querySelector("#indexPageTitle").addEventListener("input",e=>indexPageDraft.title=e.target.value);
+ wrap.querySelectorAll("[data-index-field]").forEach(el=>el.addEventListener("input",e=>{indexPageDraft.blocks[Number(e.target.dataset.index)][e.target.dataset.indexField]=e.target.value}));
+}
+window.addIndexBlock=type=>{indexPageDraft.blocks.push(type==="image"?{type:"image",url:"",caption:""}:{type:"text",text:""});renderIndexEditor()};
+window.removeIndexBlock=i=>{indexPageDraft.blocks.splice(i,1);renderIndexEditor()};
+window.moveIndexBlock=(i,d)=>{const j=i+d;if(j<0||j>=indexPageDraft.blocks.length)return;[indexPageDraft.blocks[i],indexPageDraft.blocks[j]]=[indexPageDraft.blocks[j],indexPageDraft.blocks[i]];renderIndexEditor()};
+window.uploadIndexPicture=async i=>{
+ const file=document.getElementById("indexImageFile-"+i)?.files?.[0];if(!file)return;
+ if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>20*1024*1024){alert("รองรับ JPG PNG WEBP ขนาดไม่เกิน 20 MB");return}
+ const msg=document.getElementById("indexEditorMsg");
+ try{
+  msg.textContent="กำลัง Upload รูป...";
+  const fd=new FormData();fd.append("section","home");fd.append("title",file.name);fd.append("file",file);
+  const response=await fetch(FILE_UPLOAD_API,{method:"POST",headers:{"x-admin-pin":adminPin},body:fd});
+  const data=await response.json();
+  if(!response.ok)throw Error(typeof data.error==="string"?data.error:"Upload ไม่สำเร็จ");
+  const url=data.url||data.data?.url;
+  if(!url)throw Error("ไม่พบ URL ของรูปที่อัปโหลด");
+  indexPageDraft.blocks[i].url=url;renderIndexEditor();
+ }catch(err){alert(err.message)}
+};
+window.saveIndexPage=async()=>{
+ const msg=document.getElementById("indexEditorMsg");
+ try{msg.textContent="กำลังบันทึก...";await api({action:"save",dataset:"settings",row:{key:"index_content",value:indexPageDraft}});msg.textContent="บันทึกสำเร็จแล้ว • หน้า Index จะเปลี่ยนเมื่อโหลดใหม่";msg.className="msg ok"}
+ catch(err){msg.textContent="บันทึกไม่สำเร็จ: "+err.message;msg.className="msg error"}
+};
+
 const HOME_MENU_ITEMS=[
- ["home","Home"],["uniforms","เครื่องแต่งกาย"],["production","สูตรการผลิต"],
+ ["home","Home"],["e-learning","E-Learning"],["uniforms","เครื่องแต่งกาย"],["production","สูตรการผลิต"],
  ["production-ratio","Pack Size"],["drinks","สูตรชง"],["drink-map","แผนผังสูตรเครื่องดื่ม"],
  ["expiry","วันหมดอายุ"],["toppings","Topping"],["courses","บทเรียนอื่น ๆ"]
 ];
@@ -1713,6 +1767,7 @@ window.uploadPopupImage=async(id,input)=>{
   }catch(err){alert("Upload รูปไม่สำเร็จ: "+err.message)}
 };
 async function loadData(){
+  if(dataset==="index_page"){await loadIndexEditor();return}
   if(dataset==="home_menu_layout"){await loadHomeMenuLayout();return}
   if(dataset==="menus"){await loadCustomMenus();renderMenuBuilder();return}
   if(isCustomMenuDataset(dataset)){renderCustomAdminMenu();return}
