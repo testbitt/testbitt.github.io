@@ -1600,6 +1600,20 @@ body.home-nav-top .executive-menu-toggle{display:none!important}
  body.home-nav-top #appRoot .navlinks{overflow:visible!important}
 }
 
+
+/* Index landing: no menu until login; independent from Home */
+body.yothe-index-mode #appRoot>.topbar{display:none!important}
+body.yothe-index-mode #appRoot main{width:100%!important;max-width:1600px!important;margin:0 auto!important;padding:14px clamp(12px,2vw,30px) 45px!important}
+body.yothe-index-mode #appRoot .story{grid-template-columns:minmax(0,1fr) minmax(175px,23%)!important}
+body.yothe-index-mode .executive-menu-toggle{display:none!important}
+body.yothe-index-mode #view-index .story,body.yothe-index-mode #view-index .story *{animation:none!important;transition:none!important}
+.index-image-block{margin:16px 0;max-width:100%;text-align:center}
+.index-image-block img{max-width:100%;max-height:620px;height:auto;object-fit:contain;border-radius:10px}
+.index-image-block figcaption{color:#69717e;font-size:13px;margin-top:7px}
+.home-learning-intro{padding:30px;background:#fff;border:1px solid #e8e8eb;border-radius:16px;box-shadow:0 5px 24px #1111}
+.home-learning-intro .btn{width:auto;max-width:100%;margin-top:14px}
+@media(max-width:800px){body.yothe-index-mode #appRoot main{padding:12px!important}body.yothe-index-mode #appRoot .story{display:flex!important;flex-direction:column!important}}
+
 </style>
 </head>
 <body>
@@ -1620,6 +1634,7 @@ body.home-nav-top .executive-menu-toggle{display:none!important}
   <button class="brand navbar-brand-image" data-view="home" style="border:0;background:none;padding:0"><img class="navbar-logo-custom" src="assets/yothe-header-logo.svg" alt="" aria-hidden="true"></button>
   <nav id="navLinks" class="navlinks">
     <button data-view="home" class="active">Home</button>
+    <button class="auth-only hidden-auth" data-view="e-learning">E-Learning</button>
     <button class="auth-only hidden-auth" data-view="uniforms">เครื่องแต่งกาย</button>
     <button class="auth-only hidden-auth" data-view="production">สูตรการผลิต</button>
     <button class="auth-only hidden-auth" data-view="production-ratio">Pack Size</button>
@@ -1635,16 +1650,19 @@ body.home-nav-top .executive-menu-toggle{display:none!important}
 </div></header>
 
 <main>
-  <section id="view-home" class="view active">
+  <section id="view-index" class="view active">
     <div class="story">
-      <article><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><h1 id="storyTitle">BRAND STORY</h1></div><div id="storyBody" class="story-copy">กำลังโหลด...</div><div id="attachments-home" class="attachments"></div></article>
+      <article><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><h1 id="storyTitle">BRAND STORY</h1></div><div id="storyBody" class="story-copy">กำลังโหลด...</div><div id="indexExtraBlocks"></div><div id="attachments-home" class="attachments"></div></article>
       <aside class="story-logo"><img src="assets/yothe-cat.svg" alt="" aria-hidden="true"></aside>
     </div>
     <div id="homeEntry" class="home-entry">
-      <button id="enterWebsiteBtn" class="enter-btn">Click เพื่อเข้าสู่ Website</button>
+      <button id="enterWebsiteBtn" class="enter-btn">Login เข้าเว็บไซต์</button>
     </div>
   </section>
 
+  <section id="view-home" class="view"><div class="section-head"><div><h2>Home</h2><p>Yothé E-Learning • เลือกหลักสูตรจากเมนูเพื่อเริ่มเรียนรู้</p></div></div><div class="home-learning-intro"><h3>ยินดีต้อนรับสู่ Yothé E-Learning</h3><p>ศูนย์รวมบทเรียน สูตรการผลิต คู่มือ และมาตรฐานการทำงาน</p><button type="button" class="btn primary" id="learningHomeButton" onclick="showView('courses')">เข้าสู่ E-Learning</button></div></section>
+
+  <section id="view-e-learning" class="view"><div class="section-head"><div><h2>E-Learning</h2><p>หลักสูตรและบทเรียน Yothé</p></div></div><div class="home-learning-intro"><h3>เลือกบทเรียนที่ต้องการ</h3><p>เปิดเมนูบทเรียนอื่น ๆ หรือเลือกหมวดบทเรียนจากเมนูด้านซ้าย</p><button class="btn primary" type="button" onclick="showView('courses')">ดูหลักสูตรทั้งหมด</button></div></section>
   <section id="view-production" class="view"><div class="section-head"><div><h2>สูตรการผลิต</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="productionList" class="grid"></div><div id="attachments-production" class="attachments"></div></section>
   <section id="view-production-ratio" class="view">
     <div class="section-head"><div><h2>Pack Size</h2><p>อัตราส่วนวัตถุดิบและจำนวนสูตรที่ผลิตได้</p></div></div>
@@ -1747,9 +1765,10 @@ function playMenuMeow(){
 }
 
 function setAuthUI(loggedIn){
+  document.body.classList.toggle("yothe-authenticated",!!loggedIn);
   document.querySelectorAll(".auth-only").forEach(el=>el.classList.toggle("hidden-auth",!loggedIn));
   document.getElementById("userBox")?.classList.toggle("hidden",!loggedIn);
-  document.getElementById("homeEntry")?.classList.toggle("hidden",loggedIn);
+  document.getElementById("homeEntry")?.classList.remove("hidden");
 }
 function openLogin(){
   document.getElementById("loginScreen").classList.remove("hidden");
@@ -1763,16 +1782,29 @@ function showWelcome(user){
   document.getElementById("welcomeName").textContent=name;
   document.getElementById("welcomePop").classList.remove("hidden");
 }
+function renderIndexContents(v={}){
+ const blocks=Array.isArray(v.blocks)?v.blocks:[];
+ const title=document.getElementById("storyTitle"),body=document.getElementById("storyBody"),extra=document.getElementById("indexExtraBlocks");
+ if(!title||!body||!extra)return;
+ title.textContent=v.title||"BRAND STORY";
+ body.innerHTML=blocks.filter(b=>b&&b.type==="text").map(b=>"<p>"+esc(b.text||"")+"</p>").join("");
+ extra.innerHTML=blocks.filter(b=>b&&b.type==="image"&&/^https:\/\//i.test(b.url||"")).map(b=>'<figure class="index-image-block"><img loading="lazy" src="'+esc(b.url)+'" alt="'+esc(b.caption||"Yothé")+'">'+(b.caption?'<figcaption>'+esc(b.caption)+'</figcaption>':'')+'</figure>').join("");
+}
+function updateIndexEntryButton(){
+ const b=document.getElementById("enterWebsiteBtn");if(b)b.textContent=token?"เข้าสู่ Home":"Login เข้าเว็บไซต์";
+}
 function renderBrandStoryValue(s={}){
   const ps=Array.isArray(s.paragraphs)?s.paragraphs:(s.body?[s.body]:[]);
   document.getElementById("storyTitle").textContent=s.title||"BRAND STORY";
   document.getElementById("storyBody").innerHTML=ps.length?ps.map(x=>"<p>"+esc(x)+"</p>").join(""):"<p>ยังไม่มีข้อมูล Brand Story</p>";
+  document.getElementById("indexExtraBlocks").innerHTML="";
 }
 async function loadPublicHome(){
   try{
     const r=await post(PUBLIC_API,{action:"home"});
     const rows=r.data||[],map=Object.fromEntries(rows.map(x=>[x.key,x.value]));
-    renderBrandStoryValue(map.brand_story||{});
+    if(map.index_content&&Array.isArray(map.index_content.blocks))renderIndexContents(map.index_content);else renderBrandStoryValue(map.brand_story||{});
+    updateIndexEntryButton();
   }catch(e){
     document.getElementById("storyBody").innerHTML='<p>ไม่สามารถโหลดข้อมูล Home ได้</p>';
   }
@@ -2080,7 +2112,8 @@ async function loadSettings(){
   await syncDeliveryMenuVisibility();
   groupPublicNavigation();
   applyHomeMenuLayout(map.home_menu_layout||{});
-  renderBrandStoryValue(map.brand_story||{});
+  if(map.index_content&&Array.isArray(map.index_content.blocks))renderIndexContents(map.index_content);else renderBrandStoryValue(map.brand_story||{});
+  updateIndexEntryButton();
   if(token)await loadAttachments("home");
 }
 function renderMenuOrder(order){
@@ -2154,6 +2187,8 @@ function applyHomeMenuLayout(pref={}){
 }
 
 function showView(view){
+  if(!token&&view!=="index"){showView("index");return}
+  document.body.classList.toggle("yothe-index-mode",view==="index");
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
   document.getElementById("view-"+view)?.classList.add("active");
   document.querySelectorAll('#navLinks [data-view]').forEach(x=>x.classList.toggle("active",x.dataset.view===view&&!pendingCourseCategory));
@@ -2331,7 +2366,7 @@ function scheduleUserTableFit(){
 }
 window.addEventListener("resize",()=>{clearTimeout(window.__yotheFitTimer);window.__yotheFitTimer=setTimeout(scheduleUserTableFit,120)});
 
-document.getElementById("enterWebsiteBtn").onclick=openLogin;
+document.getElementById("enterWebsiteBtn").onclick=()=>{if(token)showView("home");else openLogin()};
 document.getElementById("loginScreen").addEventListener("click",e=>{if(e.target===document.getElementById("loginScreen"))closeLogin()});
 document.getElementById("loginForm").addEventListener("submit",async e=>{
   e.preventDefault();
@@ -2361,7 +2396,7 @@ document.getElementById("logoutBtn").onclick=async()=>{
   document.getElementById("currentUser").textContent="";
   document.getElementById("loginPass").value="";
   document.getElementById("loginMsg").textContent="";
-  showView("home");
+  showView("index");
   await loadPublicHome();
 };
 document.addEventListener("click",e=>{
@@ -2436,7 +2471,7 @@ document.addEventListener("keydown",e=>{
 
 // เปิด Website ที่ Home เสมอ แต่คง Login ไว้ภายในแท็บเดิมจนกว่าจะปิดแท็บหรือ Logout
 async function restoreTabSession(){
-  showView("home");
+  showView("index");
   const savedToken=sessionStorage.getItem("yothe_session_token")||"";
   if(!savedToken){
     setAuthUI(false);
@@ -2451,13 +2486,14 @@ async function restoreTabSession(){
     setAuthUI(true);
     document.getElementById("currentUser").textContent=currentUser.display_name||currentUser.username;
     await loadSettings();
-    showView("home");
+    showView("index");
   }catch{
     token="";currentUser=null;cache={};settingsMap={};
     sessionStorage.removeItem("yothe_session_token");
     sessionStorage.removeItem("yothe_session_user");
     setAuthUI(false);
     await loadPublicHome();
+    showView("index");
   }
 }
 restoreTabSession().finally(()=>requestAnimationFrame(initMotionObserver));
