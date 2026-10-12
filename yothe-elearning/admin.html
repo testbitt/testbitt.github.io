@@ -911,6 +911,14 @@ h1,h2,h3{letter-spacing:-.015em}
 .story-mini-image{min-height:80px!important}
 @media(max-width:620px){.story-mini-slide{min-height:300px}.story-mini-text{font-size:10px!important}.story-mini-text.hero{font-size:13px!important}}
 
+
+/* Keep template preview on one 16:9 page */
+.story-mini-slide{aspect-ratio:16/9!important;height:auto!important;min-height:0!important;overflow:hidden!important}
+.story-mini-canvas{grid-auto-rows:minmax(0,1fr)!important;align-content:stretch!important;overflow:hidden!important}
+.story-mini-canvas>*{min-height:0!important;overflow:hidden!important}
+.story-mini-text{font-size:clamp(8px,.9vw,12px)!important;line-height:1.2!important}
+.story-mini-text.hero{font-size:clamp(10px,1.3vw,17px)!important}
+.story-mini-image{min-height:0!important}
 </style>
 </head>
 <body>
