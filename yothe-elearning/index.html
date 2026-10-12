@@ -1698,6 +1698,16 @@ body.yothe-index-mode #indexSoundToggleBtn{display:none!important}
 #view-home .home-story-single-slide .home-content-image img{width:auto!important;max-width:100%!important;height:auto!important;max-height:450px!important;object-fit:contain!important}
 @media(max-width:650px){#view-home .home-story-single-slide{grid-template-columns:minmax(0,1fr)!important;min-height:0!important}#view-home .home-story-single-slide>.home-story-half{grid-column:1/-1!important}#view-home .home-story-single-slide .home-content-text{font-size:13px!important}#view-home .home-story-single-slide .home-story-hero{font-size:19px!important}}
 
+
+/* Fixed 16:9 story presentation canvas, with fitted typography */
+#view-home .home-story-single-slide{aspect-ratio:16/9!important;min-height:0!important;height:auto!important;grid-auto-rows:minmax(0,1fr)!important;align-content:stretch!important;overflow:hidden!important;gap:clamp(4px,.8vw,12px)!important;padding:clamp(6px,1vw,18px)!important;box-sizing:border-box!important}
+#view-home .home-story-single-slide>.home-content-title{font-size:calc(var(--story-fit-font,14px) * 1.6)!important;overflow:hidden!important}
+#view-home .home-story-single-slide>.home-content-text,#view-home .home-story-single-slide>.home-content-image,#view-home .home-story-single-slide>.home-content-document{min-height:0!important;overflow:hidden!important;padding:clamp(3px,.6vw,9px)!important}
+#view-home .home-story-single-slide .home-content-text{font-size:var(--story-fit-font,14px)!important;line-height:1.3!important;overflow-wrap:anywhere!important}
+#view-home .home-story-single-slide .home-story-hero{font-size:calc(var(--story-fit-font,14px) * 1.6)!important;line-height:1.2!important}
+#view-home .home-story-single-slide .home-story-quote{font-size:calc(var(--story-fit-font,14px) * 1.35)!important;line-height:1.25!important}
+#view-home .home-story-single-slide .home-content-image img{width:100%!important;height:100%!important;max-height:100%!important;object-fit:contain!important}
+@media(max-width:650px){#view-home .home-story-single-slide{grid-template-columns:repeat(2,minmax(0,1fr))!important}#view-home .home-story-single-slide>.home-story-half{grid-column:span 1!important}#view-home .home-story-single-slide .home-content-text{font-size:var(--story-fit-font,10px)!important}}
 </style>
 <script>try{if(sessionStorage.getItem("yothe_session_token"))document.documentElement.classList.add("yothe-restoring")}catch(e){}</script>
 <style>html.yothe-restoring #appRoot{visibility:hidden!important}html.yothe-restoring body{background:#f5f6f8}</style>
@@ -2305,6 +2315,19 @@ function renderElearningCatalog(){
 }
 
 
+function fitYotheStorySlide(root){
+ if(!root||!root.classList.contains("home-story-single-slide"))return;
+ const blocks=[...root.children];if(!blocks.length)return;
+ root.style.setProperty("--story-fit-font","14px");
+ const available=root.clientHeight-root.clientTop*2;
+ // Reduce typography and spacing incrementally until all blocks fit the one-page canvas.
+ for(let size=14;size>=7;size--){
+  root.style.setProperty("--story-fit-font",size+"px");
+  const overflowing=blocks.some(el=>el.scrollHeight>el.clientHeight+2||el.scrollWidth>el.clientWidth+2);
+  if(!overflowing)break;
+ }
+}
+window.addEventListener("resize",()=>{const slide=document.querySelector("#view-home .home-story-single-slide");if(slide)fitYotheStorySlide(slide)});
 function renderHomePageContent(){
  const target=document.getElementById("homeContentBlocks");if(!target)return;
  const content=settingsMap.home_page_content||{};
@@ -2316,6 +2339,7 @@ function renderHomePageContent(){
  blocks.map(b=>b.type==="text"?'<div class="home-content-text home-story-'+E(b.layout||"body")+'">'+E(b.text||"").replace(/\n/g,"<br>")+'</div>':
  b.type==="image"&&/^https:\/\//i.test(b.url||"")?'<figure class="home-content-image home-story-'+E(b.layout||"wide")+'"><img src="'+E(b.url)+'" alt="'+E(b.caption||"รูปภาพ")+'" loading="lazy">'+(b.caption?'<figcaption>'+E(b.caption)+'</figcaption>':'')+'</figure>':
  b.type==="file"&&/^https:\/\//i.test(b.url||"")?'<div class="home-content-document"><a href="'+E(b.url)+'" target="_blank" rel="noopener noreferrer">'+E(b.caption||"เปิดเอกสาร")+'</a></div>':"").join("");
+ if(target.classList.contains("home-story-single-slide"))requestAnimationFrame(()=>{fitYotheStorySlide(target);setTimeout(()=>fitYotheStorySlide(target),180)});
  if(!blocks.length){target.innerHTML='<div class="home-content-empty">ยังไม่มีเนื้อหา Home • ผู้ดูแลสามารถเพิ่มได้ที่ Admin → จัดการ Layout หน้า Home</div>'}
 }
 
