@@ -809,6 +809,42 @@ html body{background:#fff!important;color:#292327!important}
 .input{background:#fff!important;border-color:#e8cfd3!important}
 .edit-sidebar,.popup-toolbar{background:#fff7f8!important;border-color:#edcfd4!important}
 
+
+/* Popup Studio — tidy white/red layout, safe on tablet and mobile */
+.popup-manager-shell{gap:16px!important}
+.popup-toolbar{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important;background:#fff!important;border:1px solid #e9d6d8!important;border-radius:22px!important;padding:16px!important;box-shadow:0 4px 12px rgba(125,35,45,.05)}
+.popup-toolbar-main{display:grid!important;grid-template-columns:minmax(230px,1fr) auto auto!important;align-items:end!important;gap:12px!important}
+.popup-toolbar-main .field{min-width:0!important}
+.popup-summary{font-weight:600;color:#72646a;font-size:12px}
+.popup-source-upload{display:grid!important;grid-template-columns:minmax(190px,1fr) minmax(200px,1fr) auto!important;align-items:end!important;gap:12px!important;border-top:1px solid #f0e0e2;padding-top:12px}
+.popup-source-upload .field{min-width:0!important}
+.popup-manager{display:grid!important;grid-template-columns:minmax(0,1.15fr) minmax(350px,.85fr)!important;gap:16px!important;align-items:start!important}
+.popup-preview-wrap{position:sticky;top:88px;padding:18px;background:#fff;border:1px solid #ead5d8;border-radius:22px;box-shadow:0 6px 18px rgba(118,36,47,.06);min-width:0}
+.popup-preview-stage{display:inline-block;max-width:100%;overflow:hidden;border-radius:15px;border:1px solid #eddfe1;background:#fbf9f9}
+.popup-preview-stage img{max-width:100%;height:auto}
+.popup-list{min-width:0;max-height:calc(100vh - 120px);overflow-y:auto;overflow-x:hidden;padding:16px;border:1px solid #ead5d8;background:#fff;border-radius:22px;box-shadow:0 6px 18px rgba(118,36,47,.06)}
+.popup-card{background:#fff;border:1px solid #ecd8dc;border-radius:18px;padding:14px;box-shadow:0 2px 7px rgba(100,30,40,.04)}
+.popup-card.active-card{border:2px solid #d72d3b;box-shadow:0 0 0 3px #fff1f2}
+.popup-card-grid{grid-template-columns:95px minmax(0,1fr);gap:13px}
+.popup-controls{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.popup-controls .field{min-width:0}
+.popup-controls input,.popup-controls select{min-width:0;width:100%}
+.popup-marker{width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;font-size:9px!important;border:2px solid #fff!important;box-shadow:0 1px 5px rgba(0,0,0,.5)!important;line-height:1!important}
+.popup-marker.selected{outline:3px solid #292327!important;outline-offset:2px}
+.popup-marker[data-marker-color="red"]{background:#d92b39!important;color:#fff!important}
+.popup-marker[data-marker-color="blue"]{background:#2364d8!important;color:#fff!important}
+.popup-marker[data-marker-color="green"]{background:#169b60!important;color:#fff!important}
+.popup-marker[data-marker-color="yellow"]{background:#ffcc24!important;color:#231a0e!important}
+.popup-marker[data-marker-color="orange"]{background:#f47726!important;color:#24150c!important}
+.popup-marker[data-marker-color="purple"]{background:#853bc9!important;color:#fff!important}
+.popup-marker[data-marker-color="pink"]{background:#ec67ae!important;color:#351427!important}
+.popup-marker[data-marker-color="black"]{background:#171717!important;color:#fff!important}
+.popup-marker[data-marker-color="white"]{background:#fff!important;color:#111!important;border-color:#333!important}
+.popup-marker[data-marker-color="auto"]{background:#fff!important;color:#000!important;mix-blend-mode:difference;border:2px solid #fff!important;box-shadow:none!important}
+@media(max-width:1000px){.popup-manager{grid-template-columns:minmax(0,1fr)!important}.popup-preview-wrap{position:static}.popup-list{max-height:none;overflow:visible}}
+@media(max-width:760px){.popup-toolbar-main,.popup-source-upload{grid-template-columns:minmax(0,1fr)!important}.popup-toolbar-main .btn,.popup-source-upload .btn{width:100%}.popup-preview-wrap,.popup-list{padding:12px;border-radius:17px}.popup-card-grid{grid-template-columns:80px minmax(0,1fr)}.popup-card-thumb{width:80px;height:80px}.popup-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.popup-manager-shell{gap:12px!important}}
+@media(max-width:420px){.popup-card-grid{grid-template-columns:minmax(0,1fr)}.popup-card-thumb{width:100px;height:90px}.popup-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 </style>
 </head>
 <body>
@@ -1455,7 +1491,8 @@ function popupCardHtml(r){
       <div>
         <div class="popup-controls">
           <div class="field"><label>หมายเลข</label><input class="input" type="number" value="${esc(r.popup_number||1)}" onchange="savePopupPatch('${r.id}',{popup_number:Number(this.value)})"></div>
-          <div class="field"><label>ขนาดจุด</label><input class="input" type="number" min="24" max="120" value="${esc(r.size_px||40)}" onchange="savePopupPatch('${r.id}',{size_px:Number(this.value)})"></div>
+          <div class="field"><label>ขนาดจุด</label><input class="input" value="เล็กสุด (18px)" disabled></div>
+          <div class="field"><label>สีจุด Popup</label><select class="input" onchange="savePopupPatch('${r.id}',{marker_color:this.value})">${["auto","red","blue","green","yellow","orange","purple","pink","black","white"].map(c=>'<option value="'+c+'" '+((r.marker_color||"red")===c?"selected":"")+'>'+({auto:"อัตโนมัติ ตัดกับพื้นหลัง",red:"แดง",blue:"น้ำเงิน",green:"เขียว",yellow:"เหลือง",orange:"ส้ม",purple:"ม่วง",pink:"ชมพู",black:"ดำ",white:"ขาว"}[c])+'</option>').join("")}</select></div>
           <div class="field"><label>X (%)</label><input class="input" type="number" step=".1" min="0" max="100" value="${esc(r.x_pct||50)}" onchange="savePopupPatch('${r.id}',{x_pct:Number(this.value)})"></div>
           <div class="field"><label>Y (%)</label><input class="input" type="number" step=".1" min="0" max="100" value="${esc(r.y_pct||50)}" onchange="savePopupPatch('${r.id}',{y_pct:Number(this.value)})"></div>
           <div class="field" style="grid-column:1/-1"><label>รูปแบบ Popup (51 แบบ)</label><select class="input" onchange="event.stopPropagation();savePopupPatch('${r.id}',{display_style:this.value})" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">${popupStyleOptions(r.display_style||"style-2")}</select></div>
@@ -1576,7 +1613,7 @@ window.addPopupItem=async()=>{
   let n=1;while(used.includes(n))n++;
   try{
     const res=await api({action:"save",dataset:"image_popups",row:{
-      attachment_id:Number(popupAttachmentId),popup_number:n,label:"Popup "+n,x_pct:50,y_pct:50,size_px:40,
+      attachment_id:Number(popupAttachmentId),popup_number:n,label:"Popup "+n,x_pct:50,y_pct:50,size_px:18,marker_color:"red",
       active:true,sort_order:n,display_style:"style-2"
     }});
     popupSelectedId=res.data?.id||null;await loadPopupManager();
