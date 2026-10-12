@@ -875,6 +875,7 @@ h1,h2,h3{letter-spacing:-.015em}
 .learning-editor{display:grid;gap:16px}.learning-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-start}.learning-toolbar h2,.learning-toolbar h3{margin:0 14px 0 0}.learning-layout{display:grid;grid-template-columns:minmax(220px,290px) minmax(0,1fr);gap:18px}.learning-side,.learning-main,.learning-topic-editor{min-width:0;display:grid;align-content:start;gap:12px}.learning-side{border-right:1px solid #e2e6eb;padding-right:12px}.learning-list-row{display:flex;gap:5px;align-items:center;min-width:0}.learning-list-row>.btn{flex:1;min-width:0;white-space:normal;text-align:left}.learning-list-row>button:not(.btn),.learning-block button:not(.btn){border:1px solid #e1e3e7;border-radius:8px;min-width:34px;min-height:34px;background:#fff;color:#ae2231}.learning-fields{display:grid;gap:10px}.learning-fields label,.learning-topic-editor label,.learning-block label{display:grid;gap:6px}.learning-topic-list{display:grid;gap:6px}.learning-block{display:grid;gap:10px;padding:14px;border:1px solid #e1e5eb;border-radius:13px;background:#fff}.learning-topic-editor{padding-top:16px;border-top:1px solid #e2e6eb}@media(max-width:850px){.learning-layout{grid-template-columns:1fr}.learning-side{border-right:0;border-bottom:1px solid #e2e6eb;padding:0 0 12px}}@media(max-width:600px){.learning-editor{padding:12px}.learning-toolbar .btn{width:auto}.learning-block{padding:10px}}
 .home-story-templates{background:#fff7f8;border:1px solid #ebd3d7;border-radius:16px;padding:17px}.home-story-templates .muted{margin:4px 0 14px}.home-template-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.home-template-grid button{background:#fff;border:1px solid #e9d1d5;border-left:4px solid #c92132;border-radius:10px;text-align:left;padding:15px;cursor:pointer;display:grid;gap:6px}.home-template-grid button:hover{background:#fff0f3}.home-template-grid small{color:#66707c}
 .home-quick-upload{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px;border:1px solid #e7cbd1;border-radius:14px;background:#fff5f6}.home-quick-upload>div{flex:1 1 240px}.home-quick-upload .muted{margin:4px 0}.home-quick-upload .input{flex:1 1 230px;max-width:100%}.home-quick-upload .btn{min-height:44px}@media(max-width:600px){.home-quick-upload{display:grid;grid-template-columns:1fr}.home-quick-upload .btn{width:100%}}
+.learning-quick-upload{padding:16px;background:#fff7f8;border:1px solid #edd1d7;border-radius:13px;display:grid;gap:8px}.learning-quick-upload p{margin:0}.learning-quick-upload .input{flex:1 1 230px;min-width:0}.learning-quick-upload .btn{min-height:44px}
 </style>
 </head>
 <body>
@@ -1491,6 +1492,40 @@ window.learningDeleteTopic=i=>{if(!confirm("ลบหัวข้อและเ
 window.learningAddBlock=type=>{learningReadForm();const t=learningDraft[learningSelection]?.topics?.[learningTopicSelection];if(!t)return;t.blocks.push({id:learningId(),type,text:"",url:"",caption:"",storage_path:""});renderLearningManager()};
 window.learningMoveBlock=(i,d)=>learningMove(learningDraft[learningSelection].topics[learningTopicSelection].blocks,i,d);
 window.learningDeleteBlock=i=>{learningReadForm();learningDraft[learningSelection].topics[learningTopicSelection].blocks.splice(i,1);renderLearningManager()};
+
+window.learningQuickAddImage=async()=>{
+ learningReadForm();
+ const course=learningDraft[learningSelection];if(!course)return;
+ const files=Array.from(document.getElementById("learningQuickImageInput")?.files||[]);
+ if(!files.length){alert("กรุณาเลือกรูปภาพ");return}
+ if(files.some(f=>!["image/jpeg","image/png","image/webp"].includes(f.type)||f.size>20*1024*1024)){alert("รองรับ JPG PNG WEBP ไม่เกิน 20 MB ต่อรูป");return}
+ if(!course.topics)course.topics=[];
+ if(!course.topics.length){course.topics.push({id:learningId(),title:"ภาพประกอบหลักสูตร",blocks:[]});learningTopicSelection=0}
+ const topic=course.topics[learningTopicSelection]||course.topics[0],status=document.getElementById("learningMsg");
+ const btn=document.getElementById("learningQuickImageButton");if(btn)btn.disabled=true;
+ let count=0;const failures=[];
+ try{
+  for(const file of files){
+   status.textContent="กำลัง Upload "+file.name;
+   try{
+    const form=new FormData();form.append("section","courses");form.append("title",file.name);form.append("file",file);
+    const response=await fetch(FILE_UPLOAD_API,{method:"POST",headers:{"x-admin-pin":adminPin},body:form});
+    const data=await response.json();
+    if(!response.ok||!data.data?.storage_path)throw Error(data.error||"Upload ไม่สำเร็จ");
+    const listing=await api({action:"list_attachments",section:"courses"});
+    const image=(listing.data||[]).find(x=>String(x.id)===String(data.data.id));
+    if(!image?.url)throw Error("ไม่พบ URL รูปภาพ");
+    topic.blocks.push({id:learningId(),type:"image",url:image.url,storage_path:data.data.storage_path,caption:file.name,file_name:file.name});
+    count++;
+   }catch(e){failures.push(file.name+": "+e.message)}
+  }
+  if(count)await api({action:"save",dataset:"settings",row:{key:"elearning_catalog",value:learningDraft}});
+  renderLearningManager();
+  document.getElementById("learningMsg").textContent="เพิ่มรูปสำเร็จ "+count+" รูป"+(failures.length?" • ล้มเหลว "+failures.join("; "):"");
+ }catch(e){status.textContent="บันทึกไม่สำเร็จ: "+e.message}
+ finally{const b=document.getElementById("learningQuickImageButton");if(b)b.disabled=false}
+};
+
 window.learningUploadBlock=async i=>{
  learningReadForm();const file=document.getElementById("learningFile"+i)?.files?.[0];if(!file)return;
  if(file.size>20*1024*1024){alert("ไฟล์ต้องไม่เกิน 20 MB");return}
@@ -1547,7 +1582,7 @@ function renderLearningManager(){
      <label>ชื่อหลักสูตร<input class="input" data-learning-field="title" data-c="${learningSelection}" value="${E(course.title)}"></label>
      <label>รายละเอียด<textarea class="input" data-learning-field="description" data-c="${learningSelection}">${E(course.description)}</textarea></label>
      <label><input type="checkbox" data-learning-field="published" data-c="${learningSelection}" ${course.published!==false?"checked":""}> เผยแพร่หลักสูตร</label></div>
-     <div class="learning-toolbar"><h3>หัวข้อการเรียน</h3><button class="btn secondary" onclick="learningAddTopic()">+ เพิ่มหัวข้อ</button></div>
+     <div class="learning-quick-upload"><strong>Upload รูปภาพหลักสูตร</strong><p class="muted">เพิ่มรูปได้ทันที แม้ยังไม่มีหัวข้อการเรียน ระบบจะสร้างหัวข้อภาพประกอบให้อัตโนมัติ</p><div class="learning-toolbar"><input id="learningQuickImageInput" class="input" type="file" accept="image/jpeg,image/png,image/webp" multiple><button id="learningQuickImageButton" class="btn primary" type="button" onclick="learningQuickAddImage()">Upload รูป</button></div></div><div class="learning-toolbar"><h3>หัวข้อการเรียน</h3><button class="btn secondary" onclick="learningAddTopic()">+ เพิ่มหัวข้อ</button></div>
      <div class="learning-topic-list">${topics}</div>
      ${topic?`<div class="learning-topic-editor">
       <label>ชื่อหัวข้อ<input class="input" data-learning-field="title" data-c="${learningSelection}" data-t="${learningTopicSelection}" value="${E(topic.title)}"></label>
