@@ -874,6 +874,7 @@ h1,h2,h3{letter-spacing:-.015em}
 .index-editor{max-width:1060px;margin:auto;display:grid;gap:17px}.index-edit-block{padding:16px;border:1px solid #e3e7ed;border-radius:12px;background:#fff}.index-edit-block-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}.index-editor .row{flex-wrap:wrap}.index-edit-block .input{width:100%}@media(max-width:600px){.index-editor{padding:14px}.index-edit-block{padding:10px}}
 .learning-editor{display:grid;gap:16px}.learning-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-start}.learning-toolbar h2,.learning-toolbar h3{margin:0 14px 0 0}.learning-layout{display:grid;grid-template-columns:minmax(220px,290px) minmax(0,1fr);gap:18px}.learning-side,.learning-main,.learning-topic-editor{min-width:0;display:grid;align-content:start;gap:12px}.learning-side{border-right:1px solid #e2e6eb;padding-right:12px}.learning-list-row{display:flex;gap:5px;align-items:center;min-width:0}.learning-list-row>.btn{flex:1;min-width:0;white-space:normal;text-align:left}.learning-list-row>button:not(.btn),.learning-block button:not(.btn){border:1px solid #e1e3e7;border-radius:8px;min-width:34px;min-height:34px;background:#fff;color:#ae2231}.learning-fields{display:grid;gap:10px}.learning-fields label,.learning-topic-editor label,.learning-block label{display:grid;gap:6px}.learning-topic-list{display:grid;gap:6px}.learning-block{display:grid;gap:10px;padding:14px;border:1px solid #e1e5eb;border-radius:13px;background:#fff}.learning-topic-editor{padding-top:16px;border-top:1px solid #e2e6eb}@media(max-width:850px){.learning-layout{grid-template-columns:1fr}.learning-side{border-right:0;border-bottom:1px solid #e2e6eb;padding:0 0 12px}}@media(max-width:600px){.learning-editor{padding:12px}.learning-toolbar .btn{width:auto}.learning-block{padding:10px}}
 .home-story-templates{background:#fff7f8;border:1px solid #ebd3d7;border-radius:16px;padding:17px}.home-story-templates .muted{margin:4px 0 14px}.home-template-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.home-template-grid button{background:#fff;border:1px solid #e9d1d5;border-left:4px solid #c92132;border-radius:10px;text-align:left;padding:15px;cursor:pointer;display:grid;gap:6px}.home-template-grid button:hover{background:#fff0f3}.home-template-grid small{color:#66707c}
+.home-quick-upload{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px;border:1px solid #e7cbd1;border-radius:14px;background:#fff5f6}.home-quick-upload>div{flex:1 1 240px}.home-quick-upload .muted{margin:4px 0}.home-quick-upload .input{flex:1 1 230px;max-width:100%}.home-quick-upload .btn{min-height:44px}@media(max-width:600px){.home-quick-upload{display:grid;grid-template-columns:1fr}.home-quick-upload .btn{width:100%}}
 </style>
 </head>
 <body>
@@ -1646,6 +1647,7 @@ function renderHomePageEditor(){
  wrap.className="";
  wrap.innerHTML='<div class="panel home-editor"><h2>จัดการหน้า Home</h2><p class="muted">หน้าแรกก่อน Login • เพิ่มข้อความหรือรูปภาพ แทรกตำแหน่ง และเปลี่ยนลำดับการแสดงผลได้</p>'+
  '<div class="home-story-templates"><strong>Story Layout Templates</strong><p class="muted">เลือกตัวอย่างเพื่อเพิ่มส่วนประกอบลงในหน้า Home แล้วพิมพ์ข้อความหรือ Upload รูปได้ตามต้องการ</p><div class="home-template-grid"><button type="button" onclick="addHomeStoryTemplate(&quot;brand&quot;)"><strong>Brand Story</strong><small>ภาพปกและเรื่องราว</small></button><button type="button" onclick="addHomeStoryTemplate(&quot;event&quot;)"><strong>กิจกรรม Yothé</strong><small>ภาพกิจกรรมและข้อความ</small></button><button type="button" onclick="addHomeStoryTemplate(&quot;gallery&quot;)"><strong>Photo Gallery</strong><small>แกลเลอรี 2 คอลัมน์</small></button><button type="button" onclick="addHomeStoryTemplate(&quot;journey&quot;)"><strong>Our Journey</strong><small>ไทม์ไลน์เรื่องราว</small></button></div></div>'+
+ '<div class="home-quick-upload"><div><strong>Upload รูปภาพสำหรับ Story</strong><p class="muted">เลือกได้หลายรูป • เพิ่มลงในหน้า Home และบันทึกให้อัตโนมัติ • JPG PNG WEBP ไม่เกิน 20 MB ต่อรูป</p></div><input id="homeStoryUploadFiles" type="file" accept="image/png,image/jpeg,image/webp" multiple class="input"><button class="btn primary" type="button" id="homeStoryUploadButton" onclick="uploadHomeStoryPhotos()">Upload รูป</button></div>'+
  '<div class="field"><label>หัวข้อหน้า Home</label><input id="homePageTitle" class="input" value="'+esc(homePageDraft.title||"")+'"></div>'+
  '<div id="homeBlocks">'+homePageDraft.blocks.map((b,i)=>'<div class="home-edit-block"><div class="home-edit-block-header"><strong>รายการ '+(i+1)+' • '+(b.type==="image"?"รูปภาพ":"ข้อความ")+'</strong><div class="row"><button type="button" class="btn secondary" onclick="moveHomePageBlock('+i+',-1)">↑</button><button type="button" class="btn secondary" onclick="moveHomePageBlock('+i+',1)">↓</button><button type="button" class="btn secondary" onclick="removeHomePageBlock('+i+')">ลบ</button></div></div>'+
  (b.type==="image"?'<div class="field"><label>URL รูปภาพ</label><input class="input" data-index-field="url" data-index="'+i+'" value="'+esc(b.url||"")+'"></div><div class="field"><label>คำอธิบายภาพ</label><input class="input" data-index-field="caption" data-index="'+i+'" value="'+esc(b.caption||"")+'"></div><div class="row"><input type="file" accept="image/png,image/jpeg,image/webp" id="homeImageFile-'+i+'"><button class="btn secondary" type="button" onclick="uploadHomePagePicture('+i+')">Upload รูป</button></div>'+(b.url?'<img style="max-width:180px;max-height:120px;object-fit:contain" src="'+esc(b.url)+'" alt="">':''):'<textarea rows="3" class="input" data-index-field="text" data-index="'+i+'">'+esc(b.text||"")+'</textarea>')+'</div>').join("")+'</div>'+
@@ -1657,6 +1659,43 @@ function renderHomePageEditor(){
 window.addHomePageBlock=type=>{homePageDraft.blocks.push(type==="image"?{type:"image",url:"",caption:""}:{type:"text",text:""});renderHomePageEditor()};
 window.removeHomePageBlock=i=>{homePageDraft.blocks.splice(i,1);renderHomePageEditor()};
 window.moveHomePageBlock=(i,d)=>{const j=i+d;if(j<0||j>=homePageDraft.blocks.length)return;[homePageDraft.blocks[i],homePageDraft.blocks[j]]=[homePageDraft.blocks[j],homePageDraft.blocks[i]];renderHomePageEditor()};
+
+window.uploadHomeStoryPhotos=async()=>{
+ const files=[...(document.getElementById("homeStoryUploadFiles")?.files||[])];
+ if(!files.length){alert("กรุณาเลือกรูปภาพก่อน Upload");return}
+ const btn=document.getElementById("homeStoryUploadButton"),status=document.getElementById("homeEditorMsg");
+ const invalid=files.find(f=>!["image/jpeg","image/png","image/webp"].includes(f.type)||f.size>20*1024*1024);
+ if(invalid){alert("รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 20 MB ต่อรูป");return}
+ // Preserve content typed into other blocks before updating the editor.
+ document.querySelectorAll("#homeBlocks [data-index-field]").forEach(el=>{
+  const block=homePageDraft.blocks[Number(el.dataset.index)];
+  if(block)block[el.dataset.indexField]=el.value;
+ });
+ btn.disabled=true;let success=0;const failures=[];
+ try{
+  for(const file of files){
+   status.textContent="กำลัง Upload "+(success+failures.length+1)+"/"+files.length+" : "+file.name;
+   try{
+    const fd=new FormData();fd.append("section","home");fd.append("title",file.name);fd.append("file",file);
+    const response=await fetch(FILE_UPLOAD_API,{method:"POST",headers:{"x-admin-pin":adminPin},body:fd});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||!data.data?.storage_path)throw Error(data.error||"อัปโหลดไม่สำเร็จ");
+    const listing=await api({action:"list_attachments",section:"home"});
+    const attachment=(listing.data||[]).find(a=>String(a.id)===String(data.data.id));
+    if(!attachment?.url)throw Error("ไม่พบลิงก์แสดงรูป");
+    homePageDraft.blocks.push({type:"image",layout:"wide",url:attachment.url,storage_path:data.data.storage_path,caption:file.name});
+    success++;
+   }catch(err){failures.push(file.name+": "+err.message)}
+  }
+  if(success){await api({action:"save",dataset:"settings",row:{key:"home_page_content",value:homePageDraft}})}
+  renderHomePageEditor();
+  const message=document.getElementById("homeEditorMsg");
+  message.textContent=success?"Upload และบันทึกสำเร็จ "+success+" รูป"+(failures.length?" • ไม่สำเร็จ: "+failures.join("; "):""):"Upload ไม่สำเร็จ: "+failures.join("; ");
+  message.className="msg "+(failures.length?"error":"ok");
+ }catch(err){status.textContent="เกิดข้อผิดพลาดในการบันทึก: "+err.message}
+ finally{const button=document.getElementById("homeStoryUploadButton");if(button)button.disabled=false}
+};
+
 window.uploadHomePagePicture=async i=>{
  const file=document.getElementById("homeImageFile-"+i)?.files?.[0];if(!file)return;
  if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>20*1024*1024){alert("รองรับ JPG PNG WEBP ขนาดไม่เกิน 20 MB");return}
