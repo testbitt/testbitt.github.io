@@ -1686,6 +1686,7 @@ body.yothe-index-mode #indexSoundToggleBtn{display:none!important}
  #view-home .home-story-single-slide .home-story-quote{font-size:clamp(9px,2.4vw,14px)}
  #view-home .home-story-single-slide>.home-content-image{padding:4px!important}
 }
+.learning-media-pager{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid #e6e8ee;padding-top:13px}.learning-media-pager button{background:#c92132;color:#fff;border:0;border-radius:10px;padding:10px 17px;font-weight:750;cursor:pointer}.learning-media-pager button:disabled{opacity:.35;cursor:default}.learning-media-pager span{color:#68717e;font-weight:700;font-size:13px}
 </style>
 </head>
 <body>
@@ -2271,7 +2272,7 @@ function applyHomeMenuLayout(pref={}){
 }
 
 
-let elearningCatalog=[],learningOpenCourse=null,learningOpenTopic=null;
+let elearningCatalog=[],learningOpenCourse=null,learningOpenTopic=null,learningMediaIndex=0;
 function renderElearningCatalog(){
  const root=document.getElementById("elearningCatalog");if(!root)return;
  const published=elearningCatalog.filter(c=>c&&c.published!==false);
@@ -2283,9 +2284,11 @@ function renderElearningCatalog(){
  const topic=topics.find(t=>t.id===learningOpenTopic)||topics[0];learningOpenTopic=topic?.id||null;
  root.innerHTML='<aside class="elearning-courses"><h3>หลักสูตร</h3>'+published.map(c=>'<button type="button" class="elearning-choice '+(c.id===course.id?'is-selected':'')+'" data-elearn-course="'+e(c.id)+'">'+e(c.title||"ไม่มีชื่อหลักสูตร")+'</button>').join("")+'</aside>'+
  '<section class="elearning-workspace"><div class="elearning-intro"><h3>'+e(course.title)+'</h3><p>'+e(course.description||"")+'</p></div><div class="elearning-topics">'+topics.map(t=>'<button type="button" class="elearning-topic '+(topic?.id===t.id?'is-selected':'')+'" data-elearn-topic="'+e(t.id)+'">'+e(t.title)+'</button>').join("")+'</div>'+
- (topic?'<article class="elearning-lesson"><h3>'+e(topic.title)+'</h3>'+(topic.blocks||[]).map(b=>b.type==="text"?'<div class="elearning-text">'+e(b.text||"").replace(/\n/g,"<br>")+'</div>':b.type==="image"&&/^https:\/\//.test(b.url||"")?'<figure><img loading="lazy" src="'+e(b.url)+'" alt="'+e(b.caption||"ภาพประกอบบทเรียน")+'"><figcaption>'+e(b.caption||"")+'</figcaption></figure>':b.type==="file"&&/^https:\/\//.test(b.url||"")?'<div class="elearning-document"><span>📄 '+e(b.caption||b.file_name||"เอกสารประกอบ")+'</span><a target="_blank" rel="noopener noreferrer" href="'+e(b.url)+'">เปิดเอกสาร</a></div>':"").join("")+'</article>':'<div class="home-learning-intro">ยังไม่มีหัวข้อการเรียน</div>')+'</section>';
- root.querySelectorAll("[data-elearn-course]").forEach(b=>b.addEventListener("click",()=>{learningOpenCourse=b.dataset.elearnCourse;learningOpenTopic=null;renderElearningCatalog()}));
- root.querySelectorAll("[data-elearn-topic]").forEach(b=>b.addEventListener("click",()=>{learningOpenTopic=b.dataset.elearnTopic;renderElearningCatalog()}));
+ (topic?'<article class="elearning-lesson"><h3>'+e(topic.title)+'</h3>'+(topic.blocks||[]).filter(b=>b.type==="text"||(b.url&&/^https:\/\//.test(b.url))).slice(learningMediaIndex,learningMediaIndex+1).map(b=>b.type==="text"?'<div class="elearning-text">'+e(b.text||"").replace(/\n/g,"<br>")+'</div>':b.type==="image"&&/^https:\/\//.test(b.url||"")?'<figure><img loading="lazy" src="'+e(b.url)+'" alt="'+e(b.caption||"ภาพประกอบบทเรียน")+'"><figcaption>'+e(b.caption||"")+'</figcaption></figure>':b.type==="file"&&/^https:\/\//.test(b.url||"")?'<div class="elearning-document"><span>📄 '+e(b.caption||b.file_name||"เอกสารประกอบ")+'</span><a target="_blank" rel="noopener noreferrer" href="'+e(b.url)+'">เปิดเอกสาร</a></div>':"").join("")+'<nav class="learning-media-pager"><button type="button" id="learningPrevMedia" '+(learningMediaIndex===0?'disabled':'')+'>← ก่อนหน้า</button><span>สื่อ '+(learningMediaIndex+1)+' / '+Math.max(1,(topic.blocks||[]).filter(b=>b.type==="text"||b.url).length)+'</span><button type="button" id="learningNextMedia" '+(learningMediaIndex>=(topic.blocks||[]).filter(b=>b.type==="text"||b.url).length-1?'disabled':'')+'>ถัดไป →</button></nav></article>':'<div class="home-learning-intro">ยังไม่มีหัวข้อการเรียน</div>')+'</section>';
+ root.querySelectorAll("[data-elearn-course]").forEach(b=>b.addEventListener("click",()=>{learningOpenCourse=b.dataset.elearnCourse;learningOpenTopic=null;learningMediaIndex=0;renderElearningCatalog()}));
+ root.querySelectorAll("[data-elearn-topic]").forEach(b=>b.addEventListener("click",()=>{learningOpenTopic=b.dataset.elearnTopic;learningMediaIndex=0;renderElearningCatalog()}));
+ root.querySelector("#learningPrevMedia")?.addEventListener("click",()=>{learningMediaIndex=Math.max(0,learningMediaIndex-1);renderElearningCatalog()});
+ root.querySelector("#learningNextMedia")?.addEventListener("click",()=>{const max=(topic?.blocks||[]).filter(b=>b.type==="text"||b.url).length;learningMediaIndex=Math.min(Math.max(0,max-1),learningMediaIndex+1);renderElearningCatalog()});
 }
 
 
