@@ -1615,6 +1615,17 @@ body.yothe-index-mode #view-index .story,body.yothe-index-mode #view-index .stor
 @media(max-width:800px){body.yothe-index-mode #appRoot main{padding:12px!important}body.yothe-index-mode #appRoot .story{display:flex!important;flex-direction:column!important}}
 
 #appRoot #navLinks [data-view="courses"]{display:none!important}
+
+.elearning-catalog{display:grid;grid-template-columns:minmax(210px,270px) minmax(0,1fr);gap:18px;align-items:start}
+.elearning-courses,.elearning-workspace,.elearning-lesson,.elearning-intro{background:white;border:1px solid #e2e6eb;border-radius:13px;padding:20px;min-width:0}
+.elearning-courses{display:grid;gap:8px;position:sticky;top:20px}.elearning-courses h3{margin:0 0 8px;color:#b61d30}
+.elearning-choice,.elearning-topic{padding:11px 13px;min-height:43px;background:#fff;color:#3a4350;border:1px solid #e1e4ea;border-radius:9px;text-align:left;font-weight:750}
+.elearning-choice.is-selected,.elearning-topic.is-selected{background:#c92132;color:#fff;border-color:#c92132}
+.elearning-workspace{display:grid;gap:18px}.elearning-intro h3{color:#bc1e30;margin:0 0 8px}.elearning-intro p{white-space:pre-wrap;margin:0}
+.elearning-topics{display:flex;flex-wrap:wrap;gap:8px}.elearning-lesson{display:grid;gap:18px}.elearning-lesson h3{margin:0;color:#b71d2e}.elearning-lesson figure{margin:0}.elearning-lesson img{max-width:100%;height:auto;max-height:650px;object-fit:contain}.elearning-lesson figcaption{color:#6b7280;font-size:13px}
+.elearning-text{white-space:normal;line-height:1.8;overflow-wrap:anywhere}.elearning-document{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px;border:1px solid #e3e6e9;border-radius:10px;flex-wrap:wrap}.elearning-document a{background:#bf2233;color:#fff;border-radius:8px;padding:8px 14px}
+@media(max-width:850px){.elearning-catalog{grid-template-columns:1fr}.elearning-courses{position:static}.elearning-lesson,.elearning-intro{padding:13px}}
+
 </style>
 </head>
 <body>
@@ -1661,9 +1672,9 @@ body.yothe-index-mode #view-index .story,body.yothe-index-mode #view-index .stor
     </div>
   </section>
 
-  <section id="view-home" class="view"><div class="section-head"><div><h2>Home</h2><p>Yothé E-Learning • เลือกหลักสูตรจากเมนูเพื่อเริ่มเรียนรู้</p></div></div><div class="home-learning-intro"><h3>ยินดีต้อนรับสู่ Yothé E-Learning</h3><p>ศูนย์รวมบทเรียน สูตรการผลิต คู่มือ และมาตรฐานการทำงาน</p><button type="button" class="btn primary" id="learningHomeButton" onclick="showView('courses')">เข้าสู่ E-Learning</button></div></section>
+  <section id="view-home" class="view"><div class="section-head"><div><h2>Home</h2><p>Yothé E-Learning • เลือกหลักสูตรจากเมนูเพื่อเริ่มเรียนรู้</p></div></div><div class="home-learning-intro"><h3>ยินดีต้อนรับสู่ Yothé E-Learning</h3><p>ศูนย์รวมบทเรียน สูตรการผลิต คู่มือ และมาตรฐานการทำงาน</p><button type="button" class="btn primary" id="learningHomeButton" onclick="showView('e-learning')">เข้าสู่ E-Learning</button></div></section>
 
-  <section id="view-e-learning" class="view"><div class="section-head"><div><h2>E-Learning</h2><p>หลักสูตรและบทเรียน Yothé</p></div></div><div class="home-learning-intro"><h3>เลือกบทเรียนที่ต้องการ</h3><p>เปิดเมนูบทเรียนอื่น ๆ หรือเลือกหมวดบทเรียนจากเมนูด้านซ้าย</p><button class="btn primary" type="button" onclick="showView('courses')">ดูหลักสูตรทั้งหมด</button></div></section>
+  <section id="view-e-learning" class="view"><div class="section-head"><div><h2>E-Learning</h2><p>หลักสูตรและบทเรียน Yothé</p></div></div><div id="elearningCatalog" class="elearning-catalog"></div></section>
   <section id="view-production" class="view"><div class="section-head"><div><h2>สูตรการผลิต</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="productionList" class="grid"></div><div id="attachments-production" class="attachments"></div></section>
   <section id="view-production-ratio" class="view">
     <div class="section-head"><div><h2>Pack Size</h2><p>อัตราส่วนวัตถุดิบและจำนวนสูตรที่ผลิตได้</p></div></div>
@@ -2110,6 +2121,7 @@ async function loadSettings(){
   renderMenuOrder(map.menu_order||["uniforms","production","drinks","expiry","toppings"]);
   renderCustomMenus(map.custom_menus||[]);
   renderCourseLessonMenus(courseRows||[]);
+  elearningCatalog=Array.isArray(map.elearning_catalog)?map.elearning_catalog:[];
   await syncDeliveryMenuVisibility();
   groupPublicNavigation();
   applyHomeMenuLayout(map.home_menu_layout||{});
@@ -2187,6 +2199,24 @@ function applyHomeMenuLayout(pref={}){
  document.body.classList.toggle("home-nav-left",pref.placement!=="top");
 }
 
+
+let elearningCatalog=[],learningOpenCourse=null,learningOpenTopic=null;
+function renderElearningCatalog(){
+ const root=document.getElementById("elearningCatalog");if(!root)return;
+ const published=elearningCatalog.filter(c=>c&&c.published!==false);
+ if(!published.length){root.innerHTML='<div class="home-learning-intro"><h3>ยังไม่มีหลักสูตรที่เผยแพร่</h3><p>ผู้ดูแลระบบสามารถเพิ่มหลักสูตรได้จาก Admin → จัดการหลักสูตร E-Learning</p></div>';return}
+ const e=esc;
+ const course=published.find(c=>c.id===learningOpenCourse)||published[0];
+ learningOpenCourse=course.id;
+ const topics=Array.isArray(course.topics)?course.topics:[];
+ const topic=topics.find(t=>t.id===learningOpenTopic)||topics[0];learningOpenTopic=topic?.id||null;
+ root.innerHTML='<aside class="elearning-courses"><h3>หลักสูตร</h3>'+published.map(c=>'<button type="button" class="elearning-choice '+(c.id===course.id?'is-selected':'')+'" data-elearn-course="'+e(c.id)+'">'+e(c.title||"ไม่มีชื่อหลักสูตร")+'</button>').join("")+'</aside>'+
+ '<section class="elearning-workspace"><div class="elearning-intro"><h3>'+e(course.title)+'</h3><p>'+e(course.description||"")+'</p></div><div class="elearning-topics">'+topics.map(t=>'<button type="button" class="elearning-topic '+(topic?.id===t.id?'is-selected':'')+'" data-elearn-topic="'+e(t.id)+'">'+e(t.title)+'</button>').join("")+'</div>'+
+ (topic?'<article class="elearning-lesson"><h3>'+e(topic.title)+'</h3>'+(topic.blocks||[]).map(b=>b.type==="text"?'<div class="elearning-text">'+e(b.text||"").replace(/\n/g,"<br>")+'</div>':b.type==="image"&&/^https:\/\//.test(b.url||"")?'<figure><img loading="lazy" src="'+e(b.url)+'" alt="'+e(b.caption||"ภาพประกอบบทเรียน")+'"><figcaption>'+e(b.caption||"")+'</figcaption></figure>':b.type==="file"&&/^https:\/\//.test(b.url||"")?'<div class="elearning-document"><span>📄 '+e(b.caption||b.file_name||"เอกสารประกอบ")+'</span><a target="_blank" rel="noopener noreferrer" href="'+e(b.url)+'">เปิดเอกสาร</a></div>':"").join("")+'</article>':'<div class="home-learning-intro">ยังไม่มีหัวข้อการเรียน</div>')+'</section>';
+ root.querySelectorAll("[data-elearn-course]").forEach(b=>b.addEventListener("click",()=>{learningOpenCourse=b.dataset.elearnCourse;learningOpenTopic=null;renderElearningCatalog()}));
+ root.querySelectorAll("[data-elearn-topic]").forEach(b=>b.addEventListener("click",()=>{learningOpenTopic=b.dataset.elearnTopic;renderElearningCatalog()}));
+}
+
 function showView(view){
   if(!token&&view!=="index"){showView("index");return}
   document.body.classList.toggle("yothe-index-mode",view==="index");
@@ -2212,6 +2242,7 @@ async function loadView(view){
     if(view==="expiry"){renderExpiry(await api("expiry"));await loadAttachments("expiry");return}
     if(view==="uniforms"){renderUniforms(await api("uniforms"));await loadAttachments("uniforms");return}
     if(view==="delivery-schedule"){await loadDeliverySchedule();return}
+    if(view==="e-learning"){renderElearningCatalog();return}
     if(view==="courses"){await loadAllLessons();await loadAttachments("courses");return}
     if(view.startsWith("custom-")){await loadAttachments(view);return}
   }catch(e){
