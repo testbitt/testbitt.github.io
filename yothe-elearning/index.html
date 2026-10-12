@@ -1580,6 +1580,26 @@ html body{background:#f5f6f8!important;color:#222832!important;letter-spacing:0!
 }
 @media(prefers-reduced-motion:reduce){#appRoot>.topbar{transition:none!important}}
 
+
+/* Home menu layout manager: single-level menu, top/left from Admin settings */
+#appRoot .navlinks{gap:5px!important}
+#appRoot .navlinks>button,#appRoot .navlinks>a{display:flex!important;align-items:center!important;justify-content:flex-start!important;width:100%!important;text-align:left!important;min-height:39px!important;padding:9px 12px!important;font-size:13px!important;white-space:normal!important;color:#424b56!important;background:#fff!important;border:1px solid transparent!important;border-radius:9px!important;box-shadow:none!important}
+#appRoot .navlinks>button.active,#appRoot .navlinks>button:hover,#appRoot .navlinks>a:hover{color:#fff!important;background:#c92132!important;border-color:#c92132!important}
+body.home-nav-top #appRoot>.topbar{position:sticky!important;inset:auto!important;top:0!important;width:100%!important;height:auto!important;max-height:none!important;overflow:visible!important;border-right:0!important;border-bottom:2px solid #c92132!important;transform:none!important}
+body.home-nav-top #appRoot>.topbar>.nav{display:flex!important;flex-flow:row wrap!important;align-items:center!important;min-height:76px!important;padding:11px 18px!important;gap:10px!important}
+body.home-nav-top #appRoot .nav .brand{width:auto!important;border:0!important;padding:0!important}
+body.home-nav-top #appRoot .navlinks{order:4!important;flex:1 0 100%!important;display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;width:100%!important;gap:6px!important;justify-content:center!important}
+body.home-nav-top #appRoot .navlinks>button,body.home-nav-top #appRoot .navlinks>a{width:auto!important;flex:0 1 auto!important;min-height:38px!important;white-space:normal!important;text-align:center!important;justify-content:center!important;padding:8px 10px!important}
+body.home-nav-top #appRoot .sound-toggle{order:2!important;margin-left:auto!important;width:auto!important}
+body.home-nav-top #appRoot .userbox{order:3!important;flex-direction:row!important;width:auto!important}
+body.home-nav-top #appRoot main{max-width:1460px!important;width:100%!important;margin:0 auto!important;padding:25px 20px 65px!important}
+body.home-nav-top .executive-menu-toggle{display:none!important}
+@media(max-width:800px){
+ body.home-nav-top #appRoot>.topbar{transform:none!important;position:sticky!important}
+ body.home-nav-top #appRoot main{width:100%!important;margin:0 auto!important;padding:18px 12px 48px!important}
+ body.home-nav-top #appRoot .navlinks{overflow:visible!important}
+}
+
 </style>
 </head>
 <body>
@@ -2059,6 +2079,7 @@ async function loadSettings(){
   renderCourseLessonMenus(courseRows||[]);
   await syncDeliveryMenuVisibility();
   groupPublicNavigation();
+  applyHomeMenuLayout(map.home_menu_layout||{});
   renderBrandStoryValue(map.brand_story||{});
   if(token)await loadAttachments("home");
 }
@@ -2112,6 +2133,24 @@ function groupPublicNavigation(){
  }
  for(const item of nodes){if(!assigned.has(item)){let g=fragment.querySelector('[data-nav-group="learning"]');if(!g){g=document.createElement("div");g.className="nav-group";g.dataset.navGroup="learning";fragment.appendChild(g)}g.appendChild(item)}}
  nav.replaceChildren(fragment);
+}
+
+
+function applyHomeMenuLayout(pref={}){
+ const nav=document.getElementById("navLinks");if(!nav)return;
+ const items=[...nav.querySelectorAll('button[data-view],button[data-course-menu],a[href="admin.html"]')];
+ const getKey=n=>n.matches('a[href="admin.html"]')?"admin":n.dataset.view||(n.dataset.deliverySchedule==="1"?"delivery-schedule":n.dataset.courseCategory?"course:"+n.dataset.courseCategory:"");
+ const keys=Array.isArray(pref.order)?pref.order:[];
+ const priority=new Map(keys.map((key,i)=>[key,i]));
+ const sorted=items.map((node,index)=>({node,index,key:getKey(node)})).sort((a,b)=>{
+  const ai=priority.has(a.key)?priority.get(a.key):10000+a.index;
+  const bi=priority.has(b.key)?priority.get(b.key):10000+b.index;
+  return ai-bi;
+ });
+ // Flatten category wrappers: one continuous menu, no group labels.
+ nav.replaceChildren(...sorted.map(item=>item.node));
+ document.body.classList.toggle("home-nav-top",pref.placement==="top");
+ document.body.classList.toggle("home-nav-left",pref.placement!=="top");
 }
 
 function showView(view){
