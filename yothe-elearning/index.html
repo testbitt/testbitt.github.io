@@ -1710,7 +1710,7 @@ body.yothe-index-mode #indexSoundToggleBtn{display:none!important}
   <nav id="navLinks" class="navlinks">
     <button data-view="home" class="active">Home</button>
     <button class="auth-only hidden-auth" data-view="e-learning">E-Learning</button>
-    <button class="auth-only hidden-auth" data-view="uniforms">เครื่องแต่งกาย</button>
+
     <button class="auth-only hidden-auth" data-view="production">สูตรการผลิต</button>
     <button class="auth-only hidden-auth" data-view="production-ratio">Pack Size</button>
     <button class="auth-only hidden-auth" data-view="drinks">สูตรชง</button>
@@ -2256,7 +2256,7 @@ function groupPublicNavigation(){
 function applyHomeMenuLayout(pref={}){
  const nav=document.getElementById("navLinks");if(!nav)return;
  // Remove retired Other Lessons shortcuts from the public menu only.
- nav.querySelectorAll('[data-course-category]:not([data-delivery-schedule="1"])').forEach(el=>el.remove());
+ nav.querySelectorAll('[data-course-category]:not([data-delivery-schedule="1"]),[data-view="uniforms"]').forEach(el=>el.remove());
  const retiredCoursesButton=nav.querySelector('[data-view="courses"]');
  const items=[...nav.querySelectorAll('button[data-view],button[data-course-menu],a[href="admin.html"]')].filter(n=>n!==retiredCoursesButton);
  const getKey=n=>n.matches('a[href="admin.html"]')?"admin":(n.dataset.deliverySchedule==="1"?"delivery-schedule":n.dataset.view||"");
