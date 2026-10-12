@@ -958,6 +958,10 @@ h1,h2,h3{letter-spacing:-.015em}
 
       <section id="attachmentPanel" class="panel">
         <h2 style="margin-top:0">Upload ไฟล์แนบ</h2>
+        <div class="row" style="align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0 16px">
+          <button type="button" class="btn secondary" id="cleanupLegacyAttachmentsBtn" onclick="cleanupLegacyAttachments()">ตรวจและลบไฟล์ประกอบบทเรียนเก่าที่ไม่ได้ใช้งาน</button>
+          <span id="cleanupLegacyAttachmentsStatus" class="muted" role="status"></span>
+        </div>
         <div class="uploadbox">
           <div class="field"><label>เมนูที่ใช้ไฟล์</label>
             <select id="attachmentSection" class="input">
@@ -1334,6 +1338,34 @@ function initMenuDrag(){
     };
   });
 }
+
+window.cleanupLegacyAttachments=async()=>{
+ const status=document.getElementById("cleanupLegacyAttachmentsStatus"),btn=document.getElementById("cleanupLegacyAttachmentsBtn");
+ if(!status||!btn)return;
+ btn.disabled=true;status.textContent="กำลังตรวจสอบไฟล์และการอ้างอิง...";
+ try{
+  const [filesRes,popRes,setRes]=await Promise.all([
+    api({action:"list_attachments"}),
+    api({action:"list",dataset:"image_popups"}),
+    api({action:"list",dataset:"settings"})
+  ]);
+  const files=filesRes.data||[];
+  const protectedIds=new Set((popRes.data||[]).map(p=>String(p.attachment_id)));
+  const refs=(setRes.data||[]).filter(r=>["index_content","home_page_content","elearning_catalog"].includes(r.key)).map(r=>JSON.stringify(r.value||{})).join("\n");
+  const candidates=files.filter(f=>!protectedIds.has(String(f.id))&&f.storage_path&&!refs.includes(f.storage_path));
+  if(!candidates.length){status.textContent="ไม่มีไฟล์เก่าที่ลบได้โดยปลอดภัย";return}
+  if(!confirm("พบไฟล์ประกอบบทเรียนเก่าที่ไม่พบการอ้างอิง "+candidates.length+" รายการ\nไฟล์เหล่านี้จะถูกลบจาก Supabase Storage และตารางข้อมูลถาวร\nยืนยันลบหรือไม่?")){status.textContent="ยกเลิกการลบ";return}
+  let done=0,failed=0;
+  for(const f of candidates){
+   try{await api({action:"delete_attachment",id:f.id});done++}
+   catch(err){failed++}
+   status.textContent="ลบแล้ว "+done+"/"+candidates.length+" รายการ"+(failed?" • ไม่สำเร็จ "+failed:"");
+  }
+  status.textContent="เสร็จสิ้น: ลบ "+done+" รายการ"+(failed?" • ล้มเหลว "+failed+" รายการ":"")+" • เก็บไฟล์ที่ใช้กับ Popup/Index/Home/E-Learning ไว้";
+ }catch(err){status.textContent="ตรวจสอบ/ลบไม่สำเร็จ: "+err.message}
+ finally{btn.disabled=false}
+};
+
 function syncAdminPageChrome(){
   const hideForUsers=dataset==="users";
   const custom=isCustomMenuDataset(dataset);
