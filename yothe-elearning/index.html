@@ -1544,6 +1544,18 @@ html body{background:#f5f6f8!important;color:#222832!important;letter-spacing:0!
  #appRoot .story{display:flex!important;flex-direction:column!important;padding:22px 18px!important}
 }
 
+
+/* Brand Story content: presentation-style static reading, no motion or hover effects */
+#view-home .story,#view-home .story article,#view-home .story-copy,#view-home .story-copy * ,#view-home .story h1{
+ animation:none!important;transition:none!important;transform:none!important;
+}
+#view-home .story:hover,#view-home .story article:hover,#view-home .story-copy:hover,#view-home .story-copy *:hover{
+ animation:none!important;transform:none!important;filter:none!important;
+}
+#view-home .story::before,#view-home .story::after,#view-home .story article::before,#view-home .story article::after{
+ animation:none!important;transition:none!important;
+}
+
 </style>
 </head>
 <body>
