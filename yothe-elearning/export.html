@@ -518,6 +518,15 @@ html,body{max-width:100%;overflow-x:hidden}
 }
 @media print{html,body{overflow:visible!important}.pages{min-width:0!important}}
 
+
+/* White/red application chrome; preserve export page themes and A4 canvas */
+:root{--red:#cf202c;--ink:#292327;--muted:#70656a;--line:#ebd8dc;--bg:#fff}
+html body{background:#fff;color:#292327}
+.top{background:#fff;border-bottom:3px solid #cf202c;box-shadow:0 4px 12px rgba(137,30,44,.07)}
+.panel{background:#fff;border-color:#ecd5d9;box-shadow:0 5px 0 #f3e4e6,0 13px 24px rgba(127,31,43,.07)}
+.btn.primary,.primary{background:linear-gradient(#ed4652,#c91c2a);color:#fff}
+.input{background:#fff;border-color:#e8cfd3}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
