@@ -1688,6 +1688,8 @@ body.yothe-index-mode #indexSoundToggleBtn{display:none!important}
 }
 .learning-media-pager{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid #e6e8ee;padding-top:13px}.learning-media-pager button{background:#c92132;color:#fff;border:0;border-radius:10px;padding:10px 17px;font-weight:750;cursor:pointer}.learning-media-pager button:disabled{opacity:.35;cursor:default}.learning-media-pager span{color:#68717e;font-weight:700;font-size:13px}
 </style>
+<script>try{if(sessionStorage.getItem("yothe_session_token"))document.documentElement.classList.add("yothe-restoring")}catch(e){}</script>
+<style>html.yothe-restoring #appRoot{visibility:hidden!important}html.yothe-restoring body{background:#f5f6f8}</style>
 </head>
 <body>
 <section id="loginScreen" class="login-screen hidden">
@@ -2307,6 +2309,7 @@ function renderHomePageContent(){
 }
 
 function showView(view){
+  if(token&&view!=="index")sessionStorage.setItem("yothe_last_view",view);
   if(!token&&view!=="index"){showView("index");return}
   document.body.classList.toggle("yothe-index-mode",view==="index");
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
@@ -2513,6 +2516,7 @@ document.getElementById("logoutBtn").onclick=async()=>{
   token="";cache={};currentUser=null;settingsMap={};
   sessionStorage.removeItem("yothe_session_token");
   sessionStorage.removeItem("yothe_session_user");
+  sessionStorage.removeItem("yothe_last_view");
   setAuthUI(false);
   document.getElementById("currentUser").textContent="";
   document.getElementById("loginPass").value="";
@@ -2592,11 +2596,11 @@ document.addEventListener("keydown",e=>{
 
 // เปิด Website ที่ Home เสมอ แต่คง Login ไว้ภายในแท็บเดิมจนกว่าจะปิดแท็บหรือ Logout
 async function restoreTabSession(){
-  showView("index");
   const savedToken=sessionStorage.getItem("yothe_session_token")||"";
   if(!savedToken){
     setAuthUI(false);
     await loadPublicHome();
+    showView("index");
     return;
   }
   try{
@@ -2607,14 +2611,18 @@ async function restoreTabSession(){
     setAuthUI(true);
     document.getElementById("currentUser").textContent=currentUser.display_name||currentUser.username;
     await loadSettings();
-    showView("index");
+    const previous=sessionStorage.getItem("yothe_last_view")||"home";
+    showView(document.getElementById("view-"+previous)&&previous!=="index"?previous:"home");
   }catch{
     token="";currentUser=null;cache={};settingsMap={};
     sessionStorage.removeItem("yothe_session_token");
     sessionStorage.removeItem("yothe_session_user");
+    sessionStorage.removeItem("yothe_last_view");
     setAuthUI(false);
     await loadPublicHome();
     showView("index");
+  }finally{
+    document.documentElement.classList.remove("yothe-restoring");
   }
 }
 restoreTabSession().finally(()=>requestAnimationFrame(initMotionObserver));
