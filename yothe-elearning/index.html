@@ -2208,8 +2208,9 @@ function groupPublicNavigation(){
 function applyHomeMenuLayout(pref={}){
  const nav=document.getElementById("navLinks");if(!nav)return;
  // Remove retired Other Lessons shortcuts from the public menu only.
- nav.querySelectorAll('[data-view="courses"],[data-course-category]:not([data-delivery-schedule="1"])').forEach(el=>el.remove());
- const items=[...nav.querySelectorAll('button[data-view],button[data-course-menu],a[href="admin.html"]')];
+ nav.querySelectorAll('[data-course-category]:not([data-delivery-schedule="1"])').forEach(el=>el.remove());
+ const retiredCoursesButton=nav.querySelector('[data-view="courses"]');
+ const items=[...nav.querySelectorAll('button[data-view],button[data-course-menu],a[href="admin.html"]')].filter(n=>n!==retiredCoursesButton);
  const getKey=n=>n.matches('a[href="admin.html"]')?"admin":(n.dataset.deliverySchedule==="1"?"delivery-schedule":n.dataset.view||"");
  const keys=Array.isArray(pref.order)?pref.order:[];
  const priority=new Map(keys.map((key,i)=>[key,i]));
@@ -2219,7 +2220,7 @@ function applyHomeMenuLayout(pref={}){
   return ai-bi;
  });
  // Flatten category wrappers: one continuous menu, no group labels.
- nav.replaceChildren(...sorted.map(item=>item.node));
+ nav.replaceChildren(...sorted.map(item=>item.node),...(retiredCoursesButton?[retiredCoursesButton]:[]));
  document.body.classList.toggle("home-nav-top",pref.placement==="top");
  document.body.classList.toggle("home-nav-left",pref.placement!=="top");
 }
