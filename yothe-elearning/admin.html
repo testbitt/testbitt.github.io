@@ -1400,7 +1400,7 @@ function syncAdminPageChrome(){
   document.getElementById("reviewLayoutPanel")?.classList.toggle("hidden",hideReview);
 
   document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers||dataset==="menus"||dataset==="home_menu_layout"||dataset==="index_page"||dataset==="home_page"||dataset==="learning_manager"||dataset==="image_popups"||custom);
-  document.getElementById("attachmentPanel")?.classList.toggle("hidden",hideForUsers||dataset==="delivery_schedule"||dataset==="image_popups"||dataset==="home_menu_layout"||dataset==="index_page"||dataset==="learning_manager");
+  document.getElementById("attachmentPanel")?.classList.toggle("hidden",hideForUsers||dataset==="delivery_schedule"||dataset==="image_popups"||dataset==="home_menu_layout"||dataset==="index_page"||dataset==="home_page"||dataset==="learning_manager");
 }
 document.getElementById("tabs").addEventListener("click",e=>{
   const b=e.target.closest(".tab"); if(!b)return;
