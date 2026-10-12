@@ -1640,7 +1640,7 @@ window.saveHomePage=async()=>{
 const HOME_MENU_ITEMS=[
  ["home","Home"],["e-learning","E-Learning"],["uniforms","เครื่องแต่งกาย"],["production","สูตรการผลิต"],
  ["production-ratio","Pack Size"],["drinks","สูตรชง"],["drink-map","แผนผังสูตรเครื่องดื่ม"],
- ["expiry","วันหมดอายุ"],["toppings","Topping"],["courses","บทเรียนอื่น ๆ"]
+ ["expiry","วันหมดอายุ"],["toppings","Topping"],["delivery-schedule","รอบการส่งสินค้า"]
 ];
 let homeMenuLayout={placement:"left",order:[]},homeMenuRows=[];
 async function loadHomeMenuLayout(){
@@ -1651,7 +1651,7 @@ async function loadHomeMenuLayout(){
   const data=res.data||[];
   const prefs=data.find(x=>x.key==="home_menu_layout")?.value||{};
   const custom=data.find(x=>x.key==="custom_menus")?.value||[];
-  homeMenuRows=[...HOME_MENU_ITEMS,...(Array.isArray(custom)?custom.filter(x=>x?.section&&x.active!==false).map(x=>[x.section,x.label||x.section]):[]),["admin","Admin"]];
+  homeMenuRows=[...HOME_MENU_ITEMS,...(Array.isArray(custom)?custom.filter(x=>x?.section&&x.active!==false).map(x=>[x.section,x.label||x.section]):[]),["admin","Admin"]].filter(([key],i,rows)=>rows.findIndex(([k])=>k===key)===i);
   const valid=new Set(homeMenuRows.map(x=>x[0]));
   const order=Array.isArray(prefs.order)?prefs.order.filter(k=>valid.has(k)):[];
   homeMenuLayout={placement:prefs.placement==="top"?"top":"left",order:[...new Set([...order,...homeMenuRows.map(x=>x[0])])]};
