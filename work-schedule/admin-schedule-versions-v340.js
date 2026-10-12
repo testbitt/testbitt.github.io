@@ -207,7 +207,7 @@
       if(!map.has(code))map.set(code,{code,name:e.employee_name||code,position:e.position||'',days:{}});
       map.get(code).days[String(e.work_date||'')]=e;
     }
-    return [...map.values()];
+    return [...map.values()].sort((a,b)=>typeof employeePositionCompare==='function'?employeePositionCompare(a,b):String(a.code).localeCompare(String(b.code),'th',{numeric:true}));
   }
   function cell340(e){
     if(!e)return '<span class="empty-cell340">—</span>';
@@ -321,5 +321,5 @@
   buildUI340();
   fillBranches340();
   document.querySelectorAll('.cute-mascot').forEach(x=>x.remove());
-  const footer=q('.side footer');if(footer)footer.textContent='Version 3.8.1 · Employee Auto Sync';
+  const footer=q('.side footer');if(footer)footer.textContent='Version 3.8.2 · Position Sorting';
 })();

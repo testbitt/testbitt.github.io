@@ -74,7 +74,7 @@
         r.days[e.work_date]=e;
       });
     });
-    const out=[...groups.values()].map(g=>({...g,rows:[...g.rows.values()].sort((a,b)=>String(a.code).localeCompare(String(b.code)))}));
+    const out=[...groups.values()].map(g=>({...g,rows:[...g.rows.values()].sort((a,b)=>typeof employeePositionCompare==='function'?employeePositionCompare(a,b):String(a.code).localeCompare(String(b.code),'th',{numeric:true}))}));
     if(!out.some(g=>g.rows.length))throw new Error('ไม่พบข้อมูลพนักงานในช่วงวันที่เลือก');
     return {start,end,dates,groups:out};
   }

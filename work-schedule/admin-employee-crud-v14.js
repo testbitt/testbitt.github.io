@@ -230,5 +230,5 @@
   if(typeof previousOpenAdmin==='function')window.openAdmin=function(){const result=previousOpenAdmin.apply(this,arguments);if(q('#admin-employees.active'))window.renderEmployees();return result};
 
   fillBranchControls350();renderEmployees350();renderBranches350();
-  const footer=q('.side footer');if(footer)footer.textContent='Version 3.8.1 · Employee Auto Sync';
+  const footer=q('.side footer');if(footer)footer.textContent='Version 3.8.2 · Position Sorting';
 })();
