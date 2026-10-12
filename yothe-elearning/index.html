@@ -1708,6 +1708,26 @@ body.yothe-index-mode #indexSoundToggleBtn{display:none!important}
 #view-home .home-story-single-slide .home-story-quote{font-size:calc(var(--story-fit-font,14px) * 1.35)!important;line-height:1.25!important}
 #view-home .home-story-single-slide .home-content-image img{width:100%!important;height:100%!important;max-height:100%!important;object-fit:contain!important}
 @media(max-width:650px){#view-home .home-story-single-slide{grid-template-columns:repeat(2,minmax(0,1fr))!important}#view-home .home-story-single-slide>.home-story-half{grid-column:span 1!important}#view-home .home-story-single-slide .home-content-text{font-size:var(--story-fit-font,10px)!important}}
+
+/* One-page Yothé publicity poster with deliberate photo overlap, no text obstruction */
+#view-home .home-poster-page{width:100%;max-width:1440px;margin:auto;display:block!important}
+.yothe-poster{width:100%;aspect-ratio:16/9;background:#fff;border:1px solid #e4e5e8;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 9px 30px #40252b15}
+.yothe-poster-header{background:#c92132;color:white;padding:clamp(7px,1vw,15px) clamp(15px,2vw,30px);display:flex;align-items:center;justify-content:space-between;font-size:clamp(18px,2.2vw,32px);font-weight:900}
+.yothe-poster-header span{font-size:clamp(8px,.9vw,12px);letter-spacing:.14em}
+.yothe-poster-content{flex:1;min-height:0;display:grid;grid-template-columns:52% 48%;padding:clamp(11px,2vw,29px);gap:1%}
+.yothe-poster-details{display:flex;flex-direction:column;justify-content:space-evenly;gap:clamp(4px,.7vw,11px);min-width:0;overflow:hidden;padding-right:3%}
+.yothe-poster-details .poster-text{overflow-wrap:anywhere;white-space:normal;font-size:clamp(9px,1.1vw,16px);line-height:1.35;color:#434c58}
+.yothe-poster-details .poster-hero{font-size:clamp(14px,2vw,29px);font-weight:850;line-height:1.18;color:#c92132}
+.yothe-poster-details .poster-quote{font-size:clamp(10px,1.25vw,19px);font-weight:750;color:#b82334;background:#fff0f2;border-left:3px solid #c92132;padding:9px}
+.yothe-poster-photos{position:relative;min-width:0;min-height:0}
+.yothe-poster-photos .poster-photo{position:absolute;border:clamp(2px,.5vw,7px) solid #fff;border-radius:12px;background:#fff1f3;box-shadow:0 6px 20px #4d273948;margin:0;overflow:hidden}
+.yothe-poster-photos .poster-photo img{width:100%;height:100%;object-fit:contain;background:#fff1f3;display:block}
+.yothe-poster-photos .poster-photo-0{inset:4% 12% 25% 3%;transform:rotate(-3deg)}
+.yothe-poster-photos .poster-photo-1{width:48%;height:44%;right:0;bottom:0;transform:rotate(7deg)}
+.yothe-poster-photos .poster-photo-2{width:40%;height:32%;left:0;bottom:2%;transform:rotate(-7deg)}
+.yothe-poster-photos .poster-photo:nth-child(n+4){display:none}
+.poster-placeholder{height:100%;display:grid;place-items:center;font-size:clamp(12px,2vw,26px);font-weight:900;color:#c92132}
+@media(max-width:650px){.yothe-poster-content{padding:7px}.yothe-poster-details .poster-text{font-size:8px;line-height:1.16}.yothe-poster-details .poster-hero{font-size:12px}.yothe-poster-details .poster-quote{font-size:8px;padding:3px}.yothe-poster-photos .poster-photo{border-width:2px;border-radius:6px}}
 </style>
 <script>try{if(sessionStorage.getItem("yothe_session_token"))document.documentElement.classList.add("yothe-restoring")}catch(e){}</script>
 <style>html.yothe-restoring #appRoot{visibility:hidden!important}html.yothe-restoring body{background:#f5f6f8}</style>
@@ -2328,11 +2348,24 @@ function fitYotheStorySlide(root){
  }
 }
 window.addEventListener("resize",()=>{const slide=document.querySelector("#view-home .home-story-single-slide");if(slide)fitYotheStorySlide(slide)});
+
+function renderYothePoster(target,content,blocks){
+ const E=esc;
+ const texts=blocks.filter(b=>b.type==="text");
+ const images=blocks.filter(b=>b.type==="image");
+ const textHTML=texts.map(b=>'<div class="poster-text poster-'+E(b.layout||"body")+'">'+E(b.text||"").replace(/\n/g,"<br>")+'</div>').join("");
+ const imageHTML=images.map((b,i)=>'<figure class="poster-photo poster-photo-'+i+'">'+(/^https:\/\//i.test(b.url||"")?'<img loading="lazy" src="'+E(b.url)+'" alt="'+E(b.caption||"ภาพประกอบกิจกรรม")+'">':'<div class="poster-placeholder">Yothé</div>')+'</figure>').join("");
+ target.classList.remove("home-story-single-slide");
+ target.classList.add("home-poster-page");
+ target.innerHTML='<div class="yothe-poster"><div class="yothe-poster-header">Yothé <span>TEA MEETS YOGURT</span></div><div class="yothe-poster-content"><section class="yothe-poster-details">'+textHTML+'</section><div class="yothe-poster-photos">'+imageHTML+'</div></div></div>';
+}
 function renderHomePageContent(){
  const target=document.getElementById("homeContentBlocks");if(!target)return;
  const content=settingsMap.home_page_content||{};
  const blocks=Array.isArray(content.blocks)?content.blocks:[];
  const E=esc;
+ if(String(content.template_id||"").startsWith("poster-")){renderYothePoster(target,content,blocks);return}
+ target.classList.remove("home-poster-page");
  target.classList.add("home-story-page");
  target.classList.toggle("home-story-single-slide",!!content.template_id);
  target.innerHTML=(content.title?'<h3 class="home-content-title">'+E(content.title)+'</h3>':'')+
