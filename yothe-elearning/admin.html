@@ -876,6 +876,29 @@ h1,h2,h3{letter-spacing:-.015em}
 .home-story-templates{background:#fff7f8;border:1px solid #ebd3d7;border-radius:16px;padding:17px}.home-story-templates .muted{margin:4px 0 14px}.home-template-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.home-template-grid button{background:#fff;border:1px solid #e9d1d5;border-left:4px solid #c92132;border-radius:10px;text-align:left;padding:15px;cursor:pointer;display:grid;gap:6px}.home-template-grid button:hover{background:#fff0f3}.home-template-grid small{color:#66707c}
 .home-quick-upload{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px;border:1px solid #e7cbd1;border-radius:14px;background:#fff5f6}.home-quick-upload>div{flex:1 1 240px}.home-quick-upload .muted{margin:4px 0}.home-quick-upload .input{flex:1 1 230px;max-width:100%}.home-quick-upload .btn{min-height:44px}@media(max-width:600px){.home-quick-upload{display:grid;grid-template-columns:1fr}.home-quick-upload .btn{width:100%}}
 .learning-quick-upload{padding:16px;background:#fff7f8;border:1px solid #edd1d7;border-radius:13px;display:grid;gap:8px}.learning-quick-upload p{margin:0}.learning-quick-upload .input{flex:1 1 230px;min-width:0}.learning-quick-upload .btn{min-height:44px}
+
+/* One-slide 16:9 layout preview of all 24 templates */
+.home-template-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));max-height:260px;overflow-y:auto;padding:2px}
+.home-template-grid button.story-template-selected{background:#c92132;color:#fff;border-color:#c92132}
+.home-template-grid button.story-template-selected small{color:#fff}
+.story-preview-panel{margin-top:17px;border-top:1px solid #ead5d9;padding-top:16px}
+.story-preview-head{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
+.story-preview-head p{margin:3px 0}
+.story-mini-slide{width:100%;max-width:800px;aspect-ratio:16/9;margin:0 auto;background:#fff;border:1px solid #e2e2e5;border-radius:12px;box-shadow:0 8px 20px #6c2c3620;display:flex;flex-direction:column;overflow:hidden}
+.story-mini-top{background:#c92132;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:8px 16px;font-size:clamp(10px,1.5vw,18px)}
+.story-mini-top span{font-size:10px;letter-spacing:.13em}
+.story-mini-canvas{flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:9px;padding:14px 18px;overflow:hidden}
+.story-mini-canvas>*{grid-column:1/-1;min-height:0;overflow:hidden;word-break:break-word}
+.story-mini-canvas>.half{grid-column:span 1}
+.story-mini-text{align-content:center;color:#45515e;font-weight:600;font-size:clamp(10px,1.4vw,16px);line-height:1.25}
+.story-mini-text.hero{color:#c92132;font-size:clamp(14px,2vw,25px);font-weight:900}
+.story-mini-text.quote{background:#fff0f2;color:#ba2030;text-align:center;padding:10px;border-radius:7px}
+.story-mini-text .line-break{display:block}
+.story-mini-image{background:repeating-linear-gradient(135deg,#fbe7eb,#fbe7eb 10px,#fff4f5 10px,#fff4f5 20px);border:1px dashed #d7aeb5;border-radius:9px;display:flex;align-items:center;justify-content:center;gap:10px;color:#b82334}
+.story-mini-image span{font-size:clamp(22px,4vw,40px)}
+.story-mini-image small{font-size:12px}
+.story-mini-footer{height:22px;border-top:1px solid #eed7db;display:flex;justify-content:flex-end;align-items:center;padding:0 14px;font-size:9px;color:#9d5963;letter-spacing:.12em}
+@media(max-width:620px){.story-mini-canvas{gap:4px;padding:7px}.story-mini-image small{font-size:9px}.story-mini-top{padding:4px 9px}.story-mini-footer{height:15px;font-size:7px}.story-preview-head button{width:100%}}
 </style>
 </head>
 <body>
@@ -1672,10 +1695,34 @@ const YOTHE_HOME_TEMPLATES={
 };
 Object.assign(YOTHE_HOME_TEMPLATES,{"founder":[{"type":"text","layout":"hero","text":"Founder Story"},{"type":"image","layout":"wide","url":"","caption":"เรื่องราวผู้ก่อตั้ง"},{"type":"text","layout":"body","text":"เพิ่มเนื้อหา เรื่องราวผู้ก่อตั้ง"}],"mission":[{"type":"text","layout":"hero","text":"Our Mission"},{"type":"text","layout":"quote","text":"พันธกิจของแบรนด์"},{"type":"image","layout":"half","url":"","caption":"ภาพที่ 1"},{"type":"image","layout":"half","url":"","caption":"ภาพที่ 2"}],"product":[{"type":"image","layout":"wide","url":"","caption":"แนะนำสินค้าเด่น"},{"type":"text","layout":"hero","text":"Product Spotlight"},{"type":"text","layout":"body","text":"แนะนำสินค้าเด่น"},{"type":"image","layout":"half","url":"","caption":"ภาพเพิ่มเติม"}],"newproduct":[{"type":"text","layout":"hero","text":"New Product Launch"},{"type":"image","layout":"half","url":"","caption":"เปิดตัวสินค้าใหม่"},{"type":"text","layout":"half","text":"บอกเล่าเรื่องราว เปิดตัวสินค้าใหม่"},{"type":"image","layout":"wide","url":"","caption":"ภาพบรรยากาศ"}],"promotion":[{"type":"text","layout":"hero","text":"Promotion Story"},{"type":"image","layout":"wide","url":"","caption":"กิจกรรมโปรโมชั่น"},{"type":"text","layout":"body","text":"เพิ่มเนื้อหา กิจกรรมโปรโมชั่น"}],"behind":[{"type":"text","layout":"hero","text":"Behind the Scenes"},{"type":"text","layout":"quote","text":"เบื้องหลังการทำงาน"},{"type":"image","layout":"half","url":"","caption":"ภาพที่ 1"},{"type":"image","layout":"half","url":"","caption":"ภาพที่ 2"}],"team":[{"type":"image","layout":"wide","url":"","caption":"เรื่องราวทีมงาน"},{"type":"text","layout":"hero","text":"Meet Our Team"},{"type":"text","layout":"body","text":"เรื่องราวทีมงาน"},{"type":"image","layout":"half","url":"","caption":"ภาพเพิ่มเติม"}],"branch":[{"type":"text","layout":"hero","text":"Branch Spotlight"},{"type":"image","layout":"half","url":"","caption":"แนะนำสาขา"},{"type":"text","layout":"half","text":"บอกเล่าเรื่องราว แนะนำสาขา"},{"type":"image","layout":"wide","url":"","caption":"ภาพบรรยากาศ"}],"opening":[{"type":"text","layout":"hero","text":"Grand Opening"},{"type":"image","layout":"wide","url":"","caption":"เปิดสาขาใหม่"},{"type":"text","layout":"body","text":"เพิ่มเนื้อหา เปิดสาขาใหม่"}],"customer":[{"type":"text","layout":"hero","text":"Customer Moments"},{"type":"text","layout":"quote","text":"เรื่องราวของลูกค้า"},{"type":"image","layout":"half","url":"","caption":"ภาพที่ 1"},{"type":"image","layout":"half","url":"","caption":"ภาพที่ 2"}],"community":[{"type":"image","layout":"wide","url":"","caption":"กิจกรรมเพื่อสังคม"},{"type":"text","layout":"hero","text":"Community & CSR"},{"type":"text","layout":"body","text":"กิจกรรมเพื่อสังคม"},{"type":"image","layout":"half","url":"","caption":"ภาพเพิ่มเติม"}],"workshop":[{"type":"text","layout":"hero","text":"Workshop Recap"},{"type":"image","layout":"half","url":"","caption":"เวิร์กช็อป"},{"type":"text","layout":"half","text":"บอกเล่าเรื่องราว เวิร์กช็อป"},{"type":"image","layout":"wide","url":"","caption":"ภาพบรรยากาศ"}],"training":[{"type":"text","layout":"hero","text":"Learning & Development"},{"type":"image","layout":"wide","url":"","caption":"การพัฒนาทีม"},{"type":"text","layout":"body","text":"เพิ่มเนื้อหา การพัฒนาทีม"}],"milestone":[{"type":"text","layout":"hero","text":"Milestone Celebration"},{"type":"text","layout":"quote","text":"ฉลองความสำเร็จ"},{"type":"image","layout":"half","url":"","caption":"ภาพที่ 1"},{"type":"image","layout":"half","url":"","caption":"ภาพที่ 2"}],"award":[{"type":"image","layout":"wide","url":"","caption":"รางวัลและเกียรติยศ"},{"type":"text","layout":"hero","text":"Awards & Recognition"},{"type":"text","layout":"body","text":"รางวัลและเกียรติยศ"},{"type":"image","layout":"half","url":"","caption":"ภาพเพิ่มเติม"}],"seasonal":[{"type":"text","layout":"hero","text":"Seasonal Collection"},{"type":"image","layout":"half","url":"","caption":"เรื่องราวเทศกาล"},{"type":"text","layout":"half","text":"บอกเล่าเรื่องราว เรื่องราวเทศกาล"},{"type":"image","layout":"wide","url":"","caption":"ภาพบรรยากาศ"}],"lookbook":[{"type":"text","layout":"hero","text":"Brand Lookbook"},{"type":"image","layout":"wide","url":"","caption":"ภาพอัตลักษณ์ Yothé"},{"type":"text","layout":"body","text":"เพิ่มเนื้อหา ภาพอัตลักษณ์ Yothé"}],"interview":[{"type":"text","layout":"hero","text":"Interview / Q&A"},{"type":"text","layout":"quote","text":"บทสัมภาษณ์"},{"type":"image","layout":"half","url":"","caption":"ภาพที่ 1"},{"type":"image","layout":"half","url":"","caption":"ภาพที่ 2"}],"highlights":[{"type":"image","layout":"wide","url":"","caption":"เหตุการณ์เด่นรายเดือน"},{"type":"text","layout":"hero","text":"Monthly Highlights"},{"type":"text","layout":"body","text":"เหตุการณ์เด่นรายเดือน"},{"type":"image","layout":"half","url":"","caption":"ภาพเพิ่มเติม"}],"thankyou":[{"type":"text","layout":"hero","text":"Thank You Story"},{"type":"image","layout":"half","url":"","caption":"เรื่องราวขอบคุณ"},{"type":"text","layout":"half","text":"บอกเล่าเรื่องราว เรื่องราวขอบคุณ"},{"type":"image","layout":"wide","url":"","caption":"ภาพบรรยากาศ"}]});
 const YOTHE_STORY_TEMPLATE_OPTIONS=[["brand","Brand Story","เรื่องราวแบรนด์"],["event","กิจกรรม Yothé","ข่าวและกิจกรรม"],["gallery","Photo Gallery","แกลเลอรีภาพ"],["journey","Our Journey","ไทม์ไลน์"],["founder","Founder Story","เรื่องราวผู้ก่อตั้ง"],["mission","Our Mission","พันธกิจของแบรนด์"],["product","Product Spotlight","แนะนำสินค้าเด่น"],["newproduct","New Product Launch","เปิดตัวสินค้าใหม่"],["promotion","Promotion Story","กิจกรรมโปรโมชั่น"],["behind","Behind the Scenes","เบื้องหลังการทำงาน"],["team","Meet Our Team","เรื่องราวทีมงาน"],["branch","Branch Spotlight","แนะนำสาขา"],["opening","Grand Opening","เปิดสาขาใหม่"],["customer","Customer Moments","เรื่องราวของลูกค้า"],["community","Community & CSR","กิจกรรมเพื่อสังคม"],["workshop","Workshop Recap","เวิร์กช็อป"],["training","Learning & Development","การพัฒนาทีม"],["milestone","Milestone Celebration","ฉลองความสำเร็จ"],["award","Awards & Recognition","รางวัลและเกียรติยศ"],["seasonal","Seasonal Collection","เรื่องราวเทศกาล"],["lookbook","Brand Lookbook","ภาพอัตลักษณ์ Yothé"],["interview","Interview / Q&A","บทสัมภาษณ์"],["highlights","Monthly Highlights","เหตุการณ์เด่นรายเดือน"],["thankyou","Thank You Story","เรื่องราวขอบคุณ"]];
+
+let yotheTemplatePreviewId="brand";
+function yotheTemplateMiniHTML(blocks){
+ const content=blocks.map((b,i)=>{
+  const half=b.layout==="half"?" half":"";
+  if(b.type==="image")return '<div class="story-mini-image'+half+'"><span>▧</span><small>'+esc(b.caption||"ภาพประกอบ")+'</small></div>';
+  return '<div class="story-mini-text '+esc(b.layout||"body")+half+'">'+esc(b.text||"").replace(/\n/g,"<span class='line-break'></span>")+'</div>';
+ }).join("");
+ return '<div class="story-mini-slide"><div class="story-mini-top"><b>Yothé</b><span>TEA MEETS YOGURT</span></div><div class="story-mini-canvas">'+content+'</div><div class="story-mini-footer">YOTHÉ STORY • '+blocks.length+' BLOCKS</div></div>';
+}
+window.previewHomeStoryTemplate=(id)=>{
+ if(!YOTHE_HOME_TEMPLATES[id])return;
+ yotheTemplatePreviewId=id;
+ const panel=document.getElementById("homeTemplatePreview");
+ if(!panel)return;
+ const label=YOTHE_STORY_TEMPLATE_OPTIONS.find(x=>x[0]===id);
+ panel.innerHTML='<div class="story-preview-head"><div><strong>Preview: '+esc(label?.[1]||id)+'</strong><p class="muted">ตัวอย่างการจัดตำแหน่งข้อความและรูปทั้งหมดในหน้าเดียว (16:9)</p></div><button class="btn primary" type="button" onclick="addHomeStoryTemplate(this.dataset.template)" data-template="'+esc(id)+'">ใช้ Layout นี้</button></div>'+yotheTemplateMiniHTML(YOTHE_HOME_TEMPLATES[id]);
+ document.querySelectorAll("[data-story-template]").forEach(el=>el.classList.toggle("story-template-selected",el.dataset.storyTemplate===id));
+};
 window.addHomeStoryTemplate=(id)=>{
  const blocks=YOTHE_HOME_TEMPLATES[id];if(!blocks)return;
- homePageDraft.blocks.push(...blocks.map(b=>({...b})));renderHomePageEditor();
+ if(homePageDraft.blocks.length&&!confirm("แทนที่ Layout ปัจจุบันด้วย Template นี้หรือไม่? เนื้อหาเดิมที่ยังไม่บันทึกจะถูกแทนที่"))return;
+ homePageDraft.blocks=blocks.map(b=>({...b}));
+ homePageDraft.template_id=id;
+ renderHomePageEditor();
+ previewHomeStoryTemplate(id);
 };
+
 window.setHomeBlockLayout=(i,value)=>{if(homePageDraft.blocks[i])homePageDraft.blocks[i].layout=value};
 
 function renderHomePageEditor(){
@@ -1683,13 +1730,14 @@ function renderHomePageEditor(){
  document.getElementById("datasetHint").textContent="จัดการหน้า Home • ข้อความและรูปภาพ";
  wrap.className="";
  wrap.innerHTML='<div class="panel home-editor"><h2>จัดการหน้า Home</h2><p class="muted">หน้าแรกก่อน Login • เพิ่มข้อความหรือรูปภาพ แทรกตำแหน่ง และเปลี่ยนลำดับการแสดงผลได้</p>'+
- '<div class="home-story-templates"><strong>Story Layout Templates • '+YOTHE_STORY_TEMPLATE_OPTIONS.length+' แบบ</strong><p class="muted">เลือกแบบเพื่อเพิ่ม Story แล้วแก้ข้อความและรูปภาพตามต้องการ</p><div class="home-template-grid">'+YOTHE_STORY_TEMPLATE_OPTIONS.map(([id,name,desc])=>'<button type="button" data-story-template="'+esc(id)+'" onclick="addHomeStoryTemplate(this.dataset.storyTemplate)"><strong>'+esc(name)+'</strong><small>'+esc(desc)+'</small></button>').join("")+'</div></div>'+ 
+ '<div class="home-story-templates"><strong>Story Layout Templates • '+YOTHE_STORY_TEMPLATE_OPTIONS.length+' แบบ</strong><p class="muted">เลือกแบบเพื่อเพิ่ม Story แล้วแก้ข้อความและรูปภาพตามต้องการ</p><div class="home-template-grid">'+YOTHE_STORY_TEMPLATE_OPTIONS.map(([id,name,desc])=>'<button type="button" data-story-template="'+esc(id)+'" onclick="previewHomeStoryTemplate(this.dataset.storyTemplate)"><strong>'+esc(name)+'</strong><small>'+esc(desc)+'</small></button>').join("")+'</div><div id="homeTemplatePreview" class="story-preview-panel"></div></div>'+ 
  '<div class="home-quick-upload"><div><strong>Upload รูปภาพสำหรับ Story</strong><p class="muted">เลือกได้หลายรูป • เพิ่มลงในหน้า Home และบันทึกให้อัตโนมัติ • JPG PNG WEBP ไม่เกิน 20 MB ต่อรูป</p></div><input id="homeStoryUploadFiles" type="file" accept="image/png,image/jpeg,image/webp" multiple class="input"><button class="btn primary" type="button" id="homeStoryUploadButton" onclick="uploadHomeStoryPhotos()">Upload รูป</button></div>'+
  '<div class="field"><label>หัวข้อหน้า Home</label><input id="homePageTitle" class="input" value="'+esc(homePageDraft.title||"")+'"></div>'+
  '<div id="homeBlocks">'+homePageDraft.blocks.map((b,i)=>'<div class="home-edit-block"><div class="home-edit-block-header"><strong>รายการ '+(i+1)+' • '+(b.type==="image"?"รูปภาพ":"ข้อความ")+'</strong><div class="row"><button type="button" class="btn secondary" onclick="moveHomePageBlock('+i+',-1)">↑</button><button type="button" class="btn secondary" onclick="moveHomePageBlock('+i+',1)">↓</button><button type="button" class="btn secondary" onclick="removeHomePageBlock('+i+')">ลบ</button></div></div>'+
  (b.type==="image"?'<div class="field"><label>URL รูปภาพ</label><input class="input" data-index-field="url" data-index="'+i+'" value="'+esc(b.url||"")+'"></div><div class="field"><label>คำอธิบายภาพ</label><input class="input" data-index-field="caption" data-index="'+i+'" value="'+esc(b.caption||"")+'"></div><div class="row"><input type="file" accept="image/png,image/jpeg,image/webp" id="homeImageFile-'+i+'"><button class="btn secondary" type="button" onclick="uploadHomePagePicture('+i+')">Upload รูป</button></div>'+(b.url?'<img style="max-width:180px;max-height:120px;object-fit:contain" src="'+esc(b.url)+'" alt="">':''):'<textarea rows="3" class="input" data-index-field="text" data-index="'+i+'">'+esc(b.text||"")+'</textarea>')+'</div>').join("")+'</div>'+
  '<div class="row"><button type="button" class="btn secondary" onclick="addHomePageBlock(\'text\')">+ เพิ่มข้อความ</button><button type="button" class="btn secondary" onclick="addHomePageBlock(\'image\')">+ เพิ่มรูปภาพ</button></div>'+
  '<div class="row"><button class="btn primary" type="button" onclick="saveHomePage()">บันทึกหน้า Home</button><a class="btn secondary" target="_blank" rel="noopener" href="./">ดูหน้า Home</a></div><div id="homeEditorMsg" class="msg" role="status"></div></div>';
+ previewHomeStoryTemplate(yotheTemplatePreviewId);
  wrap.querySelector("#homePageTitle").addEventListener("input",e=>homePageDraft.title=e.target.value);
  wrap.querySelectorAll("[data-index-field]").forEach(el=>el.addEventListener("input",e=>{homePageDraft.blocks[Number(e.target.dataset.index)][e.target.dataset.indexField]=e.target.value}));
 }
