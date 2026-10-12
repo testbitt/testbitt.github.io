@@ -1787,8 +1787,8 @@ function renderIndexContents(v={}){
  const title=document.getElementById("storyTitle"),body=document.getElementById("storyBody"),extra=document.getElementById("indexExtraBlocks");
  if(!title||!body||!extra)return;
  title.textContent=v.title||"BRAND STORY";
- body.innerHTML=blocks.filter(b=>b&&b.type==="text").map(b=>"<p>"+esc(b.text||"")+"</p>").join("");
- extra.innerHTML=blocks.filter(b=>b&&b.type==="image"&&/^https:\/\//i.test(b.url||"")).map(b=>'<figure class="index-image-block"><img loading="lazy" src="'+esc(b.url)+'" alt="'+esc(b.caption||"Yothé")+'">'+(b.caption?'<figcaption>'+esc(b.caption)+'</figcaption>':'')+'</figure>').join("");
+ body.innerHTML=blocks.map(b=>b?.type==="text"?"<p>"+esc(b.text||"")+"</p>":b?.type==="image"&&/^https:\/\//i.test(b.url||"")?'<figure class="index-image-block"><img loading="lazy" src="'+esc(b.url)+'" alt="'+esc(b.caption||"Yothé")+'">'+(b.caption?'<figcaption>'+esc(b.caption)+'</figcaption>':'')+'</figure>':"").join("");
+ extra.innerHTML="";
 }
 function updateIndexEntryButton(){
  const b=document.getElementById("enterWebsiteBtn");if(b)b.textContent=token?"เข้าสู่ Home":"Login เข้าเว็บไซต์";
