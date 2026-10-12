@@ -1453,7 +1453,7 @@ function renderLearningManager(){
      ?`<textarea rows="5" class="input" ${field("text")}>${E(b.text)}</textarea>`
      :`<label>URL<input class="input" ${field("url")} value="${E(b.url)}"></label>
        <label>คำอธิบายหรือชื่อไฟล์<input class="input" ${field("caption")} value="${E(b.caption)}"></label>
-       <div class="learning-toolbar"><input id="learningFile${i}" type="file" accept="${b.type==="image"?"image/jpeg,image/png,image/webp":".pdf,.ppt,.pptx,.doc,.docx,image/jpeg,image/png"}">
+       <div class="learning-toolbar"><input id="learningFile${i}" type="file" accept="${b.type==="image"?"image/jpeg,image/png,image/webp":".pdf,.ppt,.pptx,image/jpeg,image/png"}">
        <button class="btn secondary" onclick="learningUploadBlock(${i})">Upload</button></div>`;
    return `<div class="learning-block"><div class="learning-toolbar"><strong>${i+1}. ${b.type==="text"?"ข้อความ":b.type==="image"?"รูปภาพ":"เอกสาร"}</strong>
     <button onclick="learningMoveBlock(${i},-1)">↑</button><button onclick="learningMoveBlock(${i},1)">↓</button><button onclick="learningDeleteBlock(${i})">ลบ</button></div>${contents}</div>`;
