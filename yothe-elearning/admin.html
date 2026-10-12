@@ -1432,18 +1432,50 @@ window.learningSave=async()=>{
  try{await api({action:"save",dataset:"settings",row:{key:"elearning_catalog",value:learningDraft}});msg.textContent="บันทึกหลักสูตรเรียบร้อยแล้ว";msg.className="msg ok"}
  catch(err){msg.textContent="บันทึกไม่สำเร็จ: "+err.message;msg.className="msg error"}
 };
+
 function renderLearningManager(){
- const wrap=document.getElementById("tableWrap"),c=learningDraft[learningSelection],t=c?.topics?.[learningTopicSelection];
- const safe=v=>esc(v||"");
+ const root=document.getElementById("tableWrap");
+ const course=learningDraft[learningSelection];
+ const topic=course?.topics?.[learningTopicSelection];
+ const E=v=>esc(v??"");
  document.getElementById("datasetHint").textContent="จัดการหลักสูตร E-Learning • "+learningDraft.length+" หลักสูตร";
- wrap.className="";
- wrap.innerHTML='<div id="learningEditor" class="panel learning-editor"><div class="learning-toolbar"><h2>จัดการหลักสูตร E-Learning</h2><button class="btn primary" onclick="learningAddCourse()">+ เพิ่มหลักสูตร</button><button class="btn primary" onclick="learningSave()">บันทึกหลักสูตรทั้งหมด</button></div><p class="muted">สร้างหลักสูตร → หัวข้อเรียน → เนื้อหาแต่ละบล็อก • ใช้ลูกศรย้ายลำดับ และบันทึกเมื่อแก้ไขเสร็จ</p><div class="learning-layout"><aside class="learning-side"><h3>หลักสูตร</h3>'+
- learningDraft.map((v,i)=>'<div class="learning-list-row"><button class="btn '+(i===learningSelection?"primary":"secondary")+'" onclick="learningChooseCourse('+i+')">'+safe(v.title)+'</button><button onclick="learningMoveCourse('+i+',-1)" title="เลื่อนขึ้น">↑</button><button onclick="learningMoveCourse('+i+',1)" title="เลื่อนลง">↓</button><button onclick="learningDeleteCourse('+i+')" title="ลบ">×</button></div>').join("")+
- '</aside><div class="learning-main">'+(c?'<div class="learning-fields"><label>ชื่อหลักสูตร<input class="input" data-learning-field="title" data-c="'+learningSelection+'" value="'+safe(c.title)+'"></label><label>รายละเอียดหลักสูตร<textarea class="input" data-learning-field="description" data-c="'+learningSelection+'">'+safe(c.description)+'</textarea></label><label><input type="checkbox" data-learning-field="published" data-c="'+learningSelection+'" '+(c.published!==false?"checked":"")+'> เผยแพร่หลักสูตร</label></div><div class="learning-toolbar"><h3>หัวข้อการเรียน</h3><button class="btn secondary" onclick="learningAddTopic()">+ เพิ่มหัวข้อ</button></div><div class="learning-topic-list">'+(c.topics||[]).map((v,i)=>'<div class="learning-list-row"><button class="btn '+(i===learningTopicSelection?"primary":"secondary")+'" onclick="learningChooseTopic('+i+')">'+safe(v.title)+'</button><button onclick="learningMoveTopic('+i+',-1)">↑</button><button onclick="learningMoveTopic('+i+',1)">↓</button><button onclick="learningDeleteTopic('+i+')">×</button></div>').join("")+'</div>'+
- (t?'<div class="learning-topic-editor"><label>ชื่อหัวข้อ<input class="input" data-learning-field="title" data-c="'+learningSelection+'" data-t="'+learningTopicSelection+'" value="'+safe(t.title)+'"></label><div class="learning-toolbar"><h3>เนื้อหาบทเรียน</h3><button class="btn secondary" onclick="learningAddBlock(\'text\')">+ ข้อความ</button><button class="btn secondary" onclick="learningAddBlock(\'image\')">+ รูปภาพ</button><button class="btn secondary" onclick="learningAddBlock(\'file\')">+ เอกสาร</button></div>'+
- (t.blocks||[]).map((b,i)=>'<div class="learning-block"><div class="learning-toolbar"><strong>'+(i+1)+'. '+({text:"ข้อความ",image:"รูปภาพ",file:"เอกสาร"}[b.type]||b.type)+'</strong><button onclick="learningMoveBlock('+i+',-1)">↑</button><button onclick="learningMoveBlock('+i+',1)">↓</button><button onclick="learningDeleteBlock('+i+')">ลบ</button></div>'+
- (b.type==="text"?'<textarea rows="5" class="input" data-learning-field="text" data-c="'+learningSelection+'" data-t="'+learningTopicSelection+'" data-b="'+i+'">'+safe(b.text)+'</textarea>':
- '<label>URL<input class="input" data-learning-field="url" data-c="'+learningSelection+'" data-t="'+learningTopicSelection+'" data-b="'+i+'" value="'+safe(b.url)+'"></label><label>คำอธิบาย / ชื่อเอกสาร<input class="input" data-learning-field="caption" data-c="'+learningSelection+'" data-t="'+learningTopicSelection+'" data-b="'+i+'" value="'+safe(b.caption)+'"></label><div class="learning-toolbar"><input type="file" id="learningFile'+i+'" accept="'+(b.type==="image"?"image/png,image/jpeg,image/webp":"application/pdf,.ppt,.pptx,.doc,.docx,image/png,image/jpeg")+'"><button class="btn secondary" onclick="learningUploadBlock('+i+')">Upload</button></div>')+'</div>').join("")+'</div>':''):'<p>กรุณาเพิ่มหัวข้อการเรียน</p>'):'<p>กรุณาเพิ่มหลักสูตร</p>')+'</div></div><div id="learningMsg" class="msg" role="status"></div></div>';
+ const nav=learningDraft.map((c,i)=>`<div class="learning-list-row">
+  <button class="btn ${i===learningSelection?"primary":"secondary"}" onclick="learningChooseCourse(${i})">${E(c.title)}</button>
+  <button onclick="learningMoveCourse(${i},-1)">↑</button><button onclick="learningMoveCourse(${i},1)">↓</button>
+  <button onclick="learningDeleteCourse(${i})">×</button></div>`).join("");
+ const topics=(course?.topics||[]).map((t,i)=>`<div class="learning-list-row">
+  <button class="btn ${i===learningTopicSelection?"primary":"secondary"}" onclick="learningChooseTopic(${i})">${E(t.title)}</button>
+  <button onclick="learningMoveTopic(${i},-1)">↑</button><button onclick="learningMoveTopic(${i},1)">↓</button>
+  <button onclick="learningDeleteTopic(${i})">×</button></div>`).join("");
+ const blocks=(topic?.blocks||[]).map((b,i)=>{
+   const field=(name,value)=>`data-learning-field="${name}" data-c="${learningSelection}" data-t="${learningTopicSelection}" data-b="${i}"`;
+   const contents=b.type==="text"
+     ?`<textarea rows="5" class="input" ${field("text")}>${E(b.text)}</textarea>`
+     :`<label>URL<input class="input" ${field("url")} value="${E(b.url)}"></label>
+       <label>คำอธิบายหรือชื่อไฟล์<input class="input" ${field("caption")} value="${E(b.caption)}"></label>
+       <div class="learning-toolbar"><input id="learningFile${i}" type="file" accept="${b.type==="image"?"image/jpeg,image/png,image/webp":".pdf,.ppt,.pptx,.doc,.docx,image/jpeg,image/png"}">
+       <button class="btn secondary" onclick="learningUploadBlock(${i})">Upload</button></div>`;
+   return `<div class="learning-block"><div class="learning-toolbar"><strong>${i+1}. ${b.type==="text"?"ข้อความ":b.type==="image"?"รูปภาพ":"เอกสาร"}</strong>
+    <button onclick="learningMoveBlock(${i},-1)">↑</button><button onclick="learningMoveBlock(${i},1)">↓</button><button onclick="learningDeleteBlock(${i})">ลบ</button></div>${contents}</div>`;
+ }).join("");
+ root.className="";
+ root.innerHTML=`<div id="learningEditor" class="panel learning-editor">
+   <div class="learning-toolbar"><h2>จัดการหลักสูตร E-Learning</h2><button class="btn primary" onclick="learningAddCourse()">+ เพิ่มหลักสูตร</button><button class="btn primary" onclick="learningSave()">บันทึกหลักสูตรทั้งหมด</button></div>
+   <p class="muted">จัดหลักสูตร หัวข้อ และบล็อกเนื้อหาได้อิสระ ใช้ ↑ ↓ เพื่อเปลี่ยนลำดับ</p>
+   <div class="learning-layout"><aside class="learning-side"><h3>หลักสูตร</h3>${nav}</aside>
+    <section class="learning-main">${course?`<div class="learning-fields">
+     <label>ชื่อหลักสูตร<input class="input" data-learning-field="title" data-c="${learningSelection}" value="${E(course.title)}"></label>
+     <label>รายละเอียด<textarea class="input" data-learning-field="description" data-c="${learningSelection}">${E(course.description)}</textarea></label>
+     <label><input type="checkbox" data-learning-field="published" data-c="${learningSelection}" ${course.published!==false?"checked":""}> เผยแพร่หลักสูตร</label></div>
+     <div class="learning-toolbar"><h3>หัวข้อการเรียน</h3><button class="btn secondary" onclick="learningAddTopic()">+ เพิ่มหัวข้อ</button></div>
+     <div class="learning-topic-list">${topics}</div>
+     ${topic?`<div class="learning-topic-editor">
+      <label>ชื่อหัวข้อ<input class="input" data-learning-field="title" data-c="${learningSelection}" data-t="${learningTopicSelection}" value="${E(topic.title)}"></label>
+      <div class="learning-toolbar"><h3>เนื้อหาบทเรียน</h3>
+       <button class="btn secondary" onclick="learningAddBlock('text')">+ ข้อความ</button>
+       <button class="btn secondary" onclick="learningAddBlock('image')">+ รูปภาพ</button>
+       <button class="btn secondary" onclick="learningAddBlock('file')">+ เอกสาร</button></div>${blocks}</div>`:"<p>กรุณาเพิ่มหัวข้อ</p>"}`:"<p>กรุณาเพิ่มหลักสูตร</p>"}</section></div>
+   <div id="learningMsg" class="msg" role="status"></div></div>`;
 }
 
 let indexPageDraft={title:"BRAND STORY",blocks:[]};
