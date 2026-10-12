@@ -1656,6 +1656,36 @@ body.yothe-index-mode #indexSoundToggleBtn{display:none!important}
 .home-story-page>.home-story-half img{max-height:350px}
 @media(max-width:650px){.home-story-page{grid-template-columns:minmax(0,1fr)!important}.home-story-page>.home-story-half{grid-column:1/-1}.home-story-page>.home-story-hero{padding:17px;font-size:24px}}
 
+
+/* Executive Story: a single 16:9 presentation canvas for selected templates */
+#view-home .home-story-single-slide{
+ box-sizing:border-box;aspect-ratio:16/9;width:100%;max-width:1440px;
+ background:#fff;border:1px solid #e7e8ec;border-top:clamp(7px,1vw,13px) solid #c92132;
+ border-radius:16px;box-shadow:0 12px 32px rgba(30,35,48,.08);
+ padding:clamp(14px,2vw,38px);
+ display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ grid-auto-rows:minmax(0,1fr);align-content:stretch;gap:clamp(8px,1.2vw,18px)!important;
+ overflow:hidden;
+}
+#view-home .home-story-single-slide>.home-content-title{grid-column:1/-1;margin:0;font-size:clamp(18px,2.2vw,32px);line-height:1.1;overflow:hidden}
+#view-home .home-story-single-slide>.home-content-text,
+#view-home .home-story-single-slide>.home-content-image,
+#view-home .home-story-single-slide>.home-content-document{min-height:0;margin:0!important;padding:clamp(8px,1vw,18px)!important;overflow:hidden;box-sizing:border-box}
+#view-home .home-story-single-slide>.home-story-half{grid-column:span 1!important}
+#view-home .home-story-single-slide .home-content-image img{width:100%;height:100%;max-height:100%;object-fit:contain}
+#view-home .home-story-single-slide .home-content-image{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+#view-home .home-story-single-slide .home-content-image figcaption{font-size:clamp(9px,1vw,14px)}
+#view-home .home-story-single-slide .home-content-text{font-size:clamp(11px,1.25vw,18px);line-height:1.45;overflow-wrap:anywhere}
+#view-home .home-story-single-slide .home-story-hero{font-size:clamp(16px,2.5vw,35px);line-height:1.25}
+#view-home .home-story-single-slide .home-story-quote{font-size:clamp(13px,2vw,27px)}
+@media(max-width:650px){
+ #view-home .home-story-single-slide{padding:10px;gap:7px!important;border-radius:10px}
+ #view-home .home-story-single-slide>.home-story-half{grid-column:span 1!important}
+ #view-home .home-story-single-slide .home-content-text{font-size:clamp(8px,2vw,12px);padding:5px!important}
+ #view-home .home-story-single-slide .home-story-hero{font-size:clamp(11px,2.9vw,17px)}
+ #view-home .home-story-single-slide .home-story-quote{font-size:clamp(9px,2.4vw,14px)}
+ #view-home .home-story-single-slide>.home-content-image{padding:4px!important}
+}
 </style>
 </head>
 <body>
@@ -2265,6 +2295,7 @@ function renderHomePageContent(){
  const blocks=Array.isArray(content.blocks)?content.blocks:[];
  const E=esc;
  target.classList.add("home-story-page");
+ target.classList.toggle("home-story-single-slide",!!content.template_id);
  target.innerHTML=(content.title?'<h3 class="home-content-title">'+E(content.title)+'</h3>':'')+
  blocks.map(b=>b.type==="text"?'<div class="home-content-text home-story-'+E(b.layout||"body")+'">'+E(b.text||"").replace(/\n/g,"<br>")+'</div>':
  b.type==="image"&&/^https:\/\//i.test(b.url||"")?'<figure class="home-content-image home-story-'+E(b.layout||"wide")+'"><img src="'+E(b.url)+'" alt="'+E(b.caption||"รูปภาพ")+'" loading="lazy">'+(b.caption?'<figcaption>'+E(b.caption)+'</figcaption>':'')+'</figure>':
