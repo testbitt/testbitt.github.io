@@ -862,6 +862,15 @@ html body{background:#f5f6f8!important;color:#242a35!important}
 h1,h2,h3{letter-spacing:-.015em}
 @media(max-width:680px){.wrap{padding:12px 10px 42px}.panel{padding:14px}}
 
+
+.home-layout-editor{max-width:920px;margin:auto;display:grid;gap:14px}
+.home-layout-list{display:grid;gap:7px}
+.home-layout-row{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #e1e5eb;border-radius:11px;padding:10px 12px;min-width:0}
+.home-layout-row strong{flex:1;min-width:0;overflow-wrap:anywhere}
+.home-layout-number{display:grid;place-items:center;width:29px;height:29px;border-radius:8px;background:#fff0f2;color:#b71d2e;font-weight:800}
+.home-layout-actions{display:flex;gap:5px}.home-layout-actions .btn{min-width:44px;padding:5px 9px}
+@media(max-width:600px){.home-layout-editor{padding:14px}.home-layout-row{gap:7px;padding:8px}.home-layout-actions .btn{min-width:40px}}
+
 </style>
 </head>
 <body>
@@ -898,6 +907,7 @@ h1,h2,h3{letter-spacing:-.015em}
       <button class="tab" data-dataset="delivery_schedule">รอบการสั่งสินค้า</button>
       <button class="tab" data-dataset="image_popups">จัดการ Popup</button>
       <button class="tab" data-dataset="menus">จัดการเมนู</button>
+      <button class="tab" data-dataset="home_menu_layout">จัดการเมนู Home</button>
       <button class="tab" data-dataset="users">จัดการ User</button>
       <button class="tab" data-dataset="settings">Brand Story / Settings</button>
       <div class="drag-hint">กดเมาส์ซ้ายค้างที่เมนู แล้วลากเพื่อสลับตำแหน่ง • Auto Save ไปยัง Server</div>
@@ -1278,16 +1288,17 @@ function initMenuDrag(){
 function syncAdminPageChrome(){
   const hideForUsers=dataset==="users";
   const custom=isCustomMenuDataset(dataset);
-  const hideReview=dataset==="users"||dataset==="settings"||dataset==="menus"||dataset==="image_popups"||custom;
+  const hideReview=dataset==="users"||dataset==="settings"||dataset==="menus"||dataset==="home_menu_layout"||dataset==="image_popups"||custom;
   document.getElementById("reviewLayoutPanel")?.classList.toggle("hidden",hideReview);
 
-  document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers||dataset==="menus"||dataset==="image_popups"||custom);
-  document.getElementById("attachmentPanel")?.classList.toggle("hidden",hideForUsers||dataset==="delivery_schedule"||dataset==="image_popups");
+  document.getElementById("uploadDataPanel")?.classList.toggle("hidden",hideForUsers||dataset==="menus"||dataset==="home_menu_layout"||dataset==="image_popups"||custom);
+  document.getElementById("attachmentPanel")?.classList.toggle("hidden",hideForUsers||dataset==="delivery_schedule"||dataset==="image_popups"||dataset==="home_menu_layout");
 }
 document.getElementById("tabs").addEventListener("click",e=>{
   const b=e.target.closest(".tab"); if(!b)return;
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
   dataset=b.dataset.dataset;if(DATASETS[dataset])document.getElementById("uploadDataset").value=dataset;hideEditor();syncAdminPageChrome();syncAttachmentSection();
+  if(dataset==="home_menu_layout"){loadHomeMenuLayout();return}
   if(dataset==="menus"){loadCustomMenus().then(renderMenuBuilder);return}
   if(isCustomMenuDataset(dataset)){renderCustomAdminMenu();return}
   loadDisplayPrefs().then(loadData);
@@ -1357,6 +1368,49 @@ async function saveCustomMenus(){
   syncCustomAdminTabs();
   syncPopupSourceSections();
 }
+
+const HOME_MENU_ITEMS=[
+ ["home","Home"],["uniforms","เครื่องแต่งกาย"],["production","สูตรการผลิต"],
+ ["production-ratio","Pack Size"],["drinks","สูตรชง"],["drink-map","แผนผังสูตรเครื่องดื่ม"],
+ ["expiry","วันหมดอายุ"],["toppings","Topping"],["courses","บทเรียนอื่น ๆ"]
+];
+let homeMenuLayout={placement:"left",order:[]},homeMenuRows=[];
+async function loadHomeMenuLayout(){
+ const hint=document.getElementById("datasetHint"),wrap=document.getElementById("tableWrap");
+ hint.textContent="จัดการเมนู Home • กำลังโหลด...";
+ try{
+  const res=await api({action:"list",dataset:"settings"});
+  const data=res.data||[];
+  const prefs=data.find(x=>x.key==="home_menu_layout")?.value||{};
+  const custom=data.find(x=>x.key==="custom_menus")?.value||[];
+  homeMenuRows=[...HOME_MENU_ITEMS,...(Array.isArray(custom)?custom.filter(x=>x?.section&&x.active!==false).map(x=>[x.section,x.label||x.section]):[]),["admin","Admin"]];
+  const valid=new Set(homeMenuRows.map(x=>x[0]));
+  const order=Array.isArray(prefs.order)?prefs.order.filter(k=>valid.has(k)):[];
+  homeMenuLayout={placement:prefs.placement==="top"?"top":"left",order:[...new Set([...order,...homeMenuRows.map(x=>x[0])])]};
+  renderHomeMenuLayout();
+ }catch(err){wrap.textContent="โหลดการตั้งค่าไม่สำเร็จ: "+err.message}
+}
+function renderHomeMenuLayout(){
+ const wrap=document.getElementById("tableWrap"),hint=document.getElementById("datasetHint");
+ hint.textContent="จัดการเมนู Home • การวางเมนูและลำดับแสดงผลบนเว็บไซต์";
+ const labels=new Map(homeMenuRows);
+ wrap.className="";
+ wrap.innerHTML='<div class="panel home-layout-editor">'+
+ '<h2 style="margin:0">จัด Layout เมนูหน้าเว็บไซต์</h2>'+
+ '<p class="muted">เลือกตำแหน่งเมนูและจัดลำดับด้วยปุ่มขึ้น/ลง จากนั้นกดบันทึก เมนูใหม่จาก Admin จะเพิ่มในรายการอัตโนมัติ</p>'+
+ '<div class="field"><label>ตำแหน่งแสดงเมนู</label><select class="input" id="homeMenuPlacement"><option value="left" '+(homeMenuLayout.placement==="left"?"selected":"")+'>ด้านซ้าย (Sidebar)</option><option value="top" '+(homeMenuLayout.placement==="top"?"selected":"")+'>ด้านบน (Top Navigation)</option></select></div>'+
+ '<div class="home-layout-list">'+homeMenuLayout.order.map((k,i)=>'<div class="home-layout-row"><span class="home-layout-number">'+(i+1)+'</span><strong>'+esc(labels.get(k)||k)+'</strong><div class="home-layout-actions"><button class="btn secondary" type="button" onclick="shiftHomeMenu('+i+',-1)" '+(i===0?"disabled":"")+'>↑</button><button class="btn secondary" type="button" onclick="shiftHomeMenu('+i+',1)" '+(i===homeMenuLayout.order.length-1?"disabled":"")+'>↓</button></div></div>').join("")+'</div>'+
+ '<div class="row" style="margin-top:15px"><button class="btn primary" type="button" onclick="saveHomeMenuLayout()">บันทึก Layout หน้า Web</button><a class="btn secondary" href="./" target="_blank" rel="noopener">เปิดดูหน้าเว็บไซต์</a></div><div id="homeMenuLayoutMsg" class="msg" role="status"></div></div>';
+ document.getElementById("homeMenuPlacement").value=homeMenuLayout.placement;
+ document.getElementById("homeMenuPlacement").addEventListener("change",e=>{homeMenuLayout.placement=e.target.value});
+}
+window.shiftHomeMenu=(i,d)=>{const j=i+d;if(j<0||j>=homeMenuLayout.order.length)return;[homeMenuLayout.order[i],homeMenuLayout.order[j]]=[homeMenuLayout.order[j],homeMenuLayout.order[i]];renderHomeMenuLayout()};
+window.saveHomeMenuLayout=async()=>{
+ const msg=document.getElementById("homeMenuLayoutMsg");
+ try{msg.textContent="กำลังบันทึก...";await api({action:"save",dataset:"settings",row:{key:"home_menu_layout",value:homeMenuLayout}});msg.textContent="บันทึกเรียบร้อยแล้ว เปิดหน้าเว็บไซต์ใหม่เพื่อดูการเปลี่ยนแปลง";msg.className="msg ok"}
+ catch(err){msg.textContent="บันทึกไม่สำเร็จ: "+err.message;msg.className="msg error"}
+};
+
 function renderMenuBuilder(){
   const wrap=document.getElementById("tableWrap"),hint=document.getElementById("datasetHint");
   wrap.className="";
@@ -1659,6 +1713,7 @@ window.uploadPopupImage=async(id,input)=>{
   }catch(err){alert("Upload รูปไม่สำเร็จ: "+err.message)}
 };
 async function loadData(){
+  if(dataset==="home_menu_layout"){await loadHomeMenuLayout();return}
   if(dataset==="menus"){await loadCustomMenus();renderMenuBuilder();return}
   if(isCustomMenuDataset(dataset)){renderCustomAdminMenu();return}
   if(dataset==="image_popups"){await loadPopupManager();return}
