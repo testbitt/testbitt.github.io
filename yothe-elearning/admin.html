@@ -899,6 +899,7 @@ h1,h2,h3{letter-spacing:-.015em}
 .story-mini-image small{font-size:12px}
 .story-mini-footer{height:22px;border-top:1px solid #eed7db;display:flex;justify-content:flex-end;align-items:center;padding:0 14px;font-size:9px;color:#9d5963;letter-spacing:.12em}
 @media(max-width:620px){.story-mini-canvas{gap:4px;padding:7px}.story-mini-image small{font-size:9px}.story-mini-top{padding:4px 9px}.story-mini-footer{height:15px;font-size:7px}.story-preview-head button{width:100%}}
+.autosave-global-status{position:fixed;right:18px;bottom:16px;z-index:110;background:#fff;color:#a82131;border:1px solid #e9cdd2;border-radius:12px;padding:9px 13px;font-weight:700;font-size:12px;box-shadow:0 5px 18px #0001;max-width:min(90vw,360px)}
 </style>
 </head>
 <body>
@@ -3282,6 +3283,78 @@ async function onDisplayChange(){
 }
 window.addEventListener("resize",scheduleReviewFit);
 validateStored();
+
+/* Automatic, serialized saving for the rich editors and menu layout.
+   Latest edits win; writes of a setting never overlap. */
+const autoSaveTimers=new Map(),autoSaveQueues=new Map(),autoSaveVersions=new Map();
+function saveSettingsLater(key,getValue,readInputs,ms=850){
+ const version=(autoSaveVersions.get(key)||0)+1;autoSaveVersions.set(key,version);
+ clearTimeout(autoSaveTimers.get(key));
+ const timer=setTimeout(()=>{
+   if(readInputs)readInputs();
+   const snapshot=JSON.parse(JSON.stringify(getValue()));
+   const label=document.getElementById("autosaveGlobalStatus");
+   if(label)label.textContent="กำลังบันทึก "+key+"...";
+   const prev=autoSaveQueues.get(key)||Promise.resolve();
+   const next=prev.catch(()=>{}).then(()=>api({action:"save",dataset:"settings",row:{key,value:snapshot}}));
+   autoSaveQueues.set(key,next);
+   next.then(()=>{
+    if(version===autoSaveVersions.get(key)&&label)label.textContent="บันทึกอัตโนมัติแล้ว ✓";
+   }).catch(err=>{
+    if(version===autoSaveVersions.get(key)&&label)label.textContent="บันทึกไม่สำเร็จ: "+err.message;
+   });
+ },ms);
+ autoSaveTimers.set(key,timer);
+}
+function enableAdminAutosave(){
+ const status=document.createElement("div");
+ status.id="autosaveGlobalStatus";status.setAttribute("role","status");
+ status.className="autosave-global-status";status.textContent="Auto Save เปิดใช้งาน";
+ document.body.appendChild(status);
+ const scheduleArea=area=>{
+  if(area==="home")saveSettingsLater("home_page_content",()=>homePageDraft,()=>{
+   document.querySelectorAll("#homeBlocks [data-index-field]").forEach(el=>{const b=homePageDraft.blocks[Number(el.dataset.index)];if(b)b[el.dataset.indexField]=el.value});
+   const h=document.getElementById("homePageTitle");if(h)homePageDraft.title=h.value;
+  });
+  else if(area==="index")saveSettingsLater("index_content",()=>indexPageDraft,()=>{
+   document.querySelectorAll("#indexBlocks [data-index-field]").forEach(el=>{const b=indexPageDraft.blocks[Number(el.dataset.index)];if(b)b[el.dataset.indexField]=el.value});
+   const h=document.getElementById("indexPageTitle");if(h)indexPageDraft.title=h.value;
+  });
+  else if(area==="learning")saveSettingsLater("elearning_catalog",()=>learningDraft,learningReadForm);
+  else if(area==="menu")saveSettingsLater("home_menu_layout",()=>homeMenuLayout,null,300);
+ };
+ document.addEventListener("input",ev=>{
+  const node=ev.target;
+  if(node.closest?.("#learningEditor"))scheduleArea("learning");
+  else if(node.closest?.(".home-editor"))scheduleArea("home");
+  else if(node.closest?.(".index-editor"))scheduleArea("index");
+ },false);
+ document.addEventListener("change",ev=>{
+  const node=ev.target;
+  if(node.closest?.("#learningEditor")&&node.type!=="file")scheduleArea("learning");
+  else if(node.closest?.(".home-editor")&&node.type!=="file")scheduleArea("home");
+  else if(node.closest?.(".index-editor")&&node.type!=="file")scheduleArea("index");
+  else if(node.id==="homeMenuPlacement")scheduleArea("menu");
+ },false);
+ const methodGroups=[
+  ["home",["addHomePageBlock","removeHomePageBlock","moveHomePageBlock","addHomeStoryTemplate","setHomeBlockLayout"]],
+  ["index",["addIndexBlock","removeIndexBlock","moveIndexBlock"]],
+  ["learning",["learningAddCourse","learningMoveCourse","learningDeleteCourse","learningAddTopic","learningMoveTopic","learningDeleteTopic","learningAddBlock","learningMoveBlock","learningDeleteBlock"]],
+  ["menu",["shiftHomeMenu"]]
+ ];
+ for(const [area,names] of methodGroups){
+  for(const name of names){
+   const original=window[name];
+   if(typeof original!=="function")continue;
+   window[name]=function(...args){
+    const result=original.apply(this,args);
+    scheduleArea(area);
+    return result;
+   };
+  }
+ }
+}
+enableAdminAutosave();
 </script>
 
 <div id="popupAdminPreviewModal" class="popup-admin-modal hidden" aria-hidden="true" onclick="if(event.target===this)closePopupAdminPreview()">
