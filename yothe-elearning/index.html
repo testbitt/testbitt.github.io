@@ -1465,6 +1465,17 @@ html body{background:#fff!important;color:#292327!important}
  #appRoot .navlinks button,#appRoot .navlinks a{font-size:12px!important;padding:7px 9px!important;min-height:40px!important}
 }
 
+
+/* Structured top navigation: grouped sections, all items visible without horizontal scroll */
+#appRoot .navlinks{display:flex!important;flex-flow:row wrap!important;align-items:stretch!important;justify-content:center!important;gap:10px!important;overflow:visible!important;padding:8px 0!important}
+#appRoot .nav-group{display:flex;flex:0 1 auto;flex-wrap:wrap;gap:5px 7px;align-items:center;justify-content:center;background:#fff;border:1px solid #ead6da;border-radius:18px;padding:8px 10px;box-shadow:0 2px 8px rgba(145,40,54,.05);min-width:0;max-width:100%}
+#appRoot .nav-group-label{flex-basis:100%;display:block;text-align:left;font-size:11px;font-weight:800;letter-spacing:.01em;color:#a5313d;padding:0 5px 3px;border-bottom:1px solid #f2e5e7}
+#appRoot .nav-group button,#appRoot .nav-group a{font-size:12px!important;line-height:1.25!important;padding:8px 10px!important;min-height:36px!important;border-radius:11px!important}
+#appRoot .nav-group[data-nav-group="home"]{background:#fff5f6}
+#appRoot .nav-group[data-nav-group="admin"]{background:#fff8f8}
+@media(max-width:800px){#appRoot .navlinks{gap:8px!important}#appRoot .nav-group{flex:1 1 260px;justify-content:flex-start}.nav-group-label{text-align:left}}
+@media(max-width:480px){#appRoot .nav-group{flex:1 1 100%;padding:8px}#appRoot .nav-group button,#appRoot .nav-group a{font-size:12px!important}}
+
 </style>
 </head>
 <body>
@@ -1943,6 +1954,7 @@ async function loadSettings(){
   renderCustomMenus(map.custom_menus||[]);
   renderCourseLessonMenus(courseRows||[]);
   await syncDeliveryMenuVisibility();
+  groupPublicNavigation();
   renderBrandStoryValue(map.brand_story||{});
   if(token)await loadAttachments("home");
 }
@@ -1969,6 +1981,35 @@ function renderMenuOrder(order){
   syncCustomMenuPosition();
   syncCourseLessonMenuPosition();
 }
+
+function groupPublicNavigation(){
+ const nav=document.getElementById("navLinks");
+ if(!nav)return;
+ const nodes=[...nav.querySelectorAll("button[data-view],button[data-course-menu],a[href='admin.html']")];
+ const groups=[
+  ["home","หน้าแรก",n=>n.dataset.view==="home"],
+  ["recipes","สูตรและการผลิต",n=>["production","production-ratio","drinks","drink-map"].includes(n.dataset.view)],
+  ["products","สินค้าและมาตรฐาน",n=>["uniforms","expiry","toppings"].includes(n.dataset.view)],
+  ["learning","หลักสูตรและเมนูเพิ่มเติม",n=>n.dataset.view==="courses"||n.hasAttribute("data-course-menu")||n.hasAttribute("data-custom-menu")],
+  ["admin","จัดการระบบ",n=>n.matches('a[href="admin.html"]')]
+ ];
+ const assigned=new Set();
+ const fragment=document.createDocumentFragment();
+ for(const [id,label,match] of groups){
+  const items=nodes.filter(n=>!assigned.has(n)&&match(n));
+  if(!items.length)continue;
+  const group=document.createElement("div");
+  group.className="nav-group";group.dataset.navGroup=id;
+  const heading=document.createElement("span");
+  heading.className="nav-group-label";heading.textContent=label;
+  group.appendChild(heading);
+  for(const item of items){assigned.add(item);group.appendChild(item)}
+  fragment.appendChild(group);
+ }
+ for(const item of nodes){if(!assigned.has(item)){let g=fragment.querySelector('[data-nav-group="learning"]');if(!g){g=document.createElement("div");g.className="nav-group";g.dataset.navGroup="learning";fragment.appendChild(g)}g.appendChild(item)}}
+ nav.replaceChildren(fragment);
+}
+
 function showView(view){
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
   document.getElementById("view-"+view)?.classList.add("active");
