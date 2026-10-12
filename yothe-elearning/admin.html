@@ -901,6 +901,16 @@ h1,h2,h3{letter-spacing:-.015em}
 @media(max-width:620px){.story-mini-canvas{gap:4px;padding:7px}.story-mini-image small{font-size:9px}.story-mini-top{padding:4px 9px}.story-mini-footer{height:15px;font-size:7px}.story-preview-head button{width:100%}}
 .autosave-global-status{position:fixed;right:18px;bottom:16px;z-index:110;background:#fff;color:#a82131;border:1px solid #e9cdd2;border-radius:12px;padding:9px 13px;font-weight:700;font-size:12px;box-shadow:0 5px 18px #0001;max-width:min(90vw,360px)}
 #autosaveGlobalStatus{display:none!important}
+
+/* Template preview: expand height for content instead of hiding text */
+.story-mini-slide{aspect-ratio:16/9;min-height:420px;height:auto;overflow:visible}
+.story-mini-canvas{grid-auto-rows:auto!important;overflow:visible!important;align-content:start!important;gap:8px!important}
+.story-mini-canvas>*{min-height:48px!important;overflow:visible!important}
+.story-mini-text{font-size:clamp(10px,1.05vw,13px)!important;line-height:1.45!important;overflow-wrap:anywhere!important;white-space:normal!important}
+.story-mini-text.hero{font-size:clamp(13px,1.5vw,19px)!important}
+.story-mini-image{min-height:80px!important}
+@media(max-width:620px){.story-mini-slide{min-height:300px}.story-mini-text{font-size:10px!important}.story-mini-text.hero{font-size:13px!important}}
+
 </style>
 </head>
 <body>
