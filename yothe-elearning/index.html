@@ -1556,6 +1556,30 @@ html body{background:#f5f6f8!important;color:#222832!important;letter-spacing:0!
  animation:none!important;transition:none!important;
 }
 
+
+/* Production executive left navigation — overrides old horizontal layout */
+:root{--executive-sidebar:270px!important}
+#appRoot>.topbar{position:fixed!important;inset:0 auto 0 0!important;width:var(--executive-sidebar)!important;height:100dvh!important;overflow-y:auto!important;overflow-x:hidden!important;background:#fff!important;border-right:2px solid #c92132!important;border-bottom:0!important;box-shadow:4px 0 18px rgba(24,35,52,.07)!important;z-index:85!important}
+#appRoot>.topbar>.nav{display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;align-items:stretch!important;justify-content:flex-start!important;gap:14px!important;width:100%!important;min-height:100%!important;padding:18px 13px!important}
+#appRoot .nav .brand{width:100%!important;justify-content:center!important;padding:0 0 13px!important;border-bottom:1px solid #e8e8eb!important}
+#appRoot .navbar-logo-custom{width:auto!important;max-width:195px!important;max-height:78px!important}
+#appRoot .navlinks{display:flex!important;flex:0 0 auto!important;order:2!important;flex-direction:column!important;flex-wrap:nowrap!important;align-items:stretch!important;justify-content:flex-start!important;gap:10px!important;width:100%!important;max-width:100%!important;overflow:visible!important;padding:0!important}
+#appRoot .nav-group{display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;align-items:stretch!important;flex:0 0 auto!important;width:100%!important;max-width:100%!important;gap:5px!important;padding:10px!important;background:#fff!important;border:1px solid #e6e8ec!important;border-radius:12px!important}
+#appRoot .nav-group-label{display:block!important;width:100%!important;text-align:left!important;font-size:11px!important;color:#a62534!important;border-bottom:1px solid #eee!important;padding:0 4px 6px!important}
+#appRoot .nav-group button,#appRoot .nav-group a{display:flex!important;justify-content:flex-start!important;text-align:left!important;flex:0 0 auto!important;width:100%!important;min-height:38px!important;padding:9px 11px!important;font-size:13px!important;white-space:normal!important}
+#appRoot .sound-toggle{order:3!important;width:100%!important;margin:0!important}
+#appRoot .userbox{order:4!important;width:100%!important;flex-direction:column!important;align-items:stretch!important;white-space:normal!important}
+#appRoot .userbox .btn{width:100%!important}
+#appRoot main{max-width:none!important;width:calc(100% - var(--executive-sidebar))!important;margin:0 0 0 var(--executive-sidebar)!important;padding:30px clamp(15px,2.5vw,40px) 70px!important}
+.executive-menu-toggle{display:none}
+@media(max-width:800px){
+ #appRoot>.topbar{width:min(290px,86vw)!important;transform:translateX(-103%)!important;transition:transform .22s ease!important}
+ body.executive-menu-open #appRoot>.topbar{transform:translateX(0)!important}
+ #appRoot main{width:100%!important;margin:0!important;padding:66px 12px 45px!important}
+ .executive-menu-toggle{display:block;position:fixed;top:10px;left:10px;z-index:110;background:#c92132;color:#fff;border:0;border-radius:9px;padding:9px 13px;min-height:42px;font-weight:800;box-shadow:0 3px 10px #0002}
+}
+@media(prefers-reduced-motion:reduce){#appRoot>.topbar{transition:none!important}}
+
 </style>
 </head>
 <body>
@@ -2432,5 +2456,18 @@ syncSoundToggle();
     <div id="objectFocusHint" class="object-focus-hint hidden" aria-hidden="true"></div>
   </div>
 </div>
+<script>
+(function(){
+ const toggle=document.createElement('button');
+ toggle.type='button';toggle.className='executive-menu-toggle';toggle.textContent='☰ เมนู';
+ toggle.setAttribute('aria-label','เปิดหรือปิดเมนูด้านซ้าย');
+ toggle.setAttribute('aria-expanded','false');
+ const sync=()=>toggle.setAttribute('aria-expanded',document.body.classList.contains('executive-menu-open')?'true':'false');
+ toggle.addEventListener('click',()=>{document.body.classList.toggle('executive-menu-open');sync()});
+ document.body.appendChild(toggle);
+ document.getElementById('navLinks')?.addEventListener('click',e=>{if(e.target.closest('button,a')&&window.innerWidth<=800){document.body.classList.remove('executive-menu-open');sync()}});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.body.classList.remove('executive-menu-open');sync()}});
+})();
+</script>
 </body>
 </html>
