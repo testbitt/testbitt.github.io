@@ -2085,9 +2085,9 @@ async function syncDeliveryMenuVisibility(){
       days.some(k=>String(r[k+"_order_time"]||"").trim()||String(r[k+"_delivery_round"]||"").trim()||String(r[k+"_delivery_time"]||"").trim())||
       String(r.notes||"").trim()
     );
-    document.querySelectorAll('[data-delivery-schedule="1"]').forEach(el=>el.classList.toggle("hidden-auth",!hasData||!token));
+    document.querySelectorAll('[data-delivery-schedule="1"]').forEach(el=>el.classList.toggle("hidden-auth",!token));
     return hasData;
-  }catch{return false}
+  }catch{document.querySelectorAll('[data-delivery-schedule="1"]').forEach(el=>el.classList.toggle("hidden-auth",!token));return false}
 }
 async function loadDeliverySchedule(){
   const el=document.getElementById("deliveryScheduleList");if(!el)return;
@@ -2205,8 +2205,10 @@ function groupPublicNavigation(){
 
 function applyHomeMenuLayout(pref={}){
  const nav=document.getElementById("navLinks");if(!nav)return;
+ // Remove retired Other Lessons shortcuts from the public menu only.
+ nav.querySelectorAll('[data-view="courses"],[data-course-category]:not([data-delivery-schedule="1"])').forEach(el=>el.remove());
  const items=[...nav.querySelectorAll('button[data-view],button[data-course-menu],a[href="admin.html"]')];
- const getKey=n=>n.matches('a[href="admin.html"]')?"admin":n.dataset.view||(n.dataset.deliverySchedule==="1"?"delivery-schedule":n.dataset.courseCategory?"course:"+n.dataset.courseCategory:"");
+ const getKey=n=>n.matches('a[href="admin.html"]')?"admin":(n.dataset.deliverySchedule==="1"?"delivery-schedule":n.dataset.view||"");
  const keys=Array.isArray(pref.order)?pref.order:[];
  const priority=new Map(keys.map((key,i)=>[key,i]));
  const sorted=items.map((node,index)=>({node,index,key:getKey(node)})).sort((a,b)=>{
