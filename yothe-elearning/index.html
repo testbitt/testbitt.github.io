@@ -1614,6 +1614,7 @@ body.yothe-index-mode #view-index .story,body.yothe-index-mode #view-index .stor
 .home-learning-intro .btn{width:auto;max-width:100%;margin-top:14px}
 @media(max-width:800px){body.yothe-index-mode #appRoot main{padding:12px!important}body.yothe-index-mode #appRoot .story{display:flex!important;flex-direction:column!important}}
 
+#appRoot #navLinks [data-view="courses"]{display:none!important}
 </style>
 </head>
 <body>
@@ -1642,7 +1643,7 @@ body.yothe-index-mode #view-index .story,body.yothe-index-mode #view-index .stor
     <button class="auth-only hidden-auth" data-view="drink-map">แผนผังสูตรเครื่องดื่ม</button>
     <button class="auth-only hidden-auth" data-view="expiry">วันหมดอายุ</button>
     <button class="auth-only hidden-auth" data-view="toppings">Topping</button>
-    <button class="auth-only hidden-auth" data-view="courses">บทเรียนอื่น ๆ</button>
+    <button class="auth-only hidden-auth" data-view="courses" hidden aria-hidden="true">บทเรียนอื่น ๆ</button>
     <a class="auth-only hidden-auth" href="admin.html">Admin</a>
   </nav>
   <button id="soundToggleBtn" class="sound-toggle" type="button" aria-pressed="false" title="ปิดเสียง"><span id="soundToggleIcon">🔊</span><span id="soundToggleLabel" class="sound-label">เสียง</span></button>
