@@ -29,7 +29,8 @@
     let json={};try{json=await response.json()}catch{}
     if(!response.ok||!json.ok){
       if(json.error==='INVALID_PIN')adminPin350='';
-      throw new Error(json.error==='INVALID_PIN'?'สิทธิ์ Admin หมดอายุ กรุณาออกแล้วเข้าสู่ Admin ใหม่':json.error||`HTTP ${response.status}`);
+      const messages350={INVALID_PIN:'สิทธิ์ Admin หมดอายุ กรุณาออกแล้วเข้าสู่ Admin ใหม่',EMPLOYEE_CODE_EXISTS:'รหัสพนักงานนี้มีอยู่แล้ว กรุณาใช้รหัสอื่น',EMPLOYEE_NOT_FOUND:'ไม่พบข้อมูลพนักงานเดิม กรุณาโหลดข้อมูลใหม่',BRANCH_NOT_FOUND:'ไม่พบสาขาที่เลือก'};
+      throw new Error(messages350[json.error]||json.error||`HTTP ${response.status}`);
     }
     return json.data||{};
   }
@@ -80,7 +81,7 @@
   branchCard.innerHTML=`
     <div class="section-head">
       <div><h2>ฐานข้อมูลสาขา</h2><p>แก้ไขรหัสสาขาและชื่อสาขาส่วนกลาง ข้อมูลพนักงานและตารางเดิมจะอัปเดตตามอัตโนมัติ</p></div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="btn primary" id="addBranchBtn350">+ เพิ่มสาขา</button><span class="admin-api350">Cloud · ksp-api V8</span></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="btn primary" id="addBranchBtn350">+ เพิ่มสาขา</button><span class="admin-api350">Cloud · ksp-api V9</span></div>
     </div>
     <div class="scroll"><table class="data branch-table350" id="branchTable350"></table></div>`;
   employeeAdmin.insertBefore(branchCard,employeeSection);
@@ -92,7 +93,7 @@
       <div class="crud-head350"><h3 id="empModalTitle350">เพิ่มพนักงาน</h3><button type="button" class="btn ghost" id="empModalClose350">ปิด</button></div>
       <form id="employeeCrudForm350">
         <div class="crud-grid350">
-          <label>รหัสพนักงาน<input id="crudEmpCode350" required><span class="field-note350" id="empCodeNote350"></span></label>
+          <label>รหัสพนักงาน<input id="crudEmpCode350" required maxlength="50" autocomplete="off"><span class="field-note350" id="empCodeNote350"></span></label>
           <label>ชื่อที่แสดง<input id="crudEmpName350" required></label>
           <label>ชื่อจริง<input id="crudFirstName350"></label>
           <label>นามสกุล<input id="crudLastName350"></label>
@@ -163,8 +164,8 @@
   function openEmployee350(employee=null){
     editingEmployee350=employee||null;
     q('#empModalTitle350').textContent=employee?'แก้ไขข้อมูลพนักงาน':'เพิ่มพนักงาน';
-    fields350.code.value=employee?.employee_code||'';fields350.code.readOnly=!!employee;
-    q('#empCodeNote350').textContent=employee?'รหัสพนักงานเดิมถูกล็อกเพื่อรักษาประวัติตารางงาน':'';
+    fields350.code.value=employee?.employee_code||'';fields350.code.readOnly=false;
+    q('#empCodeNote350').textContent=employee?'แก้ไขรหัสได้ ระบบจะย้ายข้อมูลตารางงานและ Version History ให้อัตโนมัติ':'';
     fields350.name.value=employee?.name||employee?.display_name||'';fields350.first.value=employee?.first_name||'';fields350.last.value=employee?.last_name||'';
     fillBranchControls350();fields350.branch.value=employee?.branch_code||'';fields350.position.value=employee?.position||'';fields350.type.value=employee?.employment_type||'';
     employeeModal.classList.add('show');setTimeout(()=>employee?fields350.name.focus():fields350.code.focus(),0);
@@ -180,12 +181,12 @@
   q('#employeeCrudForm350').onsubmit=async event=>{
     event.preventDefault();
     if(!adminPin350)return toast('กรุณาออกจาก Admin แล้วเข้าสู่ระบบใหม่ เพื่อยืนยันสิทธิ์','error');
-    const wasEditing=!!editingEmployee350;
+    const wasEditing=!!editingEmployee350;const originalCode=wasEditing?String(editingEmployee350.employee_code||'').trim():'';
     const employee={employee_code:fields350.code.value.trim(),display_name:fields350.name.value.trim(),first_name:fields350.first.value.trim(),last_name:fields350.last.value.trim(),branch_code:fields350.branch.value,position:fields350.position.value.trim(),employment_type:fields350.type.value};
     if(!employee.employee_code||!employee.display_name||!employee.branch_code)return toast('กรุณากรอกรหัส ชื่อ และสาขา','error');
-    if(!wasEditing&&(db.employees||[]).some(e=>String(e.employee_code)===employee.employee_code))return toast('รหัสพนักงานนี้มีอยู่แล้ว','error');
+    if((!wasEditing||employee.employee_code!==originalCode)&&(db.employees||[]).some(e=>String(e.employee_code)===employee.employee_code))return toast('รหัสพนักงานนี้มีอยู่แล้ว กรุณาใช้รหัสอื่น','error');
     const button=q('#empSave350');button.disabled=true;button.textContent='กำลังบันทึก...';setSync350('กำลังบันทึกข้อมูลพนักงาน...');
-    try{await api350('adminEmployeeSave',{employee});await refreshCloud350();closeEmployee350();toast(wasEditing?'แก้ไขข้อมูลพนักงานออนไลน์แล้ว':'เพิ่มพนักงานออนไลน์แล้ว');setSync350('ออนไลน์ · Sync แล้ว')}
+    try{const result=await api350('adminEmployeeSave',{original_employee_code:originalCode,employee});await refreshCloud350();closeEmployee350();toast(wasEditing?(result?.renamed?'แก้ไขรหัสพนักงานและย้ายประวัติตารางงานแล้ว':'แก้ไขข้อมูลพนักงานออนไลน์แล้ว'):'เพิ่มพนักงานออนไลน์แล้ว');setSync350('ออนไลน์ · Sync แล้ว')}
     catch(error){setSync350('บันทึกพนักงานไม่สำเร็จ',true);toast('บันทึกไม่สำเร็จ: '+(error?.message||String(error)),'error')}
     finally{button.disabled=false;button.textContent='บันทึกข้อมูล'}
   };
@@ -229,5 +230,5 @@
   if(typeof previousOpenAdmin==='function')window.openAdmin=function(){const result=previousOpenAdmin.apply(this,arguments);if(q('#admin-employees.active'))window.renderEmployees();return result};
 
   fillBranchControls350();renderEmployees350();renderBranches350();
-  const footer=q('.side footer');if(footer)footer.textContent='Version 3.7.1 · Branch CRUD';
+  const footer=q('.side footer');if(footer)footer.textContent='Version 3.8 · Employee Code Editor';
 })();

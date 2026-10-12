@@ -66,7 +66,7 @@
             <h2>Version ตารางงาน</h2>
             <p>ดู Version ของทุกสาขาและทุก Week พร้อม Preview และ Restore ตารางเดิม</p>
           </div>
-          <span class="pill" id="versionApi340">ksp-api V6</span>
+          <span class="pill" id="versionApi340">ksp-api V9</span>
         </div>
         <div class="filters version-filters340">
           <label>สาขา
@@ -321,5 +321,5 @@
   buildUI340();
   fillBranches340();
   document.querySelectorAll('.cute-mascot').forEach(x=>x.remove());
-  const footer=q('.side footer');if(footer)footer.textContent='Version 3.6.1 · Displayed Branch Name Editor';
+  const footer=q('.side footer');if(footer)footer.textContent='Version 3.8 · Employee Code Editor';
 })();
