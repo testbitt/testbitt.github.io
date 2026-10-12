@@ -1637,6 +1637,9 @@ body.yothe-index-mode #view-index .story,body.yothe-index-mode #view-index .stor
 .home-content-empty{padding:20px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;color:#657080}
 @media(max-width:600px){.home-content-text,.home-content-image,.home-content-document{padding:14px}}
 
+
+/* Hide all legacy lesson-attachment galleries on public pages. */
+#appRoot .attachments,#appRoot .attachment-grid{display:none!important}
 </style>
 </head>
 <body>
@@ -1854,6 +1857,13 @@ function fileTypeInfo(mime="",name=""){
   return {type:"file",icon:"📎",label:"ไฟล์"};
 }
 async function loadAttachments(section){
+  // Attachments are retained in storage for Admin and Popup references,
+  // but the legacy "ไฟล์ประกอบบทเรียน" galleries are hidden on the public site.
+  const el=document.getElementById("attachments-"+section);
+  if(el)el.replaceChildren();
+  attachmentSets[section]=[];
+  return;
+
   const el=document.getElementById("attachments-"+section);if(!el)return;
   try{
     const files=await api("attachments",{section});
