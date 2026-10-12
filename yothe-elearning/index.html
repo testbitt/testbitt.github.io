@@ -1511,6 +1511,39 @@ html body{background:#f5f6f8!important;color:#222832!important;letter-spacing:0!
 #appRoot .sound-toggle{border:1px solid #e8e9ee!important;color:#bb1c2e!important;border-radius:10px!important;background:#fff!important;box-shadow:none!important}
 @media(max-width:680px){#appRoot>.topbar>.nav{padding:9px 10px!important}#appRoot .nav-group{flex:1 1 100%!important}#appRoot .nav-group[data-nav-group="home"],#appRoot .nav-group[data-nav-group="admin"]{flex:1 1 100%!important}}
 
+
+/* Executive A layout — horizontal navigation and clean corporate content */
+#appRoot>.topbar{position:sticky!important;top:0!important;left:auto!important;bottom:auto!important;width:100%!important;height:auto!important;overflow:visible!important;background:#fff!important;border-right:0!important;border-bottom:2px solid #c92132!important;z-index:80!important}
+#appRoot>.topbar>.nav{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto auto!important;align-items:center!important;max-width:1560px!important;gap:12px!important;padding:12px 24px!important;min-height:82px!important}
+#appRoot .nav .brand{grid-column:1;justify-content:flex-start!important;width:auto!important;padding:0!important;border:0!important}
+#appRoot .navbar-logo-custom{width:170px!important;max-width:170px!important;max-height:62px!important}
+#appRoot .navlinks{grid-column:2!important;order:0!important;display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;justify-content:flex-end!important;align-items:center!important;gap:5px!important;width:100%!important;min-width:0!important;padding:0!important;overflow:visible!important}
+#appRoot .nav-group{display:contents!important}
+#appRoot .nav-group-label{display:none!important}
+#appRoot .nav-group button,#appRoot .nav-group a{display:inline-flex!important;width:auto!important;min-height:39px!important;padding:8px 11px!important;font-weight:750!important;font-size:12px!important;white-space:normal!important;text-align:center!important;border:0!important;border-radius:8px!important;background:#fff!important;color:#343b47!important;box-shadow:none!important}
+#appRoot .nav-group button.active,#appRoot .nav-group button:hover,#appRoot .nav-group a:hover{background:#c92132!important;color:#fff!important}
+#appRoot .sound-toggle{grid-column:3!important;order:0!important;width:auto!important;margin:0!important}
+#appRoot .userbox{grid-column:4!important;order:0!important;width:auto!important;margin:0!important}
+#appRoot main{margin:0 auto!important;max-width:1460px!important;padding:34px 30px 75px!important}
+#appRoot .story{grid-template-columns:minmax(0,1.7fr) minmax(180px,.3fr)!important;background:#fff!important;border:1px solid #e8eaef!important;border-radius:14px!important;padding:42px!important;box-shadow:0 6px 24px rgba(20,30,50,.06)!important}
+#appRoot .story h1{font-size:clamp(30px,3.1vw,45px)!important}
+#appRoot .section-head h2{font-size:clamp(24px,2.4vw,34px)!important}
+#appRoot .grid,#appRoot .cards,#appRoot .attachment-grid{gap:18px!important}
+#appRoot .card,#appRoot .attachment-card,#appRoot .sheet{border:1px solid #e4e7ed!important;border-radius:12px!important;background:#fff!important;box-shadow:0 4px 18px rgba(20,30,50,.055)!important}
+@media(max-width:1200px){
+ #appRoot>.topbar>.nav{display:flex!important;flex-wrap:wrap!important;gap:8px!important}
+ #appRoot .navlinks{order:4!important;flex:1 0 100%!important;justify-content:center!important}
+ #appRoot .sound-toggle{margin-left:auto!important}
+}
+@media(max-width:650px){
+ #appRoot>.topbar>.nav{padding:9px 11px!important}
+ #appRoot .navbar-logo-custom{width:135px!important;max-width:135px!important}
+ #appRoot .navlinks{gap:4px!important}
+ #appRoot .nav-group button,#appRoot .nav-group a{font-size:11.5px!important;min-height:39px!important;padding:8px 9px!important}
+ #appRoot main{padding:16px 11px 45px!important}
+ #appRoot .story{display:flex!important;flex-direction:column!important;padding:22px 18px!important}
+}
+
 </style>
 </head>
 <body>
