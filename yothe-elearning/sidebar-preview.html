@@ -1,0 +1,2390 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yothé E-Learning — Side Menu Preview</title>
+<meta name="description" content="Yothé E-Learning">
+<style>
+:root{--red:#c9302c;--red-soft:#fbeceb;--ink:#26231f;--muted:#7a746b;--line:#ddd6cc;--bg:#f7f3ec;--paper:#fffdf8;--matcha:#6f7f52;--indigo:#334b5e;--gold:#b78a45;--radius:14px;--shadow:0 10px 28px rgba(74,58,39,.08);--gap:16px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:"Noto Sans Thai","Hiragino Kaku Gothic ProN","Yu Gothic","Leelawadee UI",Tahoma,Arial,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:
+linear-gradient(rgba(255,253,248,.92),rgba(255,253,248,.92)),
+repeating-linear-gradient(0deg,rgba(185,166,140,.08) 0 1px,transparent 1px 7px),
+repeating-linear-gradient(90deg,rgba(185,166,140,.05) 0 1px,transparent 1px 11px),
+var(--bg);font-size:15px;line-height:1.65;-webkit-font-smoothing:antialiased}
+button,input{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}.hidden{display:none!important}
+.login-screen{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:24px;background:rgba(20,20,20,.42);backdrop-filter:blur(5px)}
+.login-card{width:min(440px,100%);background:#fff;border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);padding:30px}
+.login-brand{display:flex;align-items:center;justify-content:center;gap:12px;margin:0 auto 12px}.login-cat{width:64px;height:64px;object-fit:contain}.login-logo{width:220px;max-width:68%;height:auto;object-fit:contain;display:block;background:#d92c24;border-radius:14px;padding:8px 12px}.login-card h1{text-align:center;margin:0;font-size:25px;color:var(--red)}.login-card p{text-align:center;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:7px;margin:14px 0}.field label{font-size:13px;font-weight:800}.input{width:100%;border:1px solid #cfc6bb;border-radius:10px;padding:13px 14px;background:#fffdf8}
+.btn{border:0;border-radius:10px;padding:12px 16px;font-weight:800}.primary{background:var(--red);color:#fff;width:100%}.secondary{background:#fff;border:1px solid #fecdd3;color:var(--red)}
+.msg{font-size:13px;margin-top:10px}.error{color:#b91c1c}.ok{color:#15803d}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(255,253,248,.96);border-bottom:1px solid var(--line);box-shadow:0 4px 16px rgba(78,62,43,.05);backdrop-filter:blur(12px)}
+.nav{max-width:1600px;margin:auto;min-height:76px;padding:10px 16px;display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;align-items:center;gap:14px}
+.brand{display:flex;align-items:center;gap:9px;color:var(--red);font-size:20px;font-weight:900;white-space:nowrap}.brand img.brand-cat{width:34px;height:40px;object-fit:contain}.brand img.brand-wordmark{width:132px;height:auto;object-fit:contain;background:#d92c24;border-radius:9px;padding:4px 7px}.brand span{white-space:nowrap}
+.navlinks{min-width:0;display:flex;align-items:center;justify-content:flex-start;gap:8px;flex-wrap:nowrap;padding:2px 0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.navlinks::-webkit-scrollbar{height:5px}
+.navlinks::-webkit-scrollbar-thumb{background:#e7b8b2;border-radius:999px}
+.navlinks::-webkit-scrollbar-track{background:transparent}
+.navlinks button,.navlinks a{flex:0 0 auto;border:0;background:transparent;padding:9px 11px;border-radius:12px;font-weight:800;font-size:14px;line-height:1.2;color:var(--red);white-space:nowrap;word-break:normal;transition:background .15s,color .15s}
+.navlinks button:hover,.navlinks button.active{background:var(--red);color:#fff;box-shadow:inset 0 -2px 0 rgba(87,18,16,.12)}
+.userbox{display:flex;align-items:center;justify-content:flex-end;gap:8px;font-size:12px;color:var(--muted);white-space:nowrap}
+main{max-width:1240px;margin:auto;padding:30px 20px 70px}.view{display:none}.view.active{display:block}
+.story{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,.3fr);gap:38px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:44px 48px;box-shadow:var(--shadow);align-items:start;position:relative;overflow:hidden}.story:before{content:"";position:absolute;inset:0 auto 0 0;width:5px;background:linear-gradient(var(--red),#d85a4f,var(--gold))}
+.story h1{font-size:clamp(34px,4.2vw,56px);line-height:1.08;margin:0 0 30px;color:var(--red);font-weight:900;letter-spacing:-.02em}.story-copy{max-width:920px}.story-copy p{line-height:1.82;color:#4e4337;font-size:clamp(16px,1.2vw,19px);font-weight:500;margin:0 0 22px;letter-spacing:.005em}.story-copy p:first-child{font-size:clamp(17px,1.3vw,20px);font-weight:650}.story-copy p:last-child{margin-bottom:0}.story-logo{display:flex;align-items:flex-start;justify-content:center;position:sticky;top:104px}.story-logo img{width:min(310px,100%);max-height:420px;object-fit:contain}
+.home-entry{margin:24px auto 0;text-align:center;background:transparent;border:0;padding:0;box-shadow:none}
+.home-entry .enter-btn{display:inline-flex;align-items:center;justify-content:center;min-width:260px;padding:14px 24px;border:1px solid #a92421;border-radius:10px;background:linear-gradient(180deg,#d6443d,var(--red));color:#fff;font-weight:900;font-size:16px;box-shadow:0 8px 18px rgba(201,48,44,.18);letter-spacing:.02em}
+.auth-only.hidden-auth{display:none!important}
+.welcome-pop{position:fixed;inset:0;z-index:220;display:grid;place-items:center;padding:24px;background:rgba(20,20,20,.38);backdrop-filter:blur(4px)}
+.welcome-card{width:min(420px,100%);background:#fff;border-radius:24px;padding:28px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.24);border:1px solid #fecdd3}
+.welcome-card img{width:70px;height:84px;object-fit:contain;margin-bottom:8px}.welcome-card h2{margin:0;color:var(--red);font-size:28px}.welcome-card p{margin:8px 0 18px;font-size:18px;font-weight:800}.welcome-card .btn{width:auto;min-width:140px}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:18px}.section-head h2{margin:0;font-size:clamp(28px,3vw,38px);line-height:1.2;font-weight:900;display:inline-block;position:relative;padding-bottom:8px}.section-head h2:after{content:"";position:absolute;left:0;bottom:0;width:56px;height:3px;background:linear-gradient(90deg,var(--red),var(--gold));border-radius:999px}.section-head p{margin:6px 0 0;color:var(--muted)}
+.all-lessons{font-size:14px;color:var(--red);font-weight:800}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap)}.sheet{background:var(--paper);border:1px solid #c8bfb3;border-top:4px solid var(--red);break-inside:avoid;box-shadow:0 8px 22px rgba(67,53,37,.06)}.sheet-title{background:linear-gradient(90deg,var(--red),#db4d45);color:#fff;font-weight:800;text-align:center;padding:11px 12px;font-size:17px;line-height:1.35;letter-spacing:.02em}
+.sheet-body{display:grid;grid-template-columns:120px 1fr;min-height:225px}.photo{display:flex;align-items:center;justify-content:center;padding:8px;border-right:1px solid #d1d5db}.photo img{width:100%;max-height:205px;object-fit:contain}.photo .empty{font-size:12px;color:#9ca3af;text-align:center}
+table{width:100%;border-collapse:collapse;min-width:0}th,td{border:1px solid #d1d5db;padding:6px 8px;font-size:12.5px;line-height:1.45;text-align:left}th{background:var(--red);color:#fff;font-weight:800;font-size:12px}td.num{text-align:center;font-weight:700;font-variant-numeric:tabular-nums}.topping{color:#8b1aa8;font-weight:900}.note{background:#ffef57;color:#d91d0b;font-size:11.5px;font-weight:800;padding:7px 10px;line-height:1.45}
+.state{background:#fff;border:1px dashed #d1d5db;border-radius:16px;padding:28px;text-align:center;color:var(--muted)}
+.search{width:100%;max-width:420px;border:1px solid #d1d5db;border-radius:14px;padding:11px 13px;margin-bottom:16px}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--gap)}.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}.card h3{margin:0 0 8px;font-size:18px}.card p{color:var(--muted);margin:0}.meta{display:flex;justify-content:space-between;gap:8px;margin-top:12px;font-size:12px;color:var(--muted)}
+.attachments{margin-top:24px}.attachments h3{margin:0 0 12px;font-size:20px}.attachment-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--gap)}
+.attachment-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.attachment-preview{aspect-ratio:4/3;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.attachment-preview img{width:100%;height:100%;object-fit:contain;background:#fff}
+.attachment-icon{font-size:42px}.attachment-body{padding:14px;display:flex;flex-direction:column;gap:8px;flex:1}.attachment-title{font-weight:850;word-break:break-word}.attachment-file{font-size:12px;color:var(--muted);word-break:break-word}
+.attachment-open{display:inline-flex;align-items:center;justify-content:center;padding:9px 12px;border-radius:10px;background:var(--red);color:#fff;font-weight:800;font-size:13px;text-decoration:none;border:0;cursor:pointer}
+.attachment-viewer{position:fixed;inset:0;z-index:260;background:rgba(0,0,0,.72);display:grid;place-items:center;padding:18px}
+.attachment-viewer-card{width:min(1180px,96vw);height:min(90vh,900px);background:#fff;border-radius:18px;overflow:hidden;display:grid;grid-template-rows:auto 1fr auto;box-shadow:0 30px 90px rgba(0,0,0,.35)}
+.attachment-viewer-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.attachment-viewer-title{font-weight:900;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.attachment-viewer-count{font-size:12px;color:var(--muted);white-space:nowrap}
+.attachment-viewer-body{min-height:0;background:#f3f4f6;display:grid;place-items:center;overflow:auto}.attachment-viewer-body img{max-width:100%;max-height:100%;object-fit:contain}.attachment-viewer-body iframe{width:100%;height:100%;border:0;background:#fff}
+.attachment-viewer-empty{padding:30px;text-align:center}.attachment-viewer-empty a{display:inline-flex;margin-top:10px}
+.attachment-viewer-foot{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--line);background:#fff}
+.viewer-nav{border:1px solid #fecdd3;background:#fff;color:var(--red);border-radius:12px;padding:10px 16px;font-weight:900}.viewer-nav:disabled{opacity:.35;cursor:not-allowed}.viewer-close{border:0;background:var(--red);color:#fff;border-radius:12px;padding:10px 18px;font-weight:900}
+/* single-row top navigation */
+@media(max-width:900px){
+  .nav{grid-template-columns:max-content minmax(0,1fr);grid-template-areas:"brand user" "links links";gap:8px 10px;padding:8px 10px}
+  .brand{grid-area:brand}.userbox{grid-area:user}.navlinks{grid-area:links;width:100%;padding:4px 0 6px}
+  .navlinks button,.navlinks a{font-size:13px;padding:9px 10px}
+}
+@media(max-width:700px){.attachment-viewer{padding:8px}.attachment-viewer-card{width:100%;height:94vh}.attachment-viewer-foot{grid-template-columns:1fr 1fr}.viewer-close{grid-column:1/-1;grid-row:1}.viewer-nav{width:100%}}
+@media(max-width:1100px){
+.nav{grid-template-columns:max-content 1fr max-content;gap:14px;padding:10px 14px}
+.brand span{display:none}.brand img.brand-wordmark{width:112px}
+.navlinks{justify-content:center;gap:5px 6px}.navlinks button,.navlinks a{font-size:13px;padding:8px 9px}
+}
+@media(max-width:900px){
+.nav{grid-template-columns:1fr auto;grid-template-areas:"brand user" "menu menu";gap:8px 12px;padding:10px 14px}
+.brand{grid-area:brand}.userbox{grid-area:user}.navlinks{grid-area:menu;width:100%;justify-content:center;border-top:1px solid #f3f4f6;padding-top:8px}
+.story{grid-template-columns:1fr;padding:34px 30px;gap:24px}.story-logo{position:static}.story-logo img{width:min(240px,65vw)}.story-copy{max-width:none}.grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}.attachment-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:560px){
+.nav{padding:8px 10px}.brand img.brand-cat{width:29px;height:34px}.brand img.brand-wordmark{width:100px}
+.userbox{font-size:11px}.userbox .btn{padding:6px 8px!important;font-size:11px}
+.navlinks{justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;padding:8px 2px 3px;-webkit-overflow-scrolling:touch}
+.navlinks button,.navlinks a{font-size:12px;padding:8px 10px}
+.cards{grid-template-columns:1fr}.attachment-grid{grid-template-columns:1fr}.brand{font-size:20px}.story{padding:26px 20px}.story h1{margin-bottom:22px}.story-copy p{font-size:16px;line-height:1.72;margin-bottom:18px}.story-logo img{width:min(210px,70vw)}.sheet-body{grid-template-columns:95px 1fr}
+}
+
+/* User table text fit: keep normal table labels/data on one line */
+.view .sheet table{
+  width:100%;
+  table-layout:fixed;
+}
+.view .sheet th,
+.view .sheet td{
+  white-space:nowrap!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+  text-overflow:clip!important;
+  overflow:hidden!important;
+  line-height:1.25!important;
+  vertical-align:middle!important;
+}
+/* Long-form note cells keep readable multiline content */
+.view .sheet td[rowspan],
+.view .sheet .note,
+.view .sheet .user-long-text{
+  white-space:normal!important;
+  overflow:visible!important;
+  overflow-wrap:anywhere!important;
+}
+/* Compact mobile baseline before JS fine-tuning */
+@media(max-width:700px){
+  .view .sheet th,.view .sheet td{font-size:11px;padding:5px 5px}
+}
+@media(max-width:480px){
+  .view .sheet th,.view .sheet td{font-size:10px;padding:4px 4px}
+}
+
+/* Japanese Modern Motion */
+@keyframes yotheFadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes yotheFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes yothePop{0%{opacity:0;transform:scale(.96) translateY(8px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes yotheFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes yotheShine{0%{transform:translateX(-140%)}100%{transform:translateX(220%)}}
+
+.view.active{animation:yotheFadeIn .28s ease both}
+.story,.sheet,.card,.attachment-card,.home-entry{animation:yotheFadeUp .42s cubic-bezier(.2,.7,.2,1) both}
+.grid>.sheet:nth-child(2n),.cards>*:nth-child(2n),.attachment-grid>*:nth-child(2n){animation-delay:.05s}
+.grid>.sheet:nth-child(3n),.cards>*:nth-child(3n),.attachment-grid>*:nth-child(3n){animation-delay:.09s}
+
+.brand{transition:transform .2s ease,filter .2s ease}.brand:hover{transform:translateY(-1px)}.brand:hover .brand-cat{animation:yotheFloat 1.8s ease-in-out infinite}
+.brand-wordmark{transition:transform .2s ease}.brand:hover .brand-wordmark{transform:scale(1.015)}
+
+.navlinks button,.navlinks a{position:relative;overflow:hidden}
+.navlinks button:after,.navlinks a:after{content:"";position:absolute;left:14px;right:14px;bottom:4px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);transform:scaleX(0);transform-origin:center;transition:transform .2s ease}
+.navlinks button:hover:after,.navlinks a:hover:after,.navlinks button.active:after{transform:scaleX(1)}
+.navlinks button.active:before{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 0 38%,rgba(255,255,255,.28) 50%,transparent 62%);transform:translateX(-140%);animation:yotheShine 2.8s ease-in-out infinite}
+
+.sheet,.card,.attachment-card{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+.sheet:hover,.card:hover,.attachment-card:hover{transform:translateY(-4px);box-shadow:0 16px 34px rgba(74,58,39,.13);border-color:#c8a77a}
+.sheet img,.card img,.attachment-card img{transition:transform .28s ease}.sheet:hover img,.card:hover img,.attachment-card:hover img{transform:scale(1.025)}
+
+.btn,.enter-btn,.attachment-open,.viewer-nav,.viewer-close{transition:transform .16s ease,box-shadow .16s ease,filter .16s ease}
+.btn:hover,.enter-btn:hover,.attachment-open:hover,.viewer-nav:hover,.viewer-close:hover{transform:translateY(-1px);filter:brightness(1.02)}
+.btn:active,.enter-btn:active,.attachment-open:active,.viewer-nav:active,.viewer-close:active{transform:translateY(0) scale(.985)}
+
+.login-card,.welcome-card,.attachment-viewer-card{animation:yothePop .24s ease both}
+.login-screen,.welcome-pop,.attachment-viewer{animation:yotheFadeIn .18s ease both}
+
+.section-head h2:after{transition:width .3s ease}.section-head:hover h2:after{width:92px}
+.story-logo img{animation:yotheFloat 4s ease-in-out infinite}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+
+.delivery-wrap{background:transparent;border:0;border-radius:0;overflow:visible;box-shadow:none}
+.delivery-head{padding:0 0 18px;border:0;background:transparent}
+.delivery-head h2{margin:0;color:var(--red);font-size:32px;font-weight:900}.delivery-head p{margin:6px 0 0;color:var(--muted)}
+.delivery-table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.delivery-table{width:100%;border-collapse:separate;border-spacing:0;min-width:900px;table-layout:auto}
+.delivery-table th,.delivery-table td{padding:13px 14px;border-right:1px solid #eadfd9;border-bottom:1px solid #eadfd9;vertical-align:middle;white-space:nowrap;overflow-wrap:normal;word-break:normal}
+.delivery-table th:first-child,.delivery-table td:first-child{border-left:1px solid #eadfd9}
+.delivery-table thead th{border-top:1px solid #eadfd9}
+.delivery-table th{background:linear-gradient(180deg,#d94a42,var(--red));color:#fff;font-weight:900;text-align:center}
+.delivery-table th:first-child{border-radius:10px 0 0 0}.delivery-table th:last-child{border-radius:0 10px 0 0}
+.delivery-table tbody tr:last-child td:first-child{border-radius:0 0 0 10px}.delivery-table tbody tr:last-child td:last-child{border-radius:0 0 10px 0}
+.delivery-table tbody tr:nth-child(even) td{background:#fffaf8}
+.delivery-table td{font-size:15px;line-height:1.45;color:#222;background:#fff}
+.delivery-table td:first-child{font-weight:900;color:#8b1e1e}
+.delivery-table th:nth-child(1),.delivery-table td:nth-child(1){min-width:110px}
+.delivery-table th:nth-child(2),.delivery-table td:nth-child(2){min-width:170px}
+.delivery-table th:nth-child(3),.delivery-table td:nth-child(3){min-width:120px}
+.delivery-table th:nth-child(4),.delivery-table td:nth-child(4){min-width:170px}
+.delivery-table th:nth-child(5),.delivery-table td:nth-child(5){min-width:120px}
+.delivery-empty{padding:30px;text-align:center;color:var(--muted)}
+.delivery-supplier-card{margin:0 0 22px;background:#fff;border:1px solid #ead8d1;border-radius:18px;overflow:hidden;box-shadow:0 8px 24px rgba(111,64,45,.08)}
+.delivery-supplier-title{display:flex;align-items:center;gap:9px;padding:15px 18px;background:linear-gradient(135deg,#fff8f4,#fff1ec);color:var(--red);font-weight:900;font-size:21px;border-bottom:1px solid #ead8d1}
+.delivery-supplier-title:before{content:"📦";font-size:20px}
+.delivery-supplier-image{padding:14px 14px 0;text-align:center}
+.delivery-supplier-image img{display:block;width:100%;max-height:260px;object-fit:contain;border-radius:12px;background:#fff}
+.delivery-supplier-card[data-accent] .delivery-supplier-title{background:linear-gradient(135deg,color-mix(in srgb,var(--supplier-accent) 10%,#fff),#fff);color:var(--supplier-accent);border-bottom-color:color-mix(in srgb,var(--supplier-accent) 25%,#ead8d1)}
+.delivery-supplier-card[data-accent] .delivery-table th{background:linear-gradient(180deg,color-mix(in srgb,var(--supplier-accent) 82%,#fff),var(--supplier-accent))}
+.delivery-supplier-card .delivery-table-wrap{padding:14px 14px 16px;box-sizing:border-box}
+.delivery-notes{margin:0 14px 14px;padding:12px 14px;background:#fff8e8;border:1px solid #f0dfb2;border-radius:10px;font-size:14px;line-height:1.55;white-space:normal;overflow-wrap:anywhere}
+.delivery-notes-title{font-weight:900;color:#8b5e00;margin-bottom:4px}
+.delivery-notes-text{color:#3f3f3f}
+@media(max-width:700px){
+  .delivery-wrap{border-radius:12px}.delivery-head{padding:14px}.delivery-head h2{font-size:22px}
+  .delivery-table{min-width:880px}.delivery-table th,.delivery-table td{padding:10px 9px;font-size:13px;white-space:nowrap}
+}
+
+/* Interactive object focus popup for lesson images */
+.attachment-viewer-body img.viewer-interactive-image{
+  cursor:zoom-in;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+.object-focus-popup{
+  position:fixed;inset:0;z-index:340;
+  background:rgba(15,10,10,.74);
+  display:grid;place-items:center;padding:18px;
+  backdrop-filter:blur(4px);
+}
+.object-focus-card{
+  width:min(520px,92vw);
+  aspect-ratio:1/1;
+  background:#fff;
+  border:4px solid #fff;
+  border-radius:28px;
+  overflow:hidden;
+  box-shadow:0 30px 100px rgba(0,0,0,.42);
+  position:relative;
+  animation:yotheObjectPop .28s cubic-bezier(.2,.9,.25,1.2) both,
+            yotheObjectWiggle 1.35s ease-in-out .28s infinite;
+}
+.object-focus-image{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  background-repeat:no-repeat;
+  background-color:#fff;
+}
+.object-focus-hint{
+  position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
+  background:rgba(0,0,0,.62);color:#fff;
+  padding:7px 12px;border-radius:999px;
+  font-size:12px;font-weight:800;white-space:nowrap;
+}
+.object-focus-close{
+  position:absolute;right:10px;top:10px;z-index:2;
+  width:36px;height:36px;border:0;border-radius:50%;
+  background:rgba(255,255,255,.94);color:var(--red);
+  font-size:20px;font-weight:900;cursor:pointer;
+  box-shadow:0 3px 12px rgba(0,0,0,.18);
+}
+@keyframes yotheObjectPop{
+  0%{opacity:0;transform:scale(.55) rotate(-7deg)}
+  70%{opacity:1;transform:scale(1.06) rotate(2deg)}
+  100%{opacity:1;transform:scale(1) rotate(0)}
+}
+@keyframes yotheObjectWiggle{
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  25%{transform:translateY(-5px) rotate(-1.5deg)}
+  50%{transform:translateY(1px) rotate(1.5deg)}
+  75%{transform:translateY(-3px) rotate(-.8deg)}
+}
+@media(prefers-reduced-motion:reduce){
+  .object-focus-card{animation:yotheObjectPop .15s ease both}
+}
+@media(max-width:560px){
+  .object-focus-card{width:min(88vw,430px);border-radius:22px}
+}
+
+/* Menu board numbered cup hotspots */
+.menu-board-stage{
+  position:relative;display:inline-block;max-width:100%;max-height:100%;
+  line-height:0;
+}
+.menu-board-stage>img{
+  display:block;max-width:100%;max-height:calc(90vh - 170px);object-fit:contain;
+}
+.cup-hotspot-layer{position:absolute;inset:0;z-index:3}
+.cup-hotspot{position:absolute;transform:translate(-50%,-50%);border:0;background:transparent;cursor:pointer;padding:0;display:grid;place-items:center}
+.cup-hotspot>span{
+  width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(198,39,35,.92);color:#fff;font-weight:900;font-size:15px;
+  border:2px solid rgba(255,255,255,.95);box-shadow:0 3px 12px rgba(0,0,0,.28);
+  line-height:1;animation:cupHotspotPulse 1.8s ease-in-out infinite;
+}
+.cup-hotspot:hover>span,.cup-hotspot:focus-visible>span{
+  transform:scale(1.15);background:#a91e1b;
+}
+@keyframes cupHotspotPulse{
+  0%,100%{box-shadow:0 3px 12px rgba(0,0,0,.26),0 0 0 0 rgba(198,39,35,.25)}
+  50%{box-shadow:0 3px 12px rgba(0,0,0,.26),0 0 0 9px rgba(198,39,35,0)}
+}
+.object-focus-image.cup-sprite{
+  background-image:url("assets/cup-popup-sprite.webp");
+  background-repeat:no-repeat;background-color:#fff;
+  background-size:300% 300%;
+}
+@media(max-width:560px){
+  .cup-hotspot>span{width:28px;height:28px;font-size:13px}
+}
+/* 50 popup styles */
+@keyframes popA{0%{opacity:0;transform:scale(.7)}70%{opacity:1;transform:scale(1.04)}100%{opacity:1;transform:scale(1)}}
+@keyframes wigA{0%{opacity:0;transform:rotate(-3deg)}70%{opacity:1;transform:rotate(3deg)}100%{opacity:1;transform:rotate(0)}}
+@keyframes zoomA{0%{opacity:0;transform:scale(.45)}70%{opacity:1;transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+@keyframes zoomB{0%{opacity:0;transform:scale(1.35)}70%{opacity:1;transform:scale(.96)}100%{opacity:1;transform:scale(1)}}
+@keyframes rotL{0%{opacity:0;transform:rotate(-18deg) scale(.8)}70%{opacity:1;transform:rotate(3deg)}100%{opacity:1;transform:rotate(0)}}
+@keyframes rotR{0%{opacity:0;transform:rotate(18deg) scale(.8)}70%{opacity:1;transform:rotate(-3deg)}100%{opacity:1;transform:rotate(0)}}
+@keyframes upA{0%{opacity:0;transform:translateY(40px)}70%{opacity:1;transform:translateY(-6px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes dnA{0%{opacity:0;transform:translateY(-40px)}70%{opacity:1;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes ltA{0%{opacity:0;transform:translateX(50px)}70%{opacity:1;transform:translateX(-6px)}100%{opacity:1;transform:translateX(0)}}
+@keyframes rtA{0%{opacity:0;transform:translateX(-50px)}70%{opacity:1;transform:translateX(6px)}100%{opacity:1;transform:translateX(0)}}
+.object-focus-card.style-1{animation:popA .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-2{animation:wigA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-3{animation:zoomA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-4{animation:zoomB .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-5{animation:rotL .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-6{animation:rotR .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-7{animation:upA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-8{animation:dnA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-9{animation:ltA .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-10{animation:rtA .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-11{animation:popA .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-12{animation:wigA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-13{animation:zoomA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-14{animation:zoomB .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-15{animation:rotL .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-16{animation:rotR .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-17{animation:upA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-18{animation:dnA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-19{animation:ltA .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-20{animation:rtA .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-21{animation:popA .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-22{animation:wigA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-23{animation:zoomA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-24{animation:zoomB .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-25{animation:rotL .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-26{animation:rotR .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-27{animation:upA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-28{animation:dnA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-29{animation:ltA .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-30{animation:rtA .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-31{animation:popA .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-32{animation:wigA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-33{animation:zoomA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-34{animation:zoomB .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-35{animation:rotL .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-36{animation:rotR .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-37{animation:upA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-38{animation:dnA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-39{animation:ltA .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-40{animation:rtA .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-41{animation:popA .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-42{animation:wigA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-43{animation:zoomA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-44{animation:zoomB .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-45{animation:rotL .42s ease both , yotheObjectWiggle 1.10s ease-in-out .42s infinite }
+.object-focus-card.style-46{animation:rotR .42s ease both , yotheObjectWiggle 1.25s ease-in-out .42s infinite }
+.object-focus-card.style-47{animation:upA .42s ease both , yotheObjectWiggle 1.40s ease-in-out .42s infinite }
+.object-focus-card.style-48{animation:dnA .42s ease both , yotheObjectWiggle 1.55s ease-in-out .42s infinite }
+.object-focus-card.style-49{animation:ltA .42s ease both , yotheObjectWiggle 1.70s ease-in-out .42s infinite }
+.object-focus-card.style-50{animation:none!important;transform:none!important}
+.object-focus-card.style-51{animation:none!important;transform:none!important}
+
+.object-focus-image>img{width:100%;height:100%;object-fit:contain;display:block}
+
+/* Popup image only: no text */
+.object-focus-hint{display:none!important}
+
+/* Sound toggle */
+.sound-toggle{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-height:36px;
+  padding:7px 11px;
+  border:1px solid rgba(255,255,255,.45);
+  border-radius:999px;
+  background:rgba(255,255,255,.14);
+  color:#fff;
+  font-weight:900;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:transform .18s ease,background .18s ease,border-color .18s ease;
+}
+.sound-toggle:hover{transform:translateY(-1px);background:rgba(255,255,255,.22)}
+.sound-toggle.muted{background:rgba(0,0,0,.18);border-color:rgba(255,255,255,.28)}
+.sound-toggle .sound-label{font-size:12px}
+@media(max-width:760px){
+  .sound-toggle{padding:7px 9px;min-width:38px}
+  .sound-toggle .sound-label{display:none}
+}
+
+/* Center public table headers */
+#appRoot table thead th,
+#appRoot table th{
+  text-align:center!important;
+  vertical-align:middle!important;
+}
+#appRoot .recipe-table th,
+#appRoot .delivery-table th,
+#appRoot .delivery-export-table th{
+  text-align:center!important;
+  vertical-align:middle!important;
+}
+
+/* Public table anti-overlap */
+#appRoot .recipe-card,
+#appRoot .delivery-supplier-card,
+#appRoot .delivery-table-wrap,
+#appRoot .table-wrap{
+  min-width:0!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+}
+#appRoot table{
+  width:100%!important;
+  max-width:100%!important;
+  border-collapse:collapse!important;
+  table-layout:auto!important;
+}
+#appRoot th,
+#appRoot td{
+  box-sizing:border-box!important;
+  min-width:0!important;
+  max-width:none!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  hyphens:auto;
+  line-height:1.35!important;
+  vertical-align:middle!important;
+}
+#appRoot th{
+  text-align:center!important;
+  font-weight:900!important;
+}
+#appRoot td{
+  position:relative;
+  overflow:visible!important;
+}
+#appRoot .recipe-table,
+#appRoot .delivery-table{
+  table-layout:auto!important;
+}
+#appRoot .recipe-table th,
+#appRoot .recipe-table td,
+#appRoot .delivery-table th,
+#appRoot .delivery-table td{
+  padding:8px 10px!important;
+}
+@media(max-width:900px){
+  #appRoot .recipe-card,
+  #appRoot .delivery-supplier-card{
+    overflow-x:auto!important;
+    -webkit-overflow-scrolling:touch;
+  }
+  #appRoot .recipe-table,
+  #appRoot .delivery-table{
+    width:max-content!important;
+    min-width:100%!important;
+    table-layout:auto!important;
+  }
+  #appRoot .recipe-table th,
+  #appRoot .recipe-table td,
+  #appRoot .delivery-table th,
+  #appRoot .delivery-table td{
+    min-width:110px!important;
+    max-width:260px!important;
+  }
+}
+@media(max-width:560px){
+  #appRoot .recipe-table th,
+  #appRoot .recipe-table td,
+  #appRoot .delivery-table th,
+  #appRoot .delivery-table td{
+    min-width:96px!important;
+    max-width:220px!important;
+    padding:7px 8px!important;
+    font-size:13px!important;
+  }
+}
+
+/* Replacement navbar logo */
+.navbar-brand-image{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  flex:0 0 auto!important;
+  min-width:0!important;
+}
+.navbar-logo-custom{
+  display:block!important;
+  width:auto!important;
+  height:54px!important;
+  max-width:min(260px,38vw)!important;
+  object-fit:contain!important;
+}
+@media(max-width:760px){
+  .navbar-logo-custom{height:44px!important;max-width:180px!important}
+}
+
+/* Header brand image pair */
+.brand-images{display:flex!important;align-items:center!important;gap:8px!important;flex:0 0 auto}
+.brand-front-logo{height:46px!important;width:auto!important;object-fit:contain!important;display:block!important}
+.brand-yothe-image{height:36px!important;width:auto!important;object-fit:contain!important;display:block!important}
+@media(max-width:760px){
+  .brand-images{gap:5px!important}
+  .brand-front-logo{height:38px!important}
+  .brand-yothe-image{height:30px!important}
+}
+
+/* Production Net Quantity */
+.production-meta{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  border-bottom:1px solid #d1d5db;
+}
+.production-meta .note{
+  margin:0!important;
+  border-radius:0!important;
+  text-align:center!important;
+  font-weight:800;
+}
+.production-meta .note+ .note{
+  border-left:1px solid #d1d5db;
+}
+@media(max-width:560px){
+  .production-meta{grid-template-columns:1fr}
+  .production-meta .note+ .note{border-left:0;border-top:1px solid #d1d5db}
+}
+
+/* Production ratio */
+.ratio-table-wrap{max-width:100%;overflow:hidden}
+.ratio-sheet{max-width:100%;overflow:hidden}
+.ratio-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ratio-table{width:100%;min-width:920px;border-collapse:collapse;table-layout:auto}
+.ratio-table th,.ratio-table td{padding:10px 12px;border:1px solid #e5e7eb;vertical-align:middle;white-space:normal;word-break:break-word}
+.ratio-table th{text-align:center!important;font-weight:900}
+.ratio-table td:nth-child(3){min-width:280px}
+.ratio-table .num{text-align:center}
+@media(max-width:760px){
+  .ratio-table{min-width:860px}
+  .ratio-table th,.ratio-table td{padding:8px;font-size:13px}
+}
+
+/* Drink formula map */
+.drink-map-wrap{display:grid;gap:18px}
+.drink-map-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:18px;
+  align-items:start;
+}
+.drink-map-group{
+  background:#fff;
+  border:1px solid #eadedb;
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 8px 28px rgba(77,25,18,.07);
+  min-width:0;
+}
+.drink-map-group-head{
+  padding:16px 14px;
+  text-align:center;
+  font-size:20px;
+  font-weight:900;
+  color:#fff;
+  background:var(--red);
+}
+.drink-map-group-sub{
+  padding:8px 12px;
+  text-align:center;
+  font-size:12px;
+  font-weight:800;
+  color:#7f1d1d;
+  background:#fff7f5;
+  border-bottom:1px solid #f0ded9;
+}
+.drink-map-items{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  padding:12px;
+}
+.drink-map-card{
+  display:grid;
+  grid-template-rows:110px auto;
+  background:#fff;
+  border:1px solid #eee2df;
+  border-radius:14px;
+  overflow:hidden;
+  cursor:pointer;
+  min-width:0;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+.drink-map-card:hover{
+  transform:translateY(-3px);
+  border-color:#e7aaa3;
+  box-shadow:0 8px 18px rgba(77,25,18,.10);
+}
+.drink-map-image{
+  display:grid;
+  place-items:center;
+  background:#faf7f6;
+  overflow:hidden;
+}
+.drink-map-image img{width:100%;height:100%;object-fit:contain}
+.drink-map-image .drink-map-noimg{font-size:28px;opacity:.45}
+.drink-map-name{
+  padding:9px 8px;
+  text-align:center;
+  font-weight:900;
+  font-size:13px;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+.drink-map-empty{padding:24px;text-align:center;color:#9ca3af;font-weight:800}
+@media(max-width:980px){
+  .drink-map-grid{grid-template-columns:1fr}
+  .drink-map-items{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:640px){
+  .drink-map-items{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .drink-map-card{grid-template-rows:95px auto}
+}
+
+/* Brand image-only safety */
+.brand{font-size:0!important}
+.brand span{display:none!important}
+.brand img{font-size:0;color:transparent}
+
+/* Left sidebar navigation */
+:root{--sidebar-w:248px}
+#appRoot{min-height:100vh}
+.topbar{
+  position:fixed!important;
+  left:0!important;
+  top:0!important;
+  bottom:0!important;
+  width:var(--sidebar-w)!important;
+  height:100vh!important;
+  z-index:80!important;
+  border-right:1px solid var(--line)!important;
+  border-bottom:0!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  background:rgba(255,253,248,.98)!important;
+}
+.nav{
+  width:100%!important;
+  max-width:none!important;
+  min-height:100%!important;
+  margin:0!important;
+  padding:18px 14px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:flex-start!important;
+  gap:14px!important;
+}
+.nav .brand{
+  width:100%!important;
+  justify-content:center!important;
+  padding:4px 6px 14px!important;
+  border-bottom:1px solid var(--line)!important;
+}
+.navbar-logo-custom{
+  display:block!important;
+  width:min(205px,100%)!important;
+  max-height:92px!important;
+  object-fit:contain!important;
+}
+.navlinks{
+  width:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:6px!important;
+  overflow:visible!important;
+  padding:0!important;
+}
+.navlinks button,.navlinks a{
+  width:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  text-align:left!important;
+  padding:11px 13px!important;
+  border-radius:12px!important;
+  white-space:normal!important;
+  text-decoration:none!important;
+}
+.navlinks button:hover,.navlinks button.active,.navlinks a:hover{
+  background:var(--red)!important;
+  color:#fff!important;
+}
+.sound-toggle{
+  width:100%!important;
+  justify-content:center!important;
+  color:var(--red)!important;
+  background:#fff!important;
+  border:1px solid #f0c5c0!important;
+}
+.userbox{
+  width:100%!important;
+  margin-top:auto!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:8px!important;
+  white-space:normal!important;
+  text-align:center!important;
+}
+.userbox .btn{width:100%!important}
+main{
+  max-width:none!important;
+  margin-left:var(--sidebar-w)!important;
+  padding:30px 28px 70px!important;
+}
+.story-logo{top:30px!important}
+@media(max-width:900px){
+  :root{--sidebar-w:210px}
+  main{padding:24px 18px 60px!important}
+}
+@media(max-width:680px){
+  :root{--sidebar-w:176px}
+  .topbar{width:var(--sidebar-w)!important}
+  .nav{padding:12px 9px!important;gap:10px!important}
+  .navbar-logo-custom{width:min(150px,100%)!important;max-height:72px!important}
+  .navlinks button,.navlinks a{font-size:12px!important;padding:9px 8px!important}
+  .sound-toggle{padding:8px!important}
+  .sound-toggle .sound-label{display:inline!important;font-size:11px!important}
+  main{padding:18px 12px 50px!important}
+}
+
+/* Professional theme polish - preserve Yothe colors */
+:root{
+  --pro-border:rgba(122,96,78,.16);
+  --pro-shadow:0 12px 32px rgba(67,53,37,.08);
+  --pro-shadow-hover:0 18px 38px rgba(67,53,37,.12);
+}
+body{
+  letter-spacing:.001em;
+}
+.topbar{
+  background:rgba(255,253,248,.985)!important;
+  border-right:1px solid var(--pro-border)!important;
+  box-shadow:8px 0 28px rgba(67,53,37,.07)!important;
+}
+.nav{
+  gap:12px!important;
+  padding:18px 14px!important;
+}
+.nav .brand{
+  border-bottom:1px solid var(--pro-border)!important;
+  padding:6px 8px 16px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.navbar-logo-custom{
+  max-height:84px!important;
+  filter:none!important;
+}
+.navlinks{
+  gap:6px!important;
+  padding:4px 0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.navlinks button,.navlinks a{
+  min-height:42px;
+  padding:10px 12px!important;
+  border-radius:10px!important;
+  font-weight:800!important;
+  transition:background .16s ease,color .16s ease,transform .16s ease,box-shadow .16s ease!important;
+}
+.navlinks button:hover,.navlinks a:hover{
+  transform:translateX(3px)!important;
+  background:var(--red-soft)!important;
+  color:var(--red)!important;
+}
+.navlinks button.active{
+  background:var(--red)!important;
+  color:#fff!important;
+  box-shadow:0 8px 18px rgba(180,38,34,.16)!important;
+  transform:none!important;
+}
+.navlinks button:before,.navlinks a:before,
+.navlinks button:after,.navlinks a:after{
+  display:none!important;
+}
+.sound-toggle{
+  min-height:40px!important;
+  border-radius:10px!important;
+  box-shadow:none!important;
+}
+.userbox{
+  padding-top:12px!important;
+  border-top:1px solid var(--pro-border);
+}
+.userbox .btn{
+  border-radius:10px!important;
+}
+main{
+  padding-top:34px!important;
+}
+.story,.sheet,.card,.attachment-card,.delivery-wrap,.ratio-table-wrap,.drink-map-group{
+  border-color:var(--pro-border)!important;
+  box-shadow:var(--pro-shadow)!important;
+}
+.story{
+  border-radius:18px!important;
+}
+.sheet,.card,.attachment-card{
+  border-radius:14px!important;
+}
+.sheet:hover,.card:hover,.attachment-card:hover{
+  transform:translateY(-2px)!important;
+  box-shadow:var(--pro-shadow-hover)!important;
+}
+.section-head{
+  padding-bottom:8px;
+  border-bottom:1px solid var(--pro-border);
+}
+.section-head h2{
+  font-weight:900;
+  letter-spacing:-.01em;
+}
+.section-head h2:after{
+  height:2px!important;
+  width:48px!important;
+}
+.sheet-title{
+  padding:12px 14px!important;
+  font-size:16px!important;
+  letter-spacing:.01em!important;
+}
+th{
+  font-weight:800!important;
+}
+.btn,.enter-btn,.viewer-nav,.viewer-close{
+  transition:transform .15s ease,box-shadow .15s ease,background .15s ease!important;
+}
+.btn:hover,.enter-btn:hover,.viewer-nav:hover,.viewer-close:hover{
+  transform:translateY(-1px);
+}
+.view.active{
+  animation:yotheFadeIn .2s ease both!important;
+}
+.story,.sheet,.card,.attachment-card,.home-entry{
+  animation:yotheFadeUp .28s ease both!important;
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
+/* Yothé motion & color refresh */
+:root{
+  --yothe-pink:#ffe7ea;
+  --yothe-cream:#fffaf4;
+  --yothe-gold:#f7c96f;
+  --yothe-green:#7fb685;
+  --yothe-shadow:0 14px 34px rgba(125,35,40,.12);
+}
+body{
+  background:
+    radial-gradient(circle at 10% 10%,rgba(255,214,220,.46),transparent 26%),
+    radial-gradient(circle at 90% 16%,rgba(247,201,111,.20),transparent 24%),
+    linear-gradient(180deg,#fffaf7 0%,#fff 46%,#fff9f5 100%);
+}
+.topbar{
+  position:sticky;
+  top:0;
+  z-index:80;
+  backdrop-filter:blur(12px);
+  box-shadow:0 8px 26px rgba(70,25,25,.10);
+}
+.brand{
+  transition:transform .24s ease,filter .24s ease;
+}
+.brand:hover{
+  transform:translateY(-2px) scale(1.025);
+  filter:drop-shadow(0 5px 8px rgba(130,25,30,.18));
+}
+.brand-cat{
+  animation:yotheCatFloat 3.4s ease-in-out infinite;
+  transform-origin:50% 85%;
+}
+.brand-wordmark{
+  transition:transform .25s ease;
+}
+.brand:hover .brand-wordmark{transform:translateX(3px)}
+.navlinks button,.navlinks a{
+  position:relative;
+  overflow:hidden;
+  transition:transform .2s ease,box-shadow .2s ease,background .2s ease,color .2s ease;
+}
+.navlinks button:hover,.navlinks a:hover{
+  transform:translateY(-2px);
+  box-shadow:0 7px 16px rgba(150,35,40,.14);
+}
+.navlinks button::after,.navlinks a::after{
+  content:"";
+  position:absolute;
+  left:14%;right:14%;bottom:4px;height:2px;
+  border-radius:999px;
+  background:currentColor;
+  transform:scaleX(0);
+  transform-origin:center;
+  transition:transform .22s ease;
+  opacity:.65;
+}
+.navlinks button:hover::after,.navlinks a:hover::after{transform:scaleX(1)}
+.view.active{
+  animation:yothePageIn .38s cubic-bezier(.2,.8,.2,1) both;
+}
+.story article,.story-logo,.recipe-card,.card,.delivery-supplier-card,.attachment-card{
+  transition:transform .24s ease,box-shadow .24s ease,border-color .24s ease;
+}
+.story article:hover,.story-logo:hover,.recipe-card:hover,.card:hover,.delivery-supplier-card:hover,.attachment-card:hover{
+  transform:translateY(-4px);
+  box-shadow:var(--yothe-shadow);
+}
+.story{
+  position:relative;
+}
+.story::before,.story::after{
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  border-radius:50%;
+  z-index:0;
+  opacity:.34;
+}
+.story::before{
+  width:120px;height:120px;
+  right:4%;top:2%;
+  background:radial-gradient(circle,#ffd0d8 0 36%,transparent 38%);
+  animation:yotheDrift 7s ease-in-out infinite;
+}
+.story::after{
+  width:76px;height:76px;
+  left:2%;bottom:4%;
+  background:radial-gradient(circle,#f7c96f 0 32%,transparent 35%);
+  animation:yotheDrift 6s ease-in-out infinite reverse;
+}
+.story>*{position:relative;z-index:1}
+.enter-btn,.btn.primary,.viewer-nav,.viewer-close{
+  position:relative;
+  overflow:hidden;
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.enter-btn:hover,.btn.primary:hover,.viewer-nav:hover,.viewer-close:hover{
+  transform:translateY(-2px) scale(1.015);
+  box-shadow:0 10px 24px rgba(150,30,35,.20);
+}
+.enter-btn::before,.btn.primary::before{
+  content:"";
+  position:absolute;
+  inset:-120% -40%;
+  background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.55) 50%,transparent 62%);
+  transform:translateX(-55%);
+  animation:yotheShine 3.8s ease-in-out infinite;
+  pointer-events:none;
+}
+.section-head h2,.delivery-head h2{
+  position:relative;
+  display:inline-block;
+}
+.section-head h2::after,.delivery-head h2::after{
+  content:"";
+  position:absolute;
+  left:0;bottom:-5px;
+  width:42%;height:4px;
+  border-radius:999px;
+  background:linear-gradient(90deg,var(--red),var(--yothe-gold));
+  animation:yotheUnderline 2.8s ease-in-out infinite;
+}
+.popup-marker{
+  box-shadow:0 5px 16px rgba(150,25,30,.28),0 0 0 0 rgba(210,55,60,.28)!important;
+  animation:yotheMarkerPulse 2s ease-in-out infinite;
+}
+.sound-toggle{
+  transition:transform .2s ease,background .2s ease,box-shadow .2s ease;
+}
+.sound-toggle:hover{
+  transform:translateY(-2px) rotate(-2deg);
+  box-shadow:0 7px 16px rgba(80,20,20,.16);
+}
+@keyframes yotheCatFloat{
+  0%,100%{transform:translateY(0) rotate(0)}
+  35%{transform:translateY(-3px) rotate(-2deg)}
+  70%{transform:translateY(1px) rotate(2deg)}
+}
+@keyframes yothePageIn{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes yotheDrift{
+  0%,100%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(12px,-8px) scale(1.08)}
+}
+@keyframes yotheShine{
+  0%,55%{transform:translateX(-70%) rotate(5deg)}
+  75%,100%{transform:translateX(70%) rotate(5deg)}
+}
+@keyframes yotheUnderline{
+  0%,100%{width:36%;opacity:.75}
+  50%{width:64%;opacity:1}
+}
+@keyframes yotheMarkerPulse{
+  0%,100%{box-shadow:0 5px 16px rgba(150,25,30,.28),0 0 0 0 rgba(210,55,60,.28)}
+  50%{box-shadow:0 7px 18px rgba(150,25,30,.32),0 0 0 8px rgba(210,55,60,0)}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    scroll-behavior:auto!important;
+  }
+}
+@media(max-width:760px){
+  .story::before{width:74px;height:74px}
+  .story::after{width:48px;height:48px}
+  .story article:hover,.story-logo:hover,.recipe-card:hover,.card:hover,.delivery-supplier-card:hover,.attachment-card:hover{
+    transform:none;
+  }
+}
+
+/* ===== YOTHE CAFE THEME v1 ===== */
+:root{
+  --yothe-red:#c91f26;
+  --yothe-red-dark:#97171c;
+  --yothe-red-soft:#fff1f1;
+  --yothe-cream:#fff8ed;
+  --yothe-milk:#fffdf9;
+  --yothe-cocoa:#49362f;
+  --yothe-taupe:#8a756b;
+  --yothe-line:#eadbd3;
+  --yothe-gold:#d4a85f;
+  --red:var(--yothe-red);
+  --red-soft:var(--yothe-red-soft);
+  --ink:var(--yothe-cocoa);
+  --muted:var(--yothe-taupe);
+  --line:var(--yothe-line);
+  --bg:var(--yothe-cream);
+  --paper:var(--yothe-milk);
+  --radius:20px;
+  --shadow:0 14px 38px rgba(117,63,49,.10);
+}
+body{
+  color:var(--yothe-cocoa)!important;
+  background:
+    radial-gradient(circle at 12% 8%,rgba(201,31,38,.055) 0 110px,transparent 111px),
+    radial-gradient(circle at 90% 18%,rgba(212,168,95,.08) 0 140px,transparent 141px),
+    linear-gradient(180deg,#fffaf3 0%,#fff7ec 52%,#fffdf9 100%)!important;
+}
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  opacity:.22;
+  background-image:
+    radial-gradient(circle,rgba(201,31,38,.11) 1px,transparent 1.2px);
+  background-size:26px 26px;
+  mask-image:linear-gradient(to bottom,rgba(0,0,0,.28),transparent 48%);
+  z-index:-1;
+}
+.topbar{
+  background:rgba(255,253,249,.94)!important;
+  border-bottom:1px solid rgba(201,31,38,.13)!important;
+  box-shadow:0 8px 28px rgba(105,56,44,.08)!important;
+}
+.nav{
+  min-height:82px!important;
+  max-width:1500px!important;
+  gap:16px!important;
+}
+.brand{
+  gap:10px!important;
+  color:var(--yothe-red)!important;
+}
+.brand img.brand-cat{
+  width:42px!important;
+  height:48px!important;
+  filter:drop-shadow(0 3px 7px rgba(121,24,27,.12));
+}
+.brand img.brand-wordmark{
+  width:142px!important;
+  padding:5px 9px!important;
+  border-radius:12px!important;
+  background:var(--yothe-red)!important;
+  box-shadow:0 6px 16px rgba(201,31,38,.14);
+}
+.brand span{
+  font-size:12px!important;
+  letter-spacing:.08em;
+  color:#8e7167!important;
+  border-left:1px solid #eadbd3;
+  padding-left:9px;
+}
+.navlinks{
+  gap:7px!important;
+  scrollbar-color:#e8aaa8 transparent;
+}
+.navlinks button,.navlinks a{
+  border:1px solid transparent!important;
+  border-radius:999px!important;
+  padding:9px 13px!important;
+  color:#a51d22!important;
+  background:transparent!important;
+  font-weight:850!important;
+}
+.navlinks button:hover,.navlinks a:hover{
+  background:#fff1f1!important;
+  border-color:#f3c8c8!important;
+  color:#9b161c!important;
+}
+.navlinks button.active{
+  color:#fff!important;
+  background:linear-gradient(180deg,#d93036,#bd1820)!important;
+  border-color:#b7171d!important;
+  box-shadow:0 7px 16px rgba(201,31,38,.20)!important;
+}
+.sound-toggle{
+  background:#fff!important;
+  color:var(--yothe-red)!important;
+  border:1px solid #efc6c5!important;
+  box-shadow:0 5px 13px rgba(201,31,38,.08);
+}
+.sound-toggle.muted{
+  color:#806e66!important;
+  border-color:#ded2cb!important;
+  background:#faf7f4!important;
+}
+main{
+  max-width:1280px!important;
+  padding-top:34px!important;
+}
+.story{
+  border:1px solid #ead8cf!important;
+  border-radius:28px!important;
+  padding:48px 50px!important;
+  box-shadow:0 20px 55px rgba(108,63,44,.10)!important;
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.98),rgba(255,248,239,.98))!important;
+}
+.story:before{
+  width:8px!important;
+  background:linear-gradient(180deg,#c91f26 0%,#e84d51 58%,#d4a85f 100%)!important;
+}
+.story:after{
+  content:"YOTHÉ";
+  position:absolute;
+  right:28px;
+  bottom:-20px;
+  font-size:92px;
+  line-height:1;
+  font-weight:950;
+  letter-spacing:.08em;
+  color:rgba(201,31,38,.035);
+  pointer-events:none;
+}
+.story h1{
+  color:var(--yothe-red)!important;
+  letter-spacing:.01em!important;
+}
+.story-copy p{
+  color:#59433b!important;
+}
+.story-logo img{
+  filter:drop-shadow(0 14px 20px rgba(130,35,37,.10));
+}
+.home-entry .enter-btn{
+  border-radius:999px!important;
+  border:1px solid #a8141a!important;
+  background:linear-gradient(180deg,#db3339 0%,#bd1820 100%)!important;
+  box-shadow:0 12px 26px rgba(201,31,38,.22)!important;
+  min-width:290px!important;
+}
+.section-head{
+  align-items:center!important;
+  padding:4px 2px 2px;
+}
+.section-head h2{
+  color:#4b3530!important;
+  letter-spacing:.01em;
+}
+.section-head h2:after{
+  width:78px!important;
+  height:5px!important;
+  background:linear-gradient(90deg,#c91f26 0 68%,#d4a85f 68% 100%)!important;
+}
+.section-head p{
+  color:#8a756b!important;
+}
+.grid,.cards,.attachment-grid{
+  gap:18px!important;
+}
+.sheet,.card,.attachment-card,.delivery-supplier-card{
+  border:1px solid #eadbd3!important;
+  border-radius:20px!important;
+  overflow:hidden!important;
+  background:#fffdfa!important;
+  box-shadow:0 12px 30px rgba(105,63,48,.08)!important;
+}
+.sheet{
+  border-top:0!important;
+}
+.sheet-title{
+  background:linear-gradient(135deg,#c91f26,#df4248)!important;
+  padding:13px 14px!important;
+  font-size:18px!important;
+  letter-spacing:.015em!important;
+}
+.sheet-body{
+  background:#fffdfa!important;
+}
+table{
+  background:#fff!important;
+}
+th{
+  background:#c91f26!important;
+  color:#fff!important;
+  border-color:#ad171d!important;
+  font-weight:900!important;
+}
+td{
+  background:#fffdf9;
+  border-color:#eadbd3!important;
+}
+tr:nth-child(even) td{
+  background:#fff9f3;
+}
+.note{
+  background:#fff0c9!important;
+  color:#9f2a1d!important;
+  border-top:1px solid #f0d398;
+}
+.card{
+  padding:20px!important;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+.card:hover,.attachment-card:hover{
+  transform:translateY(-3px);
+  border-color:#e3b9b6!important;
+  box-shadow:0 18px 38px rgba(105,63,48,.13)!important;
+}
+.card h3,.attachment-title{
+  color:#4d342e!important;
+}
+.attachment-open,.viewer-close{
+  border-radius:999px!important;
+  background:linear-gradient(180deg,#d72d34,#bd1820)!important;
+  box-shadow:0 7px 16px rgba(201,31,38,.15);
+}
+.search,.input{
+  border:1px solid #dfd0c8!important;
+  border-radius:14px!important;
+  background:#fffdfa!important;
+}
+.search:focus,.input:focus{
+  outline:none!important;
+  border-color:#d97b7d!important;
+  box-shadow:0 0 0 4px rgba(201,31,38,.08)!important;
+}
+.login-card,.welcome-card{
+  background:#fffdf9!important;
+  border:1px solid #ead8cf!important;
+  border-radius:28px!important;
+  box-shadow:0 28px 80px rgba(78,37,30,.20)!important;
+}
+.login-card h1,.welcome-card h2{
+  color:var(--yothe-red)!important;
+}
+.primary{
+  background:linear-gradient(180deg,#d93238,#bd1820)!important;
+  border-radius:999px!important;
+}
+.secondary{
+  border-color:#efc6c5!important;
+  color:#a51d22!important;
+  background:#fff!important;
+  border-radius:999px!important;
+}
+.state{
+  border:1px dashed #e1c9bf!important;
+  background:#fffaf5!important;
+  border-radius:20px!important;
+}
+.attachment-viewer-card{
+  border-radius:24px!important;
+  border:1px solid rgba(255,255,255,.55);
+}
+.viewer-nav{
+  border-radius:999px!important;
+  border-color:#efc6c5!important;
+  color:#a51d22!important;
+}
+.delivery-wrap{
+  background:transparent;
+}
+.delivery-head{
+  border-radius:22px!important;
+}
+@media(max-width:900px){
+  .story{
+    padding:32px 24px!important;
+    border-radius:22px!important;
+  }
+  .story:after{font-size:58px;right:12px}
+  .nav{
+    min-height:auto!important;
+  }
+}
+@media(max-width:600px){
+  main{padding:20px 12px 52px!important}
+  .story{padding:26px 18px!important}
+  .story h1{font-size:34px!important}
+  .home-entry .enter-btn{min-width:min(290px,90vw)!important}
+  .sheet,.card,.attachment-card{border-radius:16px!important}
+}
+
+/* Yothé playful UI enhancements: compositor-friendly motion. */
+@keyframes yotheGentleBob{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-8px) rotate(1.5deg)}}
+@keyframes yotheSoftPulse{0%,100%{box-shadow:0 8px 24px rgba(201,48,44,.14)}50%{box-shadow:0 13px 29px rgba(201,48,44,.27)}}
+@keyframes yotheSparkle{0%,100%{opacity:.2;transform:translateY(0)}50%{opacity:.75;transform:translateY(-9px)}}
+@keyframes yotheNewEntry{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes yotheLightSweep{0%,75%{transform:translateX(-170%) skewX(-23deg)}100%{transform:translateX(270%) skewX(-23deg)}}
+body .story{position:relative;isolation:isolate}
+body .story::before,body .story::after{content:"✦";position:absolute;pointer-events:none;color:#d3a052;animation:yotheSparkle 5s ease-in-out infinite}
+body .story::before{top:12%;right:29%;font-size:21px}
+body .story::after{bottom:12%;right:8%;font-size:15px;animation-delay:-2.5s}
+body .story-logo img{animation:yotheGentleBob 5s ease-in-out infinite;transform-origin:50% 75%}
+body .home-entry .enter-btn{position:relative;isolation:isolate;overflow:hidden;animation:yotheSoftPulse 3.8s ease-in-out infinite;transition:transform .23s ease}
+body .home-entry .enter-btn::after{content:"";position:absolute;inset:0;width:44%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);pointer-events:none;animation:yotheLightSweep 5s ease-in-out infinite}
+body .home-entry .enter-btn:hover{transform:translateY(-3px) scale(1.025)}
+body .navlinks button,body .navlinks a{transition:transform .2s ease,box-shadow .2s ease}
+body .navlinks button:hover,body .navlinks a:hover{transform:translateY(-2px)}
+body .navbar-brand-image img{transition:transform .3s ease}
+body .navbar-brand-image:hover img{transform:rotate(-3deg) scale(1.04)}
+body .view.active .section-head{animation:yotheNewEntry .36s ease-out both}
+@media(hover:hover) and (pointer:fine){body .view.active .attachment-card,body .view.active .card{transition:transform .22s ease,box-shadow .22s ease}body .view.active .attachment-card:hover,body .view.active .card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(74,58,39,.12)}}
+@media(prefers-reduced-motion:reduce){body .story-logo img,body .story::before,body .story::after,body .home-entry .enter-btn,body .home-entry .enter-btn::after,body .view.active .section-head{animation:none!important}body .navlinks button,body .navlinks a,body .navbar-brand-image img,body .home-entry .enter-btn,body .view.active .card,body .view.active .attachment-card{transition:none!important}}
+
+
+/* Yothé Clay World — soft sculpted / handmade visual system */
+:root{--red:#c93638;--red-soft:#ffe1dd;--ink:#49312d;--muted:#866b62;--line:#eccfc0;--bg:#fff1e2;--paper:#fffaf2;--radius:26px;--shadow:0 9px 0 #edc8b6,0 17px 30px rgba(114,67,55,.13)}
+body{background:radial-gradient(circle at 12% 12%,#fff9e8 0 12%,transparent 32%),radial-gradient(circle at 94% 38%,#f9d8d0 0,transparent 30%),linear-gradient(145deg,#fff1e2,#ffe9df 60%,#fff5e9);color:var(--ink)}
+.topbar{background:rgba(255,245,230,.96);border-bottom:3px solid #e7b9a5;box-shadow:0 5px 0 #f8d5c4,0 9px 17px rgba(110,69,47,.12)}
+.story,.sheet,.card,.attachment-card,.login-card,.welcome-card{border:2px solid #f0cdbb;border-radius:30px;background:linear-gradient(150deg,#fffef8,#fff4e7);box-shadow:0 8px 0 #e9c1ae,0 18px 32px rgba(110,64,46,.12)}
+.story{background:radial-gradient(circle at 93% 6%,rgba(255,213,179,.55),transparent 37%),linear-gradient(150deg,#fffdf8,#fff2e4);border-radius:38px}
+.story h1,.section-head h2{color:#b93434;text-shadow:0 3px 0 #ffe0cf;letter-spacing:-.025em}
+.story::before{width:9px!important;background:linear-gradient(#f9af8e,#d5524a,#f2bfa6)!important;border-radius:14px}
+.navlinks button,.navlinks a{border-radius:18px;border:2px solid transparent}
+.navlinks button:hover,.navlinks button.active{background:linear-gradient(165deg,#ec7469,#c93638);border-color:#b93536;color:white;box-shadow:inset 0 2px 3px rgba(255,255,255,.38),0 4px 0 #a82e32,0 7px 14px rgba(138,49,49,.15)}
+.btn,.enter-btn,.attachment-open,.viewer-nav{border-radius:19px!important;transition:transform .2s ease,box-shadow .2s ease,filter .2s ease}
+.btn.primary,.home-entry .enter-btn{background:linear-gradient(165deg,#ec796b,#c93638);border:2px solid #bd3b3a;border-radius:23px!important;box-shadow:inset 0 3px 3px rgba(255,255,255,.32),0 7px 0 #a62d30,0 13px 19px rgba(122,39,38,.18);color:#fff;text-shadow:0 1px 1px rgba(90,0,0,.2)}
+.btn.secondary{background:linear-gradient(#fffef9,#ffeddf);border:2px solid #e7bca9;box-shadow:0 4px 0 #edd0be;color:#b93434}
+.btn:active,.home-entry .enter-btn:active{transform:translateY(4px)!important;box-shadow:0 2px 0 #a62d30!important}
+.input,input,select,textarea{accent-color:#c93638}
+.input{border:2px solid #e9c5b2;border-radius:17px;background:#fffaf4;box-shadow:inset 0 2px 5px rgba(125,70,48,.06)}
+.story-logo img{filter:drop-shadow(0 11px 3px rgba(154,102,83,.18))}
+.sheet,.card,.attachment-card{overflow-wrap:anywhere}
+@media(hover:hover) and (pointer:fine){.card:hover,.attachment-card:hover,.sheet:hover{filter:saturate(1.05);box-shadow:0 11px 0 #e8bca7,0 22px 36px rgba(110,64,46,.16)}}
+@media(max-width:600px){.story{border-radius:26px;padding:22px}.story,.sheet,.card,.attachment-card{box-shadow:0 5px 0 #e9c1ae,0 11px 20px rgba(110,64,46,.10)}}
+@media(prefers-reduced-motion:reduce){.story-logo img,.story::after{animation:none!important}}
+
+
+/* Clay World V2: unmistakable soft-modelled depth across page sections */
+.yothe-clay-world .story{border:4px solid #f1c5b0;background:radial-gradient(circle at 87% 12%,#ffdbbf 0,transparent 33%),linear-gradient(160deg,#fffcf1,#ffe8d9);box-shadow:inset 0 5px 8px rgba(255,255,255,.95),0 12px 0 #e6af96,0 21px 35px rgba(126,73,53,.2)}
+.yothe-clay-world .sheet,.yothe-clay-world .card,.yothe-clay-world .attachment-card{border:3px solid #ebbea6;background:linear-gradient(150deg,#fffdf6,#ffead8);box-shadow:inset 0 4px 5px rgba(255,255,255,.92),0 7px 0 #dfa98f,0 15px 24px rgba(123,68,49,.13)}
+.yothe-clay-world .topbar{background:linear-gradient(180deg,#fff7ec,#ffe7d7);border-bottom:4px solid #e0b09c;box-shadow:0 6px 0 rgba(227,177,157,.35),0 12px 18px rgba(125,69,47,.11)}
+.yothe-clay-world .section-head h2{display:inline-block;padding:10px 20px;border-radius:24px;background:linear-gradient(#fffaf3,#ffdfce);box-shadow:0 5px 0 #e8b49d;border:2px solid #ebc5ae}
+.yothe-clay-world .navlinks button,.yothe-clay-world .navlinks a{border-radius:20px;background:#fff3e8;border:2px solid #efcbb8;box-shadow:0 3px 0 #dfb59f}
+.yothe-clay-world .navlinks button.active,.yothe-clay-world .navlinks button:hover{background:linear-gradient(#e87d6f,#c93638);border-color:#b83738;box-shadow:inset 0 3px 2px rgba(255,255,255,.3),0 4px 0 #a73435;color:#fff}
+
+
+/* Responsive Clay: phone / tablet / desktop */
+html,body{max-width:100%}body{overflow-x:hidden}
+.view,.story,.sheet,.card,.attachment-card,.attachment-grid,.grid,.cards{min-width:0}
+img,video,iframe{max-width:100%}
+@media(max-width:1024px){
+ .nav{display:flex!important;flex-wrap:wrap;gap:8px 12px;padding:9px 14px;min-height:0}
+ .navbar-brand-image{flex:0 0 auto}
+ .navbar-logo-custom{max-width:min(200px,45vw)!important;height:auto!important}
+ .navlinks{order:3;flex:1 0 100%;width:100%;padding:7px 0;gap:7px;overflow-x:auto;scrollbar-width:thin}
+ .navlinks button,.navlinks a{min-height:42px;display:inline-flex;align-items:center;padding:9px 13px}
+ .userbox{margin-left:auto;min-width:0}
+ main{max-width:100%;padding:22px 16px 50px}
+ .story{grid-template-columns:minmax(0,1fr) minmax(160px,30%);gap:18px;padding:28px}
+ .grid,.cards,.attachment-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .attachment-viewer-card,.object-focus-card{max-width:calc(100vw - 24px)}
+}
+@media(max-width:600px){
+ .nav{padding:8px 10px}
+ .navbar-logo-custom{max-width:155px!important}
+ .sound-toggle{min-height:40px}
+ .userbox{font-size:11px;gap:4px}
+ .navlinks{scroll-snap-type:x proximity}
+ .navlinks button,.navlinks a{scroll-snap-align:start;font-size:13px;min-height:44px}
+ main{padding:14px 10px 42px!important}
+ .story{display:flex!important;flex-direction:column;gap:12px;border-radius:24px!important;padding:20px 15px!important}
+ .story article{min-width:0;width:100%}
+ .story h1{font-size:clamp(27px,8vw,36px)!important;margin-bottom:14px}
+ .story-copy p{font-size:15px!important;line-height:1.7}
+ .story-logo{position:static;width:100%;align-items:center}
+ .story-logo img{width:min(205px,56vw);max-height:220px}
+ .home-entry .enter-btn{width:min(100%,360px);min-width:0!important;min-height:48px}
+ .grid,.cards,.attachment-grid{grid-template-columns:minmax(0,1fr)!important}
+ .section-head{align-items:flex-start;flex-wrap:wrap}
+ .section-head h2{font-size:clamp(23px,7vw,30px)}
+ .sheet,.card,.attachment-card{border-radius:22px!important}
+ .login-card,.welcome-card{width:min(100%,420px);max-height:calc(100dvh - 26px);overflow-y:auto;padding:20px}
+ .attachments,.attachment-viewer-body{min-width:0}
+ .sheet{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+ .sheet table{width:max-content;min-width:100%}
+ .attachment-viewer{padding:8px}
+}
+@media(max-width:380px){.navbar-logo-custom{max-width:125px!important}.nav{gap:6px}.userbox{font-size:10px}}
+
+
+/* FINAL NAV LAYOUT: override legacy fixed-left-sidebar rules on all screen sizes */
+:root{--sidebar-w:0px!important}
+#appRoot{min-height:100dvh!important}
+#appRoot>.topbar{position:sticky!important;top:0!important;left:auto!important;right:auto!important;bottom:auto!important;width:100%!important;height:auto!important;max-height:none!important;overflow:visible!important;border-right:0!important;border-bottom:3px solid #e6b8a2!important;box-shadow:0 5px 15px rgba(105,57,43,.13)!important;background:linear-gradient(180deg,#fff7ec,#ffe8d8)!important}
+#appRoot>.topbar>.nav{display:flex!important;flex-flow:row wrap!important;align-items:center!important;justify-content:flex-start!important;width:100%!important;max-width:1600px!important;min-height:70px!important;margin:auto!important;padding:9px 16px!important;gap:8px 14px!important}
+#appRoot .nav .brand{width:auto!important;flex:0 0 auto!important;align-self:center!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important}
+#appRoot .navbar-logo-custom{width:auto!important;max-width:min(185px,34vw)!important;max-height:62px!important;object-fit:contain!important}
+#appRoot .navlinks{order:2!important;flex:1 1 600px!important;display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:flex-start!important;align-self:center!important;gap:7px!important;width:auto!important;min-width:0!important;overflow-x:auto!important;overflow-y:hidden!important;padding:6px 0!important;scrollbar-width:thin!important;overscroll-behavior-x:contain!important}
+#appRoot .navlinks button,#appRoot .navlinks a{display:inline-flex!important;flex:0 0 auto!important;width:auto!important;min-height:42px!important;align-items:center!important;justify-content:center!important;text-align:center!important;padding:9px 13px!important;white-space:nowrap!important;border-radius:18px!important;transform:none!important}
+#appRoot .sound-toggle{order:3!important;flex:0 0 auto!important;width:auto!important;min-height:42px!important;margin:0!important;padding:7px 12px!important;align-self:center!important}
+#appRoot .userbox{order:4!important;flex:0 0 auto!important;width:auto!important;max-width:100%!important;margin:0!important;flex-direction:row!important;align-items:center!important;gap:8px!important;white-space:nowrap!important;text-align:left!important}
+#appRoot .userbox .btn{width:auto!important}
+#appRoot main{max-width:1440px!important;width:100%!important;margin:0 auto!important;padding:26px 22px 65px!important}
+#appRoot .story-logo{top:100px!important}
+@media(max-width:1100px){
+ #appRoot>.topbar>.nav{gap:7px 10px!important}
+ #appRoot .navlinks{order:5!important;flex:1 0 100%!important;width:100%!important;padding:4px 0 6px!important}
+ #appRoot .userbox{margin-left:auto!important}
+}
+@media(max-width:600px){
+ #appRoot>.topbar>.nav{padding:7px 10px!important;gap:6px 8px!important}
+ #appRoot .navbar-logo-custom{max-width:130px!important;max-height:52px!important}
+ #appRoot .navlinks button,#appRoot .navlinks a{min-height:44px!important;font-size:13px!important;padding:8px 12px!important}
+ #appRoot .sound-toggle{min-height:40px!important;padding:6px 9px!important}
+ #appRoot .userbox{font-size:11px!important;gap:5px!important}
+ #appRoot main{padding:14px 10px 45px!important}
+ #appRoot .story-logo{top:auto!important}
+}
+
+
+/* Yothé white + red identity, keeping top navigation and 3D affordances */
+:root{--red:#cf202c!important;--red-soft:#fff0f1!important;--ink:#292327!important;--muted:#70656a!important;--line:#e9d5d8!important;--bg:#fff!important;--paper:#fff!important;--shadow:0 6px 0 #f2dadd,0 14px 28px rgba(129,30,43,.09)!important}
+html body{background:#fff!important;color:#292327!important}
+#appRoot>.topbar{background:linear-gradient(180deg,#fff,#fff5f6)!important;border-bottom:3px solid #cf202c!important;box-shadow:0 5px 14px rgba(156,33,49,.1)!important}
+#appRoot .navlinks button,#appRoot .navlinks a{background:#fff!important;border:2px solid #f2d9dc!important;color:#be1d2b!important;box-shadow:0 3px 0 #f0d7db!important}
+#appRoot .navlinks button.active,#appRoot .navlinks button:hover,#appRoot .navlinks a:hover{background:linear-gradient(#ec4651,#c91c2a)!important;border-color:#b61826!important;color:#fff!important;box-shadow:0 4px 0 #a31622!important}
+#appRoot .sound-toggle{background:#fff!important;border-color:#e7c3c7!important;color:#c91c2a!important}
+.yothe-clay-world .story,.story{background:linear-gradient(155deg,#fff,#fff6f7)!important;border-color:#f0d2d6!important;box-shadow:inset 0 4px 5px #fff,0 8px 0 #f1d9dc,0 17px 28px rgba(116,32,44,.1)!important}
+.yothe-clay-world .sheet,.yothe-clay-world .card,.yothe-clay-world .attachment-card,.sheet,.card,.attachment-card,.login-card,.welcome-card{background:linear-gradient(155deg,#fff,#fff8f9)!important;border-color:#efd9dc!important;box-shadow:0 6px 0 #f2dfe1,0 13px 24px rgba(118,34,46,.08)!important}
+.yothe-clay-world .section-head h2{background:#fff5f6!important;border-color:#edcbd0!important;box-shadow:0 4px 0 #f3dade!important}
+.story h1,.section-head h2{color:#c91c2a!important;text-shadow:none!important}
+.btn.primary,.home-entry .enter-btn{background:linear-gradient(160deg,#ee4a56,#c91c2a)!important;border-color:#ba1827!important;box-shadow:inset 0 2px 3px rgba(255,255,255,.25),0 6px 0 #a41927,0 12px 20px rgba(149,24,39,.13)!important}
+.btn.secondary,.input{background:#fff!important;border-color:#ebccd0!important}
+
+
+/* Fit all top navigation items without horizontal scrolling */
+#appRoot>.topbar{overflow:visible!important}
+#appRoot>.topbar>.nav{max-width:100%!important;align-content:center!important}
+#appRoot .navlinks{flex:1 1 100%!important;order:5!important;width:100%!important;max-width:100%!important;display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;overflow:visible!important;justify-content:center!important;gap:7px 6px!important;scroll-snap-type:none!important;padding:6px 0 8px!important}
+#appRoot .navlinks button,#appRoot .navlinks a{flex:0 1 auto!important;width:auto!important;max-width:100%!important;white-space:normal!important;text-align:center!important;overflow-wrap:break-word!important;font-size:clamp(11px,1vw,14px)!important;line-height:1.25!important;padding:8px 10px!important;min-height:39px!important}
+#appRoot .sound-toggle{order:2!important;margin-left:auto!important}
+#appRoot .userbox{order:3!important}
+@media(max-width:600px){
+ #appRoot .navlinks{justify-content:center!important;gap:6px 5px!important}
+ #appRoot .navlinks button,#appRoot .navlinks a{font-size:12px!important;padding:7px 9px!important;min-height:40px!important}
+}
+
+
+/* Structured top navigation: grouped sections, all items visible without horizontal scroll */
+#appRoot .navlinks{display:flex!important;flex-flow:row wrap!important;align-items:stretch!important;justify-content:center!important;gap:10px!important;overflow:visible!important;padding:8px 0!important}
+#appRoot .nav-group{display:flex;flex:0 1 auto;flex-wrap:wrap;gap:5px 7px;align-items:center;justify-content:center;background:#fff;border:1px solid #ead6da;border-radius:18px;padding:8px 10px;box-shadow:0 2px 8px rgba(145,40,54,.05);min-width:0;max-width:100%}
+#appRoot .nav-group-label{flex-basis:100%;display:block;text-align:left;font-size:11px;font-weight:800;letter-spacing:.01em;color:#a5313d;padding:0 5px 3px;border-bottom:1px solid #f2e5e7}
+#appRoot .nav-group button,#appRoot .nav-group a{font-size:12px!important;line-height:1.25!important;padding:8px 10px!important;min-height:36px!important;border-radius:11px!important}
+#appRoot .nav-group[data-nav-group="home"]{background:#fff5f6}
+#appRoot .nav-group[data-nav-group="admin"]{background:#fff8f8}
+@media(max-width:800px){#appRoot .navlinks{gap:8px!important}#appRoot .nav-group{flex:1 1 260px;justify-content:flex-start}.nav-group-label{text-align:left}}
+@media(max-width:480px){#appRoot .nav-group{flex:1 1 100%;padding:8px}#appRoot .nav-group button,#appRoot .nav-group a{font-size:12px!important}}
+
+
+/* SIDE NAV LAYOUT — isolated preview, does not change production index.html */
+:root{--sidebar-preview-width:272px}
+#appRoot>.topbar{position:fixed!important;inset:0 auto 0 0!important;width:var(--sidebar-preview-width)!important;height:100dvh!important;overflow-y:auto!important;overflow-x:hidden!important;background:#fff!important;border-right:3px solid #d22635!important;border-bottom:0!important;box-shadow:5px 0 22px #500b171b!important}
+#appRoot>.topbar>.nav{display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;align-items:stretch!important;justify-content:flex-start!important;gap:12px!important;width:100%!important;min-height:100%!important;padding:18px 13px!important}
+#appRoot .nav .brand{width:100%!important;justify-content:center!important}
+#appRoot .navbar-logo-custom{max-width:195px!important;max-height:80px!important}
+#appRoot .navlinks{order:2!important;display:flex!important;flex-flow:column nowrap!important;justify-content:flex-start!important;align-items:stretch!important;flex:0 0 auto!important;width:100%!important;gap:10px!important;overflow:visible!important;padding:0!important}
+#appRoot .nav-group{display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;align-items:stretch!important;width:100%!important;max-width:100%!important;gap:5px!important;padding:10px!important}
+#appRoot .nav-group-label{width:100%;text-align:left!important}
+#appRoot .nav-group button,#appRoot .nav-group a{width:100%!important;justify-content:flex-start!important;text-align:left!important;min-height:37px!important;font-size:13px!important}
+#appRoot .sound-toggle{order:3!important;width:100%!important;margin:0!important}
+#appRoot .userbox{order:4!important;width:100%!important;flex-direction:column!important;align-items:stretch!important}
+#appRoot .userbox .btn{width:100%!important}
+#appRoot main{width:calc(100% - var(--sidebar-preview-width))!important;max-width:none!important;margin-left:var(--sidebar-preview-width)!important;margin-right:0!important;padding:22px 25px 60px!important}
+.side-preview-ribbon{position:fixed;bottom:12px;right:12px;z-index:99;background:#fff;border:2px solid #d22635;border-radius:999px;padding:6px 13px;color:#a71927;font-size:12px;font-weight:800;box-shadow:0 3px 12px #0002}
+.side-preview-mobile-toggle{display:none}
+@media(max-width:800px){
+ #appRoot>.topbar{transform:translateX(-102%);transition:transform .2s ease;z-index:100!important;width:min(290px,86vw)!important}
+ body.side-preview-open #appRoot>.topbar{transform:translateX(0)}
+ #appRoot main{width:100%!important;margin:0!important;padding:62px 12px 44px!important}
+ .side-preview-mobile-toggle{display:block;position:fixed;top:10px;left:10px;z-index:110;border:0;border-radius:12px;background:#d22635;color:white;padding:10px 14px;font-weight:800;box-shadow:0 3px 8px #0002}
+ .side-preview-ribbon{bottom:8px;right:8px}
+}
+
+</style>
+</head>
+<body>
+<section id="loginScreen" class="login-screen hidden">
+  <form id="loginForm" class="login-card">
+    <div class="login-brand"><img src="assets/yothe-header-logo.svg" alt="" aria-hidden="true" style="width:min(320px,82vw);height:auto;object-fit:contain;display:block"></div>
+    <h1>E-Learning</h1>
+    <p>กรุณา Login เพื่อเข้าใช้งาน</p>
+    <div class="field"><label>User</label><input id="loginUser" class="input" autocomplete="username" required></div>
+    <div class="field"><label>Password</label><input id="loginPass" class="input" type="password" autocomplete="current-password" required></div>
+    <button class="btn primary" type="submit">Login</button>
+    <div id="loginMsg" class="msg"></div>
+  </form>
+</section>
+
+<div id="appRoot">
+<header class="topbar"><div class="nav">
+  <button class="brand navbar-brand-image" data-view="home" style="border:0;background:none;padding:0"><img class="navbar-logo-custom" src="assets/yothe-header-logo.svg" alt="" aria-hidden="true"></button>
+  <nav id="navLinks" class="navlinks">
+    <button data-view="home" class="active">Home</button>
+    <button class="auth-only hidden-auth" data-view="uniforms">เครื่องแต่งกาย</button>
+    <button class="auth-only hidden-auth" data-view="production">สูตรการผลิต</button>
+    <button class="auth-only hidden-auth" data-view="production-ratio">Pack Size</button>
+    <button class="auth-only hidden-auth" data-view="drinks">สูตรชง</button>
+    <button class="auth-only hidden-auth" data-view="drink-map">แผนผังสูตรเครื่องดื่ม</button>
+    <button class="auth-only hidden-auth" data-view="expiry">วันหมดอายุ</button>
+    <button class="auth-only hidden-auth" data-view="toppings">Topping</button>
+    <button class="auth-only hidden-auth" data-view="courses">บทเรียนอื่น ๆ</button>
+    <a class="auth-only hidden-auth" href="admin.html">Admin</a>
+  </nav>
+  <button id="soundToggleBtn" class="sound-toggle" type="button" aria-pressed="false" title="ปิดเสียง"><span id="soundToggleIcon">🔊</span><span id="soundToggleLabel" class="sound-label">เสียง</span></button>
+  <div id="userBox" class="userbox hidden"><span id="currentUser"></span><button id="logoutBtn" class="btn secondary" style="padding:7px 10px">Logout</button></div>
+</div></header>
+
+<main>
+  <section id="view-home" class="view active">
+    <div class="story">
+      <article><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><h1 id="storyTitle">BRAND STORY</h1></div><div id="storyBody" class="story-copy">กำลังโหลด...</div><div id="attachments-home" class="attachments"></div></article>
+      <aside class="story-logo"><img src="assets/yothe-cat.svg" alt="" aria-hidden="true"></aside>
+    </div>
+    <div id="homeEntry" class="home-entry">
+      <button id="enterWebsiteBtn" class="enter-btn">Click เพื่อเข้าสู่ Website</button>
+    </div>
+  </section>
+
+  <section id="view-production" class="view"><div class="section-head"><div><h2>สูตรการผลิต</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="productionList" class="grid"></div><div id="attachments-production" class="attachments"></div></section>
+  <section id="view-production-ratio" class="view">
+    <div class="section-head"><div><h2>Pack Size</h2><p>อัตราส่วนวัตถุดิบและจำนวนสูตรที่ผลิตได้</p></div></div>
+    <div id="productionRatioList" class="ratio-table-wrap"></div>
+  </section>
+  <section id="view-drinks" class="view"><div class="section-head"><div><h2>สูตรชงเครื่องดื่ม</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="drinkList" class="grid"></div><div id="attachments-drinks" class="attachments"></div></section>
+  <section id="view-drink-map" class="view"><div class="section-head"><div><h2>แผนผังสูตรเครื่องดื่ม</h2><p>จัดกลุ่มอัตโนมัติจากวัตถุดิบลำดับที่ 1–2 ของสูตรชงเครื่องดื่ม</p></div></div><div id="drinkMapList" class="drink-map-wrap"></div></section>
+  <section id="view-expiry" class="view"><div class="section-head"><div><h2>วันหมดอายุ</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="expiryList"></div><div id="attachments-expiry" class="attachments"></div></section>
+  <section id="view-toppings" class="view"><div class="section-head"><div><h2>Topping</h2><p>บทเรียนทั้งหมดในหัวข้อนี้</p></div></div><div id="toppingList" class="grid"></div><div id="attachments-toppings" class="attachments"></div></section>
+  <section id="view-uniforms" class="view"><div class="section-head"><div><h2>เครื่องแต่งกาย</h2></div></div><div id="uniformList" class="grid"></div><div id="attachments-uniforms" class="attachments"></div></section>
+  <section id="view-delivery-schedule" class="view">
+    <div class="delivery-wrap">
+      <div class="delivery-head"><h2>รอบการสั่งสินค้า</h2><p>รอบสั่งสินค้า รอบส่งสินค้า เวลา และ Supplier</p></div>
+      <div id="deliveryScheduleList" class="delivery-table-wrap"></div>
+    </div>
+  </section>
+  <section id="view-courses" class="view"><div class="section-head"><div><h2>บทเรียนทั้งหมด</h2><p>รวมบทเรียนทั้งหมดที่มีอยู่ใน Yothé E-Learning</p></div></div><div id="courseCategoryHeading" class="hidden" style="margin:0 0 12px;font-weight:900;font-size:22px;color:var(--red)"></div><input id="courseSearch" class="search" placeholder="ค้นหาบทเรียนทั้งหมด..."><div id="courseList" class="cards"></div><div id="attachments-courses" class="attachments"></div></section>
+</main>
+</div>
+
+<section id="attachmentViewer" class="attachment-viewer hidden">
+  <div class="attachment-viewer-card">
+    <div class="attachment-viewer-head">
+      <div style="min-width:0"><div id="attachmentViewerTitle" class="attachment-viewer-title"></div><div id="attachmentViewerCount" class="attachment-viewer-count"></div></div>
+      <button id="attachmentViewerX" class="btn secondary" style="padding:7px 10px">✕</button>
+    </div>
+    <div id="attachmentViewerBody" class="attachment-viewer-body"></div>
+    <div class="attachment-viewer-foot">
+      <button id="attachmentPrevBtn" class="viewer-nav">← ไฟล์ก่อนหน้า</button>
+      <button id="attachmentCloseBtn" class="viewer-close">ปิด</button>
+      <button id="attachmentNextBtn" class="viewer-nav">ไฟล์ถัดไป →</button>
+    </div>
+  </div>
+</section>
+
+<section id="welcomePop" class="welcome-pop hidden">
+  <div class="welcome-card">
+    <img src="assets/yothe-cat.svg" alt="" aria-hidden="true">
+    <h2>ยินดีต้อนรับ</h2>
+    <p id="welcomeName"></p>
+    <button id="welcomeOkBtn" class="btn primary">เข้าสู่บทเรียน</button>
+  </div>
+</section>
+
+<script>
+const LOGIN_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-login";
+const PUBLIC_API="https://hcswjuemjluozmyejhnu.supabase.co/functions/v1/yothe-public";
+const COLORS=["#d71920","#e11d48","#be123c","#dc2626","#ef4444","#f97316","#ea580c","#f59e0b","#d97706","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#059669","#10b981","#14b8a6","#0d9488","#06b6d4","#0891b2","#0ea5e9","#0284c7","#3b82f6","#2563eb","#4f46e5","#4338ca","#6366f1","#7c3aed","#8b5cf6","#9333ea","#a855f7","#c026d3","#d946ef","#db2777","#ec4899","#f43f5e","#7f1d1d","#9a3412","#854d0e","#3f6212","#166534","#065f46","#115e59","#155e75","#1e3a8a","#312e81","#581c87","#701a75","#831843","#374151"];
+let token="",currentUser=null,cache={},courses=[],settingsMap={},attachmentSets={},attachmentViewerSection="",attachmentViewerIndex=0,customMenus=[],courseNavRows=[],pendingCourseCategory="";
+const catMeowFiles=[
+  "assets/sounds/meow-01.mp3",
+  "assets/sounds/meow-02.mp3",
+  "assets/sounds/meow-03.mp3",
+  "assets/sounds/meow-04.mp3"
+];
+const catMeows=catMeowFiles.map(src=>{
+  const a=new Audio(src);
+  a.preload="auto";
+  a.volume=0.62;
+  return a;
+});
+let lastMeowIndex=-1;
+let soundMuted=localStorage.getItem("yothe_sound_muted")==="1";
+function syncSoundToggle(){
+  const btn=document.getElementById("soundToggleBtn");
+  const icon=document.getElementById("soundToggleIcon");
+  const label=document.getElementById("soundToggleLabel");
+  if(!btn)return;
+  btn.classList.toggle("muted",soundMuted);
+  btn.setAttribute("aria-pressed",soundMuted?"true":"false");
+  btn.title=soundMuted?"เปิดเสียง":"ปิดเสียง";
+  if(icon)icon.textContent=soundMuted?"🔇":"🔊";
+  if(label)label.textContent=soundMuted?"ปิดเสียง":"เสียง";
+}
+function setSoundMuted(muted){
+  soundMuted=!!muted;
+  localStorage.setItem("yothe_sound_muted",soundMuted?"1":"0");
+  if(soundMuted){
+    catMeows.forEach(a=>{try{a.pause();a.currentTime=0}catch{}});
+  }
+  syncSoundToggle();
+}
+function playMenuMeow(){
+  try{
+    if(soundMuted||!catMeows.length)return;
+    let idx=Math.floor(Math.random()*catMeows.length);
+    if(catMeows.length>1&&idx===lastMeowIndex){
+      idx=(idx+1+Math.floor(Math.random()*(catMeows.length-1)))%catMeows.length;
+    }
+    lastMeowIndex=idx;
+    catMeows.forEach((a,i)=>{
+      if(i!==idx&&!a.paused){a.pause();a.currentTime=0}
+    });
+    const a=catMeows[idx];
+    a.pause();
+    a.currentTime=0;
+    const p=a.play();
+    if(p&&typeof p.catch==="function")p.catch(()=>{});
+  }catch{}
+}
+
+function setAuthUI(loggedIn){
+  document.querySelectorAll(".auth-only").forEach(el=>el.classList.toggle("hidden-auth",!loggedIn));
+  document.getElementById("userBox")?.classList.toggle("hidden",!loggedIn);
+  document.getElementById("homeEntry")?.classList.toggle("hidden",loggedIn);
+}
+function openLogin(){
+  document.getElementById("loginScreen").classList.remove("hidden");
+  setTimeout(()=>document.getElementById("loginUser")?.focus(),30);
+}
+function closeLogin(){
+  document.getElementById("loginScreen").classList.add("hidden");
+}
+function showWelcome(user){
+  const name=user?.display_name||user?.username||"";
+  document.getElementById("welcomeName").textContent=name;
+  document.getElementById("welcomePop").classList.remove("hidden");
+}
+function renderBrandStoryValue(s={}){
+  const ps=Array.isArray(s.paragraphs)?s.paragraphs:(s.body?[s.body]:[]);
+  document.getElementById("storyTitle").textContent=s.title||"BRAND STORY";
+  document.getElementById("storyBody").innerHTML=ps.length?ps.map(x=>"<p>"+esc(x)+"</p>").join(""):"<p>ยังไม่มีข้อมูล Brand Story</p>";
+}
+async function loadPublicHome(){
+  try{
+    const r=await post(PUBLIC_API,{action:"home"});
+    const rows=r.data||[],map=Object.fromEntries(rows.map(x=>[x.key,x.value]));
+    renderBrandStoryValue(map.brand_story||{});
+  }catch(e){
+    document.getElementById("storyBody").innerHTML='<p>ไม่สามารถโหลดข้อมูล Home ได้</p>';
+  }
+}
+function savedGroupOrder(ds){const v=settingsMap["layout_group_order_"+ds];return Array.isArray(v)?v.map(String):[]}
+function sortGroupedEntries(ds,entries){const order=savedGroupOrder(ds),pos=new Map(order.map((k,i)=>[String(k),i]));return [...entries].sort((a,b)=>{const ai=pos.has(String(a[0]))?pos.get(String(a[0])):999999,bi=pos.has(String(b[0]))?pos.get(String(b[0])):999999;return ai-bi})}
+function sortDetailRows(arr){return [...arr].sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||(Number(a.id)||0)-(Number(b.id)||0))}
+function esc(v=""){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
+async function post(url,payload){const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const d=await r.json().catch(()=>({error:"Invalid response"}));if(!r.ok)throw new Error(d.error||"เกิดข้อผิดพลาด");return d}
+async function api(action,extra={}){
+  const key=action+JSON.stringify(extra||{});
+  if(cache[key])return cache[key];
+  const r=await post(PUBLIC_API,{action,token,...extra});
+  cache[key]=r.data||[];
+  return cache[key];
+}
+function applyTheme(pref={}){ /* Clay World is the fixed public visual identity; keep saved layout spacing only. */ const ti=Math.max(1,Math.min(50,Number(pref.theme_index)||1)); document.documentElement.style.setProperty("--red","#c93638");document.documentElement.style.setProperty("--red-soft","#ffe1dd");document.documentElement.style.setProperty("--radius","28px");document.documentElement.style.setProperty("--gap",[12,14,16,18,20][(ti-1)%5]+"px");document.documentElement.classList.add("yothe-clay-world") }
+
+function fileTypeInfo(mime="",name=""){
+  const n=String(name).toLowerCase();
+  if(String(mime).startsWith("image/"))return {type:"image",icon:"🖼️",label:"รูปภาพ"};
+  if(mime==="application/pdf"||n.endsWith(".pdf"))return {type:"pdf",icon:"📄",label:"PDF"};
+  if(mime.includes("powerpoint")||n.endsWith(".ppt")||n.endsWith(".pptx"))return {type:"ppt",icon:"📊",label:"PowerPoint"};
+  return {type:"file",icon:"📎",label:"ไฟล์"};
+}
+async function loadAttachments(section){
+  const el=document.getElementById("attachments-"+section);if(!el)return;
+  try{
+    const files=await api("attachments",{section});
+    attachmentSets[section]=files;
+    if(!files.length){el.innerHTML="";return}
+    el.innerHTML='<h3>ไฟล์ประกอบบทเรียน</h3><div class="attachment-grid">'+files.map((f,idx)=>{
+      const info=fileTypeInfo(f.mime_type,f.file_name);
+      const preview=info.type==="image"&&f.url
+        ?'<div class="attachment-preview"><img src="'+esc(f.url)+'" alt="'+esc(f.title||f.file_name)+'" loading="lazy"></div>'
+        :'<div class="attachment-preview"><div class="attachment-icon">'+info.icon+'</div></div>';
+      return '<article class="attachment-card">'+preview+'<div class="attachment-body"><div class="attachment-title">'+esc(f.title||f.file_name)+'</div>'+(f.url?'<button class="attachment-open" type="button" onclick="openAttachmentViewer(\''+esc(section)+'\','+idx+')">เปิดไฟล์</button>':'')+'</div></article>'
+    }).join("")+'</div>';
+  }catch(e){el.innerHTML='<div class="state">โหลดไฟล์แนบไม่สำเร็จ: '+esc(e.message)+'</div>'}
+}
+let currentImagePopups=[];
+async function loadImagePopups(attachmentId){
+  try{
+    const rows=await api("image_popups",{attachment_id:Number(attachmentId)});
+    currentImagePopups=Array.isArray(rows)?rows:[];
+  }catch{currentImagePopups=[]}
+  return currentImagePopups;
+}
+function popupHotspotsHtml(rows=[]){
+  if(!rows.length)return "";
+  return '<div class="cup-hotspot-layer">'+rows.map(r=>
+    '<button type="button" class="cup-hotspot" data-popup-row-id="'+r.id+'" style="left:'+Number(r.x_pct||50)+'%;top:'+Number(r.y_pct||50)+'%;width:'+Math.max(24,Number(r.size_px||40))+'px;height:'+Math.max(24,Number(r.size_px||40))+'px" aria-label="เปิด Popup '+esc(r.popup_number||"")+'"><span>'+esc(r.popup_number||"")+'</span></button>'
+  ).join("")+'</div>';
+}
+function openConfiguredPopup(row){
+  if(!row?.image_url)return;
+  const popup=document.getElementById("objectFocusPopup");
+  const focus=document.getElementById("objectFocusImage");
+  const hint=document.getElementById("objectFocusHint");
+  const card=popup?.querySelector(".object-focus-card");
+  focus.classList.remove("cup-sprite");
+  focus.style.backgroundImage="";
+  focus.style.backgroundSize="";
+  focus.style.backgroundPosition="";
+  focus.style.backgroundRepeat="";
+  focus.innerHTML='<img src="'+esc(row.image_url)+'" alt="'+esc(row.label||("Popup "+(row.popup_number||"")))+'">';
+  if(card){card.className="object-focus-card popup-style "+(row.display_style||"style-2")}
+  if(hint){hint.textContent="";hint.classList.add("hidden");hint.setAttribute("aria-hidden","true")};
+  popup.classList.remove("hidden");popup.setAttribute("aria-hidden","false");
+  playMenuMeow();
+}
+function openObjectFocusFromImage(img,event){
+  if(!img?.src)return;
+  const rect=img.getBoundingClientRect();
+  if(!rect.width||!rect.height)return;
+  const x=Math.max(0,Math.min(1,(event.clientX-rect.left)/rect.width));
+  const y=Math.max(0,Math.min(1,(event.clientY-rect.top)/rect.height));
+
+  const popup=document.getElementById("objectFocusPopup");
+  const focus=document.getElementById("objectFocusImage");
+  const hint=document.getElementById("objectFocusHint");
+  focus.classList.remove("cup-sprite");
+  if(hint){hint.textContent="";hint.classList.add("hidden");hint.setAttribute("aria-hidden","true")};
+  focus.style.backgroundImage='url("'+img.src.replace(/"/g,'%22')+'")';
+  // 230% zoom, centered at the exact point the user clicked.
+  focus.style.backgroundSize="230% auto";
+  focus.style.backgroundPosition=(x*100)+"% "+(y*100)+"%";
+  popup.classList.remove("hidden");
+  popup.setAttribute("aria-hidden","false");
+  playMenuMeow();
+}
+function closeObjectFocus(){
+  const popup=document.getElementById("objectFocusPopup");
+  if(!popup)return;
+  popup.classList.add("hidden");
+  popup.setAttribute("aria-hidden","true");
+  const focus=document.getElementById("objectFocusImage");
+  if(focus){
+    focus.style.backgroundImage="";
+    focus.innerHTML="";
+    focus.style.backgroundPosition="";
+    focus.style.backgroundSize="";
+    focus.classList.remove("cup-sprite");
+    const card=document.querySelector("#objectFocusPopup .object-focus-card");if(card)card.className="object-focus-card";
+  }
+  const hint=document.getElementById("objectFocusHint");
+  if(hint){hint.textContent="";hint.classList.add("hidden");hint.setAttribute("aria-hidden","true")};
+}
+async function renderAttachmentViewer(){
+  const files=attachmentSets[attachmentViewerSection]||[];
+  const f=files[attachmentViewerIndex];
+  if(!f)return closeAttachmentViewer();
+  const info=fileTypeInfo(f.mime_type,f.file_name);
+  document.getElementById("attachmentViewerTitle").textContent=f.title||f.file_name||"ไฟล์แนบ";
+  document.getElementById("attachmentViewerCount").textContent=(attachmentViewerIndex+1)+" / "+files.length;
+  const body=document.getElementById("attachmentViewerBody");
+  if(info.type==="image"){
+    const configured=await loadImagePopups(f.id);
+    if(configured.length){
+      body.innerHTML='<div class="menu-board-stage"><img src="'+esc(f.url)+'" alt="'+esc(f.title||f.file_name)+'" draggable="false">'+popupHotspotsHtml(configured)+'</div>';
+    }else{
+      body.innerHTML='<img class="viewer-interactive-image" src="'+esc(f.url)+'" alt="'+esc(f.title||f.file_name)+'" draggable="false">';
+    }
+  }else if(info.type==="pdf"){
+    body.innerHTML='<iframe src="'+esc(f.url)+'#toolbar=1&navpanes=1"></iframe>';
+  }else{
+    body.innerHTML='<div class="attachment-viewer-empty"><div style="font-size:54px">'+info.icon+'</div><h3>'+esc(f.title||f.file_name)+'</h3><p>ไฟล์ชนิดนี้ไม่สามารถแสดงตัวอย่างภายใน Browser ได้</p><a class="attachment-open" href="'+esc(f.url)+'" target="_blank" rel="noopener">เปิดไฟล์</a></div>';
+  }
+  document.getElementById("attachmentPrevBtn").disabled=attachmentViewerIndex<=0;
+  document.getElementById("attachmentNextBtn").disabled=attachmentViewerIndex>=files.length-1;
+}
+window.openAttachmentViewer=(section,index)=>{
+  attachmentViewerSection=section;
+  attachmentViewerIndex=Number(index)||0;
+  document.getElementById("attachmentViewer").classList.remove("hidden");
+  document.body.style.overflow="hidden";
+  renderAttachmentViewer();
+};
+function closeAttachmentViewer(){
+  document.getElementById("attachmentViewer").classList.add("hidden");
+  document.getElementById("attachmentViewerBody").innerHTML="";
+  document.body.style.overflow="";
+}
+function stepAttachment(dir){
+  const files=attachmentSets[attachmentViewerSection]||[];
+  const next=attachmentViewerIndex+dir;
+  if(next<0||next>=files.length)return;
+  attachmentViewerIndex=next;
+  renderAttachmentViewer();
+}
+function syncCustomMenuPosition(){
+  const nav=document.getElementById("navLinks");
+  const coursesBtn=nav.querySelector('[data-view="courses"]');
+  const admin=nav.querySelector('a[href="admin.html"]');
+  if(!coursesBtn)return;
+  [...nav.querySelectorAll("[data-custom-menu]")].forEach(btn=>nav.insertBefore(btn,coursesBtn));
+  if(admin)nav.appendChild(admin);
+}
+function renderCustomMenus(list=[]){
+  customMenus=Array.isArray(list)?list:[];
+  const nav=document.getElementById("navLinks");
+  nav.querySelectorAll("[data-custom-menu]").forEach(x=>x.remove());
+  document.querySelectorAll(".custom-menu-view").forEach(x=>x.remove());
+
+  const coursesBtn=nav.querySelector('[data-view="courses"]');
+  const main=document.querySelector("main");
+  const coursesView=document.getElementById("view-courses");
+
+  customMenus.filter(m=>m&&m.active!==false&&m.id&&m.label&&m.section).forEach(m=>{
+    const btn=document.createElement("button");
+    btn.className="auth-only hidden-auth";
+    btn.dataset.view=m.section;
+    btn.dataset.customMenu="1";
+    btn.textContent=m.label;
+    nav.insertBefore(btn,coursesBtn);
+
+    const section=document.createElement("section");
+    section.id="view-"+m.section;
+    section.className="view custom-menu-view";
+    section.innerHTML='<div class="section-head"><div><h2>'+esc(m.label)+'</h2>'+(m.description?'<p>'+esc(m.description)+'</p>':'')+'</div></div><div id="attachments-'+esc(m.section)+'" class="attachments"></div>';
+    main.insertBefore(section,coursesView);
+  });
+  syncCustomMenuPosition();
+  setAuthUI(!!token);
+}
+function syncCourseLessonMenuPosition(){
+  const nav=document.getElementById("navLinks");
+  const coursesBtn=nav.querySelector('[data-view="courses"]');
+  if(!coursesBtn)return;
+  [...nav.querySelectorAll("[data-course-menu]")].forEach(btn=>nav.insertBefore(btn,coursesBtn));
+}
+function renderCourseLessonMenus(rows=[]){
+  courseNavRows=Array.isArray(rows)?rows:[];
+  const nav=document.getElementById("navLinks");
+  nav.querySelectorAll("[data-course-menu]").forEach(x=>x.remove());
+  const coursesBtn=nav.querySelector('[data-view="courses"]');
+  if(!coursesBtn)return;
+
+  const groups=new Map();
+  courseNavRows
+    .filter(r=>r&&r.is_published!==false&&String(r.category||"").trim()&&String(r.title||"").trim())
+    .sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||(Number(a.id)||0)-(Number(b.id)||0))
+    .forEach(r=>{
+      const category=String(r.category||"").trim();
+      if(!groups.has(category))groups.set(category,[]);
+      groups.get(category).push(r);
+    });
+
+  groups.forEach((items,category)=>{
+    const btn=document.createElement("button");
+    btn.className="auth-only hidden-auth course-lesson-menu";
+    btn.dataset.courseMenu="1";
+    btn.dataset.courseCategory=category;
+    btn.textContent=category;
+    btn.title=items.map(x=>String(x.title||"").trim()).filter(Boolean).join(" • ");
+    nav.insertBefore(btn,coursesBtn);
+  });
+
+  if(!nav.querySelector('[data-delivery-schedule="1"]')){
+    const deliveryBtn=document.createElement("button");
+    deliveryBtn.className="auth-only hidden-auth course-lesson-menu";
+    deliveryBtn.dataset.courseMenu="1";
+    deliveryBtn.dataset.deliverySchedule="1";
+    deliveryBtn.dataset.courseCategory="วัตถุดิบขนม";
+    deliveryBtn.dataset.deliveryMainFallback="1";
+    deliveryBtn.textContent="รอบการส่งสินค้า";
+    nav.insertBefore(deliveryBtn,coursesBtn);
+  }
+
+  syncCustomMenuPosition();
+  syncCourseLessonMenuPosition();
+  setAuthUI(!!token);
+}
+function openCourseCategory(category){
+  pendingCourseCategory=String(category||"").trim();
+  const search=document.getElementById("courseSearch");
+  if(search)search.value="";
+  showView("courses");
+}
+async function syncDeliveryMenuVisibility(){
+  try{
+    const rows=await api("delivery_schedule");
+    const days=["mon","tue","wed","thu","fri","sat","sun"];
+    const hasData=rows.some(r=>
+      days.some(k=>String(r[k+"_order_time"]||"").trim()||String(r[k+"_delivery_round"]||"").trim()||String(r[k+"_delivery_time"]||"").trim())||
+      String(r.notes||"").trim()
+    );
+    document.querySelectorAll('[data-delivery-schedule="1"]').forEach(el=>el.classList.toggle("hidden-auth",!hasData||!token));
+    return hasData;
+  }catch{return false}
+}
+async function loadDeliverySchedule(){
+  const el=document.getElementById("deliveryScheduleList");if(!el)return;
+  const wrap=document.querySelector("#view-delivery-schedule .delivery-wrap");
+  const head=document.querySelector("#view-delivery-schedule .delivery-head");
+  el.innerHTML='<div class="delivery-empty">กำลังโหลดรอบการส่งสินค้า...</div>';
+  try{
+    const rows=await api("delivery_schedule");
+    const days=[
+      ["mon","จันทร์"],["tue","อังคาร"],["wed","พุธ"],["thu","พฤหัสบดี"],
+      ["fri","ศุกร์"],["sat","เสาร์"],["sun","อาทิตย์"]
+    ];
+    const clean=rows.map(r=>{
+      const activeDays=days.filter(([k])=>
+        String(r[k+"_order_time"]||"").trim()||
+        String(r[k+"_delivery_round"]||"").trim()||
+        String(r[k+"_delivery_time"]||"").trim()
+      );
+      return {r,activeDays};
+    }).filter(x=>x.activeDays.length||String(x.r.notes||"").trim());
+
+    if(!clean.length){
+      if(head)head.style.display="none";
+      if(wrap)wrap.style.display="none";
+      el.innerHTML="";
+      return;
+    }
+
+    if(wrap)wrap.style.display="";
+    if(head)head.style.display="";
+    el.innerHTML=clean.map(({r,activeDays})=>
+      '<section class="delivery-supplier-card" '+(/^#[0-9A-Fa-f]{6}$/.test(r.theme_color||"")?'data-accent="1" style="--supplier-accent:'+esc(r.theme_color)+'"':'')+'>'+
+        '<div class="delivery-supplier-title">'+esc(r.supplier_name||"Supplier")+'</div>'+
+        (r.image_url?'<div class="delivery-supplier-image"><img src="'+esc(r.image_url)+'" alt="'+esc(r.supplier_name||"Supplier")+'"></div>':'')+
+        (activeDays.length?'<div class="delivery-table-wrap"><table class="delivery-table"><thead><tr><th>วัน</th><th>เวลาสั่ง</th><th>รอบส่งสินค้า</th><th>เวลาส่ง</th></tr></thead><tbody>'+
+          activeDays.map(([k,d])=>'<tr><td><strong>'+d+'</strong></td><td>'+esc(r[k+"_order_time"]||"-")+'</td><td>'+esc(r[k+"_delivery_round"]||"-")+'</td><td>'+esc(r[k+"_delivery_time"]||"-")+'</td></tr>').join("")+
+        '</tbody></table></div>':'')+
+        (String(r.notes||"").trim()?'<div class="delivery-notes"><div class="delivery-notes-title">หมายเหตุ</div><div class="delivery-notes-text">'+esc(r.notes).replace(/\n/g,"<br>")+'</div></div>':'')+
+      '</section>'
+    ).join("");
+  }catch(e){
+    if(wrap)wrap.style.display="";
+    if(head)head.style.display="";
+    el.innerHTML='<div class="delivery-empty">'+esc(e.message)+'</div>';
+  }
+}
+async function loadSettings(){
+  const [rows,courseRows]=await Promise.all([api("settings"),api("courses").catch(()=>[])]);
+  const map=Object.fromEntries(rows.map(x=>[x.key,x.value]));
+  settingsMap=map;
+  applyTheme(map.display_preferences||{});
+  renderMenuOrder(map.menu_order||["uniforms","production","drinks","expiry","toppings"]);
+  renderCustomMenus(map.custom_menus||[]);
+  renderCourseLessonMenus(courseRows||[]);
+  await syncDeliveryMenuVisibility();
+  groupPublicNavigation();
+  renderBrandStoryValue(map.brand_story||{});
+  if(token)await loadAttachments("home");
+}
+function renderMenuOrder(order){
+  const nav=document.getElementById("navLinks"),
+    home=nav.querySelector('[data-view="home"]'),
+    uniforms=nav.querySelector('[data-view="uniforms"]'),
+    coursesBtn=nav.querySelector('[data-view="courses"]'),
+    drinkMapBtn=nav.querySelector('[data-view="drink-map"]'),
+    admin=nav.querySelector('a[href="admin.html"]');
+  const rest=order.filter(x=>["production","drinks","expiry","toppings"].includes(x));
+  nav.insertBefore(home,nav.firstChild);
+  if(uniforms) nav.insertBefore(uniforms,home.nextSibling);
+  rest.forEach(k=>{
+    const el=nav.querySelector('[data-view="'+k+'"]');
+    if(el)nav.insertBefore(el,coursesBtn);
+    if(k==="drinks"&&drinkMapBtn)nav.insertBefore(drinkMapBtn,coursesBtn);
+  });
+  if(drinkMapBtn&&!rest.includes("drinks"))nav.insertBefore(drinkMapBtn,coursesBtn);
+  syncCustomMenuPosition();
+  syncCourseLessonMenuPosition();
+  nav.appendChild(coursesBtn);
+  nav.appendChild(admin);
+  syncCustomMenuPosition();
+  syncCourseLessonMenuPosition();
+}
+
+function groupPublicNavigation(){
+ const nav=document.getElementById("navLinks");
+ if(!nav)return;
+ const nodes=[...nav.querySelectorAll("button[data-view],button[data-course-menu],a[href='admin.html']")];
+ const groups=[
+  ["home","หน้าแรก",n=>n.dataset.view==="home"],
+  ["recipes","สูตรและการผลิต",n=>["production","production-ratio","drinks","drink-map"].includes(n.dataset.view)],
+  ["products","สินค้าและมาตรฐาน",n=>["uniforms","expiry","toppings"].includes(n.dataset.view)],
+  ["learning","หลักสูตรและเมนูเพิ่มเติม",n=>n.dataset.view==="courses"||n.hasAttribute("data-course-menu")||n.hasAttribute("data-custom-menu")],
+  ["admin","จัดการระบบ",n=>n.matches('a[href="admin.html"]')]
+ ];
+ const assigned=new Set();
+ const fragment=document.createDocumentFragment();
+ for(const [id,label,match] of groups){
+  const items=nodes.filter(n=>!assigned.has(n)&&match(n));
+  if(!items.length)continue;
+  const group=document.createElement("div");
+  group.className="nav-group";group.dataset.navGroup=id;
+  const heading=document.createElement("span");
+  heading.className="nav-group-label";heading.textContent=label;
+  group.appendChild(heading);
+  for(const item of items){assigned.add(item);group.appendChild(item)}
+  fragment.appendChild(group);
+ }
+ for(const item of nodes){if(!assigned.has(item)){let g=fragment.querySelector('[data-nav-group="learning"]');if(!g){g=document.createElement("div");g.className="nav-group";g.dataset.navGroup="learning";fragment.appendChild(g)}g.appendChild(item)}}
+ nav.replaceChildren(fragment);
+}
+
+function showView(view){
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
+  document.getElementById("view-"+view)?.classList.add("active");
+  document.querySelectorAll('#navLinks [data-view]').forEach(x=>x.classList.toggle("active",x.dataset.view===view&&!pendingCourseCategory));
+  document.querySelectorAll('#navLinks [data-course-menu]').forEach(x=>{
+    const isDelivery=view==="delivery-schedule"&&x.dataset.deliverySchedule==="1";
+    const isCourse=view==="courses"&&pendingCourseCategory&&x.dataset.courseCategory===pendingCourseCategory;
+    x.classList.toggle("active",isDelivery||isCourse);
+  });
+  window.scrollTo({top:0,behavior:"smooth"});
+  loadView(view).finally(()=>requestAnimationFrame(initMotionObserver));
+}
+async function loadView(view){
+  try{
+    if(view==="home"){if(token)await loadAttachments("home");else{const el=document.getElementById("attachments-home");if(el)el.innerHTML=""}return}
+    if(view==="production"){const r=await api("production");renderProduction(r);await loadAttachments("production");return}
+    if(view==="production-ratio"){renderProductionRatio(await api("production_ratio"));return}
+    if(view==="drinks"){const [r,m]=await Promise.all([api("drinks"),api("drink_meta")]);renderDrinks(r,m);await loadAttachments("drinks");return}
+    if(view==="drink-map"){const [r,m]=await Promise.all([api("drinks"),api("drink_meta")]);renderDrinkMap(r,m);return}
+    if(view==="toppings"){renderToppings(await api("toppings"));await loadAttachments("toppings");return}
+    if(view==="expiry"){renderExpiry(await api("expiry"));await loadAttachments("expiry");return}
+    if(view==="uniforms"){renderUniforms(await api("uniforms"));await loadAttachments("uniforms");return}
+    if(view==="delivery-schedule"){await loadDeliverySchedule();return}
+    if(view==="courses"){await loadAllLessons();await loadAttachments("courses");return}
+    if(view.startsWith("custom-")){await loadAttachments(view);return}
+  }catch(e){
+    const el=document.querySelector("#view-"+view+" [id$='List']");
+    if(el)el.innerHTML='<div class="state">'+esc(e.message)+'</div>'
+  }
+}
+function formatRatioOneDecimal(v){const n=Number(v);return Number.isFinite(n)?n.toLocaleString("th-TH",{maximumFractionDigits:0,minimumFractionDigits:0}):"-"}
+function formatRatioNumber(v){
+  if(v===null||v===undefined||v==="")return "-";
+  const n=Number(v);if(!Number.isFinite(n))return esc(v);
+  return n.toLocaleString("th-TH",{maximumFractionDigits:0,minimumFractionDigits:0});
+}
+function renderProductionRatio(rows){
+  const el=document.getElementById("productionRatioList");if(!el)return;
+  el.innerHTML=rows.length?'<div class="sheet ratio-sheet"><div class="sheet-title">Pack Size</div><div class="ratio-scroll"><table class="ratio-table"><thead><tr><th>NO.</th><th>รูป</th><th>Code</th><th>Detail Raw Material</th><th>Unit</th><th>ขนาดบรรจุ</th><th>ปริมาณที่ใช้ต่อ 1 สูตร</th><th>จำนวนที่ผลิตได้ (สูตร)</th></tr></thead><tbody>'+rows.map((r,i)=>'<tr><td class="num">'+esc(r.sort_order||i+1)+'</td><td class="num">'+(r.image_url?'<img src="'+esc(r.image_url)+'" alt="" style="width:58px;height:58px;object-fit:contain;border-radius:8px">':'-')+'</td><td><strong>'+esc(r.code||"")+'</strong></td><td>'+esc(r.detail_raw_material||"")+'</td><td class="num">'+esc(r.unit||"")+'</td><td class="num">'+formatRatioNumber(r.pack_size)+'</td><td class="num">'+formatRatioNumber(r.usage_per_recipe)+'</td><td class="num"><strong>'+formatRatioOneDecimal(r.recipes_yield)+'</strong></td></tr>').join("")+'</tbody></table></div></div>':'<div class="state">ยังไม่มีข้อมูล</div>';
+}
+function renderProduction(rows){const g={};rows.forEach(r=>(g[r.recipe_name||"ไม่ระบุชื่อ"]??=[]).push(r));document.getElementById("productionList").innerHTML=sortGroupedEntries("production",Object.entries(g)).map(([name,items])=>{items=sortDetailRows(items);const img=items.find(x=>x.image_url)?.image_url||"";const noteValues=[...new Set(items.map(x=>String(x.notes||"").trim()).filter(Boolean))];const mergedNote=noteValues.join("\n\n");return '<article class="sheet"><div class="sheet-title">'+esc(name)+'</div>'+(img?'<div class="photo" style="border-right:0;border-bottom:1px solid #d1d5db;min-height:180px"><img src="'+esc(img)+'" alt="'+esc(name)+'"></div>':"")+'<div class="production-meta"><div class="note" style="background:#f3f4f6;color:#111827">Servings: '+esc(items.find(x=>String(x.servings||"").trim())?.servings||"-")+'</div><div class="note net-quantity-note" style="background:#fff7ed;color:#9a3412">Net Quantity: '+esc(items.find(x=>String(x.net_quantity??"").trim())?.net_quantity||"-")+'</div><div class="note net-unit-note" style="background:#f0fdf4;color:#166534">Net Unit: '+esc(items.find(x=>String(x.net_unit||"").trim())?.net_unit||"-")+'</div></div><table><thead><tr><th>วัตถุดิบ</th><th>จำนวน</th><th>หน่วย</th><th>หมายเหตุ</th></tr></thead><tbody>'+items.map((x,i)=>'<tr><td>'+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td>'+(i===0?'<td rowspan="'+items.length+'" style="vertical-align:top">'+esc(mergedNote).replace(/\n/g,"<br>")+'</td>':'')+'</tr>').join("")+'</tbody></table></article>'}).join("")||'<div class="state">ยังไม่มีข้อมูล</div>';scheduleUserTableFit()}
+function classifyDrinkRecipe(items){
+  const ingredients=sortDetailRows(items)
+    .filter(x=>String(x.component_type||"").toLowerCase()==="ingredient");
+  const first=String(ingredients[0]?.ingredient||"").trim().toLowerCase();
+  const second=String(ingredients[1]?.ingredient||"").trim().toLowerCase();
+  if(first!=="yogurt")return null;
+  if(second.includes("camellia"))return "camellia";
+  if(second.includes("jasmine"))return "jasmine";
+  return "original";
+}
+function renderDrinkMap(rows,metas){
+  const el=document.getElementById("drinkMapList");if(!el)return;
+  const mm=Object.fromEntries((metas||[]).map(x=>[x.recipe_id,x]));
+  const byRecipe={};
+  (rows||[]).forEach(r=>(byRecipe[r.recipe_id]??=[]).push(r));
+  const groups={original:[],camellia:[],jasmine:[]};
+  Object.entries(byRecipe).forEach(([recipeId,items])=>{
+    const group=classifyDrinkRecipe(items);
+    if(!group)return;
+    const first=sortDetailRows(items)[0]||{};
+    groups[group].push({
+      recipe_id:recipeId,
+      menu_name:first.menu_name||recipeId,
+      image_url:mm[recipeId]?.image_url||""
+    });
+  });
+  Object.values(groups).forEach(arr=>arr.sort((a,b)=>String(a.menu_name).localeCompare(String(b.menu_name),"th")));
+  const defs=[
+    ["original","Original Yogurt","Yogurt + วัตถุดิบลำดับ 2 แบบ Original"],
+    ["camellia","Camellia Yogurt","Yogurt + Camellia tea"],
+    ["jasmine","Jasmine Yogurt","Yogurt + Jasmine tea"]
+  ];
+  el.innerHTML='<div class="drink-map-grid">'+defs.map(([key,title,sub])=>{
+    const items=groups[key];
+    return '<section class="drink-map-group"><div class="drink-map-group-head">'+esc(title)+'</div><div class="drink-map-group-sub">'+esc(sub)+'</div>'+
+      (items.length?'<div class="drink-map-items">'+items.map(x=>
+        '<button type="button" class="drink-map-card" data-drink-recipe="'+esc(x.recipe_id)+'">'+
+          '<div class="drink-map-image">'+(x.image_url?'<img src="'+esc(x.image_url)+'" alt="'+esc(x.menu_name)+'">':'<div class="drink-map-noimg">🥤</div>')+'</div>'+
+          '<div class="drink-map-name">'+esc(x.menu_name)+'</div>'+
+        '</button>'
+      ).join("")+'</div>':'<div class="drink-map-empty">ยังไม่มีเมนูในกลุ่มนี้</div>')+
+    '</section>'
+  }).join("")+'</div>';
+  el.querySelectorAll("[data-drink-recipe]").forEach(btn=>btn.addEventListener("click",()=>{
+    const rid=btn.dataset.drinkRecipe;
+    showView("drinks");
+    setTimeout(()=>{
+      const sheets=[...document.querySelectorAll("#drinkList .sheet")];
+      const rowsFor=byRecipe[rid]||[];
+      const name=rowsFor[0]?.menu_name||"";
+      const target=sheets.find(s=>s.querySelector(".sheet-title")?.textContent.trim()===name);
+      target?.scrollIntoView({behavior:"smooth",block:"start"});
+    },180);
+  }));
+}
+function renderDrinks(rows,metas){const mm=Object.fromEntries(metas.map(x=>[x.recipe_id,x])),g={};rows.forEach(r=>(g[r.recipe_id]??=[]).push(r));document.getElementById("drinkList").innerHTML=sortGroupedEntries("drinks",Object.entries(g)).map(([id,items])=>{items=sortDetailRows(items);const first=items[0]||{},m=mm[id]||{},tops=items.filter(x=>String(x.component_type||"").toLowerCase()==="topping").map(x=>x.sort_order||9999),ft=tops.length?Math.min(...tops):null;return '<article class="sheet"><div class="sheet-title">'+esc(first.menu_name||id)+'</div><div class="sheet-body"><div class="photo">'+(m.image_url?'<img src="'+esc(m.image_url)+'" alt="'+esc(first.menu_name||id)+'">':'<div class="empty">ยังไม่มีรูป</div>')+'</div><div><table><thead><tr><th>วัตถุดิบ</th><th>'+esc(m.size_label||"17 oz.(IB)")+'</th><th>หน่วย</th><th>หมายเหตุ</th></tr></thead><tbody>'+items.map(x=>'<tr><td>'+(ft!==null&&x.sort_order===ft?'<span class="topping">Topping</span><br>':'')+esc(x.ingredient||"")+'</td><td class="num">'+esc(x.quantity??"-")+'</td><td class="num">'+esc(x.unit||"-")+'</td><td>'+esc(x.notes||"").replace(/\n/g,"<br>")+'</td></tr>').join("")+'</tbody></table>'+(m.note?'<div class="note">'+esc(m.note).replace(/\n/g,"<br>")+'</div>':'')+'</div></div></article>'}).join("")||'<div class="state">ยังไม่มีข้อมูล</div>';scheduleUserTableFit()}
+function renderToppings(rows){const g={};rows.forEach(r=>{const k=(r.category||"Topping")+" • "+(r.subcategory||"ทั่วไป");(g[k]??=[]).push(r)});document.getElementById("toppingList").innerHTML=sortGroupedEntries("toppings",Object.entries(g)).map(([name,items])=>'<article class="sheet"><div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th>รูป</th><th>รายการ</th><th>จำนวน</th><th>หน่วย</th><th>ราคา</th><th>หมายเหตุ</th></tr></thead><tbody>'+sortDetailRows(items).map(r=>'<tr><td style="width:74px">'+(r.image_url?'<img src="'+esc(r.image_url)+'" style="width:58px;height:58px;object-fit:contain">':"-")+'</td><td>'+esc(r.item_name||r.name||"")+'</td><td class="num">'+esc(r.quantity??"-")+'</td><td class="num">'+esc(r.unit||"-")+'</td><td class="num">'+(r.price_baht!=null?esc(r.price_baht)+" บาท":"-")+'</td><td>'+esc(r.notes||"").replace(/\n/g,"<br>")+'</td></tr>').join("")+'</tbody></table></article>').join("")||'<div class="state">ยังไม่มีข้อมูล</div>'}
+function renderExpiry(rows){
+  const order=savedGroupOrder("expiry"),pos=new Map(order.map((k,i)=>[String(k),i]));
+  rows=[...rows].sort((a,b)=>{
+    const ak=String(a.category||"วันหมดอายุ"),bk=String(b.category||"วันหมดอายุ");
+    const ai=pos.has(ak)?pos.get(ak):999999,bi=pos.has(bk)?pos.get(bk):999999;
+    return ai-bi||(Number(a.sort_order)||0)-(Number(b.sort_order)||0)||(Number(a.id)||0)-(Number(b.id)||0);
+  });
+  document.getElementById("expiryList").innerHTML=rows.length?'<div class="sheet"><div class="sheet-title">ตารางวันหมดอายุ</div><table><thead><tr><th>รูป</th><th>รายการ</th><th>หมวด</th><th>การจัดเก็บ</th><th>ยังไม่เปิด</th><th>หลังเปิด</th><th>หน่วย</th><th>หมายเหตุ</th></tr></thead><tbody>'+rows.map(r=>'<tr><td style="width:74px">'+(r.image_url?'<img src="'+esc(r.image_url)+'" style="width:58px;height:58px;object-fit:contain">':"-")+'</td><td>'+esc(r.item_name||"")+'</td><td>'+esc(r.category||"")+'</td><td>'+esc(r.storage_condition||"")+'</td><td>'+esc(r.shelf_life_unopened||"-")+'</td><td>'+esc(r.shelf_life_opened||"-")+'</td><td>'+esc(r.unit||"")+'</td><td>'+esc(r.notes||"").replace(/\n/g,"<br>")+'</td></tr>').join("")+'</tbody></table></div>':'<div class="state">ยังไม่มีข้อมูล</div>';scheduleUserTableFit()}
+function renderUniforms(rows){
+  const g={};rows.forEach(r=>{(g[r.category||"เครื่องแต่งกาย"]??=[]).push(r)});
+  document.getElementById("uniformList").innerHTML=sortGroupedEntries("uniforms",Object.entries(g)).map(([name,items])=>'<article class="sheet"><div class="sheet-title">'+esc(name)+'</div><table><thead><tr><th>รูป</th><th>รายการ</th><th>ขนาด</th><th>รายละเอียด</th><th>หมายเหตุ</th></tr></thead><tbody>'+sortDetailRows(items).map(r=>'<tr><td style="width:84px">'+(r.image_url?'<img src="'+esc(r.image_url)+'" style="width:68px;height:68px;object-fit:contain">':'-')+'</td><td>'+esc(r.item_name||"")+'</td><td>'+esc(r.size_info||"-")+'</td><td>'+esc(r.description||r.usage_notes||"")+'</td><td>'+esc(r.notes||"").replace(/\n/g,"<br>")+'</td></tr>').join("")+'</tbody></table></article>').join("");scheduleUserTableFit();
+}
+async function loadAllLessons(){
+  const el=document.getElementById("courseList");
+  el.innerHTML='<div class="state">กำลังรวบรวมบทเรียนทั้งหมด...</div>';
+  try{
+    const [production,drinks,expiry,toppings,uniforms,extra]=await Promise.all([
+      api("production"),api("drinks"),api("expiry"),api("toppings"),api("uniforms"),api("courses")
+    ]);
+    const lessons=[];
+    const seen=new Set();
+    function add(view,title,description,category,meta="",notes=""){
+      const t=String(title||"").trim();if(!t)return;
+      const key=view+"|"+t.toLowerCase();if(seen.has(key))return;seen.add(key);
+      lessons.push({view,title:t,description:description||"",category:category||"",meta:meta||"",notes:notes||"",thumbnail_url:""});
+    }
+    production.forEach(r=>add("production",r.recipe_name,r.category||"สูตรการผลิต","สูตรการผลิต"));
+    drinks.forEach(r=>add("drinks",r.menu_name,r.menu_group||"สูตรชงเครื่องดื่ม","สูตรชงเครื่องดื่ม"));
+    expiry.forEach(r=>add("expiry",r.item_name,r.storage_condition||r.notes||"","วันหมดอายุ",r.shelf_life_opened||r.shelf_life_unopened||""));
+    toppings.forEach(r=>add("toppings",r.item_name||r.name,r.subcategory||r.description||"","Topping",r.quantity&&r.unit?String(r.quantity)+" "+String(r.unit):""));
+    uniforms.forEach(r=>add("uniforms",r.item_name,r.description||r.usage_notes||"","เครื่องแต่งกาย",r.size_info||""));
+    extra.forEach(r=>{add("courses",r.title,r.description||"",r.category||"บทเรียนอื่น ๆ",r.estimated_minutes?String(r.estimated_minutes)+" นาที":"",r.notes||"");const x=lessons.find(x=>x.view==="courses"&&x.title===r.title);if(x)x.thumbnail_url=r.thumbnail_url||""});
+    courses=lessons;
+    renderCourses();
+  }catch(e){el.innerHTML='<div class="state">'+esc(e.message)+'</div>'}
+}
+function renderCourses(){
+  const heading=document.getElementById("courseCategoryHeading");
+  if(heading){
+    heading.textContent=pendingCourseCategory?pendingCourseCategory:"";
+    heading.classList.toggle("hidden",!pendingCourseCategory);
+  }
+  const q=document.getElementById("courseSearch").value.trim().toLowerCase();
+  const list=courses.filter(c=>{
+    const inCategory=!pendingCourseCategory||String(c.category||"").trim()===pendingCourseCategory;
+    const inSearch=!q||((c.title||"")+" "+(c.description||"")+" "+(c.category||"")+" "+(c.meta||"")).toLowerCase().includes(q);
+    return inCategory&&inSearch;
+  });
+  document.getElementById("courseList").innerHTML=list.map(c=>
+    '<article class="card" data-open-view="'+esc(c.view)+'" style="cursor:pointer">'+(c.thumbnail_url?'<img src="'+esc(c.thumbnail_url)+'" style="width:100%;aspect-ratio:16/9;object-fit:contain;margin-bottom:10px;border-radius:12px;background:#fff">':'')+'<h3>'+esc(c.title||"")+'</h3>'+
+      '<p>'+esc(c.description||"")+'</p>'+
+      (c.notes?'<div class="note" style="margin:8px 0 10px"><b>หมายเหตุ:</b> '+esc(c.notes).replace(/\n/g,"<br>")+'</div>':'')+
+      '<div class="meta"><span>'+esc(c.category||"")+'</span><span>'+esc(c.meta||"")+'</span></div>'+
+    '</article>'
+  ).join("")||'<div class="state">ไม่พบบทเรียน</div>';
+}
+function fitUserTableText(root=document){
+  const cells=[...root.querySelectorAll(".view.active .sheet th,.view.active .sheet td")];
+  cells.forEach(el=>{
+    if(el.matches("td[rowspan],.note,.user-long-text"))return;
+    el.style.removeProperty("font-size");
+    el.style.setProperty("white-space","nowrap","important");
+    const base=parseFloat(getComputedStyle(el).fontSize)||12.5;
+    const available=Math.max(1,el.clientWidth-6);
+    const needed=Math.max(1,el.scrollWidth);
+    if(needed<=available+1)return;
+    let size=Math.max(7,Math.min(base,base*(available/needed)*.96));
+    el.style.setProperty("font-size",size+"px","important");
+    // One more correction after layout settles.
+    if(el.scrollWidth>available+1){
+      size=Math.max(6.5,size*(available/Math.max(1,el.scrollWidth))*.97);
+      el.style.setProperty("font-size",size+"px","important");
+    }
+  });
+}
+function scheduleUserTableFit(){
+  requestAnimationFrame(()=>requestAnimationFrame(()=>fitUserTableText(document)));
+}
+window.addEventListener("resize",()=>{clearTimeout(window.__yotheFitTimer);window.__yotheFitTimer=setTimeout(scheduleUserTableFit,120)});
+
+document.getElementById("enterWebsiteBtn").onclick=openLogin;
+document.getElementById("loginScreen").addEventListener("click",e=>{if(e.target===document.getElementById("loginScreen"))closeLogin()});
+document.getElementById("loginForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const m=document.getElementById("loginMsg");
+  m.textContent="กำลัง Login...";m.className="msg";
+  try{
+    const r=await post(LOGIN_API,{action:"login",username:document.getElementById("loginUser").value,password:document.getElementById("loginPass").value});
+    token=r.token;currentUser=r.user;cache={};
+    sessionStorage.setItem("yothe_session_token",token);
+    sessionStorage.setItem("yothe_session_user",JSON.stringify(currentUser));
+    closeLogin();
+    setAuthUI(true);
+    document.getElementById("currentUser").textContent=r.user.display_name||r.user.username;
+    await loadSettings();
+    showView("home");
+    showWelcome(r.user);
+    m.textContent="";
+  }catch(err){m.textContent=err.message;m.className="msg error"}
+});
+document.getElementById("welcomeOkBtn").onclick=()=>document.getElementById("welcomePop").classList.add("hidden");
+document.getElementById("logoutBtn").onclick=async()=>{
+  try{await post(LOGIN_API,{action:"logout",token})}catch{}
+  token="";cache={};currentUser=null;settingsMap={};
+  sessionStorage.removeItem("yothe_session_token");
+  sessionStorage.removeItem("yothe_session_user");
+  setAuthUI(false);
+  document.getElementById("currentUser").textContent="";
+  document.getElementById("loginPass").value="";
+  document.getElementById("loginMsg").textContent="";
+  showView("home");
+  await loadPublicHome();
+};
+document.addEventListener("click",e=>{
+  const focusClose=e.target.closest("#objectFocusClose");
+  const focusPopup=e.target.closest("#objectFocusPopup");
+  if(focusClose || (focusPopup && e.target.id==="objectFocusPopup")){
+    e.preventDefault();closeObjectFocus();return;
+  }
+  const popupHotspot=e.target.closest("[data-popup-row-id]");
+  if(popupHotspot){
+    e.preventDefault();e.stopPropagation();
+    const row=currentImagePopups.find(x=>String(x.id)===String(popupHotspot.dataset.popupRowId));
+    if(row)openConfiguredPopup(row);
+    return;
+  }
+  const viewerImg=e.target.closest(".viewer-interactive-image");
+  if(viewerImg){
+    e.preventDefault();
+    openObjectFocusFromImage(viewerImg,e);
+    return;
+  }
+
+  const courseMenu=e.target.closest("[data-course-menu]");
+  if(courseMenu){
+    e.preventDefault();
+    playMenuMeow();
+    if(!token){openLogin();return}
+    if(courseMenu.dataset.deliverySchedule==="1"){
+      pendingCourseCategory="";
+      showView("delivery-schedule");
+    }else{
+      openCourseCategory(courseMenu.dataset.courseCategory||courseMenu.textContent||"");
+    }
+    return;
+  }
+  const lesson=e.target.closest("[data-open-view]");
+  if(lesson){
+    e.preventDefault();
+    if(!token){openLogin();return}
+    showView(lesson.dataset.openView);return
+  }
+  const b=e.target.closest("[data-view]");
+  if(b){
+    e.preventDefault();
+    playMenuMeow();
+    if(b.dataset.view==="courses"){
+      pendingCourseCategory="";
+      const search=document.getElementById("courseSearch");
+      if(search)search.value="";
+    }
+    if(b.dataset.view!=="home"&&!token){openLogin();return}
+    showView(b.dataset.view);
+    return;
+  }
+  const navLink=e.target.closest("#navLinks a");
+  if(navLink){
+    playMenuMeow();
+  }
+});
+document.getElementById("courseSearch").addEventListener("input",renderCourses);
+document.getElementById("attachmentPrevBtn").onclick=()=>stepAttachment(-1);
+document.getElementById("attachmentNextBtn").onclick=()=>stepAttachment(1);
+document.getElementById("attachmentCloseBtn").onclick=closeAttachmentViewer;
+document.getElementById("attachmentViewerX").onclick=closeAttachmentViewer;
+document.getElementById("attachmentViewer").addEventListener("click",e=>{if(e.target===document.getElementById("attachmentViewer"))closeAttachmentViewer()});
+document.addEventListener("keydown",e=>{
+  if(document.getElementById("attachmentViewer").classList.contains("hidden"))return;
+  if(e.key==="ArrowLeft")stepAttachment(-1);
+  if(e.key==="ArrowRight")stepAttachment(1);
+  if(e.key==="Escape")closeAttachmentViewer();
+});
+
+// เปิด Website ที่ Home เสมอ แต่คง Login ไว้ภายในแท็บเดิมจนกว่าจะปิดแท็บหรือ Logout
+async function restoreTabSession(){
+  showView("home");
+  const savedToken=sessionStorage.getItem("yothe_session_token")||"";
+  if(!savedToken){
+    setAuthUI(false);
+    await loadPublicHome();
+    return;
+  }
+  try{
+    const r=await post(LOGIN_API,{action:"validate",token:savedToken});
+    token=savedToken;
+    currentUser=r.user;
+    cache={};
+    setAuthUI(true);
+    document.getElementById("currentUser").textContent=currentUser.display_name||currentUser.username;
+    await loadSettings();
+    showView("home");
+  }catch{
+    token="";currentUser=null;cache={};settingsMap={};
+    sessionStorage.removeItem("yothe_session_token");
+    sessionStorage.removeItem("yothe_session_user");
+    setAuthUI(false);
+    await loadPublicHome();
+  }
+}
+restoreTabSession().finally(()=>requestAnimationFrame(initMotionObserver));
+
+function initMotionObserver(){
+  if(!("IntersectionObserver" in window))return;
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        entry.target.classList.add("motion-visible");
+        io.unobserve(entry.target);
+      }
+    });
+  },{threshold:.08,rootMargin:"0px 0px -20px 0px"});
+  document.querySelectorAll(".sheet,.card,.attachment-card,.story,.home-entry").forEach(el=>io.observe(el));
+}
+
+document.getElementById("objectFocusImage")?.addEventListener("click",closeObjectFocus);
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&!document.getElementById("objectFocusPopup")?.classList.contains("hidden")){
+    closeObjectFocus();
+  }
+});
+
+document.getElementById("soundToggleBtn")?.addEventListener("click",()=>{
+  setSoundMuted(!soundMuted);
+});
+syncSoundToggle();
+</script>
+
+<div id="objectFocusPopup" class="object-focus-popup hidden" aria-hidden="true">
+  <div class="object-focus-card" role="dialog" aria-modal="true" aria-label="ขยายรูปที่เลือก">
+    <button id="objectFocusClose" class="object-focus-close" type="button" aria-label="ปิด">×</button>
+    <div id="objectFocusImage" class="object-focus-image"></div>
+    <div id="objectFocusHint" class="object-focus-hint hidden" aria-hidden="true"></div>
+  </div>
+</div>
+<script>
+(function(){
+ const btn=document.createElement('button');btn.className='side-preview-mobile-toggle';btn.type='button';btn.textContent='☰ เมนู';btn.setAttribute('aria-label','เปิดหรือปิดเมนูด้านซ้าย');
+ btn.addEventListener('click',()=>document.body.classList.toggle('side-preview-open'));
+ document.body.appendChild(btn);
+ document.addEventListener('click',e=>{if(window.innerWidth<=800 && e.target.closest('#navLinks [data-view],#navLinks [data-course-menu]'))document.body.classList.remove('side-preview-open')});
+ const note=document.createElement('div');note.className='side-preview-ribbon';note.textContent='ตัวอย่าง Layout • ไม่ใช่หน้าหลัก';document.body.appendChild(note);
+})();
+</script>
+</body>
+</html>
