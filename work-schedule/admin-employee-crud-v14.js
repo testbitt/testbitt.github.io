@@ -81,7 +81,7 @@
   branchCard.innerHTML=`
     <div class="section-head">
       <div><h2>ฐานข้อมูลสาขา</h2><p>แก้ไขรหัสสาขาและชื่อสาขาส่วนกลาง ข้อมูลพนักงานและตารางเดิมจะอัปเดตตามอัตโนมัติ</p></div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="btn primary" id="addBranchBtn350">+ เพิ่มสาขา</button><span class="admin-api350">Cloud · ksp-api V9</span></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="btn primary" id="addBranchBtn350">+ เพิ่มสาขา</button><span class="admin-api350">Cloud · ksp-api V10</span></div>
     </div>
     <div class="scroll"><table class="data branch-table350" id="branchTable350"></table></div>`;
   employeeAdmin.insertBefore(branchCard,employeeSection);
@@ -165,7 +165,7 @@
     editingEmployee350=employee||null;
     q('#empModalTitle350').textContent=employee?'แก้ไขข้อมูลพนักงาน':'เพิ่มพนักงาน';
     fields350.code.value=employee?.employee_code||'';fields350.code.readOnly=false;
-    q('#empCodeNote350').textContent=employee?'แก้ไขรหัสได้ ระบบจะย้ายข้อมูลตารางงานและ Version History ให้อัตโนมัติ':'';
+    q('#empCodeNote350').textContent=employee?'ข้อมูลที่แก้ไขจะอัปเดตในตารางงาน, Version History และไฟล์ Export อัตโนมัติ':'';
     fields350.name.value=employee?.name||employee?.display_name||'';fields350.first.value=employee?.first_name||'';fields350.last.value=employee?.last_name||'';
     fillBranchControls350();fields350.branch.value=employee?.branch_code||'';fields350.position.value=employee?.position||'';fields350.type.value=employee?.employment_type||'';
     employeeModal.classList.add('show');setTimeout(()=>employee?fields350.name.focus():fields350.code.focus(),0);
@@ -186,7 +186,7 @@
     if(!employee.employee_code||!employee.display_name||!employee.branch_code)return toast('กรุณากรอกรหัส ชื่อ และสาขา','error');
     if((!wasEditing||employee.employee_code!==originalCode)&&(db.employees||[]).some(e=>String(e.employee_code)===employee.employee_code))return toast('รหัสพนักงานนี้มีอยู่แล้ว กรุณาใช้รหัสอื่น','error');
     const button=q('#empSave350');button.disabled=true;button.textContent='กำลังบันทึก...';setSync350('กำลังบันทึกข้อมูลพนักงาน...');
-    try{const result=await api350('adminEmployeeSave',{original_employee_code:originalCode,employee});await refreshCloud350();closeEmployee350();toast(wasEditing?(result?.renamed?'แก้ไขรหัสพนักงานและย้ายประวัติตารางงานแล้ว':'แก้ไขข้อมูลพนักงานออนไลน์แล้ว'):'เพิ่มพนักงานออนไลน์แล้ว');setSync350('ออนไลน์ · Sync แล้ว')}
+    try{const result=await api350('adminEmployeeSave',{original_employee_code:originalCode,employee});await refreshCloud350();closeEmployee350();toast(wasEditing?(result?.renamed?'แก้ไขรหัสและอัปเดตข้อมูลพนักงานในตารางงานแล้ว':'แก้ไขข้อมูลพนักงานและอัปเดตตารางงานแล้ว'):'เพิ่มพนักงานออนไลน์แล้ว');setSync350('ออนไลน์ · Sync แล้ว')}
     catch(error){setSync350('บันทึกพนักงานไม่สำเร็จ',true);toast('บันทึกไม่สำเร็จ: '+(error?.message||String(error)),'error')}
     finally{button.disabled=false;button.textContent='บันทึกข้อมูล'}
   };
@@ -230,5 +230,5 @@
   if(typeof previousOpenAdmin==='function')window.openAdmin=function(){const result=previousOpenAdmin.apply(this,arguments);if(q('#admin-employees.active'))window.renderEmployees();return result};
 
   fillBranchControls350();renderEmployees350();renderBranches350();
-  const footer=q('.side footer');if(footer)footer.textContent='Version 3.8 · Employee Code Editor';
+  const footer=q('.side footer');if(footer)footer.textContent='Version 3.8.1 · Employee Auto Sync';
 })();
