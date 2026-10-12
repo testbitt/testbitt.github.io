@@ -1525,7 +1525,7 @@ window.learningQuickAddImage=async()=>{
  if(!files.length){alert("กรุณาเลือกรูปภาพ");return}
  if(files.some(f=>!["image/jpeg","image/png","image/webp"].includes(f.type)||f.size>20*1024*1024)){alert("รองรับ JPG PNG WEBP ไม่เกิน 20 MB ต่อรูป");return}
  if(!course.topics)course.topics=[];
- if(!course.topics.length){course.topics.push({id:learningId(),title:"ภาพประกอบหลักสูตร",blocks:[]});learningTopicSelection=0}
+ if(!course.topics.length){course.topics.push({id:learningId(),title:"",blocks:[]});learningTopicSelection=0}
  const topic=course.topics[learningTopicSelection]||course.topics[0],status=document.getElementById("learningMsg");
  const btn=document.getElementById("learningQuickImageButton");if(btn)btn.disabled=true;
  let count=0;const failures=[];
@@ -1540,7 +1540,7 @@ window.learningQuickAddImage=async()=>{
     const listing=await api({action:"list_attachments",section:"courses"});
     const image=(listing.data||[]).find(x=>String(x.id)===String(data.data.id));
     if(!image?.url)throw Error("ไม่พบ URL รูปภาพ");
-    topic.blocks.push({id:learningId(),type:"image",url:image.url,storage_path:data.data.storage_path,caption:file.name,file_name:file.name});
+    topic.blocks.push({id:learningId(),type:"image",url:image.url,storage_path:data.data.storage_path,caption:"",file_name:file.name});
     count++;
    }catch(e){failures.push(file.name+": "+e.message)}
   }
@@ -1563,7 +1563,7 @@ window.learningUploadBlock=async i=>{
   const list=await api({action:"list_attachments",section:"courses"});
   const item=(list.data||[]).find(a=>String(a.id)===String(upload.data.id));
   const b=learningDraft[learningSelection].topics[learningTopicSelection].blocks[i];
-  b.storage_path=upload.data.storage_path;b.url=item?.url||"";b.caption=b.caption||file.name;b.file_name=file.name;
+  b.storage_path=upload.data.storage_path;b.url=item?.url||"";b.caption=b.caption||"";b.file_name=file.name;
   renderLearningManager();document.getElementById("learningMsg").textContent="อัปโหลดสำเร็จ กรุณากดบันทึกหลักสูตร";
  }catch(err){msg.textContent="อัปโหลดไม่สำเร็จ: "+err.message}
 };
@@ -1584,7 +1584,7 @@ function renderLearningManager(){
   <button onclick="learningMoveCourse(${i},-1)">↑</button><button onclick="learningMoveCourse(${i},1)">↓</button>
   <button onclick="learningDeleteCourse(${i})">×</button></div>`).join("");
  const topics=(course?.topics||[]).map((t,i)=>`<div class="learning-list-row">
-  <button class="btn ${i===learningTopicSelection?"primary":"secondary"}" onclick="learningChooseTopic(${i})">${E(t.title)}</button>
+  <button class="btn ${i===learningTopicSelection?"primary":"secondary"}" onclick="learningChooseTopic(${i})">${E(t.title||"หัวข้อ "+(i+1))}</button>
   <button onclick="learningMoveTopic(${i},-1)">↑</button><button onclick="learningMoveTopic(${i},1)">↓</button>
   <button onclick="learningDeleteTopic(${i})">×</button></div>`).join("");
  const blocks=(topic?.blocks||[]).map((b,i)=>{
@@ -1592,7 +1592,7 @@ function renderLearningManager(){
    const contents=b.type==="text"
      ?`<textarea rows="5" class="input" ${field("text")}>${E(b.text)}</textarea>`
      :`<label>URL<input class="input" ${field("url")} value="${E(b.url)}"></label>
-       <label>คำอธิบายหรือชื่อไฟล์<input class="input" ${field("caption")} value="${E(b.caption)}"></label>
+       ${b.type==="image"?"":`<label>คำอธิบาย (ไม่บังคับ)<input class="input" ${field("caption")} value="${E(b.caption)}"></label>`}
        <div class="learning-toolbar"><input id="learningFile${i}" type="file" accept="${b.type==="image"?"image/jpeg,image/png,image/webp":".pdf,.ppt,.pptx,image/jpeg,image/png"}">
        <button class="btn secondary" onclick="learningUploadBlock(${i})">Upload</button></div>`;
    return `<div class="learning-block"><div class="learning-toolbar"><strong>${i+1}. ${b.type==="text"?"ข้อความ":b.type==="image"?"รูปภาพ":"เอกสาร"}</strong>
