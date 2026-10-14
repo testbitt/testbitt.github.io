@@ -1,10 +1,10 @@
-/* Version 3.31 — Separate mMilk/Milac Lead Time group */
+/* Version 3.32 — Separate mMilk / ไมแลคโกลด์วิปครีม Lead Time group */
 (()=>{
   const API='https://jbagitudrjpentdneiju.supabase.co/functions/v1/kamu-inventory-api';
   const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
   const num=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0};
   const T2=v=>String(v??'').trim();
-  const milkCodeSet=new Set(['3603-4','Y3-36034']);
+  const milkCodeSet=new Set(['3603-4','Y3-36034','3107-1']);
 
   function normalizeMilkText(v){
     return String(v??'').toLowerCase().replace(/[^a-z0-9ก-๙]+/g,'');
@@ -12,7 +12,7 @@
   function isMilkMilac(rm,desc=''){
     const code=T2(rm).toUpperCase();
     const s=normalizeMilkText(code+' '+desc);
-    return milkCodeSet.has(code)||s.includes('mmilk')||s.includes('milac');
+    return milkCodeSet.has(code)||s.includes('mmilk')||s.includes('milac')||s.includes('ไมแลคโกลด์วิปครีม')||s.includes('ไมแลค');
   }
 
   function branchCode(){return document.querySelector('#planBranch')?.value||document.querySelector('#branch')?.value||''}
@@ -46,13 +46,13 @@
     const id=wantMilk?'planMilkDays':'planAllDays';
     const days=Math.max(0,Math.min(365,Math.trunc(num(document.querySelector('#'+id)?.value))));
     const changed=setLeadForGroup(branch,days,wantMilk);
-    if(!changed){alert(wantMilk?'ไม่พบสินค้า mMilk / Milac ในสาขานี้':'ไม่พบสินค้าทั่วไปสำหรับกำหนด Lead Time');return}
+    if(!changed){alert(wantMilk?'ไม่พบสินค้า mMilk / ไมแลคโกลด์วิปครีม ในสาขานี้':'ไม่พบสินค้าทั่วไปสำหรับกำหนด Lead Time');return}
     const btn=document.querySelector(wantMilk?'#applyMilkDays':'#applyPlanAll');
     const old=btn?.textContent;if(btn){btn.disabled=true;btn.textContent='กำลังบันทึก...'}
     try{
       await saveSettings(branch);
       if(typeof renderPlanningPage==='function')renderPlanningPage();
-      alert((wantMilk?'บันทึก Lead Time mMilk / Milac':'บันทึก Lead Time สินค้าทั่วไป')+' '+days+' วัน • '+changed+' รายการแล้ว');
+      alert((wantMilk?'บันทึก Lead Time mMilk / ไมแลคโกลด์วิปครีม':'บันทึก Lead Time สินค้าทั่วไป')+' '+days+' วัน • '+changed+' รายการแล้ว');
     }catch(e){alert('บันทึก Lead Time ไม่สำเร็จ: '+(e?.message||e))}
     finally{if(btn){btn.disabled=false;btn.textContent=old}}
   }
@@ -72,9 +72,9 @@
     if(!document.querySelector('#planMilkDays')){
       const label=document.createElement('label');
       label.className='milk-lead-label';
-      label.innerHTML='Lead Time mMilk / Milac <input id="planMilkDays" type="number" min="0" max="365" value="0">';
+      label.innerHTML='Lead Time mMilk / ไมแลคโกลด์วิปครีม <input id="planMilkDays" type="number" min="0" max="365" value="0">';
       const btn=document.createElement('button');
-      btn.className='btn milk-lead-btn';btn.id='applyMilkDays';btn.type='button';btn.textContent='ใช้กับ mMilk / Milac';
+      btn.className='btn milk-lead-btn';btn.id='applyMilkDays';btn.type='button';btn.textContent='ใช้กับ mMilk / ไมแลคโกลด์วิปครีม';
       apply.insertAdjacentElement('afterend',label);
       label.insertAdjacentElement('afterend',btn);
     }
@@ -88,7 +88,7 @@
     if(!document.querySelector('#'+noteId)){
       const note=document.createElement('div');
       note.id=noteId;note.className='milk-lead-note';
-      note.innerHTML='<b>Lead Time แยก:</b> mMilk / Milac จะใช้วันรอส่งของกลุ่มนี้เท่านั้น และไม่ใช้ค่า Lead Time ของสินค้าทั่วไป';
+      note.innerHTML='<b>Lead Time แยก:</b> mMilk / ไมแลคโกลด์วิปครีม จะใช้วันรอส่งของกลุ่มนี้เท่านั้น และไม่ใช้ค่า Lead Time ของสินค้าทั่วไป';
       toolbar.insertAdjacentElement('afterend',note);
     }
   }
@@ -102,7 +102,7 @@
       if(lead){
         let badge=lead.querySelector('.milk-badge');
         if(milk&&!badge){
-          badge=document.createElement('small');badge.className='milk-badge';badge.textContent='mMilk / Milac';
+          badge=document.createElement('small');badge.className='milk-badge';badge.textContent='mMilk / ไมแลคโกลด์วิปครีม';
           lead.appendChild(badge);
         }else if(!milk&&badge)badge.remove();
       }
@@ -137,5 +137,5 @@
   document.addEventListener('kamu:data-ready',()=>setTimeout(()=>{ensureSeparateLeadUi();markMilkRows()},150));
 
   const v=document.querySelector('.version');
-  if(v){const fresh=v.cloneNode(false);fresh.textContent='Version 3.31 • Public Multi‑User Cloud';v.replaceWith(fresh)}
+  if(v){const fresh=v.cloneNode(false);fresh.textContent='Version 3.32 • Public Multi‑User Cloud';v.replaceWith(fresh)}
 })();
