@@ -1,0 +1,80 @@
+/* Version 3.28 — Dual Usage Source + WIP Conversion + Manual Cal + Daily Usage Planning */
+(()=>{
+  const API='https://jbagitudrjpentdneiju.supabase.co/functions/v1/kamu-inventory-api';
+  const ROLE=()=>localStorage.getItem('kamuInvCloudRole')||'';
+  const TOKEN=()=>localStorage.getItem('kamuInvCloudToken')||'';
+  const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+  const num=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0};
+  const fmt=v=>Number.isFinite(Number(v))?Number(v).toLocaleString('th-TH',{maximumFractionDigits:3}):'—';
+
+  if(!Array.isArray(S.wipConversion))S.wipConversion=[];
+  if(!Array.isArray(S.reorderSettings))S.reorderSettings=[];
+
+  async function cloudApi(action,data={}){
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json',...(TOKEN()?{'Authorization':'Bearer '+TOKEN()}:{})},body:JSON.stringify({action,...data})});
+    let out={};try{out=await r.json()}catch{}
+    if(!r.ok||out.ok===false)throw Error(out.message||out.error||`HTTP ${r.status}`);
+    return out;
+  }
+
+  function sourceCode(v){
+    const x=T(v).toLowerCase().replace(/[\s_-]+/g,'');
+    if(x==='stock'||x==='stockmovement'||x==='movement')return'stock';
+    if(x==='itemsale'||x==='sale'||x==='sales')return'item_sale';
+    if(x==='manual'||x==='manualcal'||x==='manualcalculation')return'manual_cal';
+    return x==='bom'||x==='bomb'?'bom':'';
+  }
+  function sourceLabel(v){
+    const x=sourceCode(v);
+    return x==='bom'?'BOM':x==='stock'?'Stock Movement':x==='item_sale'?'Item Sale':x==='manual_cal'?'Manual Cal':'ยังไม่กำหนด';
+  }
+  function sourceOptions(current,second=false){
+    const first=second?'<option value="">-- ไม่ใช้ Source 2 --</option>':'<option value="">-- ยังไม่กำหนด --</option>';
+    return first+
+      `<option value="bom" ${current==='bom'?'selected':''}>BOM</option>`+
+      `<option value="stock" ${current==='stock'?'selected':''}>Stock Movement</option>`+
+      `<option value="item_sale" ${current==='item_sale'?'selected':''}>Item Sale</option>`+
+      `<option value="manual_cal" ${current==='manual_cal'?'selected':''}>Manual Cal</option>`;
+  }
+  function dualSettingsMap(){
+    const m=new Map();
+    for(const x of Array.isArray(S.usageSource)?S.usageSource:[]){
+      const rm=T(x.rm_code).toUpperCase();if(!rm)continue;
+      m.set(rm,{
+        rm_code:rm,
+        source1:sourceCode(x.source_1||x.source),
+        source2:sourceCode(x.source_2),
+        cup1:T(x.cup_size_1||x.cup_size).toUpperCase(),
+        cup2:T(x.cup_size_2).toUpperCase()
+      });
+    }
+    return m;
+  }
+
+  function yieldOverrides(){
+    const m=new Map();
+    for(const x of S.wipConversion||[]){
+      const code=T(x.wip_code).toUpperCase(),y=num(x.yield_qty);
+      if(code&&y>0)m.set(code,y);
+    }
+    return m;
+  }
+  function wipGroups(){
+    const by=new Map();
+    for(const r of Array.isArray(S.wip)?S.wip:[]){
+      const code=T(V(r,'wipc')).toUpperCase();
+      if(!/^WP/i.test(code))continue;
+      if(!by.has(code))by.set(code,[]);
+      by.get(code).push(r);
+    }
+    return by;
+  }
+  function stockRmInfo(branch,rm){
+    const rows=IDX.stockByBranch.get(branch)||[];
+    const r=rows.find(x=>T(V(x,'rm')).toUpperCase()===rm.toUpperCase());
+    return r?{desc:T(V(r,'rmd')),unit:T(V(r,'stocku')),cost:num(V(r,'cost'))}:{desc:'',unit:'',cost:0};
+  }
+
+  function manualCal(branch){
+    const groups=wipGroups(),overrides=yieldOverrides(),wpSales=new Map(),errors=[],byRm=new Map(),wipDetails=[];
+    for(const r of IDX.stockByBranch.get(branch)||[]){
