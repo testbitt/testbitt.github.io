@@ -1,0 +1,80 @@
+    $$('.page').forEach(x=>x.classList.toggle('active',x.id===id));
+    if(id==='wipmaster')renderWipMaster();
+    if(id==='manualcal')renderManualPage();
+    if(id==='planning')renderPlanningPage();
+  }
+  function renderBranchSelectors(){
+    const opts=(typeof branchMaster==='function'?branchMaster():[]).map(x=>`<option value="${esc(x.code)}">${esc(x.code+(x.name?' - '+x.name:''))}</option>`).join('');
+    for(const id of ['manualBranch','planBranch']){
+      const e=$('#'+id);if(!e)continue;const keep=e.value||$('#branch')?.value||'';e.innerHTML=opts;if(keep&&[...e.options].some(o=>o.value===keep))e.value=keep;
+    }
+  }
+
+  function renderWipMaster(){
+    const box=$('#wipMasterList');if(!box)return;
+    const q=K($('#wipSearch')?.value||''),groups=wipGroups(),overrides=yieldOverrides(),list=[...groups.entries()].filter(([code,rows])=>!q||K(code+' '+rows.map(r=>T(V(r,'rmitem'))+' '+T(V(r,'rmd'))).join(' ')).includes(q));
+    $('#wipCount').textContent=`${list.length.toLocaleString('th-TH')} WP`;
+    box.innerHTML=list.length?list.map(([code,rows])=>{
+      const fileYield=num(V(rows[0],'fgq')),override=overrides.get(code),used=override||fileYield;
+      return `<div class="wip-card"><div class="wip-head"><div><b>${esc(code)}</b><small>${rows.length} วัตถุดิบ</small></div><div class="wip-yield"><label>ผลผลิตจากไฟล์<input value="${fileYield||''}" disabled></label><label>ผลผลิตที่ใช้<input class="wip-yield-input" data-code="${esc(code)}" type="number" min="0" step="any" value="${override||''}" placeholder="${fileYield||'กรอกผลผลิต'}" ${ROLE()==='admin'?'':'disabled'}></label>${ROLE()==='admin'?`<button class="btn alt small wip-clear" data-code="${esc(code)}">ล้างค่ากำหนดเอง</button>`:''}<span class="wip-used">ใช้ ${fmt(used)}</span></div></div>
+      <div class="tablewrap"><table><thead><tr><th>RM Code</th><th>Qty / สูตร</th><th>Unit</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(T(V(r,'rmitem')))}</b></td><td class="num">${fmt(num(V(r,'rmq')))}</td><td>${esc(T(V(r,'rmu')))}</td></tr>`).join('')}</tbody></table></div></div>`;
+    }).join(''):'<div class="planning-empty">ไม่พบรหัส WP ใน Bomb Sheet Wip</div>';
+    box.querySelectorAll('.wip-yield-input').forEach(i=>i.onchange=()=>setYield(i.dataset.code,i.value));
+    box.querySelectorAll('.wip-clear').forEach(b=>b.onclick=()=>setYield(b.dataset.code,0));
+  }
+
+  function renderManualPage(){
+    const body=$('#manualTbl tbody');if(!body)return;
+    renderBranchSelectors();const branch=$('#manualBranch')?.value||$('#branch')?.value||'';if(!branch){body.innerHTML='';return}
+    const m=manualCal(branch),rows=[...m.byRm.values()].sort((a,b)=>a.rm.localeCompare(b.rm,'en',{numeric:true}));
+    body.innerHTML=rows.map(x=>`<tr><td><b>${esc(x.rm)}</b></td><td>${esc(x.desc)}</td><td>${esc(x.unit)}</td><td>${x.sources.map(esc).join(', ')}</td><td>${x.details.map(d=>`${esc(d.wp)}: Sales ${fmt(d.sales)} ÷ Yield ${fmt(d.yieldQty)} = ${fmt(d.batches)} สูตร × ${fmt(d.rmQty)} ${esc(d.rmUnit)}${d.factor?` ÷ ${fmt(d.factor)}`:''}`).join('<br>')}</td><td class="num"><b>${fmt(x.total)}</b></td><td class="${x.status==='OK'?'ok':'warn'}">${esc(x.status)}</td></tr>`).join('');
+    const missingYield=m.errors.filter(x=>x.type==='Missing Yield').length,needConv=m.errors.filter(x=>x.type==='Manual Cal needs conversion').length;
+    $('#manualKpi').innerHTML=`<div class="card plan-kpi">WP ที่มียอดใช้<b>${m.wpSales.size}</b></div><div class="card plan-kpi">RM ที่คำนวณได้<b>${rows.length}</b></div><div class="card plan-kpi">Missing Yield<b class="warn">${missingYield}</b></div><div class="card plan-kpi">Need Conversion<b class="warn">${needConv}</b></div>`;
+    $('#manualErrors').innerHTML=m.errors.length?`<div class="notice">${m.errors.map(x=>`<b>${esc(x.type)}</b> ${esc(x.code)}: ${esc(x.note)}`).join(' • ')}</div>`:'';
+  }
+
+  function itemSaleDays(branch){
+    return new Set((S.item||[]).filter(r=>T(V(r,'wh'))===branch&&T(V(r,'date'))).map(r=>T(V(r,'date')))).size;
+  }
+  function reorderMap(branch){const m=new Map();for(const x of S.reorderSettings||[])if(T(x.branch_code)===branch)m.set(T(x.rm_code).toUpperCase(),Math.max(0,Math.trunc(num(x.lead_time_days))));return m}
+  function parseStockDate(s){
+    s=T(s);if(!s)return new Date();
+    let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+    m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);if(m)return new Date(+m[3],+m[2]-1,+m[1]);
+    const d=new Date(s);return isNaN(d)?new Date():d;
+  }
+  function thaiDate(d){return d instanceof Date&&!isNaN(d)?d.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'}):'—'}
+  function currentStock(x){
+    if(x.count!=null)return{value:num(x.count),basis:'Actual Count'};
+    if(Number.isFinite(Number(x.reportActual))&&num(x.reportActual)!==0)return{value:num(x.reportActual),basis:'Report Actual'};
+    return{value:num(x.calc),basis:'Calc Theory'};
+  }
+  function planningRows(){
+    const branch=$('#planBranch')?.value||$('#branch')?.value||'',days=Math.max(1,itemSaleDays(branch)),lead=reorderMap(branch),base=parseStockDate(S.stockDate);
+    return (S.analysis||[]).map(x=>{
+      const stock=currentStock(x),usage=x.usageTotal==null?null:num(x.usageTotal),daily=usage==null?null:usage/days,lt=lead.get(T(x.rm).toUpperCase())||0,required=daily==null?null:daily*lt,order=required==null?null:Math.max(required-stock.value,0),cover=daily>0?Math.max(stock.value,0)/daily:null;
+      let until=null;if(cover!=null){until=new Date(base);until.setDate(until.getDate()+Math.floor(cover))}
+      return {...x,currentStock:stock.value,stockBasis:stock.basis,usageDays:days,dailyUsage:daily,leadTime:lt,requiredQty:required,planOrder:order,coverDays:cover,availableUntil:until,planStatus:required==null?'คำนวณไม่ได้':stock.value>=required?'เพียงพอ':'ควรสั่งเพิ่ม'};
+    });
+  }
+  let leadSaveTimer=0;
+  async function saveLeadSetting(branch,rm,days){
+    days=Math.max(0,Math.min(365,Math.trunc(num(days))));
+    const key=branch+'\u0001'+rm.toUpperCase(),m=new Map((S.reorderSettings||[]).map(x=>[T(x.branch_code)+'\u0001'+T(x.rm_code).toUpperCase(),x]));
+    m.set(key,{branch_code:branch,rm_code:rm,lead_time_days:days,updated_at:new Date().toISOString()});S.reorderSettings=[...m.values()];
+    clearTimeout(leadSaveTimer);leadSaveTimer=setTimeout(async()=>{try{await cloudApi('save_reorder_settings',{settings:S.reorderSettings.filter(x=>T(x.branch_code)===branch)});renderPlanningPage()}catch(e){alert('บันทึก Lead Time ไม่สำเร็จ: '+e.message)}},350);
+  }
+  function syncPlanningBranch(forceAll=false){
+    const p=$('#planBranch'),main=$('#branch');if(!p||!main)return;
+    if(p.value&&main.value!==p.value)main.value=p.value;
+    if(forceAll&&$('#date'))$('#date').value='';
+    compute();
+  }
+  function renderPlanningPage(){
+    const body=$('#planTbl tbody');if(!body||ROLE()!=='user')return;
+    renderBranchSelectors();const branch=$('#planBranch')?.value||$('#branch')?.value||'';if(!branch)return;
+    if($('#branch')?.value!==branch)return;
+    const rows=planningRows(),days=itemSaleDays(branch);
+    $('#planDaysInfo').textContent=`ฐานคำนวณ Daily Usage: ${days||1} วัน${days?'จาก Item Sale':' (ไม่พบวันที่ Item Sale จึงใช้ 1 วัน)'}`;
+    body.innerHTML=rows.map(x=>`<tr><td><b>${esc(x.rm)}</b></td><td>${esc(x.desc)}</td><td>${esc(x.unit)}</td><td class="num" title="${esc(x.stockBasis)}">${fmt(x.currentStock)}</td><td class="num">${x.usageTotal==null?'—':fmt(x.usageTotal)}</td><td class="num">${x.usageDays}</td><td class="num">${x.dailyUsage==null?'—':fmt(x.dailyUsage)}</td><td><input class="lead-days" data-rm="${esc(x.rm)}" type="number" min="0" max="365" value="${x.leadTime}"></td><td class="num">${x.requiredQty==null?'—':fmt(x.requiredQty)}</td><td class="num"><b>${x.planOrder==null?'—':fmt(x.planOrder)}</b></td><td class="num">${x.coverDays==null?'—':fmt(x.coverDays)}</td><td>${x.availableUntil?thaiDate(x.availableUntil):'—'}</td><td><span class="plan-status ${x.planStatus==='เพียงพอ'?'enough':x.planStatus==='ควรสั่งเพิ่ม'?'order':'unknown'}">${x.planStatus}</span></td></tr>`).join('');
+    body.querySelectorAll('.lead-days').forEach(i=>i.onchange=()=>saveLeadSetting(branch,i.dataset.rm,i.value));
