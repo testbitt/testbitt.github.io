@@ -1,0 +1,80 @@
+      else sc.innerHTML=`<span class="usage-source-tag">${esc(x.usageSource1||'ยังไม่กำหนด')}${x.usageCupSize1?' ('+esc(x.usageCupSize1)+')':''}</span>`;
+      uc.className='num';uc.innerHTML=x.usageValue1==null?'—':`<b>${fmt(x.usageValue1)}</b>`;
+      const c2=document.createElement('td'),u2=document.createElement('td'),tot=document.createElement('td');
+      if(ROLE()==='admin'){c2.className='dual-usage-editor';c2.innerHTML=usageEditor(rm,cfg,2)}
+      else c2.innerHTML=x.usageSource2?`<span class="usage-source-tag">${esc(x.usageSource2)}${x.usageCupSize2?' ('+esc(x.usageCupSize2)+')':''}</span>`:'—';
+      u2.className='num';u2.innerHTML=x.usageCode2?(x.usageValue2==null?'—':fmt(x.usageValue2)):'—';
+      tot.className='num dual-total';tot.innerHTML=x.usageTotal==null?'—':`<b>${fmt(x.usageTotal)}</b>`;
+      tr.insertBefore(c2,uc.nextSibling);tr.insertBefore(u2,c2.nextSibling);tr.insertBefore(tot,u2.nextSibling);
+    }
+  }
+  $('#tbl')?.addEventListener('change',e=>{
+    const t=e.target;if(ROLE()!=='admin')return;
+    if(t.classList.contains('dual-usage-source')){
+      const rm=T(t.dataset.rm).toUpperCase(),slot=Number(t.dataset.slot),source=sourceCode(t.value),tr=t.closest('tr');
+      const cup=T(tr?.querySelector(`.dual-usage-cup[data-slot="${slot}"]`)?.value).toUpperCase();
+      updateUsageCfg(rm,slot,source,cup);
+    }else if(t.classList.contains('dual-usage-cup')){
+      const rm=T(t.dataset.rm).toUpperCase(),slot=Number(t.dataset.slot),tr=t.closest('tr');
+      const source=sourceCode(tr?.querySelector(`.dual-usage-source[data-slot="${slot}"]`)?.value);
+      updateUsageCfg(rm,slot,source,T(t.value).toUpperCase());
+    }
+  });
+
+  async function loadPlanningData(){
+    if(!TOKEN())return;
+    try{
+      const x=await cloudApi('load_planning');
+      S.wipConversion=Array.isArray(x.wip_conversion)?x.wip_conversion:[];
+      S.reorderSettings=Array.isArray(x.reorder_settings)?x.reorder_settings:[];
+      ensureExtraPages();renderWipMaster();renderManualPage();renderPlanningPage();compute();
+    }catch(e){console.warn('Planning data load',e)}
+  }
+  async function saveWipMaster(){
+    if(ROLE()!=='admin')return;
+    const b=$('#wipSaveState');if(b){b.textContent='กำลังบันทึก...';b.className='planning-state saving'}
+    try{
+      await cloudApi('admin_save_master',{dataset_type:'wip_conversion',payload:S.wipConversion,metadata:{file_name:'WIP Conversion Master',rows:S.wipConversion.length,updated_by:'admin'},silent:true});
+      if(b){b.textContent='บันทึกแล้ว';b.className='planning-state saved'}
+      compute();
+    }catch(e){if(b){b.textContent='บันทึกไม่สำเร็จ';b.className='planning-state error'}alert('บันทึก WIP Conversion ไม่สำเร็จ: '+e.message)}
+  }
+  function setYield(code,value){
+    code=T(code).toUpperCase();const y=num(value),m=new Map((S.wipConversion||[]).map(x=>[T(x.wip_code).toUpperCase(),x]));
+    if(y>0)m.set(code,{wip_code:code,yield_qty:y,updated_at:new Date().toISOString()});else m.delete(code);
+    S.wipConversion=[...m.values()].sort((a,b)=>a.wip_code.localeCompare(b.wip_code,'en',{numeric:true}));
+    saveWipMaster();renderWipMaster();
+  }
+
+  function ensureExtraPages(){
+    const tabs=$('.tabs'),main=document.querySelector('main');if(!tabs||!main)return;
+    if(!$('.tab[data-p="wipmaster"]')){
+      const t=document.createElement('button');t.className='tab';t.dataset.p='wipmaster';t.innerHTML='<span>🏭</span> WIP Conversion Master';tabs.appendChild(t);
+      const s=document.createElement('section');s.id='wipmaster';s.className='page';s.innerHTML=`
+        <div class="card"><div class="section-head"><div class="section-title"><div class="icon">🏭</div><div><h3>WIP Conversion Master</h3><div class="subtle">รหัส WP จาก Bomb Sheet Wip • กำหนดผลผลิตสำหรับ Manual Cal</div></div></div><span id="wipSaveState" class="planning-state saved">พร้อม</span></div>
+        <div class="planning-toolbar"><input id="wipSearch" placeholder="ค้นหา WP Code / วัตถุดิบ"><span id="wipCount" class="subtle"></span></div></div>
+        <div class="card"><div id="wipMasterList" class="wip-master-list"></div></div>`;
+      main.appendChild(s);t.onclick=()=>activatePage('wipmaster');$('#wipSearch').oninput=renderWipMaster;
+    }
+    if(!$('.tab[data-p="manualcal"]')){
+      const t=document.createElement('button');t.className='tab';t.dataset.p='manualcal';t.innerHTML='<span>🧮</span> Manual Cal';tabs.appendChild(t);
+      const s=document.createElement('section');s.id='manualcal';s.className='page';s.innerHTML=`
+        <div class="card"><div class="section-head"><div class="section-title"><div class="icon">🧮</div><div><h3>Manual Cal • WIP Usage</h3><div class="subtle">WP Sales Usage ÷ ผลผลิต × วัตถุดิบ ÷ Unit Conversion</div></div></div></div>
+        <div class="planning-toolbar"><label>สาขา <select id="manualBranch"></select></label><button class="btn" id="manualRefresh">🔄 คำนวณใหม่</button></div></div>
+        <div id="manualKpi" class="planning-kpis"></div>
+        <div class="card"><div id="manualErrors"></div><div class="tablewrap"><table id="manualTbl"><thead><tr><th>RM</th><th>Description</th><th>Unit</th><th>WP Source</th><th>รายละเอียดสูตร</th><th>Total Manual Usage</th><th>Status</th></tr></thead><tbody></tbody></table></div></div>`;
+      main.appendChild(s);t.onclick=()=>activatePage('manualcal');$('#manualBranch').onchange=renderManualPage;$('#manualRefresh').onclick=renderManualPage;
+    }
+    if(ROLE()==='user'&&!$('.tab[data-p="planning"]')){
+      const t=document.createElement('button');t.className='tab';t.dataset.p='planning';t.innerHTML='<span>📦</span> Daily Usage & Plan';tabs.appendChild(t);
+      const s=document.createElement('section');s.id='planning';s.className='page';s.innerHTML=`
+        <div class="card"><div class="section-head"><div class="section-title"><div class="icon">📦</div><div><h3>Daily Usage & Order Planning</h3><div class="subtle">คำนวณยอดใช้รายวัน • รอบรอส่งสินค้า • Stock Cover • Plan สั่งสินค้า</div></div></div><div style="display:flex;gap:8px"><button class="btn" id="planExcel">📗 Excel</button><button class="btn" id="planPdf">📄 PDF</button></div></div>
+        <div class="planning-toolbar"><label>สาขา <select id="planBranch"></select></label><label>Lead Time ทุกสินค้า <input id="planAllDays" type="number" min="0" max="365" value="0"></label><button class="btn alt" id="applyPlanAll">ใช้กับทุกรายการ</button><span id="planDaysInfo" class="subtle"></span></div></div>
+        <div id="planKpi" class="planning-kpis"></div>
+        <div class="card"><div class="tablewrap"><table id="planTbl"><thead><tr><th>RM</th><th>Description</th><th>Unit</th><th>Current Stock</th><th>Usage Total</th><th>Usage Days</th><th>Daily Usage</th><th>Lead Time Days</th><th>Required Qty</th><th>Plan Order Qty</th><th>Stock Cover Days</th><th>ใช้ได้ถึงวันที่</th><th>Status</th></tr></thead><tbody></tbody></table></div></div>`;
+      main.appendChild(s);t.onclick=()=>{activatePage('planning');syncPlanningBranch(true)};$('#planBranch').onchange=()=>syncPlanningBranch(true);$('#applyPlanAll').onclick=applyLeadAll;$('#planExcel').onclick=exportPlanningExcel;$('#planPdf').onclick=exportPlanningPdf;
+    }
+    renderBranchSelectors();
+  }
+  function activatePage(id){
+    $$('.tab').forEach(x=>x.classList.toggle('active',x.dataset.p===id));
