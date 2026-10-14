@@ -1,0 +1,80 @@
+        out.push({
+          rm,desc,unit:su,bf,gr,tin,wipin,adjin,rtv,tout,wipout,damage,adjout,bom,bomRaw,hasBom,missingConv:missing.length,
+          mov:movSales,uv:bom===null?null:movSales-bom,waste,calc,reportTheory,reportActual,count,diff,
+          diffp:diff===null||calc===null||Math.abs(calc)<1e-9?null:diff/calc*100,cost,vc:diff===null?0:diff*cost,status,sourceRows:rs.length,
+          usageSource:cfg.source1?sourceLabel(cfg.source1)+(cfg.source2?' + '+sourceLabel(cfg.source2):''):'ยังไม่กำหนด',
+          usageCupSize:cfg.cup1,usageValue:usageTotal,usageSetupNeeded,
+          usageSource1:sourceLabel(cfg.source1),usageCode1:cfg.source1,usageCupSize1:cfg.cup1,usageValue1:one.value,
+          usageSource2:cfg.source2?sourceLabel(cfg.source2):'',usageCode2:cfg.source2,usageCupSize2:cfg.cup2,usageValue2:cfg.source2?two.value:0,
+          usageTotal,manualUsage:manualRow?.total||0
+        });
+      }
+      S.analysis=out;S.needs=needs;S.currentExpected=exp;S.manualCal=manual;
+      syncActiveCustomCheck(out);renderRMFilter(true);render();recon();renderCustomChecks();setCalcStatus(`พร้อม • ${out.length.toLocaleString()} RM`);
+      renderManualPage();renderPlanningPage();
+    });
+  }
+  compute=calcDualAnalysis;
+
+  let usageSaveTimer=0,usageSaving=false;
+  function cupSizes(){return[...new Set((S.cupMapping||[]).filter(x=>x.count_as_cup!==false&&T(x.cup_size)).map(x=>T(x.cup_size).toUpperCase()))].sort((a,b)=>a.localeCompare(b,'en',{numeric:true}))}
+  function cupSelect(rm,value,source,slot){
+    if(source!=='item_sale')return'';
+    const sizes=cupSizes();
+    return `<select class="dual-usage-cup" data-rm="${esc(rm)}" data-slot="${slot}"><option value="">-- รหัสแก้ว --</option>${sizes.map(s=>`<option value="${esc(s)}" ${value===s?'selected':''}>${esc(s)}</option>`).join('')}</select>`;
+  }
+  function usageEditor(rm,cfg,slot){
+    const src=slot===1?cfg.source1:cfg.source2,cup=slot===1?cfg.cup1:cfg.cup2;
+    return `<select class="dual-usage-source" data-rm="${esc(rm)}" data-slot="${slot}">${sourceOptions(src,slot===2)}</select>${cupSelect(rm,cup,src,slot)}`;
+  }
+  function ensureUsageSaveState(){
+    if($('#dualUsageSaveState'))return;
+    const card=$('#tbl')?.closest('.card'),actions=card?.querySelector('.section-head>div:last-child');if(!actions)return;
+    const st=document.createElement('span');st.id='dualUsageSaveState';st.className='dual-usage-state saved';st.textContent='Usage Source 1+2 • Auto Save';actions.prepend(st);
+  }
+  function setUsageState(t,c){const e=$('#dualUsageSaveState');if(e){e.textContent=t;e.className='dual-usage-state '+c}}
+  async function saveUsageMaster(){
+    if(ROLE()!=='admin'||usageSaving)return;
+    usageSaving=true;setUsageState('กำลังบันทึก Usage Source...','saving');
+    try{await cloudApi('admin_save_master',{dataset_type:'usage_source',payload:S.usageSource||[],metadata:{file_name:'RM Usage Source 1+2',rows:(S.usageSource||[]).length,source:'inventory_audit_v328'},silent:true});setUsageState('บันทึก Usage Source แล้ว','saved')}
+    catch(e){setUsageState('บันทึกไม่สำเร็จ','error');console.warn(e)}
+    finally{usageSaving=false}
+  }
+  function scheduleUsageSave(){clearTimeout(usageSaveTimer);setUsageState('รอบันทึกอัตโนมัติ...','saving');usageSaveTimer=setTimeout(saveUsageMaster,500)}
+  function updateUsageCfg(rm,slot,source,cup){
+    const map=dualSettingsMap(),old=map.get(rm)||{rm_code:rm,source1:'',source2:'',cup1:'',cup2:''};
+    if(slot===1){old.source1=source;old.cup1=source==='item_sale'?cup:''}
+    else{old.source2=source;old.cup2=source==='item_sale'?cup:''}
+    if(old.source1&&old.source2&&old.source1===old.source2){alert('Usage Source 1 และ Usage Source 2 ห้ามเลือกซ้ำกัน');return false}
+    const raw=new Map();
+    for(const x of S.usageSource||[])raw.set(T(x.rm_code).toUpperCase(),x);
+    if(!old.source1&&!old.source2)raw.delete(rm);
+    else raw.set(rm,{rm_code:rm,source:old.source1,source_1:old.source1,source_2:old.source2,cup_size:old.cup1,cup_size_1:old.cup1,cup_size_2:old.cup2});
+    S.usageSource=[...raw.values()];
+    scheduleUsageSave();compute();return true;
+  }
+
+  const renderBase=render;
+  render=function(){
+    renderBase();
+    enhanceDualUsageTable();
+    renderPlanningPage();
+  };
+  function enhanceDualUsageTable(){
+    const table=$('#tbl');if(!table)return;
+    let hs=[...table.querySelectorAll('thead th')],sidx=hs.findIndex(x=>T(x.textContent)==='Usage Source'),uidx=hs.findIndex(x=>T(x.textContent)==='Usage');
+    if(sidx<0){sidx=hs.findIndex(x=>T(x.textContent)==='Usage Source 1')}
+    if(uidx<0){uidx=hs.findIndex(x=>T(x.textContent)==='Usage 1')}
+    if(sidx<0||uidx<0)return;
+    hs[sidx].textContent='Usage Source 1';hs[uidx].textContent='Usage 1';
+    const trh=table.querySelector('thead tr');
+    const h2=document.createElement('th');h2.textContent='Usage Source 2';
+    const h3=document.createElement('th');h3.textContent='Usage 2';
+    const h4=document.createElement('th');h4.textContent='Usage Total';
+    trh.insertBefore(h2,hs[uidx].nextSibling);trh.insertBefore(h3,h2.nextSibling);trh.insertBefore(h4,h3.nextSibling);
+    const map=dualSettingsMap();
+    for(const tr of table.querySelectorAll('tbody tr')){
+      const rm=T(tr.cells[0]?.textContent).toUpperCase(),x=S.analysis.find(a=>T(a.rm).toUpperCase()===rm),cfg=map.get(rm)||{source1:'',source2:'',cup1:'',cup2:''};
+      if(!x)continue;
+      const sc=tr.cells[sidx],uc=tr.cells[uidx];
+      if(ROLE()==='admin'){ensureUsageSaveState();sc.className='dual-usage-editor';sc.innerHTML=usageEditor(rm,cfg,1)}
