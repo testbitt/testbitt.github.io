@@ -1,0 +1,40 @@
+    const enough=rows.filter(x=>x.planStatus==='เพียงพอ').length,order=rows.filter(x=>x.planStatus==='ควรสั่งเพิ่ม').length,totalOrder=rows.reduce((s,x)=>s+(x.planOrder||0),0),covers=rows.map(x=>x.coverDays).filter(x=>x!=null);
+    $('#planKpi').innerHTML=`<div class="card plan-kpi">RM ทั้งหมด<b>${rows.length}</b></div><div class="card plan-kpi">เพียงพอ<b class="ok">${enough}</b></div><div class="card plan-kpi">ควรสั่งเพิ่ม<b class="bad">${order}</b></div><div class="card plan-kpi">Plan Order Qty รวม<b>${fmt(totalOrder)}</b></div><div class="card plan-kpi">Average Stock Cover<b>${covers.length?fmt(covers.reduce((a,b)=>a+b,0)/covers.length):'—'} วัน</b></div>`;
+  }
+  async function applyLeadAll(){
+    const branch=$('#planBranch')?.value||'',days=Math.max(0,Math.min(365,Math.trunc(num($('#planAllDays')?.value))));
+    const rows=S.analysis||[];for(const x of rows){const key=branch+'\u0001'+T(x.rm).toUpperCase(),m=new Map((S.reorderSettings||[]).map(y=>[T(y.branch_code)+'\u0001'+T(y.rm_code).toUpperCase(),y]));m.set(key,{branch_code:branch,rm_code:x.rm,lead_time_days:days,updated_at:new Date().toISOString()});S.reorderSettings=[...m.values()]}
+    try{await cloudApi('save_reorder_settings',{settings:S.reorderSettings.filter(x=>T(x.branch_code)===branch)});renderPlanningPage()}catch(e){alert('บันทึก Lead Time ไม่สำเร็จ: '+e.message)}
+  }
+
+  function exportPlanningExcel(){
+    if(!window.XLSX){alert('Excel library ยังไม่พร้อม');return}
+    const branch=$('#planBranch')?.value||'',rows=planningRows(),aoa=[['KAMU Daily Usage & Order Planning'],['Branch',branch],['Stock Date',S.stockDate||''],[],['RM','Description','Unit','Current Stock','Usage Total','Usage Days','Daily Usage','Lead Time Days','Required Qty','Plan Order Qty','Stock Cover Days','Stock Available Until','Status'],...rows.map(x=>[x.rm,x.desc,x.unit,x.currentStock,x.usageTotal??'',x.usageDays,x.dailyUsage??'',x.leadTime,x.requiredQty??'',x.planOrder??'',x.coverDays??'',x.availableUntil?thaiDate(x.availableUntil):'',x.planStatus])];
+    const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=[{wch:15},{wch:35},{wch:12},...Array(10).fill({wch:16})];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Daily Usage Plan');XLSX.writeFile(wb,`KAMU_Daily_Usage_Plan_${branch}_${S.stockDate||'ALL'}.xlsx`);
+  }
+  async function exportPlanningPdf(){
+    try{
+      if(typeof ensurePdf!=='function')throw Error('PDF library ไม่พร้อม');await ensurePdf();
+      const branch=$('#planBranch')?.value||'',rows=planningRows(),per=20,total=Math.max(1,Math.ceil(rows.length/per)),pages=[];
+      for(let p=0;p<total;p++){
+        const part=rows.slice(p*per,(p+1)*per),box=document.createElement('div');box.style.cssText='position:fixed;left:-100000px;top:0;width:1400px;padding:32px;background:white;color:#173a28;font-family:Arial,sans-serif;box-sizing:border-box';
+        box.innerHTML=`<h2 style="margin:0 0 8px">KAMU Daily Usage & Order Planning</h2><div style="margin-bottom:12px">Branch: <b>${esc(branch)}</b> • Stock Date: ${esc(S.stockDate||'-')} • Page ${p+1}/${total}</div><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr>${['RM','Description','Stock','Usage','Daily','Lead','Required','Plan Order','Cover Days','ใช้ได้ถึง','Status'].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${part.map(x=>`<tr><td>${esc(x.rm)}</td><td>${esc(x.desc)}</td><td>${fmt(x.currentStock)}</td><td>${x.usageTotal==null?'—':fmt(x.usageTotal)}</td><td>${x.dailyUsage==null?'—':fmt(x.dailyUsage)}</td><td>${x.leadTime}</td><td>${x.requiredQty==null?'—':fmt(x.requiredQty)}</td><td>${x.planOrder==null?'—':fmt(x.planOrder)}</td><td>${x.coverDays==null?'—':fmt(x.coverDays)}</td><td>${x.availableUntil?thaiDate(x.availableUntil):'—'}</td><td>${x.planStatus}</td></tr>`).join('')}</tbody></table>`;box.querySelectorAll('th,td').forEach(x=>x.style.cssText+=';border:1px solid #cfded4;padding:6px');box.querySelectorAll('th').forEach(x=>x.style.cssText+=';background:#dff4e7');document.body.appendChild(box);pages.push(box);
+      }
+      const canvases=[];try{for(const p of pages)canvases.push(await html2canvas(p,{scale:1.15,backgroundColor:'#fff',logging:false}))}finally{pages.forEach(x=>x.remove())}
+      const {jsPDF}=window.jspdf,pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});canvases.forEach((c,i)=>{if(i)pdf.addPage('a4','landscape');const img=c.toDataURL('image/jpeg',.92),pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight(),r=Math.min(pw/c.width,ph/c.height);pdf.addImage(img,'JPEG',(pw-c.width*r)/2,(ph-c.height*r)/2,c.width*r,c.height*r)});pdf.save(`KAMU_Daily_Usage_Plan_${branch}_${S.stockDate||'ALL'}.pdf`);
+    }catch(e){alert('Export PDF ไม่สำเร็จ: '+e.message)}
+  }
+
+  const css=document.createElement('style');css.textContent=`
+  .dual-usage-editor{min-width:170px}.dual-usage-editor select{display:block;width:100%;min-height:34px;border:1px solid #bcd9c6;border-radius:9px;background:#fff;padding:5px 7px;font-size:11px}.dual-usage-editor select+select{margin-top:4px}.dual-total{background:#f0faf3}.dual-usage-state,.planning-state{display:inline-flex;padding:6px 10px;border-radius:10px;font-size:11px;font-weight:850}.saved{background:#e7f8ed;color:#147645}.saving{background:#fff5d9;color:#8b5a00}.error{background:#fff0ee;color:#b42318}
+  .planning-toolbar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:12px}.planning-toolbar label{display:grid;gap:4px;font-size:11px;font-weight:800;color:#547060}.planning-toolbar select,.planning-toolbar input{min-height:40px;border:1px solid #bfdac8;border-radius:10px;padding:7px 10px;background:#fff}.planning-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:12px 0}.plan-kpi{font-size:11px;color:#657c6d}.plan-kpi b{display:block;margin-top:4px;font-size:21px;color:#173a28}.lead-days{width:84px;min-height:34px;border:1px solid #bfdac8;border-radius:8px;padding:5px}.plan-status{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900;white-space:nowrap}.plan-status.enough{background:#daf5e3;color:#116a35}.plan-status.order{background:#ffe1df;color:#b42318}.plan-status.unknown{background:#eef1ef;color:#65756c}
+  .wip-master-list{display:grid;gap:12px}.wip-card{border:1px solid #d5e8db;border-radius:16px;padding:12px;background:#fff}.wip-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;margin-bottom:10px}.wip-head>div:first-child b{font-size:16px;color:#17653e}.wip-head small{display:block;color:#748679;margin-top:3px}.wip-yield{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.wip-yield label{display:grid;gap:3px;font-size:10px;color:#688071}.wip-yield input{width:130px;min-height:36px;border:1px solid #c7dfcf;border-radius:9px;padding:6px 8px}.wip-used{padding:7px 9px;border-radius:9px;background:#eef9f2;color:#17653e;font-size:11px;font-weight:850}.planning-empty{padding:24px;text-align:center;color:#718679}
+  @media(max-width:900px){.planning-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.wip-head{display:block}.wip-yield{margin-top:10px}}@media(max-width:600px){.planning-kpis{grid-template-columns:1fr}.planning-toolbar>*{width:100%}.planning-toolbar select,.planning-toolbar input{width:100%}}
+  `;document.head.appendChild(css);
+
+  ensureExtraPages();renderBranchSelectors();renderWipMaster();renderManualPage();
+  document.addEventListener('kamu:data-ready',()=>setTimeout(()=>{ensureExtraPages();renderBranchSelectors();loadPlanningData()},120));
+  setTimeout(()=>{ensureExtraPages();if(TOKEN())loadPlanningData()},900);
+
+  const ver=document.querySelector('.version');if(ver){const fresh=ver.cloneNode(false);fresh.textContent='Version 3.28 • Public Multi‑User Cloud';ver.replaceWith(fresh)}
+})();
