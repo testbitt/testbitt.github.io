@@ -52,6 +52,21 @@
     return out;
   }
 
+  function adminDayCode(value){
+    const normalized=norm(value||'');
+    const shift=(db.shifts||[]).find(item=>item.active!==false&&/^DAY/i.test(String(item.day_code||'').trim())&&(norm(item.normal_time||'')===normalized||String(item.day_code||'').trim().toUpperCase()===String(normalized).toUpperCase()));
+    return shift?.day_code||'';
+  }
+
+  function adminDayRows(schedule){
+    const employeeMaster=new Map((db.employees||[]).map(employee=>[String(employee.employee_code||'').trim(),employee]));
+    const branch=String(schedule.branch_code||'').trim().toUpperCase();
+    return grouped(schedule).filter(row=>{
+      const master=employeeMaster.get(String(row.code||'').trim());
+      return !master?.branch_code||String(master.branch_code).trim().toUpperCase()===branch;
+    });
+  }
+
   function renderAdminDayOnly(){
     try{
       const schedules=selectedSchedules();
@@ -62,7 +77,7 @@
         if(idx>0)section.innerHTML+='<tr><td colspan="9" style="height:18px;background:#f7faf9"></td></tr>';
         section.innerHTML+=`<tr><th colspan="9" style="background:#e7f2ee;font-size:13px">${esc(s.branch_code)}${s.branch_name&&s.branch_name!==s.branch_code?' — '+esc(s.branch_name):''}</th></tr>`;
         section.innerHTML+=`<tr><th>รหัส</th><th>พนักงาน</th>${dates.map((d,i)=>`<th>${SHORT[i]}<br>${d}</th>`).join('')}</tr>`;
-        section.innerHTML+=grouped(s).map(r=>`<tr><td>${esc(r.code)}</td><td>${esc(r.name)}</td>${dates.map(d=>{const e=r.days[d]||{};return `<td><b>${esc(dayCode(e.normal_time)||'-')}</b></td>`}).join('')}</tr>`).join('');
+        section.innerHTML+=adminDayRows(s).map(r=>`<tr><td>${esc(r.code)}</td><td>${esc(r.name)}</td>${dates.map(d=>{const e=r.days[d]||{};return `<td><b>${esc(adminDayCode(e.normal_time)||'-')}</b></td>`}).join('')}</tr>`).join('');
         adminTable.appendChild(section);
       });
     }catch(e){toast(e.message,'error')}
@@ -73,7 +88,7 @@
       const schedules=selectedSchedules(),wb=XLSX.utils.book_new();
       schedules.forEach(s=>{
         const dates=weekDates(s.week_start).map(iso),aoa=[[`KAMU WORK SCHEDULE - DAY`,s.branch_code,s.branch_name||'',`Week`,s.week_start],[],['รหัส','ชื่อพนักงาน','ตำแหน่ง',...dates.map((d,i)=>SHORT[i]+' '+d)]];
-        grouped(s).forEach(r=>aoa.push([r.code,r.name,r.position,...dates.map(d=>dayCode((r.days[d]||{}).normal_time)||'')]));
+        adminDayRows(s).forEach(r=>aoa.push([r.code,r.name,r.position,...dates.map(d=>adminDayCode((r.days[d]||{}).normal_time)||'')]));
         const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=[{wch:14},{wch:28},{wch:18},...Array(7).fill({wch:15})];
         XLSX.utils.book_append_sheet(wb,ws,String(s.branch_code).slice(0,31));
       });
@@ -86,7 +101,7 @@
     try{
       const schedules=selectedSchedules();
       const rows=[['BranchCode','BranchName','Week','EmployeeCode','EmployeeName','Position','MON','TUE','WED','THU','FRI','SAT','SUN']];
-      schedules.forEach(s=>{const dates=weekDates(s.week_start).map(iso);grouped(s).forEach(r=>rows.push([s.branch_code,s.branch_name||'',s.week_start,r.code,r.name,r.position,...dates.map(d=>dayCode((r.days[d]||{}).normal_time)||'')]))});
+      schedules.forEach(s=>{const dates=weekDates(s.week_start).map(iso);adminDayRows(s).forEach(r=>rows.push([s.branch_code,s.branch_name||'',s.week_start,r.code,r.name,r.position,...dates.map(d=>adminDayCode((r.days[d]||{}).normal_time)||'')]))});
       const csv='\ufeff'+rows.map(r=>r.map(csvEscape).join(',')).join('\r\n');
       const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='KAMU_DAY_Schedule_'+adminWeek.value+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);toast('Export CSV DAY แล้ว');
     }catch(e){toast(e.message,'error')}
@@ -102,3 +117,4 @@
   if(adminSub)adminSub.textContent='แสดงเฉพาะรหัสกะ DAY ตาม Shift Master';
   const footer=document.querySelector('.side footer');if(footer)footer.textContent='Version 1.2 · Public Web';
 })();
+

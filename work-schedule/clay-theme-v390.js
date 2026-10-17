@@ -75,6 +75,6 @@
   const brandSmall=document.querySelector('.brand small');
   if(brandSmall)brandSmall.textContent='Clay Work Planner';
   const footer=document.querySelector('.side footer');
-  if(footer)footer.textContent='Version 3.9.2 · Green & White Clay Theme';
+  if(footer)footer.textContent='Version 3.9.3 · Green & White Clay Theme';
 })();
 

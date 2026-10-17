@@ -61,16 +61,24 @@
     if(!schedules.length)throw new Error('ไม่พบตารางในสาขาและช่วงวันที่เลือก');
 
     const groups=new Map();
+    const normalizedBranch=value=>String(value||'').trim().toUpperCase();
+    const employeeMasterByCode=new Map((db?.employees||[]).map(employee=>[
+      String(employee.employee_code||'').trim(),employee
+    ]));
     schedules.sort((a,b)=>String(a.branch_code).localeCompare(String(b.branch_code))||String(a.week_start).localeCompare(String(b.week_start)));
     schedules.forEach(s=>{
       if(!groups.has(s.branch_code))groups.set(s.branch_code,{branch_code:s.branch_code,branch_name:s.branch_name||s.branch_code,rows:new Map()});
       const g=groups.get(s.branch_code);
       (s.entries||[]).forEach(e=>{
         if(!e.work_date||e.work_date<start||e.work_date>end)return;
-        const code=e.employee_code||'';
-        if(!g.rows.has(code))g.rows.set(code,{code,name:e.employee_name||code,position:e.position||'',days:{}});
+        const code=String(e.employee_code||'').trim();
+        const master=employeeMasterByCode.get(code);
+        if(master?.branch_code&&normalizedBranch(master.branch_code)!==normalizedBranch(s.branch_code))return;
+        const currentName=master?.name||master?.display_name||e.employee_name||code;
+        const currentPosition=master?.position||e.position||'';
+        if(!g.rows.has(code))g.rows.set(code,{code,name:currentName,position:currentPosition,days:{}});
         const r=g.rows.get(code);
-        if(e.employee_name)r.name=e.employee_name;if(e.position)r.position=e.position;
+        if(currentName)r.name=currentName;if(currentPosition)r.position=currentPosition;
         r.days[e.work_date]=e;
       });
     });
@@ -79,7 +87,12 @@
     return {start,end,dates,groups:out};
   }
 
-  function dayCell(e){return e?dayCode(e.normal_time)||e.normal_time||'-':'-'}
+  function dayCell(e){
+    if(!e)return '-';
+    const value=norm(e.normal_time||'');
+    const shift=(db?.shifts||[]).find(item=>item.active!==false&&/^DAY/i.test(String(item.day_code||'').trim())&&(norm(item.normal_time||'')===value||String(item.day_code||'').trim().toUpperCase()===String(value).toUpperCase()));
+    return shift?.day_code||'-';
+  }
   function shiftCell(e){
     if(!e)return '-';
     let t=e.normal_time||'-';
@@ -175,3 +188,4 @@
   document.head.appendChild(style);
   const footer=q('.side footer');if(footer)footer.textContent='Version 2.7 · Date Range Export';
 })();
+
