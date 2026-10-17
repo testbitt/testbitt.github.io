@@ -90,6 +90,7 @@
   function dayCell(e){
     if(!e)return '-';
     const value=norm(e.normal_time||'');
+    if(/^(H|VL|EX)$/.test(value))return value;
     const shift=(db?.shifts||[]).find(item=>item.active!==false&&/^DAY/i.test(String(item.day_code||'').trim())&&(norm(item.normal_time||'')===value||String(item.day_code||'').trim().toUpperCase()===String(value).toUpperCase()));
     return shift?.day_code||'-';
   }

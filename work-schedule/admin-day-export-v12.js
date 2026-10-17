@@ -54,6 +54,7 @@
 
   function adminDayCode(value){
     const normalized=norm(value||'');
+    if(/^(H|VL|EX)$/.test(normalized))return normalized;
     const shift=(db.shifts||[]).find(item=>item.active!==false&&/^DAY/i.test(String(item.day_code||'').trim())&&(norm(item.normal_time||'')===normalized||String(item.day_code||'').trim().toUpperCase()===String(normalized).toUpperCase()));
     return shift?.day_code||'';
   }
