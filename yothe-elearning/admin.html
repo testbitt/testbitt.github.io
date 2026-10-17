@@ -3140,18 +3140,23 @@ function parseCSV(text){
   const headers=out[0].map(x=>x.trim());
   return out.slice(1).map(r=>Object.fromEntries(headers.map((h,i)=>[h,(r[i]??"").trim()])));
 }
-async function parseExcelFile(file){
-  if(typeof XLSX==="undefined")throw new Error("ไม่สามารถโหลดตัวอ่าน Excel ได้ กรุณารีเฟรชหน้าแล้วลองใหม่");
-  const buf=await file.arrayBuffer();
-  const wb=XLSX.read(buf,{type:"array",cellDates:false,raw:false});
-  const rows=[];
-  for(const sheetName of wb.SheetNames||[]){
-    const ws=wb.Sheets[sheetName];
-    if(!ws)continue;
-    const data=XLSX.utils.sheet_to_json(ws,{defval:"",raw:false});
-    if(Array.isArray(data)&&data.length)rows.push(...data);
+async function parseExcelFile(file,ds){
+ if(typeof XLSX==="undefined")throw new Error("ไม่สามารถโหลดตัวอ่าน Excel ได้");
+ const wb=XLSX.read(await file.arrayBuffer(),{type:"array",raw:false});
+ const out=[];
+ for(const name of wb.SheetNames){
+  const ws=wb.Sheets[name];if(!ws)continue;
+  if(ds!=="expiry"){out.push(...XLSX.utils.sheet_to_json(ws,{defval:"",raw:false}));continue}
+  const matrix=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false});
+  const at=matrix.findIndex(row=>row.some(c=>["ชื่อวัตถุดิบ","item_name"].includes(String(c).trim())));
+  if(at<0)continue;
+  const cols=matrix[at].map(x=>String(x||"").trim());
+  for(const line of matrix.slice(at+1)){
+   if(!line.some(x=>String(x??"").trim()))continue;
+   out.push(Object.fromEntries(cols.map((h,i)=>[h,line[i]??""]).filter(x=>x[0])));
   }
-  return rows;
+ }
+ return out;
 }
 function coerceRows(ds,arr){
   const types=Object.fromEntries(DATASETS[ds].fields.map(([k,,t])=>[k,t]));
@@ -3166,7 +3171,22 @@ function coerceRows(ds,arr){
       "จำนวนที่ผลิตได้ (สูตร)":"recipes_yield"
     }
   };
+  let lastExpiryName="";
   return arr.map((r,rowIndex)=>{
+    if(ds==="expiry"&&("ชื่อวัตถุดิบ" in r || "อายุการจัดเก็บ" in r)){
+      const name=String(r["ชื่อวัตถุดิบ"]||"").trim();
+      if(name)lastExpiryName=name;
+      const status=String(r["สถานะ"]||"").trim();
+      const life=String(r["อายุการจัดเก็บ"]||"").trim();
+      const storage=String(r["อุปกรณ์ที่จัดเก็บ"]||"").trim();
+      const standard=String(r["ลักษณะตามมาตรฐาน"]||"").trim();
+      const note=String(r["หมายเหตุ"]||"").trim();
+      if(!lastExpiryName||(!status&&!life&&!storage))return {};
+      const packed=/บรรจุภัณฑ์|ยังไม่เปิด/.test(status);
+      return {item_name:lastExpiryName,category:status||"ทั่วไป",storage_condition:storage,
+        shelf_life_unopened:packed?life:"",shelf_life_opened:packed?"":life,
+        notes:[standard,note].filter(Boolean).join(" • "),sort_order:rowIndex+1,is_published:true};
+    }
     const o={};
     for(const [rawKey,v0] of Object.entries(r)){
       const norm=String(rawKey||"").trim();
@@ -3209,7 +3229,7 @@ async function autoUploadData(){
         msg.textContent="กำลังอ่านข้อมูล "+file.name+"...";msg.className="msg saving";
         let data;
         if(isExcel){
-          data=await parseExcelFile(file);
+          data=await parseExcelFile(file,ds);
         }else{
           const text=await file.text();
           if(isJson){
