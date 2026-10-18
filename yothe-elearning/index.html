@@ -1639,7 +1639,9 @@ body.yothe-index-mode #view-index .story,body.yothe-index-mode #view-index .stor
 
 
 /* Hide all legacy lesson-attachment galleries on public pages. */
-#appRoot .attachments,#appRoot .attachment-grid{display:none!important}
+#appRoot .view:not(.custom-menu-view) .attachments,#appRoot .view:not(.custom-menu-view) .attachment-grid{display:none!important}
+#appRoot .custom-menu-view .attachments{display:block!important}
+#appRoot .custom-menu-view .attachment-grid{display:grid!important}
 .index-sound-toggle{background:#fff;color:#c92132;border:1px solid #e7cbd0;border-radius:10px;min-height:43px;padding:8px 15px;font-weight:800;cursor:pointer;margin-left:10px}.index-sound-toggle:focus-visible{outline:3px solid #c92132;outline-offset:3px}@media(max-width:600px){.index-sound-toggle{margin:8px 0 0}}
 body.yothe-index-mode #indexSoundToggleBtn{display:none!important}
 
