@@ -1959,19 +1959,21 @@ function fileTypeInfo(mime="",name=""){
   return {type:"file",icon:"📎",label:"ไฟล์"};
 }
 async function loadAttachments(section){
-  // Attachments are retained in storage for Admin and Popup references,
-  // but the legacy "ไฟล์ประกอบบทเรียน" galleries are hidden on the public site.
-  const galleryRoot=document.getElementById("attachments-"+section);
-  if(galleryRoot)galleryRoot.replaceChildren();
-  attachmentSets[section]=[];
-  return;
+  // Custom menu pages (including Menuboard) must display their saved attachments.
+  // Hide only the retired legacy attachment galleries on standard course pages.
+  if(!String(section).startsWith("custom-")){
+    const galleryRoot=document.getElementById("attachments-"+section);
+    if(galleryRoot)galleryRoot.replaceChildren();
+    attachmentSets[section]=[];
+    return;
+  }
 
   const el=document.getElementById("attachments-"+section);if(!el)return;
   try{
     const files=await api("attachments",{section});
     attachmentSets[section]=files;
     if(!files.length){el.innerHTML="";return}
-    el.innerHTML='<h3>ไฟล์ประกอบบทเรียน</h3><div class="attachment-grid">'+files.map((f,idx)=>{
+    el.innerHTML='<div class="attachment-grid">'+files.map((f,idx)=>{
       const info=fileTypeInfo(f.mime_type,f.file_name);
       const preview=info.type==="image"&&f.url
         ?'<div class="attachment-preview"><img src="'+esc(f.url)+'" alt="'+esc(f.title||f.file_name)+'" loading="lazy"></div>'
