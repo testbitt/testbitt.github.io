@@ -1,4 +1,4 @@
-/* Version 3.32 — Separate mMilk / ไมแลคโกลด์วิปครีม Lead Time group */
+/* Version 3.33 — Fix unresponsive loop + separate mMilk / ไมแลคโกลด์วิปครีม Lead Time */
 (()=>{
   const API='https://jbagitudrjpentdneiju.supabase.co/functions/v1/kamu-inventory-api';
   const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
@@ -79,10 +79,15 @@
       label.insertAdjacentElement('afterend',btn);
     }
 
-    const fresh=apply.cloneNode(true);
-    apply.replaceWith(fresh);
-    fresh.onclick=()=>applyGroup(false);
-    document.querySelector('#applyMilkDays').onclick=()=>applyGroup(true);
+    if(apply.dataset.leadGroupBound!=='1'){
+      apply.dataset.leadGroupBound='1';
+      apply.onclick=()=>applyGroup(false);
+    }
+    const milkBtn=document.querySelector('#applyMilkDays');
+    if(milkBtn&&milkBtn.dataset.leadGroupBound!=='1'){
+      milkBtn.dataset.leadGroupBound='1';
+      milkBtn.onclick=()=>applyGroup(true);
+    }
 
     const noteId='milkLeadNote';
     if(!document.querySelector('#'+noteId)){
@@ -117,8 +122,20 @@
     }
   }
 
-  const obs=new MutationObserver(()=>{ensureSeparateLeadUi();markMilkRows();hideWpFromPlanningExport()});
-  obs.observe(document.body,{childList:true,subtree:true});
+  let obsPending=false;
+  const runSafeRefresh=()=>{
+    if(obsPending)return;
+    obsPending=true;
+    requestAnimationFrame(()=>{
+      obsPending=false;
+      ensureSeparateLeadUi();
+      markMilkRows();
+      hideWpFromPlanningExport();
+    });
+  };
+  const planRoot=document.querySelector('#planning')||document.body;
+  const obs=new MutationObserver(runSafeRefresh);
+  obs.observe(planRoot,{childList:true,subtree:true});
 
   const css=document.createElement('style');
   css.textContent=`
@@ -137,5 +154,5 @@
   document.addEventListener('kamu:data-ready',()=>setTimeout(()=>{ensureSeparateLeadUi();markMilkRows()},150));
 
   const v=document.querySelector('.version');
-  if(v){const fresh=v.cloneNode(false);fresh.textContent='Version 3.32 • Public Multi‑User Cloud';v.replaceWith(fresh)}
+  if(v){const fresh=v.cloneNode(false);fresh.textContent='Version 3.33 • Public Multi‑User Cloud';v.replaceWith(fresh)}
 })();
