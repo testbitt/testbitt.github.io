@@ -3594,19 +3594,34 @@ function printCss(){
     '#kslMediaPrintRoot{display:block!important;margin:0!important;padding:0!important;width:'+w+';}'+
     '#kslMediaPrintRoot .ksl-media-page{display:grid!important;transform:none!important;margin:0!important;width:'+w+'!important;height:'+h+'!important;min-width:'+w+'!important;min-height:'+h+'!important;max-width:'+w+'!important;max-height:'+h+'!important;box-shadow:none!important;page-break-after:always;break-after:page;overflow:hidden!important;}'+
     '#kslMediaPrintRoot .ksl-media-page:last-child{page-break-after:auto;break-after:auto;}'+
-    '@media print{body>*{display:none!important}#kslMediaPrintRoot{display:block!important}#kslMediaPrintRoot *{visibility:visible!important}}';
+    '@media print{html,body,#kslMediaPrintRoot,#kslMediaPrintRoot *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}body>*{display:none!important}#kslMediaPrintRoot{display:block!important}#kslMediaPrintRoot *{visibility:visible!important}}';
 }
 async function printPdf(){
   if(!draft.selected.length){alert('กรุณาเลือกอย่างน้อย 1 เมนู');return}
   const source=[...document.querySelectorAll('#kslMediaPreview .ksl-media-page')];
   if(!source.length){alert('ไม่พบข้อมูลสำหรับ PDF');return}
-  await Promise.all(source.map(waitForMediaReady));
-  const w=window.open('','_blank');
-  if(!w){alert('Browser ปิดกั้นหน้าต่าง Export');return}
-  const pages=source.map(p=>p.outerHTML).join('');
-  w.document.open();
-  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(pageTitle())+'</title><style>'+printCss()+'</style></head><body><div id="kslMediaPrintRoot">'+pages+'</div><script>window.onload=async()=>{try{if(document.fonts&&document.fonts.ready)await document.fonts.ready;const imgs=[...document.images];await Promise.all(imgs.map(i=>i.complete?Promise.resolve():new Promise(r=>{i.onload=r;i.onerror=r})));setTimeout(()=>window.print(),250)}catch(e){setTimeout(()=>window.print(),400)}}<\/script></body></html>');
-  w.document.close();
+  setSaveStatus('กำลังสร้าง PDF ให้เหมือน Export รูป...');
+  try{
+    const rendered=[];
+    for(let i=0;i<source.length;i++){
+      const canvas=await renderPageCanvas(source[i]);
+      rendered.push(canvas.toDataURL('image/png',1));
+      await new Promise(r=>setTimeout(r,80));
+    }
+    const landscape=draft.orientation==='landscape';
+    const w=window.open('','_blank');
+    if(!w){alert('Browser ปิดกั้นหน้าต่าง Export');return}
+    const sizeCss=landscape?'297mm 210mm':'210mm 297mm';
+    const pages=rendered.map(src=>'<section class="pdf-image-page"><img src="'+src+'" alt=""></section>').join('');
+    w.document.open();
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(pageTitle())+'</title><style>@page{size:A4 '+(landscape?'landscape':'portrait')+';margin:0}html,body{margin:0;padding:0;background:#fff}.pdf-image-page{width:'+sizeCss.split(' ')[0]+';height:'+sizeCss.split(' ')[1]+';margin:0;padding:0;page-break-after:always;break-after:page;overflow:hidden}.pdf-image-page:last-child{page-break-after:auto;break-after:auto}.pdf-image-page img{display:block;width:100%;height:100%;object-fit:fill;-webkit-print-color-adjust:exact;print-color-adjust:exact}@media print{html,body,.pdf-image-page,.pdf-image-page img{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}</style></head><body>'+pages+'<script>window.onload=async()=>{const imgs=[...document.images];await Promise.all(imgs.map(i=>i.complete?Promise.resolve():new Promise(r=>{i.onload=r;i.onerror=r})));setTimeout(()=>window.print(),250)}<\/script></body></html>');
+    w.document.close();
+    setSaveStatus('PDF พร้อมแล้ว • สีและแถบเมนูตรงกับ Export รูป ✓');
+  }catch(e){
+    console.error('[KSL Media] PDF render',e);
+    setSaveStatus('สร้าง PDF ไม่สำเร็จ');
+    alert('Export PDF ไม่สำเร็จ: '+(e?.message||'Render A4 ไม่สำเร็จ'));
+  }
 }
 
 async function exportImages(format){
@@ -3638,7 +3653,7 @@ async function waitForMediaReady(root){
   await Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=r;img.onerror=r})));
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
 }
-async function exportPageImage(page,format,index){
+async function renderPageCanvas(page){
   const h2c=await getHtml2Canvas();
   const landscape=draft.orientation==='landscape';
   const w=landscape?1123:794,h=landscape?794:1123;
@@ -3664,7 +3679,7 @@ async function exportPageImage(page,format,index){
     await waitForMediaReady(clonePage);
     fitVisibleTableText(clonePage);
     await new Promise(r=>requestAnimationFrame(r));
-    const canvas=await h2c(clonePage,{
+    return await h2c(clonePage,{
       backgroundColor:'#ffffff',
       scale:2,
       useCORS:true,
@@ -3678,21 +3693,25 @@ async function exportPageImage(page,format,index){
       scrollX:0,
       scrollY:0
     });
-    const mime=format==='png'?'image/png':'image/jpeg',ext=format==='png'?'png':'jpg';
-    await new Promise((resolve,reject)=>{
-      canvas.toBlob(b=>{
-        if(!b)return reject(new Error('สร้างไฟล์ไม่สำเร็จ'));
-        const a=document.createElement('a');
-        a.href=URL.createObjectURL(b);
-        a.download=(pageTitle().replace(/[\\/:*?"<>|]+/g,'-')||'KSL-Media')+'-A4-'+index+'.'+ext;
-        document.body.appendChild(a);a.click();a.remove();
-        setTimeout(()=>URL.revokeObjectURL(a.href),1500);
-        resolve();
-      },mime,.93);
-    });
   }finally{
     host.remove();
   }
+}
+
+async function exportPageImage(page,format,index){
+  const canvas=await renderPageCanvas(page);
+  const mime=format==='png'?'image/png':'image/jpeg',ext=format==='png'?'png':'jpg';
+  await new Promise((resolve,reject)=>{
+    canvas.toBlob(b=>{
+      if(!b)return reject(new Error('สร้างไฟล์ไม่สำเร็จ'));
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(b);
+      a.download=(pageTitle().replace(/[\\/:*?"<>|]+/g,'-')||'KSL-Media')+'-A4-'+index+'.'+ext;
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+      resolve();
+    },mime,.93);
+  });
 }
 
 async function openBuilder(type){
