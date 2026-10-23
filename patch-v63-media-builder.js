@@ -26,7 +26,7 @@ const unique=a=>[...new Set((a||[]).map(text).filter(Boolean))];
 
 const defaults=()=>({
   id:uid(),name:'สื่อการสอน',type:'drink',template:'branch-grid',orientation:'landscape',
-  perPage:4,theme:'1',bgRemovalMode:'detail',title:'',subtitle:'',selected:[],images:{},overrides:{},customItems:[],deletedItemIds:[],createdAt:now(),updatedAt:now()
+  perPage:4,theme:'1',bgRemovalMode:'detail',title:'',subtitle:'',exportFooterText:'',selected:[],images:{},overrides:{},customItems:[],deletedItemIds:[],createdAt:now(),updatedAt:now()
 });
 let draft=defaults(), search='', targetImage='';
 let saveTimer=null;
@@ -214,7 +214,7 @@ function projectHasContent(p){
   return (Array.isArray(p.selected)&&p.selected.length>0) ||
     (Array.isArray(p.customItems)&&p.customItems.length>0) ||
     (p.overrides&&typeof p.overrides==='object'&&Object.keys(p.overrides).length>0) ||
-    !!text(p.title) || !!text(p.subtitle);
+    !!text(p.title) || !!text(p.subtitle) || !!text(p.exportFooterText);
 }
 function latestUsableProject(type){
   const list=remoteProjects
@@ -685,7 +685,7 @@ function buildPage(items,index,total){
     '<header class="mb-page-head"><div><div class="mb-kamu">KAMU KAMU • TRAINING</div><h1>'+esc(pageTitle())+'</h1>'+
     (draft.subtitle?'<p>'+esc(draft.subtitle)+'</p>':'')+'</div><div class="mb-page-no">'+(index+1)+' / '+total+'</div></header>'+
     '<div class="mb-equal-rows">'+rowsHtml+'</div>'+
-    '<footer class="mb-footer"><span>'+esc(typeLabel())+'</span><span>ข้อมูลจาก KSL • '+new Intl.DateTimeFormat('th-TH',{dateStyle:'medium'}).format(new Date())+'</span></footer>'+
+    '<footer class="mb-footer"><span class="mb-footer-type">'+esc(typeLabel())+'</span><span class="mb-footer-meta">ข้อมูลจาก KSL • '+new Intl.DateTimeFormat('th-TH',{dateStyle:'medium'}).format(new Date())+'</span><span class="mb-export-footer-text">'+esc(draft.exportFooterText||'')+'</span></footer>'+
     '</section>';
 }
 function previewHtml(){
@@ -719,7 +719,7 @@ const CSS=`
 .mb-pills{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}.mb-pills span,.mb-meta span{font-size:8px;background:#e7f4ed;color:#205f49;border-radius:999px;padding:3px 6px}.mb-meta{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}
 .mb-section{font-size:10px;line-height:1.35;margin-top:4px;min-height:0}.mb-section>b{display:block;color:#205843;margin-bottom:3px}.mb-section ul,.mb-section ol{margin:2px 0 0;padding-left:18px}.mb-section li{margin:1px 0}.mb-more{color:#6c857a;font-size:8px;font-weight:700}
 .mb-holding{width:100%;border-collapse:collapse;font-size:8px}.mb-holding th,.mb-holding td{border-bottom:1px solid #e4eee9;text-align:left;padding:4px 3px}.mb-holding th{color:#4c7060;background:#edf7f2}
-.mb-footer{border-top:1px solid #dce9e2;margin-top:12px;padding-top:7px;display:flex;justify-content:space-between;color:#779086;font-size:8px}
+.mb-footer{border-top:1px solid #dce9e2;margin-top:12px;padding-top:7px;display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:8px;color:#779086;font-size:8px}.mb-footer-type{text-align:left}.mb-footer-meta{text-align:center}.mb-export-footer-text{text-align:right;white-space:pre-wrap;overflow-wrap:anywhere;font-weight:800;color:#4f6f62}
 .mb-template-compact .mb-card{border-radius:9px;padding:9px}.mb-template-compact .mb-card h2{font-size:14px}.mb-template-compact .mb-img{width:48px;height:38px;flex-basis:48px}.mb-template-compact .mb-section{font-size:9px}
 .mb-template-visual .mb-card{background:linear-gradient(145deg,#f8fffb,#eef8f3);border:2px solid #bcdcca}.mb-template-visual .mb-card h2{color:#0f6b4f}.mb-template-visual .mb-img{width:64px;height:50px;flex-basis:64px}
 .mb-density-medium .mb-grid{gap:8px}.mb-density-medium .mb-card{padding:9px;border-radius:12px}.mb-density-medium .mb-card h2{font-size:13px}.mb-density-medium .mb-icon{width:28px;height:28px;font-size:15px}.mb-density-medium .mb-img{width:46px;height:36px;flex-basis:46px}.mb-density-medium .mb-section{font-size:8.5px}.mb-density-medium .mb-en{font-size:8px}
@@ -2997,7 +2997,7 @@ function reorderSelectedByDrag(from,to){
 function syncUI(skipPersist=false){
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v};
   set('kslMediaType',draft.type);set('kslMediaTemplate',draft.template);set('kslMediaOrientation',draft.orientation);
-  set('kslMediaPerPage',String(draft.perPage));set('kslMediaTheme',String(draft.theme||'1'));set('kslMediaBgRemovalMode',String(draft.bgRemovalMode||'detail'));set('kslMediaTitle',draft.title);set('kslMediaSubtitle',draft.subtitle);
+  set('kslMediaPerPage',String(draft.perPage));set('kslMediaTheme',String(draft.theme||'1'));set('kslMediaBgRemovalMode',String(draft.bgRemovalMode||'detail'));set('kslMediaTitle',draft.title);set('kslMediaSubtitle',draft.subtitle);set('kslMediaExportFooterText',draft.exportFooterText||'');
   renderControls();renderPreview();
   if(!skipPersist)persistDraft();
 }
@@ -3245,9 +3245,10 @@ function builderHtml(){
  '<div class="mb-field"><label>สีสำหรับ Preview / Export (30 สี)</label><select class="mb-select" id="kslMediaTheme"><option value="1">01 KAMU Green</option><option value="2">02 Classic Black</option><option value="3">03 Matcha</option><option value="4">04 Mint</option><option value="5">05 Forest</option><option value="6">06 Cream</option><option value="7">07 Latte</option><option value="8">08 Taro</option><option value="9">09 Thai Tea</option><option value="10">10 Sky</option><option value="11">11 Navy</option><option value="12">12 Rose</option><option value="13">13 Sakura</option><option value="14">14 Minimal Gray</option><option value="15">15 High Contrast</option><option value="16">16 Emerald</option><option value="17">17 Lime</option><option value="18">18 Olive</option><option value="19">19 Teal</option><option value="20">20 Cyan</option><option value="21">21 Royal Blue</option><option value="22">22 Indigo</option><option value="23">23 Violet</option><option value="24">24 Plum</option><option value="25">25 Magenta</option><option value="26">26 Coral</option><option value="27">27 Red</option><option value="28">28 Amber</option><option value="29">29 Chocolate</option><option value="30">30 Slate</option></select></div><div class="mb-field"><label>จำนวนเมนูต่อ A4 (สูงสุด 20)</label><select class="mb-select" id="kslMediaPerPage"><option value="1">1 เมนู</option><option value="2">2 เมนู</option><option value="3">3 เมนู</option><option value="4">4 เมนู</option><option value="5">5 เมนู</option><option value="6">6 เมนู</option><option value="7">7 เมนู</option><option value="8">8 เมนู</option><option value="9">9 เมนู</option><option value="10">10 เมนู</option><option value="11">11 เมนู</option><option value="12">12 เมนู</option><option value="13">13 เมนู</option><option value="14">14 เมนู</option><option value="15">15 เมนู</option><option value="16">16 เมนู</option><option value="17">17 เมนู</option><option value="18">18 เมนู</option><option value="19">19 เมนู</option><option value="20">20 เมนู</option></select><div class="mb-note">แนวตั้งแสดงสูงสุด 20 เมนูต่อหน้าแบบ 2×10 • แนวนอนเลือกได้สูงสุด 20 เมนู • ถ้าเกินจะสร้างหน้าถัดไปอัตโนมัติ</div></div></div>'+
  '<div class="mb-block"><h3>2. เลือกเมนูจากฐานข้อมูล <span class="mb-count" id="kslMediaSelectedCount">0 เมนู</span></h3><div class="mb-field"><input class="mb-input" id="kslMediaSearch" placeholder="ค้นหาเมนู..."></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaAddMenu" type="button">＋ เพิ่มเมนูใหม่</button><button class="mb-link" id="kslMediaSelectAll">เลือกทั้งหมดที่ค้นหา</button><button class="mb-link" id="kslMediaClearSel">ล้างการเลือก</button></div><div id="kslMediaItemList"></div></div>'+
  '<div class="mb-block"><h3>3. หัวเรื่อง</h3><div class="mb-field"><label>หัวเรื่องหลัก</label><input class="mb-input" id="kslMediaTitle" placeholder="ใช้ชื่อประเภทสื่ออัตโนมัติ"></div><div class="mb-field"><label>ข้อความรอง</label><input class="mb-input" id="kslMediaSubtitle" placeholder="เช่น สำหรับพนักงานใหม่ / Updated..."></div></div>'+
- '<div class="mb-block"><h3>4. งานที่บันทึกไว้</h3><div class="mb-field"><select class="mb-select" id="kslMediaSavedProjects"></select></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaLoadProject" type="button">เปิดแก้ไข</button><button class="mb-link" id="kslMediaDeleteProject" type="button">ลบงาน</button></div><div class="mb-note">เปิดงานเดิมแล้วสามารถเพิ่ม/ลดเมนู แก้รายละเอียด เปลี่ยนรูป แล้วกด “บันทึกทับงานเดิม” • หากต้องการแยกเป็นอีกงานให้กด “บันทึกงานใหม่”</div></div>'+ 
- '<div class="mb-block"><h3>5. แก้ไขข้อมูลรายเมนู</h3><div class="mb-field"><label>เมนูที่จะแก้ไข</label><select class="mb-select" id="kslMediaEditTarget"></select></div><div id="kslMediaEditor"></div><div class="mb-note">ทุกประเภทสื่อสามารถเพิ่ม/ลด/แก้ไขรายการได้ • ช่องชื่อรายการ หน่วย และประเภทแก้วสามารถเลือกจาก Dropdown หรือพิมพ์เองได้ • หลายค่าใช้เครื่องหมาย , • ทุกการแก้ไข Auto Save Online แยกตามประเภทสื่อ • ไม่เปลี่ยนไฟล์ Upload ต้นฉบับ</div></div>'+ 
- '<div class="mb-block"><h3>6. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-field"><label>โหมดลบพื้นหลัง</label><select class="mb-select" id="kslMediaBgRemovalMode"><option value="detail">ละเอียด / เก็บวัตถุข้างแก้ว</option><option value="standard">มาตรฐาน / เร็วขึ้น</option></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">โหมดละเอียดจะเพิ่ม Padding ก่อน AI, รักษาผลไม้/Topping/Packaging รอบแก้ว, ปรับ Alpha และลดขอบขาว • บันทึกเป็น PNG โปร่งใส • Auto Save และ Upload รูปใหม่เมนูเดิมจะทับรูปเดิม</div></div>'+
+ '<div class="mb-block"><h3>4. Export</h3><div class="mb-field"><label>ข้อความมุมขวาล่างของหน้า Export</label><textarea class="mb-input" id="kslMediaExportFooterText" rows="3" placeholder="พิมพ์ข้อความที่ต้องการให้แสดงมุมขวาล่างของ PDF / JPG / PNG"></textarea></div><div class="mb-note">ข้อความนี้จะแสดงที่ส่วนล่างขวาของ A4 ทุกหน้า และติดไปกับไฟล์ PDF / JPG / PNG อัตโนมัติ</div></div>'+ 
+ '<div class="mb-block"><h3>5. งานที่บันทึกไว้</h3><div class="mb-field"><select class="mb-select" id="kslMediaSavedProjects"></select></div><div class="mb-list-tools"><button class="mb-link" id="kslMediaLoadProject" type="button">เปิดแก้ไข</button><button class="mb-link" id="kslMediaDeleteProject" type="button">ลบงาน</button></div><div class="mb-note">เปิดงานเดิมแล้วสามารถเพิ่ม/ลดเมนู แก้รายละเอียด เปลี่ยนรูป แล้วกด “บันทึกทับงานเดิม” • หากต้องการแยกเป็นอีกงานให้กด “บันทึกงานใหม่”</div></div>'+ 
+ '<div class="mb-block"><h3>6. แก้ไขข้อมูลรายเมนู</h3><div class="mb-field"><label>เมนูที่จะแก้ไข</label><select class="mb-select" id="kslMediaEditTarget"></select></div><div id="kslMediaEditor"></div><div class="mb-note">ทุกประเภทสื่อสามารถเพิ่ม/ลด/แก้ไขรายการได้ • ช่องชื่อรายการ หน่วย และประเภทแก้วสามารถเลือกจาก Dropdown หรือพิมพ์เองได้ • หลายค่าใช้เครื่องหมาย , • ทุกการแก้ไข Auto Save Online แยกตามประเภทสื่อ • ไม่เปลี่ยนไฟล์ Upload ต้นฉบับ</div></div>'+ 
+ '<div class="mb-block"><h3>7. รูปประกอบ</h3><div class="mb-field"><label>เมนูที่จะใส่รูป</label><select class="mb-select" id="kslMediaImageTarget"></select></div><div class="mb-field"><label>โหมดลบพื้นหลัง</label><select class="mb-select" id="kslMediaBgRemovalMode"><option value="detail">ละเอียด / เก็บวัตถุข้างแก้ว</option><option value="standard">มาตรฐาน / เร็วขึ้น</option></select></div><div class="mb-image-row"><button class="mb-btn" id="kslMediaChooseImage">＋ เพิ่ม/เปลี่ยนรูป</button><button class="mb-btn danger" id="kslMediaRemoveImage">ลบรูป</button><input type="file" id="kslMediaImageInput" accept="image/*" hidden></div><div class="mb-thumb" id="kslMediaImageThumb"></div><div class="mb-note">โหมดละเอียดจะเพิ่ม Padding ก่อน AI, รักษาผลไม้/Topping/Packaging รอบแก้ว, ปรับ Alpha และลดขอบขาว • บันทึกเป็น PNG โปร่งใส • Auto Save และ Upload รูปใหม่เมนูเดิมจะทับรูปเดิม</div></div>'+
  '</aside><main class="mb-preview-wrap" id="kslMediaPreview"></main></div>'+
  '<section id="kslMediaHistoryPage"><div class="mb-history-head"><div><div class="mb-kamu">KAMU KAMU • MEDIA</div><h2>ประวัติการบันทึกสื่อ</h2><p>เรียกงานเดิมกลับมาแก้ไข เพิ่ม/ลดรายการ เปลี่ยนรูป Theme และบันทึกทับได้</p></div><button class="mb-btn" id="kslMediaHistoryClose">← กลับหน้าสร้างสื่อ</button></div><div id="kslMediaHistoryList"></div></section></div>';
 }
@@ -3289,6 +3290,7 @@ function installBuilder(){
   bind('kslMediaPerPage','change',e=>{draft.perPage=Math.min(20,Math.max(1,Number(e.target.value)||4));renderPreview();persistDraft()});
   bind('kslMediaTitle','input',e=>{draft.title=e.target.value;renderPreview();persistDraft()});
   bind('kslMediaSubtitle','input',e=>{draft.subtitle=e.target.value;renderPreview();persistDraft()});
+  bind('kslMediaExportFooterText','input',e=>{draft.exportFooterText=e.target.value;renderPreview();persistDraft()});
   bind('kslMediaSearch','input',e=>{search=e.target.value;renderControls()});
   bind('kslMediaItemList','change',e=>{const cb=e.target.closest('[data-mb-item]');if(!cb)return;const id=cb.dataset.mbItem;if(cb.checked&&!draft.selected.includes(id))draft.selected.push(id);if(!cb.checked)draft.selected=draft.selected.filter(x=>x!==id);renderControls();renderPreview();persistDraft()});
   bind('kslMediaPreview','dragstart',e=>{
@@ -3409,6 +3411,7 @@ function projectSnapshot(){
     bgRemovalMode:draft.bgRemovalMode||'detail',
     title:draft.title,
     subtitle:draft.subtitle,
+    exportFooterText:draft.exportFooterText||'',
     selected:[...(draft.selected||[])],
     overrides:clone(draft.overrides||{}),
     customItems:clone(draft.customItems||[]),
