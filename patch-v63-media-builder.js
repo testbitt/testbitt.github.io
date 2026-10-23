@@ -685,7 +685,7 @@ function buildPage(items,index,total){
     '<header class="mb-page-head"><div><div class="mb-kamu">KAMU KAMU • TRAINING</div><h1>'+esc(pageTitle())+'</h1>'+
     (draft.subtitle?'<p>'+esc(draft.subtitle)+'</p>':'')+'</div><div class="mb-page-no">'+(index+1)+' / '+total+'</div></header>'+
     '<div class="mb-equal-rows">'+rowsHtml+'</div>'+
-    '<footer class="mb-footer"><span class="mb-footer-type">'+esc(typeLabel())+'</span><span class="mb-footer-meta">ข้อมูลจาก KSL • '+new Intl.DateTimeFormat('th-TH',{dateStyle:'medium'}).format(new Date())+'</span><span class="mb-export-footer-text">'+esc(draft.exportFooterText||'')+'</span></footer>'+
+    '<footer class="mb-footer"><span class="mb-footer-type">'+esc(typeLabel())+'</span><span class="mb-footer-meta"></span><span class="mb-export-footer-text">'+esc(draft.exportFooterText||'')+'</span></footer>'+
     '</section>';
 }
 function previewHtml(){
