@@ -28,7 +28,56 @@ const KSL_NEW_API='https://script.google.com/macros/s/AKfycbwtHxjbAvvxLPezMt6Glj
 const KSL_ADMIN2_BOOT=(()=>{
   try{return new URLSearchParams(location.search).get('admin2')==='1'}catch(_){return false}
 })();
+async function ensureMainWebAccess(){
+  if(KSL_ADMIN2_BOOT)return true;
+  try{
+    if(sessionStorage.getItem('KSL_MAIN_WEB_AUTH')==='1')return true;
+  }catch(_){}
+  const expected='28995a2c0d04b66d5c7c818536bb00cd1fc1ac422aea47627de0999782fee3f4';
+  document.documentElement.style.visibility='visible';
+  document.body.innerHTML=
+    '<div id="kslMainGate" style="min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#eef7f2,#f8fbf9);font-family:system-ui,-apple-system,\'Noto Sans Thai\',Tahoma,sans-serif;color:#173e30">'+
+      '<form id="kslMainGateForm" style="width:min(440px,100%);background:#fff;border:1px solid #cfe4d9;border-radius:22px;padding:28px;box-shadow:0 14px 40px rgba(23,76,57,.10)">'+
+        '<div style="font-size:12px;font-weight:900;letter-spacing:.7px;color:#1a7453">KAMU KAMU • KSL</div>'+
+        '<h1 style="margin:6px 0 8px;font-size:25px;color:#174c39">เข้าสู่ระบบ</h1>'+
+        '<p style="margin:0 0 18px;color:#6b8178;font-size:13px">กรอกรหัสผ่านเพื่อเข้าใช้งานระบบ</p>'+
+        '<label for="kslMainPass" style="display:block;font-size:12px;font-weight:800;margin-bottom:6px">รหัสผ่าน</label>'+
+        '<input id="kslMainPass" type="password" inputmode="numeric" autocomplete="current-password" required autofocus style="width:100%;box-sizing:border-box;border:1px solid #bfdccc;border-radius:11px;padding:12px 13px;font-size:16px;outline:none">'+
+        '<button type="submit" style="width:100%;margin-top:12px;border:0;border-radius:11px;padding:12px 14px;background:#176b4d;color:#fff;font-weight:900;font-size:15px;cursor:pointer">เข้าสู่ระบบ</button>'+
+        '<div id="kslMainGateMsg" style="min-height:20px;margin-top:10px;font-size:12px;color:#a33"></div>'+
+      '</form>'+
+    '</div>';
+  const sha256=async s=>{
+    const bytes=new TextEncoder().encode(String(s||''));
+    const hash=await crypto.subtle.digest('SHA-256',bytes);
+    return [...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,'0')).join('');
+  };
+  return await new Promise(resolve=>{
+    document.getElementById('kslMainGateForm').addEventListener('submit',async e=>{
+      e.preventDefault();
+      const input=document.getElementById('kslMainPass');
+      const msg=document.getElementById('kslMainGateMsg');
+      const digest=await sha256(input.value);
+      if(digest!==expected){
+        msg.textContent='รหัสผ่านไม่ถูกต้อง';
+        input.select();
+        return;
+      }
+      try{sessionStorage.setItem('KSL_MAIN_WEB_AUTH','1')}catch(_){}
+      resolve(true);
+    });
+  });
+}
+function installOitoFooter(){
+  if(document.getElementById('kslOitoFooter'))return;
+  const footer=document.createElement('footer');
+  footer.id='kslOitoFooter';
+  footer.textContent='@ 2026 Powered By : OITO';
+  footer.style.cssText='width:100%;box-sizing:border-box;text-align:center;padding:14px 12px 18px;margin-top:18px;color:#667a72;font:700 12px/1.4 system-ui,-apple-system,"Noto Sans Thai",Tahoma,sans-serif;background:transparent';
+  document.body.appendChild(footer);
+}
 (async()=>{
+  await ensureMainWebAccess();
   const VERSION='v63-expiry-correct-date';
   const SHELL_CACHE_KEY='KSL_APP_SHELL_V52';
   const CORE_PATCHES=['patch-v39.js?v=61','patch-v40.js?v=61','patch-v41.js?v=61','patch-v42.js?v=61','patch-v44.js?v=61','patch-v45.js?v=61','patch-v46.js?v=61','patch-v48.js?v=61','patch-v49.js?v=61','patch-v56.js?v=61','patch-v57.js?v=61','patch-v60.js?v=63-upload-live-2'];
@@ -62,6 +111,7 @@ const KSL_ADMIN2_BOOT=(()=>{
       document.documentElement.style.visibility='visible';
 
       await loadOrderedScripts(['patch-v63-media-builder.js?v=63-media-builder-71']);
+      installOitoFooter();
       document.getElementById('kslAdmin2BootCover')?.remove();
       window.__KSL_RELEASE__='6.3-admin2-fast';
       if(history.replaceState)history.replaceState(null,'','/app.html?restore=63&admin2=1');
@@ -82,6 +132,7 @@ const KSL_ADMIN2_BOOT=(()=>{
     });
     document.getElementById('kslBootHide')?.remove();
     document.documentElement.style.visibility='visible';
+    installOitoFooter();
     window.scrollTo(0,0);
     loadHQInBackground();
     loadV63InBackground();
