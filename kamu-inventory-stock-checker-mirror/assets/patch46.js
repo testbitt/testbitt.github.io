@@ -94,10 +94,8 @@
   installLogo();
   setTimeout(installLogo,150);
   setTimeout(installLogo,700);
+  setTimeout(installLogo,1500);
   document.addEventListener('kamu:data-ready',()=>setTimeout(installLogo,80));
-
-  const obs=new MutationObserver(()=>installLogo());
-  obs.observe(document.body,{childList:true,subtree:true});
 
   const v=document.querySelector('.version');
   if(v){
