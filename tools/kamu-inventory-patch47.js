@@ -1,4 +1,4 @@
-/* Version 3.37 — Login only; disable public registration */
+/* Version 3.38 — Login only without global DOM observer */
 (()=>{
   function enforceLoginOnly(){
     const auth=document.querySelector('#cloudAuth');
@@ -20,7 +20,7 @@
     }
 
     const note=auth.querySelector('.cloud-note');
-    if(note)note.innerHTML='บัญชีผู้ใช้งานสร้างและจัดการโดย Admin เท่านั้น • User แต่ละคนเห็นเฉพาะข้อมูลของตนเอง';
+    if(note&&note.textContent!=='บัญชีผู้ใช้งานสร้างและจัดการโดย Admin เท่านั้น • User แต่ละคนเห็นเฉพาะข้อมูลของตนเอง')note.textContent='บัญชีผู้ใช้งานสร้างและจัดการโดย Admin เท่านั้น • User แต่ละคนเห็นเฉพาะข้อมูลของตนเอง';
 
     const active=auth.querySelector('.cloud-mode.active');
     if(active?.dataset.mode==='register'){
@@ -35,13 +35,12 @@
   enforceLoginOnly();
   setTimeout(enforceLoginOnly,120);
   setTimeout(enforceLoginOnly,600);
-  const obs=new MutationObserver(enforceLoginOnly);
-  obs.observe(document.body,{childList:true,subtree:true});
+  setTimeout(enforceLoginOnly,1500);
 
   const v=document.querySelector('.version');
   if(v){
     const fresh=v.cloneNode(false);
-    fresh.textContent='Version 3.37 • Public Multi‑User Cloud';
+    fresh.textContent='Version 3.38 • Public Multi‑User Cloud';
     v.replaceWith(fresh);
   }
 })();
