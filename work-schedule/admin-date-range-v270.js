@@ -79,6 +79,8 @@
     const codes=selectedCodes(mode);
     const schedules=Object.values(db?.schedules||{}).filter(s=>{
       if(!codes.has(s.branch_code)||!s.week_start)return false;
+      const wd=new Date(String(s.week_start)+'T12:00:00').getDay();
+      if(wd!==1)return false;
       const se=addDays(s.week_start,6);
       return s.week_start<=end&&se>=start;
     });
@@ -215,6 +217,6 @@
     }
   `;
   document.head.appendChild(style);
-  const footer=q('.side footer');if(footer)footer.textContent='Version 3.8 · Admin Live Cloud Sync';
+  const footer=q('.side footer');if(footer)footer.textContent='Version 3.9.5 · Monday Week Guard';
 })();
 
