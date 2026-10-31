@@ -1,6 +1,30 @@
 (()=>{
   const q=s=>document.querySelector(s), qa=s=>[...document.querySelectorAll(s)];
   const DAY_NAMES=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const API270='https://jbagitudrjpentdneiju.supabase.co/functions/v1/ksp-api';
+
+  async function syncAdminCloud270(){
+    const sync=q('#sync');
+    if(sync){sync.textContent='กำลัง Sync ตารางล่าสุด...';sync.style.color=''}
+    const response=await fetch(API270+'?action=bootstrap&_='+Date.now(),{cache:'no-store'});
+    let json={};try{json=await response.json()}catch{}
+    if(!response.ok||!json.ok)throw new Error(json.error||('HTTP '+response.status));
+    const x=json.data||{},branches=x.branches||[],branchMap=new Map(branches.map(b=>[String(b.code),b]));
+    const schedules={};
+    Object.entries(x.schedules||{}).forEach(([k,s])=>{
+      schedules[k]={...s,entries:(s.entries||[]).map(e=>({...e,ot_start:e.ot_start?String(e.ot_start).slice(0,5):'',ot_end:e.ot_end?String(e.ot_end).slice(0,5):''}))};
+    });
+    db={
+      employees:(x.employees||[]).map(e=>({...e,name:e.display_name||e.name||e.employee_code,branch_name:e.branch_name||branchMap.get(String(e.branch_code))?.name||e.branch_code,active:e.active!==false})),
+      branches,
+      shifts:x.shifts||[],
+      otTypes:x.otTypes||[],
+      schedules,
+      versions:x.versions||[]
+    };
+    if(typeof refreshMeta==='function')refreshMeta();
+    if(sync){sync.textContent='ออนไลน์ · Sync แล้ว';sync.style.color=''}
+  }
 
   const fmtDate=s=>{const [y,m,d]=String(s||'').split('-');return d&&m&&y?`${d}/${m}/${y}`:String(s||'')};
   const csvEscape=v=>{const s=String(v??'');return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
@@ -104,8 +128,9 @@
     return t;
   }
 
-  function renderDayRange(){
+  async function renderDayRange(){
     try{
+      await syncAdminCloud270();
       const {start,end,dates,groups}=collect('day'),table=q('#adminTable');
       table.innerHTML='';
       groups.forEach((g,idx)=>{
@@ -120,8 +145,9 @@
     }catch(e){toast(e.message,'error')}
   }
 
-  function renderShiftRange(){
+  async function renderShiftRange(){
     try{
+      await syncAdminCloud270();
       const {start,end,dates,groups}=collect('shift'),table=q('#shiftTimeTable');
       table.innerHTML='';
       groups.forEach((g,idx)=>{
@@ -140,8 +166,9 @@
     }catch(e){toast(e.message,'error')}
   }
 
-  function exportExcel(mode){
+  async function exportExcel(mode){
     try{
+      await syncAdminCloud270();
       const {start,end,dates,groups}=collect(mode),wb=XLSX.utils.book_new();
       groups.forEach(g=>{
         const title=mode==='day'?'KAMU WORK SCHEDULE - DAY':'KAMU WORK SCHEDULE - SHIFT TIME';
@@ -157,8 +184,9 @@
     }catch(e){toast(e.message,'error')}
   }
 
-  function exportCsv(mode){
+  async function exportCsv(mode){
     try{
+      await syncAdminCloud270();
       const {start,end,dates,groups}=collect(mode),rows=[['BranchCode','BranchName','DateStart','DateEnd','EmployeeCode','EmployeeName','Position',...dates.map(dayName)],['','','','','','','',...dates.map(fmtDate)]];
       groups.forEach(g=>g.rows.forEach(r=>rows.push([g.branch_code,g.branch_name||'',start,end,r.code,r.name,r.position||'',...dates.map(d=>mode==='day'?dayCell(r.days[d]):shiftCell(r.days[d]))])));
       const csv='\ufeff'+rows.map(r=>r.map(csvEscape).join(',')).join('\r\n');
@@ -187,6 +215,6 @@
     }
   `;
   document.head.appendChild(style);
-  const footer=q('.side footer');if(footer)footer.textContent='Version 2.7 · Date Range Export';
+  const footer=q('.side footer');if(footer)footer.textContent='Version 3.8 · Admin Live Cloud Sync';
 })();
 
