@@ -1,4 +1,4 @@
-/* Version 3.38 — Login only without global DOM observer */
+/* Version 3.39 — Fix Admin login after disabling public registration */
 (()=>{
   function enforceLoginOnly(){
     const auth=document.querySelector('#cloudAuth');
@@ -8,7 +8,11 @@
     if(regTab)regTab.remove();
 
     const regForm=auth.querySelector('#cloudRegisterForm');
-    if(regForm)regForm.remove();
+    if(regForm){
+      regForm.hidden=true;
+      regForm.setAttribute('aria-hidden','true');
+      regForm.querySelectorAll('input,button').forEach(el=>el.disabled=true);
+    }
 
     const modes=auth.querySelector('.cloud-modes');
     if(modes){
@@ -40,7 +44,7 @@
   const v=document.querySelector('.version');
   if(v){
     const fresh=v.cloneNode(false);
-    fresh.textContent='Version 3.38 • Public Multi‑User Cloud';
+    fresh.textContent='Version 3.39 • Public Multi‑User Cloud';
     v.replaceWith(fresh);
   }
 })();
