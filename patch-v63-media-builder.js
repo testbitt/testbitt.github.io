@@ -593,6 +593,12 @@ function lineList(values,max=6){
   const vals=values.map(text).filter(Boolean);
   return vals.slice(0,max).map(v=>'<li>'+esc(v)+'</li>').join('')+(vals.length>max?'<li class="mb-more">+'+(vals.length-max)+' รายการ</li>':'');
 }
+function cardImageHtml(id,placeholder='🧋'){
+  const known=imageFor(id);
+  const direct=publicMediaUrl(mediaPathFor(id),'direct');
+  const src=known||direct;
+  return '<img src="'+esc(src)+'" alt="" loading="eager" crossorigin="anonymous" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'"><div class="mb-photo-placeholder" style="display:none">'+esc(placeholder)+'</div>';
+}
 function drinkCard(item){
   const img=imageFor(item.id),o=effectiveOverride(item);
   let variants=(o.headers||[]).map(text).filter(Boolean);
@@ -609,7 +615,7 @@ function drinkCard(item){
   return '<article class="mb-card mb-table-card">'+
     '<div class="mb-black-title">'+esc(o.title||item.name)+'</div>'+
     '<div class="mb-table-body">'+
-      '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">🧋</div>')+'</div></div>'+
+      '<div class="mb-left-photo"><div class="mb-photo-frame">'+cardImageHtml(item.id,'🧋')+'</div></div>'+
       '<div class="mb-table-side"><table class="mb-recipe-table mb-drink-table">'+head+'<tbody>'+rows+'</tbody></table>'+
       (o.note?'<div class="mb-note-line">'+esc(o.note)+'</div>':'')+'</div>'+
     '</div></article>';
@@ -618,21 +624,21 @@ function productionCard(item){
   const img=imageFor(item.id),o=effectiveOverride(item);
   const rows=(o.rows||[]).slice(0,14).map(rec=>'<tr><td class="mb-r-name">'+esc(rec.label||'-')+'</td><td class="mb-r-qty">'+esc((Array.isArray(rec.values)?rec.values:[rec.value]).map(text).filter(Boolean).join(', '))+'</td><td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>').join('');
   return '<article class="mb-card mb-table-card mb-production-card"><div class="mb-black-title">'+esc(o.title||item.name)+'</div><div class="mb-table-body">'+
-    '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">🧑‍🍳</div>')+'</div></div>'+
+    '<div class="mb-left-photo"><div class="mb-photo-frame">'+cardImageHtml(item.id,'🧑‍🍳')+'</div></div>'+
     '<div class="mb-table-side"><table class="mb-recipe-table mb-production-table"><tbody>'+rows+'</tbody></table>'+(o.note?'<div class="mb-note-line">'+esc(o.note)+'</div>':'')+'</div></div></article>';
 }
 function holdingCard(item){
   const img=imageFor(item.id),o=effectiveOverride(item);
   const rows=(o.rows||[]).slice(0,14).map(rec=>'<tr><td class="mb-r-name">'+esc(rec.label||'-')+'</td><td class="mb-r-qty">'+esc((Array.isArray(rec.values)?rec.values:[rec.value]).map(text).filter(Boolean).join(', '))+'</td><td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>').join('');
   return '<article class="mb-card mb-table-card mb-holding-card"><div class="mb-black-title">'+esc(o.title||item.name)+'</div><div class="mb-table-body">'+
-    '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">⏳</div>')+'</div></div>'+
+    '<div class="mb-left-photo"><div class="mb-photo-frame">'+cardImageHtml(item.id,'⏳')+'</div></div>'+
     '<div class="mb-table-side"><table class="mb-recipe-table mb-holding-table"><tbody>'+rows+'</tbody></table>'+(o.note?'<div class="mb-note-line">'+esc(o.note)+'</div>':'')+'</div></div></article>';
 }
 function otherCard(item){
   const img=imageFor(item.id),o=effectiveOverride(item);
   const rows=(o.rows||[]).slice(0,14).map(rec=>'<tr><td class="mb-r-name">'+esc(rec.label||'-')+'</td><td class="mb-r-qty">'+esc((Array.isArray(rec.values)?rec.values:[rec.value]).map(text).filter(Boolean).join(', '))+'</td><td class="mb-r-unit">'+esc(rec.unit||'')+'</td></tr>').join('');
   return '<article class="mb-card mb-table-card mb-production-card mb-other-card"><div class="mb-black-title">'+esc(o.title||item.name)+'</div><div class="mb-table-body">'+
-    '<div class="mb-left-photo"><div class="mb-photo-frame">'+(img?'<img src="'+img+'" alt="">':'<div class="mb-photo-placeholder">📋</div>')+'</div></div>'+
+    '<div class="mb-left-photo"><div class="mb-photo-frame">'+cardImageHtml(item.id,'📋')+'</div></div>'+
     '<div class="mb-table-side"><table class="mb-recipe-table mb-production-table mb-other-table"><tbody>'+rows+'</tbody></table>'+(o.note?'<div class="mb-note-line">'+esc(o.note)+'</div>':'')+'</div></div></article>';
 }
 function itemCard(item){
