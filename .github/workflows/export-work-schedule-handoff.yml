@@ -30,9 +30,12 @@ jobs:
           curl --fail --silent --show-error --location \
             "https://jbagitudrjpentdneiju.supabase.co/functions/v1/ksp-api?action=health&export=1" \
             -o handoff/cloud/health.json
+          curl --fail --silent --show-error --location \
+            "https://jbagitudrjpentdneiju.supabase.co/functions/v1/ksp-api?action=exportVersionsEncrypted" \
+            -o handoff/cloud/schedule_versions.encrypted.json
           python - <<'PY'
           import json
-          for p in ["handoff/cloud/bootstrap.json","handoff/cloud/health.json"]:
+          for p in ["handoff/cloud/bootstrap.json","handoff/cloud/health.json","handoff/cloud/schedule_versions.encrypted.json"]:
               with open(p, encoding="utf-8") as f:
                   obj=json.load(f)
               if not obj.get("ok"):
