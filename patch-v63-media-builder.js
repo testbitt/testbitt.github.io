@@ -3653,6 +3653,36 @@ async function waitForMediaReady(root){
   await Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=r;img.onerror=r})));
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
 }
+async function imageUrlToDataUrl(src){
+  const s=String(src||'');
+  if(!s||s.startsWith('data:')||s.startsWith('blob:'))return s;
+  try{
+    const res=await fetch(s,{mode:'cors',cache:'force-cache'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const blob=await res.blob();
+    return await new Promise((resolve,reject)=>{
+      const fr=new FileReader();
+      fr.onload=()=>resolve(String(fr.result||s));
+      fr.onerror=()=>reject(fr.error||new Error('อ่านรูปไม่สำเร็จ'));
+      fr.readAsDataURL(blob);
+    });
+  }catch(e){
+    console.warn('[KSL Media] image embed fallback',s,e);
+    return s;
+  }
+}
+async function embedCloneImages(sourcePage,clonePage){
+  const srcImgs=[...sourcePage.querySelectorAll('img')];
+  const cloneImgs=[...clonePage.querySelectorAll('img')];
+  await Promise.all(cloneImgs.map(async(img,i)=>{
+    const src=srcImgs[i]?.currentSrc||srcImgs[i]?.src||img.currentSrc||img.src||'';
+    if(!src)return;
+    const embedded=await imageUrlToDataUrl(src);
+    if(embedded)img.src=embedded;
+  }));
+  await waitForMediaReady(clonePage);
+}
+
 async function renderPageCanvas(page){
   const h2c=await getHtml2Canvas();
   const landscape=draft.orientation==='landscape';
@@ -3676,7 +3706,7 @@ async function renderPageCanvas(page){
   document.body.appendChild(host);
 
   try{
-    await waitForMediaReady(clonePage);
+    await embedCloneImages(page,clonePage);
     fitVisibleTableText(clonePage);
     await new Promise(r=>requestAnimationFrame(r));
     return await h2c(clonePage,{
