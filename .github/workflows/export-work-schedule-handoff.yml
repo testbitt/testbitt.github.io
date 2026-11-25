@@ -1,0 +1,48 @@
+name: Export Work Schedule Handoff
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/export-work-schedule-handoff.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare source snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p handoff/source handoff/cloud
+          cp -a work-schedule handoff/source/
+          printf '%s\n' "${GITHUB_SHA}" > handoff/source/GITHUB_COMMIT_SHA.txt
+          curl --fail --silent --show-error --location \
+            "https://jbagitudrjpentdneiju.supabase.co/functions/v1/ksp-api?action=bootstrap&export=1" \
+            -o handoff/cloud/bootstrap.json
+          curl --fail --silent --show-error --location \
+            "https://jbagitudrjpentdneiju.supabase.co/functions/v1/ksp-api?action=health&export=1" \
+            -o handoff/cloud/health.json
+          python - <<'PY'
+          import json
+          for p in ["handoff/cloud/bootstrap.json","handoff/cloud/health.json"]:
+              with open(p, encoding="utf-8") as f:
+                  obj=json.load(f)
+              if not obj.get("ok"):
+                  raise SystemExit(f"Cloud export failed: {p}: {obj}")
+          PY
+
+      - name: Upload handoff source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: KAMU_WORK_SCHEDULE_SOURCE_SNAPSHOT
+          path: handoff/
+          retention-days: 3
+          if-no-files-found: error
