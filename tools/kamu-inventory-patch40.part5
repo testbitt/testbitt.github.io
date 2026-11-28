@@ -1,11 +1,10 @@
     $$('.page').forEach(x=>x.classList.toggle('active',x.id===id));
     if(id==='wipmaster')renderWipMaster();
-    if(id==='manualcal')renderManualPage();
     if(id==='planning')renderPlanningPage();
   }
   function renderBranchSelectors(){
     const opts=(typeof branchMaster==='function'?branchMaster():[]).map(x=>`<option value="${esc(x.code)}">${esc(x.code+(x.name?' - '+x.name:''))}</option>`).join('');
-    for(const id of ['manualBranch','planBranch']){
+    for(const id of ['planBranch']){
       const e=$('#'+id);if(!e)continue;const keep=e.value||$('#branch')?.value||'';e.innerHTML=opts;if(keep&&[...e.options].some(o=>o.value===keep))e.value=keep;
     }
   }
@@ -18,19 +17,9 @@
       const fileYield=num(V(rows[0],'fgq')),override=overrides.get(code),used=override||fileYield;
       return `<div class="wip-card"><div class="wip-head"><div><b>${esc(code)}</b><small>${rows.length} วัตถุดิบ</small></div><div class="wip-yield"><label>ผลผลิตจากไฟล์<input value="${fileYield||''}" disabled></label><label>ผลผลิตที่ใช้<input class="wip-yield-input" data-code="${esc(code)}" type="number" min="0" step="any" value="${override||''}" placeholder="${fileYield||'กรอกผลผลิต'}" ${ROLE()==='admin'?'':'disabled'}></label>${ROLE()==='admin'?`<button class="btn alt small wip-clear" data-code="${esc(code)}">ล้างค่ากำหนดเอง</button>`:''}<span class="wip-used">ใช้ ${fmt(used)}</span></div></div>
       <div class="tablewrap"><table><thead><tr><th>RM Code</th><th>Qty / สูตร</th><th>Unit</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(T(V(r,'rmitem')))}</b></td><td class="num">${fmt(num(V(r,'rmq')))}</td><td>${esc(T(V(r,'rmu')))}</td></tr>`).join('')}</tbody></table></div></div>`;
-    }).join(''):'<div class="planning-empty">ไม่พบรหัส WP ใน Bomb Sheet Wip</div>';
+    }).join(''):'<div class="planning-empty">ไม่พบรหัส WP ใน BOM Sheet Wip</div>';
     box.querySelectorAll('.wip-yield-input').forEach(i=>i.onchange=()=>setYield(i.dataset.code,i.value));
     box.querySelectorAll('.wip-clear').forEach(b=>b.onclick=()=>setYield(b.dataset.code,0));
-  }
-
-  function renderManualPage(){
-    const body=$('#manualTbl tbody');if(!body)return;
-    renderBranchSelectors();const branch=$('#manualBranch')?.value||$('#branch')?.value||'';if(!branch){body.innerHTML='';return}
-    const m=manualCal(branch),rows=[...m.byRm.values()].sort((a,b)=>a.rm.localeCompare(b.rm,'en',{numeric:true}));
-    body.innerHTML=rows.map(x=>`<tr><td><b>${esc(x.rm)}</b></td><td>${esc(x.desc)}</td><td>${esc(x.unit)}</td><td>${x.sources.map(esc).join(', ')}</td><td>${x.details.map(d=>`${esc(d.wp)}: Sales ${fmt(d.sales)} ÷ Yield ${fmt(d.yieldQty)} = ${fmt(d.batches)} สูตร × ${fmt(d.rmQty)} ${esc(d.rmUnit)}${d.factor?` ÷ ${fmt(d.factor)}`:''}`).join('<br>')}</td><td class="num"><b>${fmt(x.total)}</b></td><td class="${x.status==='OK'?'ok':'warn'}">${esc(x.status)}</td></tr>`).join('');
-    const missingYield=m.errors.filter(x=>x.type==='Missing Yield').length,needConv=m.errors.filter(x=>x.type==='Manual Cal needs conversion').length;
-    $('#manualKpi').innerHTML=`<div class="card plan-kpi">WP ที่มียอดใช้<b>${m.wpSales.size}</b></div><div class="card plan-kpi">RM ที่คำนวณได้<b>${rows.length}</b></div><div class="card plan-kpi">Missing Yield<b class="warn">${missingYield}</b></div><div class="card plan-kpi">Need Conversion<b class="warn">${needConv}</b></div>`;
-    $('#manualErrors').innerHTML=m.errors.length?`<div class="notice">${m.errors.map(x=>`<b>${esc(x.type)}</b> ${esc(x.code)}: ${esc(x.note)}`).join(' • ')}</div>`:'';
   }
 
   function itemSaleDays(branch){
