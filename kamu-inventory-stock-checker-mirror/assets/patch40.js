@@ -74,43 +74,6 @@
     return r?{desc:T(V(r,'rmd')),unit:T(V(r,'stocku')),cost:num(V(r,'cost'))}:{desc:'',unit:'',cost:0};
   }
 
-  function manualCal(branch){
-    const groups=wipGroups(),overrides=yieldOverrides(),wpSales=new Map(),errors=[],byRm=new Map(),wipDetails=[];
-    for(const r of IDX.stockByBranch.get(branch)||[]){
-      const code=T(V(r,'rm')).toUpperCase();
-      if(!/^WP/i.test(code))continue;
-      wpSales.set(code,(wpSales.get(code)||0)+num(V(r,'sales')));
-    }
-    for(const [wp,sales] of wpSales){
-      if(!sales)continue;
-      const rows=groups.get(wp)||[];
-      if(!rows.length){errors.push({type:'WP without WIP Master',code:wp,note:'ไม่พบใน Bomb Sheet Wip'});continue}
-      const fileYield=num(V(rows[0],'fgq')),yieldQty=overrides.get(wp)||fileYield;
-      if(!(yieldQty>0)){errors.push({type:'Missing Yield',code:wp,note:'กรุณากำหนดผลผลิตใน WIP Conversion Master'});continue}
-      const batches=sales/yieldQty;
-      if(!rows.length){errors.push({type:'WP without ingredients',code:wp,note:'ไม่พบวัตถุดิบ'});continue}
-      for(const row of rows){
-        const rm=T(V(row,'rmitem')).toUpperCase(),rmQty=num(V(row,'rmq')),rmUnit=T(V(row,'rmu'));
-        if(!rm||!rmQty)continue;
-        const raw=batches*rmQty,info=stockRmInfo(branch,rm);
-        let factor=1,status='OK';
-        if(K(rmUnit)!==K(info.unit)){
-          factor=convFactor(rm,rmUnit,info.unit,info.desc);
-          if(!(factor>0)){status='Needs conversion';factor=0;errors.push({type:'Manual Cal needs conversion',code:rm,note:`${rmUnit||'-'} → ${info.unit||'-'} • ${wp}`})}
-        }
-        const converted=factor>0?raw/factor:null;
-        const detail={wp,sales,yieldQty,batches,rm,rmQty,rmUnit,raw,factor,stockUnit:info.unit,converted,status};
-        wipDetails.push(detail);
-        if(!byRm.has(rm))byRm.set(rm,{rm,desc:info.desc,unit:info.unit,total:0,status:'OK',sources:[],details:[]});
-        const agg=byRm.get(rm);agg.sources.push(wp);agg.details.push(detail);
-        if(converted!=null)agg.total+=converted;else agg.status='Needs conversion';
-      }
-    }
-    for(const x of byRm.values())x.sources=[...new Set(x.sources)];
-    return {wpSales,byRm,errors,wipDetails};
-  }
-  window.kamuManualCal=manualCal;
-
   function calcDualAnalysis(){
     const b=$('#branch')?.value||'',d=$('#date')?.value||'';
     if(!b){S.analysis=[];S.needs=[];S.currentExpected=new Map();render();renderRMFilter();return}
