@@ -1,4 +1,4 @@
-/* Version 3.28 — Dual Usage Source + WIP Conversion + Manual Cal + Daily Usage Planning */
+/* Version 3.40 — Dual Usage Source + WIP Conversion + BOM from Sales Usage + Daily Usage Planning */
 (()=>{
   const API='https://jbagitudrjpentdneiju.supabase.co/functions/v1/kamu-inventory-api';
   const ROLE=()=>localStorage.getItem('kamuInvCloudRole')||'';
@@ -21,20 +21,19 @@
     const x=T(v).toLowerCase().replace(/[\s_-]+/g,'');
     if(x==='stock'||x==='stockmovement'||x==='movement')return'stock';
     if(x==='itemsale'||x==='sale'||x==='sales')return'item_sale';
-    if(x==='manual'||x==='manualcal'||x==='manualcalculation')return'manual_cal';
+    if(x==='manual'||x==='manualcal'||x==='manualcalculation')return'bom';
     return x==='bom'||x==='bomb'?'bom':'';
   }
   function sourceLabel(v){
     const x=sourceCode(v);
-    return x==='bom'?'BOM':x==='stock'?'Stock Movement':x==='item_sale'?'Item Sale':x==='manual_cal'?'Manual Cal':'ยังไม่กำหนด';
+    return x==='bom'?'BOM':x==='stock'?'Stock Movement':x==='item_sale'?'Item Sale':'ยังไม่กำหนด';
   }
   function sourceOptions(current,second=false){
     const first=second?'<option value="">-- ไม่ใช้ Source 2 --</option>':'<option value="">-- ยังไม่กำหนด --</option>';
     return first+
       `<option value="bom" ${current==='bom'?'selected':''}>BOM</option>`+
       `<option value="stock" ${current==='stock'?'selected':''}>Stock Movement</option>`+
-      `<option value="item_sale" ${current==='item_sale'?'selected':''}>Item Sale</option>`+
-      `<option value="manual_cal" ${current==='manual_cal'?'selected':''}>Manual Cal</option>`;
+      `<option value="item_sale" ${current==='item_sale'?'selected':''}>Item Sale</option>`;
   }
   function dualSettingsMap(){
     const m=new Map();
@@ -118,7 +117,7 @@
     setCalcStatus('กำลังคำนวณ...');
     requestAnimationFrame(()=>{
       const exp=expected(b,d),mov=IDX.stockByBranch.get(b)||[],out=[],needs=[],groups=new Map(),
-            usageSettings=dualSettingsMap(),itemUsage=itemSaleUsage(b,d),manual=manualCal(b);
+            usageSettings=dualSettingsMap(),itemUsage=itemSaleUsage(b,d);
       for(const r of mov){const rm=T(V(r,'rm'));if(!rm)continue;if(!groups.has(rm))groups.set(rm,[]);groups.get(rm).push(r)}
       for(const [rm,rs] of groups){
         const r=rs[0],sum=n=>rs.reduce((z,x)=>z+num(V(x,n)),0),firstText=n=>{for(const x of rs){const v=T(V(x,n));if(v)return v}return''};
@@ -133,13 +132,11 @@
         const bf=sum('bf'),gr=sum('gr'),tin=sum('tin'),wipin=sum('wipin'),adjin=sum('adjin'),rtv=sum('rtv'),tout=sum('tout'),wipout=sum('wipout'),damage=sum('damage'),adjout=sum('adjout'),movSales=sum('sales'),waste=sum('waste'),reportTheory=sum('theory'),reportActual=sum('actual');
         const cfg=usageSettings.get(T(rm).toUpperCase())||{source1:'',source2:'',cup1:'',cup2:''};
         const mappedItemUsage=itemUsage.byRm.get(T(rm).toUpperCase());
-        const manualRow=manual.byRm.get(T(rm).toUpperCase());
 
         function sourceValue(source,cup){
           if(!source)return{value:0,setup:false,needConv:false};
           if(source==='stock')return{value:movSales,setup:false,needConv:false};
           if(source==='bom')return{value:bom,setup:false,needConv:need||bom===null};
-          if(source==='manual_cal')return{value:manualRow?.status==='Needs conversion'?null:(manualRow?.total||0),setup:false,needConv:manualRow?.status==='Needs conversion'};
           if(source==='item_sale'){
             if(mappedItemUsage!==undefined)return{value:mappedItemUsage,setup:false,needConv:false};
             if(cup)return{value:itemUsage.bySize.get(cup)||0,setup:false,needConv:false};
@@ -166,12 +163,12 @@
           usageCupSize:cfg.cup1,usageValue:usageTotal,usageSetupNeeded,
           usageSource1:sourceLabel(cfg.source1),usageCode1:cfg.source1,usageCupSize1:cfg.cup1,usageValue1:one.value,
           usageSource2:cfg.source2?sourceLabel(cfg.source2):'',usageCode2:cfg.source2,usageCupSize2:cfg.cup2,usageValue2:cfg.source2?two.value:0,
-          usageTotal,manualUsage:manualRow?.total||0
+          usageTotal
         });
       }
-      S.analysis=out;S.needs=needs;S.currentExpected=exp;S.manualCal=manual;
+      S.analysis=out;S.needs=needs;S.currentExpected=exp;
       syncActiveCustomCheck(out);renderRMFilter(true);render();recon();renderCustomChecks();setCalcStatus(`พร้อม • ${out.length.toLocaleString()} RM`);
-      renderManualPage();renderPlanningPage();
+      renderPlanningPage();
     });
   }
   compute=calcDualAnalysis;
@@ -291,19 +288,10 @@
     if(!$('.tab[data-p="wipmaster"]')){
       const t=document.createElement('button');t.className='tab';t.dataset.p='wipmaster';t.innerHTML='<span>🏭</span> WIP Conversion Master';tabs.appendChild(t);
       const s=document.createElement('section');s.id='wipmaster';s.className='page';s.innerHTML=`
-        <div class="card"><div class="section-head"><div class="section-title"><div class="icon">🏭</div><div><h3>WIP Conversion Master</h3><div class="subtle">รหัส WP จาก Bomb Sheet Wip • กำหนดผลผลิตสำหรับ Manual Cal</div></div></div><span id="wipSaveState" class="planning-state saved">พร้อม</span></div>
+        <div class="card"><div class="section-head"><div class="section-title"><div class="icon">🏭</div><div><h3>WIP Conversion Master</h3><div class="subtle">รหัส WP จาก BOM Sheet Wip • กำหนด Yield สำหรับแปลง Sales Usage กลับเป็นวัตถุดิบหลัก</div></div></div><span id="wipSaveState" class="planning-state saved">พร้อม</span></div>
         <div class="planning-toolbar"><input id="wipSearch" placeholder="ค้นหา WP Code / วัตถุดิบ"><span id="wipCount" class="subtle"></span></div></div>
         <div class="card"><div id="wipMasterList" class="wip-master-list"></div></div>`;
       main.appendChild(s);t.onclick=()=>activatePage('wipmaster');$('#wipSearch').oninput=renderWipMaster;
-    }
-    if(!$('.tab[data-p="manualcal"]')){
-      const t=document.createElement('button');t.className='tab';t.dataset.p='manualcal';t.innerHTML='<span>🧮</span> Manual Cal';tabs.appendChild(t);
-      const s=document.createElement('section');s.id='manualcal';s.className='page';s.innerHTML=`
-        <div class="card"><div class="section-head"><div class="section-title"><div class="icon">🧮</div><div><h3>Manual Cal • WIP Usage</h3><div class="subtle">WP Sales Usage ÷ ผลผลิต × วัตถุดิบ ÷ Unit Conversion</div></div></div></div>
-        <div class="planning-toolbar"><label>สาขา <select id="manualBranch"></select></label><button class="btn" id="manualRefresh">🔄 คำนวณใหม่</button></div></div>
-        <div id="manualKpi" class="planning-kpis"></div>
-        <div class="card"><div id="manualErrors"></div><div class="tablewrap"><table id="manualTbl"><thead><tr><th>RM</th><th>Description</th><th>Unit</th><th>WP Source</th><th>รายละเอียดสูตร</th><th>Total Manual Usage</th><th>Status</th></tr></thead><tbody></tbody></table></div></div>`;
-      main.appendChild(s);t.onclick=()=>activatePage('manualcal');$('#manualBranch').onchange=renderManualPage;$('#manualRefresh').onclick=renderManualPage;
     }
     if(ROLE()==='user'&&!$('.tab[data-p="planning"]')){
       const t=document.createElement('button');t.className='tab';t.dataset.p='planning';t.innerHTML='<span>📦</span> Daily Usage & Plan';tabs.appendChild(t);
@@ -320,12 +308,11 @@
     $$('.tab').forEach(x=>x.classList.toggle('active',x.dataset.p===id));
     $$('.page').forEach(x=>x.classList.toggle('active',x.id===id));
     if(id==='wipmaster')renderWipMaster();
-    if(id==='manualcal')renderManualPage();
     if(id==='planning')renderPlanningPage();
   }
   function renderBranchSelectors(){
     const opts=(typeof branchMaster==='function'?branchMaster():[]).map(x=>`<option value="${esc(x.code)}">${esc(x.code+(x.name?' - '+x.name:''))}</option>`).join('');
-    for(const id of ['manualBranch','planBranch']){
+    for(const id of ['planBranch']){
       const e=$('#'+id);if(!e)continue;const keep=e.value||$('#branch')?.value||'';e.innerHTML=opts;if(keep&&[...e.options].some(o=>o.value===keep))e.value=keep;
     }
   }
@@ -338,19 +325,9 @@
       const fileYield=num(V(rows[0],'fgq')),override=overrides.get(code),used=override||fileYield;
       return `<div class="wip-card"><div class="wip-head"><div><b>${esc(code)}</b><small>${rows.length} วัตถุดิบ</small></div><div class="wip-yield"><label>ผลผลิตจากไฟล์<input value="${fileYield||''}" disabled></label><label>ผลผลิตที่ใช้<input class="wip-yield-input" data-code="${esc(code)}" type="number" min="0" step="any" value="${override||''}" placeholder="${fileYield||'กรอกผลผลิต'}" ${ROLE()==='admin'?'':'disabled'}></label>${ROLE()==='admin'?`<button class="btn alt small wip-clear" data-code="${esc(code)}">ล้างค่ากำหนดเอง</button>`:''}<span class="wip-used">ใช้ ${fmt(used)}</span></div></div>
       <div class="tablewrap"><table><thead><tr><th>RM Code</th><th>Qty / สูตร</th><th>Unit</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(T(V(r,'rmitem')))}</b></td><td class="num">${fmt(num(V(r,'rmq')))}</td><td>${esc(T(V(r,'rmu')))}</td></tr>`).join('')}</tbody></table></div></div>`;
-    }).join(''):'<div class="planning-empty">ไม่พบรหัส WP ใน Bomb Sheet Wip</div>';
+    }).join(''):'<div class="planning-empty">ไม่พบรหัส WP ใน BOM Sheet Wip</div>';
     box.querySelectorAll('.wip-yield-input').forEach(i=>i.onchange=()=>setYield(i.dataset.code,i.value));
     box.querySelectorAll('.wip-clear').forEach(b=>b.onclick=()=>setYield(b.dataset.code,0));
-  }
-
-  function renderManualPage(){
-    const body=$('#manualTbl tbody');if(!body)return;
-    renderBranchSelectors();const branch=$('#manualBranch')?.value||$('#branch')?.value||'';if(!branch){body.innerHTML='';return}
-    const m=manualCal(branch),rows=[...m.byRm.values()].sort((a,b)=>a.rm.localeCompare(b.rm,'en',{numeric:true}));
-    body.innerHTML=rows.map(x=>`<tr><td><b>${esc(x.rm)}</b></td><td>${esc(x.desc)}</td><td>${esc(x.unit)}</td><td>${x.sources.map(esc).join(', ')}</td><td>${x.details.map(d=>`${esc(d.wp)}: Sales ${fmt(d.sales)} ÷ Yield ${fmt(d.yieldQty)} = ${fmt(d.batches)} สูตร × ${fmt(d.rmQty)} ${esc(d.rmUnit)}${d.factor?` ÷ ${fmt(d.factor)}`:''}`).join('<br>')}</td><td class="num"><b>${fmt(x.total)}</b></td><td class="${x.status==='OK'?'ok':'warn'}">${esc(x.status)}</td></tr>`).join('');
-    const missingYield=m.errors.filter(x=>x.type==='Missing Yield').length,needConv=m.errors.filter(x=>x.type==='Manual Cal needs conversion').length;
-    $('#manualKpi').innerHTML=`<div class="card plan-kpi">WP ที่มียอดใช้<b>${m.wpSales.size}</b></div><div class="card plan-kpi">RM ที่คำนวณได้<b>${rows.length}</b></div><div class="card plan-kpi">Missing Yield<b class="warn">${missingYield}</b></div><div class="card plan-kpi">Need Conversion<b class="warn">${needConv}</b></div>`;
-    $('#manualErrors').innerHTML=m.errors.length?`<div class="notice">${m.errors.map(x=>`<b>${esc(x.type)}</b> ${esc(x.code)}: ${esc(x.note)}`).join(' • ')}</div>`:'';
   }
 
   function itemSaleDays(branch){
@@ -432,7 +409,7 @@
   @media(max-width:900px){.planning-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.wip-head{display:block}.wip-yield{margin-top:10px}}@media(max-width:600px){.planning-kpis{grid-template-columns:1fr}.planning-toolbar>*{width:100%}.planning-toolbar select,.planning-toolbar input{width:100%}}
   `;document.head.appendChild(css);
 
-  ensureExtraPages();renderBranchSelectors();renderWipMaster();renderManualPage();
+  ensureExtraPages();renderBranchSelectors();renderWipMaster();
   document.addEventListener('kamu:data-ready',()=>setTimeout(()=>{ensureExtraPages();renderBranchSelectors();loadPlanningData()},120));
   setTimeout(()=>{ensureExtraPages();if(TOKEN())loadPlanningData()},900);
 
