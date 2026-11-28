@@ -1,4 +1,4 @@
-/* Version 3.28 — Dual Usage Source + WIP Conversion + Manual Cal + Daily Usage Planning */
+/* Version 3.40 — Dual Usage Source + WIP Conversion + BOM from Sales Usage + Daily Usage Planning */
 (()=>{
   const API='https://jbagitudrjpentdneiju.supabase.co/functions/v1/kamu-inventory-api';
   const ROLE=()=>localStorage.getItem('kamuInvCloudRole')||'';
@@ -21,20 +21,19 @@
     const x=T(v).toLowerCase().replace(/[\s_-]+/g,'');
     if(x==='stock'||x==='stockmovement'||x==='movement')return'stock';
     if(x==='itemsale'||x==='sale'||x==='sales')return'item_sale';
-    if(x==='manual'||x==='manualcal'||x==='manualcalculation')return'manual_cal';
+    if(x==='manual'||x==='manualcal'||x==='manualcalculation')return'bom';
     return x==='bom'||x==='bomb'?'bom':'';
   }
   function sourceLabel(v){
     const x=sourceCode(v);
-    return x==='bom'?'BOM':x==='stock'?'Stock Movement':x==='item_sale'?'Item Sale':x==='manual_cal'?'Manual Cal':'ยังไม่กำหนด';
+    return x==='bom'?'BOM':x==='stock'?'Stock Movement':x==='item_sale'?'Item Sale':'ยังไม่กำหนด';
   }
   function sourceOptions(current,second=false){
     const first=second?'<option value="">-- ไม่ใช้ Source 2 --</option>':'<option value="">-- ยังไม่กำหนด --</option>';
     return first+
       `<option value="bom" ${current==='bom'?'selected':''}>BOM</option>`+
       `<option value="stock" ${current==='stock'?'selected':''}>Stock Movement</option>`+
-      `<option value="item_sale" ${current==='item_sale'?'selected':''}>Item Sale</option>`+
-      `<option value="manual_cal" ${current==='manual_cal'?'selected':''}>Manual Cal</option>`;
+      `<option value="item_sale" ${current==='item_sale'?'selected':''}>Item Sale</option>`;
   }
   function dualSettingsMap(){
     const m=new Map();
