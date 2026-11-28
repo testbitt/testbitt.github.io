@@ -6,12 +6,12 @@
           usageCupSize:cfg.cup1,usageValue:usageTotal,usageSetupNeeded,
           usageSource1:sourceLabel(cfg.source1),usageCode1:cfg.source1,usageCupSize1:cfg.cup1,usageValue1:one.value,
           usageSource2:cfg.source2?sourceLabel(cfg.source2):'',usageCode2:cfg.source2,usageCupSize2:cfg.cup2,usageValue2:cfg.source2?two.value:0,
-          usageTotal,manualUsage:manualRow?.total||0
+          usageTotal
         });
       }
-      S.analysis=out;S.needs=needs;S.currentExpected=exp;S.manualCal=manual;
+      S.analysis=out;S.needs=needs;S.currentExpected=exp;
       syncActiveCustomCheck(out);renderRMFilter(true);render();recon();renderCustomChecks();setCalcStatus(`พร้อม • ${out.length.toLocaleString()} RM`);
-      renderManualPage();renderPlanningPage();
+      renderPlanningPage();
     });
   }
   compute=calcDualAnalysis;
