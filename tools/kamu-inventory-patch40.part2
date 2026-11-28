@@ -38,7 +38,7 @@
     setCalcStatus('กำลังคำนวณ...');
     requestAnimationFrame(()=>{
       const exp=expected(b,d),mov=IDX.stockByBranch.get(b)||[],out=[],needs=[],groups=new Map(),
-            usageSettings=dualSettingsMap(),itemUsage=itemSaleUsage(b,d),manual=manualCal(b);
+            usageSettings=dualSettingsMap(),itemUsage=itemSaleUsage(b,d);
       for(const r of mov){const rm=T(V(r,'rm'));if(!rm)continue;if(!groups.has(rm))groups.set(rm,[]);groups.get(rm).push(r)}
       for(const [rm,rs] of groups){
         const r=rs[0],sum=n=>rs.reduce((z,x)=>z+num(V(x,n)),0),firstText=n=>{for(const x of rs){const v=T(V(x,n));if(v)return v}return''};
@@ -53,13 +53,11 @@
         const bf=sum('bf'),gr=sum('gr'),tin=sum('tin'),wipin=sum('wipin'),adjin=sum('adjin'),rtv=sum('rtv'),tout=sum('tout'),wipout=sum('wipout'),damage=sum('damage'),adjout=sum('adjout'),movSales=sum('sales'),waste=sum('waste'),reportTheory=sum('theory'),reportActual=sum('actual');
         const cfg=usageSettings.get(T(rm).toUpperCase())||{source1:'',source2:'',cup1:'',cup2:''};
         const mappedItemUsage=itemUsage.byRm.get(T(rm).toUpperCase());
-        const manualRow=manual.byRm.get(T(rm).toUpperCase());
 
         function sourceValue(source,cup){
           if(!source)return{value:0,setup:false,needConv:false};
           if(source==='stock')return{value:movSales,setup:false,needConv:false};
           if(source==='bom')return{value:bom,setup:false,needConv:need||bom===null};
-          if(source==='manual_cal')return{value:manualRow?.status==='Needs conversion'?null:(manualRow?.total||0),setup:false,needConv:manualRow?.status==='Needs conversion'};
           if(source==='item_sale'){
             if(mappedItemUsage!==undefined)return{value:mappedItemUsage,setup:false,needConv:false};
             if(cup)return{value:itemUsage.bySize.get(cup)||0,setup:false,needConv:false};
