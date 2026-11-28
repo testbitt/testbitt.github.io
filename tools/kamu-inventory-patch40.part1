@@ -74,6 +74,3 @@
     return r?{desc:T(V(r,'rmd')),unit:T(V(r,'stocku')),cost:num(V(r,'cost'))}:{desc:'',unit:'',cost:0};
   }
 
-  function manualCal(branch){
-    const groups=wipGroups(),overrides=yieldOverrides(),wpSales=new Map(),errors=[],byRm=new Map(),wipDetails=[];
-    for(const r of IDX.stockByBranch.get(branch)||[]){
