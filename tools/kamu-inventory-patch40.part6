@@ -32,7 +32,7 @@
   @media(max-width:900px){.planning-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.wip-head{display:block}.wip-yield{margin-top:10px}}@media(max-width:600px){.planning-kpis{grid-template-columns:1fr}.planning-toolbar>*{width:100%}.planning-toolbar select,.planning-toolbar input{width:100%}}
   `;document.head.appendChild(css);
 
-  ensureExtraPages();renderBranchSelectors();renderWipMaster();renderManualPage();
+  ensureExtraPages();renderBranchSelectors();renderWipMaster();
   document.addEventListener('kamu:data-ready',()=>setTimeout(()=>{ensureExtraPages();renderBranchSelectors();loadPlanningData()},120));
   setTimeout(()=>{ensureExtraPages();if(TOKEN())loadPlanningData()},900);
 
