@@ -60,7 +60,7 @@ jobs:
             ('patch37.js','tools/kamu-inventory-patch37.js','325'),
             ('patch38.js','tools/kamu-inventory-patch38.js','326'),
             ('patch39.js','tools/kamu-inventory-patch39.js','327'),
-            ('patch40.js','tools/kamu-inventory-patch40.js','328'),
+            ('patch40.js','tools/kamu-inventory-patch40.js','340'),
             ('patch41.js','tools/kamu-inventory-patch41.js','329'),
             ('patch42.js','tools/kamu-inventory-patch42.js','330'),
             ('patch43.js','tools/kamu-inventory-patch43.js','333'),
