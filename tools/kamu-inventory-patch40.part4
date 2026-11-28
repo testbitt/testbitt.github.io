@@ -51,19 +51,10 @@
     if(!$('.tab[data-p="wipmaster"]')){
       const t=document.createElement('button');t.className='tab';t.dataset.p='wipmaster';t.innerHTML='<span>🏭</span> WIP Conversion Master';tabs.appendChild(t);
       const s=document.createElement('section');s.id='wipmaster';s.className='page';s.innerHTML=`
-        <div class="card"><div class="section-head"><div class="section-title"><div class="icon">🏭</div><div><h3>WIP Conversion Master</h3><div class="subtle">รหัส WP จาก Bomb Sheet Wip • กำหนดผลผลิตสำหรับ Manual Cal</div></div></div><span id="wipSaveState" class="planning-state saved">พร้อม</span></div>
+        <div class="card"><div class="section-head"><div class="section-title"><div class="icon">🏭</div><div><h3>WIP Conversion Master</h3><div class="subtle">รหัส WP จาก BOM Sheet Wip • กำหนด Yield สำหรับแปลง Sales Usage กลับเป็นวัตถุดิบหลัก</div></div></div><span id="wipSaveState" class="planning-state saved">พร้อม</span></div>
         <div class="planning-toolbar"><input id="wipSearch" placeholder="ค้นหา WP Code / วัตถุดิบ"><span id="wipCount" class="subtle"></span></div></div>
         <div class="card"><div id="wipMasterList" class="wip-master-list"></div></div>`;
       main.appendChild(s);t.onclick=()=>activatePage('wipmaster');$('#wipSearch').oninput=renderWipMaster;
-    }
-    if(!$('.tab[data-p="manualcal"]')){
-      const t=document.createElement('button');t.className='tab';t.dataset.p='manualcal';t.innerHTML='<span>🧮</span> Manual Cal';tabs.appendChild(t);
-      const s=document.createElement('section');s.id='manualcal';s.className='page';s.innerHTML=`
-        <div class="card"><div class="section-head"><div class="section-title"><div class="icon">🧮</div><div><h3>Manual Cal • WIP Usage</h3><div class="subtle">WP Sales Usage ÷ ผลผลิต × วัตถุดิบ ÷ Unit Conversion</div></div></div></div>
-        <div class="planning-toolbar"><label>สาขา <select id="manualBranch"></select></label><button class="btn" id="manualRefresh">🔄 คำนวณใหม่</button></div></div>
-        <div id="manualKpi" class="planning-kpis"></div>
-        <div class="card"><div id="manualErrors"></div><div class="tablewrap"><table id="manualTbl"><thead><tr><th>RM</th><th>Description</th><th>Unit</th><th>WP Source</th><th>รายละเอียดสูตร</th><th>Total Manual Usage</th><th>Status</th></tr></thead><tbody></tbody></table></div></div>`;
-      main.appendChild(s);t.onclick=()=>activatePage('manualcal');$('#manualBranch').onchange=renderManualPage;$('#manualRefresh').onclick=renderManualPage;
     }
     if(ROLE()==='user'&&!$('.tab[data-p="planning"]')){
       const t=document.createElement('button');t.className='tab';t.dataset.p='planning';t.innerHTML='<span>📦</span> Daily Usage & Plan';tabs.appendChild(t);
